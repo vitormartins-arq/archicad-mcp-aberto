@@ -204,6 +204,11 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "rotate_elements": (
+        "rotation",
+        "rotation_receipt_id",
+        "Rotate without copying; verify geometry.",
+    ),
     "create_zones": ("zone", "zone_receipt_id", "New zones inherit category/stamp defaults."),
     "create_beams": ("beam", "beam_receipt_id", "New beams inherit layer/material defaults."),
     "delete_elements": (
@@ -522,6 +527,9 @@ async def _write(
     dry_run: bool,
     confirmation_token: str | None,
     operation: str = "create_walls",
+    *,
+    planner_override=None,
+    dispatcher_override=None,
 ) -> dict:
     if client.session_id is None:
         raise RuntimeError("ArchicadClient must be used inside 'async with'.")
@@ -530,7 +538,7 @@ async def _write(
         state = WriteState(session_id=client.session_id)
         _states[client] = state
     kind, receipt_key, preview_note = OPERATIONS[operation]
-    planner = {
+    planner = planner_override or {
         "move_elements": _move_plan,
         "set_property_values": _property_plan,
         "delete_elements": _delete_plan,
@@ -579,7 +587,7 @@ async def _write(
         receipt["prepared_receipt_path"] = _journal(receipt, "prepared")
         # Consume before dispatch, including if dispatch or verification later fails.
         state.previews.pop(confirmation_token)
-        dispatcher = {
+        dispatcher = dispatcher_override or {
             "move_elements": _move_dispatch,
             "delete_elements": _delete_dispatch,
             "set_property_values": _property_dispatch,
@@ -1306,7 +1314,7 @@ async def delete_elements(
     return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
 
 
-NAMED_PREVIEWS = {"move_elements", "set_property_values", "delete_elements"}
+NAMED_PREVIEWS = {"move_elements", "set_property_values", "delete_elements", "rotate_elements"}
 
 
 def _plan_digest(plan: dict) -> str:

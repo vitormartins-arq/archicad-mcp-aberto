@@ -146,6 +146,10 @@
     {
       "name": "list_library_parts",
       "description": "Read available library part names/GUIDs/types with filtering and pagination."
+    },
+    {
+      "name": "rotate_elements",
+      "description": "Preview/rotate up to 50 editable elements, with per-item geometry verification."
     }
   ],
   "compatibility": {
