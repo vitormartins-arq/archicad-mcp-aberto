@@ -183,3 +183,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - T8: nomes de andar/camada nas prévias de mover/propriedades; helper também cobre delete_elements quando disponível. Uma chamada GetAttributesByType(Layer) por prévia; nome ausente vira null. Nomes fora do digest; índices/cotas continuam vinculados. Fixture documental do commit 02691b5d, não captura ao vivo. T7 integrada na main 5039baf; T8 reiniciada dessa main conforme Vitor, sem cherry-pick.
 
 - T8: 551 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Base origin/main 5039baf, sem cherry-pick/merge.
+
+- T9: CreateBeams confirmado em ExtendedElementCommands.cpp no commit 02691b5d. Vigas retas retangulares, cota absoluta e dimensão em metros; confirmação/recibos/timeout compartilhados; conferência BIM e seção. Fixture documental, não captura ao vivo; somente simulado. Detalhes Tapir limitados ao primeiro segmento; usar padrão básico de um segmento na validação futura.
+
+- T9: 586 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Branch empilhada em T8, PR com base main.

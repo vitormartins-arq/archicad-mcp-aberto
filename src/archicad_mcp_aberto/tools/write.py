@@ -77,6 +77,21 @@ class WallCreate(InputModel):
         return self
 
 
+class BeamCreate(InputModel):
+    start: Point
+    end: Point
+    floor_index: int
+    level: float
+    width: Positive
+    height: Positive
+
+    @model_validator(mode="after")
+    def nonzero_length(self) -> BeamCreate:
+        if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
+            raise ValueError("A beam must be at least 0.000001 m long.")
+        return self
+
+
 class ColumnCreate(InputModel):
     origin: Point
     floor_index: int
@@ -171,6 +186,7 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "create_beams": ("beam", "beam_receipt_id", "New beams inherit layer/material defaults."),
     "delete_elements": (
         "deletion",
         "delete_receipt_id",
@@ -212,6 +228,7 @@ OPERATIONS = {
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
+    "create_beams": ("CreateBeams", "beamsData"),
     "create_walls": ("CreateWalls", "wallsData"),
     "create_slabs": ("CreateSlabs", "slabsData"),
     "create_columns": ("CreateColumns", "columnsData"),
@@ -292,8 +309,11 @@ async def _plan(
     items = []
     slab = operation == "create_slabs"
     column = operation == "create_columns"
+    beam = operation == "create_beams"
     obj = operation == "create_objects"
-    kind = "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
+    kind = (
+        "Beam" if beam else "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
+    )
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
@@ -312,6 +332,8 @@ async def _plan(
             if column
             else _object_payload(wall)
             if obj
+            else _beam_payload(wall)
+            if beam
             else _create_payload(wall)
         )
         items.append({"index": index, "status": "ready", "parameters": payload})
@@ -361,6 +383,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     slab = receipt["operation"] == "create_slabs"
     column = receipt["operation"] == "create_columns"
+    beam = receipt["operation"] == "create_beams"
     obj = receipt["operation"] == "create_objects"
     command, key = CREATE_COMMANDS[receipt["operation"]]
     try:
@@ -425,6 +448,8 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
                 if column
                 else _object_mismatches(item, row)
                 if obj
+                else _beam_mismatches(item, row, receipt["target"])
+                if beam
                 else _mismatches(_expected(item), row)
             )
             item.update(status="verification_failed" if differences else "verified")
@@ -1275,3 +1300,60 @@ async def _preview_names(client: ArchicadClient, plan: dict) -> None:
                 item[key] = before.get(key) if isinstance(before, dict) else None
         item["floorName"] = floors.get(item["floorIndex"])
         item["layerName"] = layers.get(item["layerIndex"])
+
+
+def _beam_payload(beam: BeamCreate) -> dict:
+    return {
+        "begCoordinate": beam.start.model_dump(),
+        "endCoordinate": beam.end.model_dump(),
+        "floorIndex": beam.floor_index,
+        "zCoordinate": beam.level,
+        "width": beam.width,
+        "height": beam.height,
+        "offset": 0.0,
+        "slantAngle": 0.0,
+        "isSlanted": False,
+        "profileAngle": 0.0,
+        "arcAngle": 0.0,
+        "verticalCurveHeight": 0.0,
+        "anchorPoint": "Center",
+        "circleBased": False,
+        "isWidthAndHeightLinked": False,
+    }
+
+
+def _beam_mismatches(item: dict, row: Any, target: dict) -> list[str]:
+    p = item["parameters"]
+    story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
+    details = {key: value for key, value in p.items() if key != "floorIndex"}
+    details.update(level=p["zCoordinate"] - story["level"], beamShape="Straight")
+    differences = _mismatches(
+        {"type": "Beam", "floorIndex": p["floorIndex"], "details": details}, row
+    )
+    if (
+        isinstance(row, dict)
+        and isinstance(row.get("details"), dict)
+        and "profileId" in row["details"]
+    ):
+        differences.append("details.profileId")
+    return differences
+
+
+async def create_beams(
+    client: ArchicadClient,
+    beams: list[dict | BeamCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 straight rectangular beams; all lengths in metres.
+
+    level is absolute project Z. Centered, unrotated, unlinked rectangular section.
+    Requires Tapir; shares single-use token, explicit port, per-beam receipts and timeout.
+    Verifies geometry/section after writing. Inherited profiles may fail verification.
+    Never saves. Tapir details describe the first segment of a multi-segment default.
+    """
+    if not 1 <= len(beams) <= 20:
+        raise ValueError("Pass between 1 and 20 beams.")
+    validated = [b if isinstance(b, BeamCreate) else BeamCreate.model_validate(b) for b in beams]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_beams")

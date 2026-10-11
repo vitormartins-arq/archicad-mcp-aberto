@@ -134,6 +134,10 @@
     {
       "name": "delete_elements",
       "description": "Preview and delete editable elements only in untitled test projects; never saves. Preview includes story and layer names when available."
+    },
+    {
+      "name": "create_beams",
+      "description": "Preview/create up to 20 straight rectangular beams in metres, with per-beam verification."
     }
   ],
   "compatibility": {

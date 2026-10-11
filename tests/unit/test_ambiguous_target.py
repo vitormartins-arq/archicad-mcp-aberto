@@ -14,6 +14,18 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "create_beams": {
+        "beams": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 4, "y": 0},
+                "floor_index": 0,
+                "level": 3,
+                "width": 0.2,
+                "height": 0.4,
+            }
+        ]
+    },
     "delete_elements": {"element_guids": [GUID]},
     "find_elements": {},
     "set_property_values": {

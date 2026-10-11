@@ -84,6 +84,7 @@ class FakeArchicad:
     building_materials: dict[str, dict] = field(default_factory=dict)
     layers: dict[int, str | None] = field(default_factory=lambda: {1: "Walls"})
     lose_slab_response: bool = False
+    lose_beam_response: bool = False
     lose_column_response: bool = False
     lose_object_response: bool = False
     # Library part names CreateObjects can find; any other name fails that item.
@@ -323,6 +324,30 @@ class FakeArchicad:
                         store[g] = row
                 out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "CreateBeams":
+            # Source-confirmed at 02691b5d; synthetic fixture, not live captured.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_create_beams_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = []
+            for index, beam in enumerate(args["beamsData"]):
+                if index in self.create_errors:
+                    rows.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Beam"
+                row = deepcopy(fixture["details"])
+                row["floorIndex"] = beam["floorIndex"]
+                story = next(s for s in self.stories if s["index"] == beam["floorIndex"])
+                row["details"].update(
+                    {k: deepcopy(v) for k, v in beam.items() if k != "floorIndex"}
+                )
+                row["details"]["level"] = beam["zCoordinate"] - story["level"]
+                self.details[guid] = row
+                rows.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": rows}})
         if name == "CreateColumns":
             out = []
             for index, column in enumerate(args["columnsData"]):
@@ -466,6 +491,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_object_response and command == "CreateObjects":
             raise httpx.ReadTimeout(
                 "Injected lost object response after model change", request=request
+            )
+        if instance.lose_beam_response and command == "CreateBeams":
+            raise httpx.ReadTimeout(
+                "Injected lost beam response after model change", request=request
             )
         if instance.lose_column_response and command == "CreateColumns":
             raise httpx.ReadTimeout(
