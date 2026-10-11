@@ -9,7 +9,7 @@ from typing import Any
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import read, write
+from archicad_mcp_aberto.tools import attributes, read, write
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall creation).
@@ -133,6 +133,14 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         default layer and building material. Returns per-wall results and local receipts;
         verifies geometry after writing. Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_building_materials(
+        ctx: Context, port: int | None = None, attribute_guids: list[str] | None = None
+    ) -> dict:
+        """List material GUID/index/name and cut-fill index/foreground/background pens.
+        Requires Tapir 1.7.0. Optional GUID filter; changes nothing."""
+        return await attributes.list_building_materials(client_of(ctx), port, attribute_guids)
 
     return mcp
 
