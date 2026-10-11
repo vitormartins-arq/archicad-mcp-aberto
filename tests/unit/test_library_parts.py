@@ -62,14 +62,54 @@ async def test_includes_other_part_types_and_filename_fallback():
     assert result["libraryParts"][0]["typeId"] == "Macro"
 
 
-async def test_partial_inventory_exposed_and_unknown_name_not_declared_absent():
+async def test_partial_inventory_exposed_and_unknown_item_unconfirmed():
     fake = FakeArchicad(19723, library_skipped_count=2)
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         result = await read.list_library_parts(c, 19723)
         assert result["partial"] is True and result["skippedCount"] == 2
-        with pytest.raises(ValueError, match="partial; cannot confirm"):
-            await write.create_objects(c, [obj("Unknown")], 19723)
+        preview = await write.create_objects(c, [obj(), obj("Unknown")], 19723)
+    assert [item["status"] for item in preview["items"]] == ["ready", "unconfirmed"]
+    assert "partial" in preview["items"][1]["warning"]
+    assert "library_part_guid" not in preview["items"][1]
+    assert "warning" not in preview["items"][0]
     assert "CreateObjects" not in fake.tapir_calls
+
+
+async def test_complete_inventory_unknown_name_refuses_entire_preview():
+    fake = FakeArchicad(19723, library_skipped_count=0)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="name not in loaded"):
+            await write.create_objects(c, [obj(), obj("Unknown")], 19723)
+    assert "CreateObjects" not in fake.tapir_calls
+    assert not fake.elements
+
+
+async def test_partial_inventory_native_error_isolated_and_token_consumed(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path))
+    fake = FakeArchicad(19723, library_skipped_count=2)
+    objects = [obj(), obj("Unknown")]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await write.create_objects(c, objects, 19723)
+        result = await write.create_objects(c, objects, 19723, False, preview["confirmation_token"])
+        with pytest.raises(ValueError, match="consumed"):
+            await write.create_objects(c, objects, 19723, False, preview["confirmation_token"])
+    assert [item["status"] for item in result["items"]] == ["verified", "failed"]
+    assert "Unknown" in result["items"][1]["error"]["message"]
+    assert len({item["object_receipt_id"] for item in result["items"]}) == 2
+    assert result["receipt_path"]
+    assert fake.tapir_calls.count("CreateObjects") == 1
+
+
+async def test_unconfirmed_name_can_resolve_natively_and_verify(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path))
+    # Native lookup knows the part, but the partial inventory omitted its unreadable row.
+    fake = FakeArchicad(19723, library_inventory=[], library_skipped_count=1)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await write.create_objects(c, [obj()], 19723)
+        assert preview["items"][0]["status"] == "unconfirmed"
+        result = await write.create_objects(c, [obj()], 19723, False, preview["confirmation_token"])
+    assert result["status"] == "verified"
+    assert result["items"][0]["after"]["type"] == "Object"
 
 
 @pytest.mark.parametrize(
