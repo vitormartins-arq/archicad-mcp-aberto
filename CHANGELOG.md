@@ -68,5 +68,7 @@
 - Add safe `create_beams` with rectangular section, absolute level and post-write geometry verification.
 
 - Add safe `create_zones` with shared slab polygon validation and per-zone contour/name/number verification.
+  Tapir 1.7.0 omits `polygonArcs` for an outline without arcs, so zone verification accepts
+  the missing key (found in review against the Tapir source; the fake used to send `[]`).
 
 - Add read-only `list_library_parts` and source investigation; preflight object document names against loaded Object parts before issuing a token.
