@@ -36,20 +36,34 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Releitura do CRM 005 com a sobreposição gráfica desligada: 13 paredes Basic, todas com o
   mesmo material e corte cinza visível na tela. 8 têm polígono e 5 não (F426B8A1, D3ED1C3F,
   63022645, D83685A3, 91EF50D5). Desligar a sobreposição não mudou nada. Então nem o
-  material nem a sobreposição explicam essas 5. Causa ainda aberta; próximo passo é ver na
-  planta onde ficam essas 5 paredes (junções, sobreposição com pilares).
+  material nem a sobreposição explicam essas 5.
+  Mapa dos 17 polígonos sobre os retângulos reais das paredes (linha de referência na face
+  externa, tolerância 1 cm; 11/10/2026): 11 caem só na parede que os devolveu; 2 são o
+  mesmo quadrado de 0,15 x 0,15 m no nó 3D35CB0F/74B2C117; 4 são dois quadrados de canto
+  de 0,15 x 0,15 m, cada um devolvido duas vezes. Nenhum polígono cai sobre as 5 paredes
+  sem polígono, então não é o corte delas indo para a vizinha. Duplicatas exatas viram a
+  tarefa T1 de `docs/FILA.md`. Próximo passo: comparar base, altura e plano de corte das 5
+  com as outras 8 (só leitura).
 - P-005: recusa de destino ambíguo coberta no simulado, branch `feat/ambiguous-target`.
   Todas as ferramentas com `port` recusam duas instâncias sem destino explícito.
   Descoberta e estado do Tapir listam ambas; aplicação exige porta explícita.
   Nenhum teste ao vivo nesta entrega.
+- `create_columns` e `tests/live/smoke.py --write` testados ao vivo em 11/10/2026 (AC30
+  build 3001 BRA, Tapir 1.7.0, projeto sem título, sem salvar). Pilar retangular
+  0,30 x 0,50 m verificado. Pilar circular: o ArchiCAD grava `isWidthAndHeightLinked`
+  verdadeiro mesmo recebendo falso; corrigido no PR #10 antes do merge. O
+  `floorPlanPolygons` do pilar circular volta como losango de 4 vértices. Smoke passou
+  (2 paredes em L, 1 laje, 1 pilar, todos verificados). `API.GetProjectInfo` não existe
+  nesse ArchiCAD (erro 2002); o `isUntitled` vem do `GetProjectInfo` do Tapir.
 - `create_walls` testado ao vivo em 11/10/2026 (AC30 build 3001 BRA, Tapir 1.7.0, projeto
   sem título, sem salvar): simulação, aplicação de 2 paredes em L com status "verified" e
   recusa do token reaplicado passaram. Undo ainda não testado.
 
 ## Próximos passos
 
-1. Resolver a pendência do `floorPlanPolygons`.
-2. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
+1. Resolver a pendência do `floorPlanPolygons` (ver acima).
+2. Tarefas do Codex em `docs/FILA.md`; Claude revisa, testa ao vivo e faz o merge.
+3. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
    simulação por padrão, recibo de cada escrita, erro por elemento e conferência depois
    de aplicar. Começar por paredes. Testar Undo de verdade.
 
