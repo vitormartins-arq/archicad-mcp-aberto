@@ -1,4 +1,6 @@
-"""Small, reviewable wall writes. Lengths are metres; no project is ever saved.
+"""Small, reviewable writes: create walls, slabs and columns, move elements.
+
+Lengths are metres; no project is ever saved.
 
 Previews live in one client session for ten minutes. A consumed preview is never
 retried: an HTTP failure can happen after Archicad has already changed the model.
@@ -20,15 +22,17 @@ from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 from weakref import WeakKeyDictionary
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, resolve_port
-from archicad_mcp_aberto.tools.read import element_ids
+from archicad_mcp_aberto.tools.read import element_ids, get_bounding_boxes
 
 Positive = Annotated[float, Field(gt=0)]
 MAX_WALLS = 20
 MAX_SLABS = 20
 MAX_COLUMNS = 20
+MAX_MOVES = 50
+MOVE_TOLERANCE = 0.001  # metres; bounding boxes are compared after a move
 PREVIEW_SECONDS = 600
 DETAIL_FIELDS = ["type", "floorIndex", "layerIndex", "hotlinkId", "details"]
 
@@ -146,6 +150,31 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
         or (cd_b == 0 and on(c, d, b))
         or ((ab_c > 0) != (ab_d > 0) and (cd_a > 0) != (cd_b > 0))
     )
+
+
+# operation -> (noun used in messages, per-item receipt key, note shown with a preview)
+OPERATIONS = {
+    "create_walls": (
+        "wall",
+        "wall_receipt_id",
+        "New walls inherit Archicad's default layer and building material.",
+    ),
+    "create_slabs": (
+        "slab",
+        "slab_receipt_id",
+        "New slabs inherit Archicad's default layer and building material.",
+    ),
+    "create_columns": (
+        "column",
+        "column_receipt_id",
+        "New columns inherit Archicad's default layer and building material.",
+    ),
+    "move_elements": (
+        "move",
+        "move_receipt_id",
+        "Each element moves by its vector; boxes are checked after.",
+    ),
+}
 
 
 @dataclass
@@ -374,10 +403,11 @@ async def _write(
     if state is None or state.session_id != client.session_id:
         state = WriteState(session_id=client.session_id)
         _states[client] = state
-    kind = {"create_columns": "column", "create_slabs": "slab", "create_walls": "wall"}[operation]
+    kind, receipt_key, preview_note = OPERATIONS[operation]
+    planner = _move_plan if operation == "move_elements" else _plan
     async with state.lock:
         if dry_run:
-            plan = await _plan(client, walls, port, operation)
+            plan = await planner(client, walls, port, operation)
             now = time.monotonic()
             state.previews = {k: v for k, v in state.previews.items() if v[0] > now}
             if len(state.previews) >= 32:
@@ -390,15 +420,14 @@ async def _write(
                 "confirmation_token": token,
                 "expires_in_seconds": PREVIEW_SECONDS,
                 "note": "Review this plan with the user before applying. No model changes. "
-                f"New {kind}s inherit "
-                "Archicad's default layer and building material.",
+                + preview_note,
             }
         if port is None:
             raise ValueError(f"Applying a {kind} plan requires its explicit port.")
         entry = state.previews.get(confirmation_token or "")
         if entry is None or entry[0] <= time.monotonic():
             raise ValueError("Preview missing, expired or already consumed. Run a new dry run.")
-        plan = await _plan(client, walls, port, operation)
+        plan = await planner(client, walls, port, operation)
         if _digest(plan) != _digest(entry[1]):
             raise ValueError(
                 "Parameters, target, stories or element IDs changed since preview. "
@@ -414,17 +443,11 @@ async def _write(
             "status": "outcome_unknown",
         }
         for item in receipt["items"]:
-            item[
-                "column_receipt_id"
-                if operation == "create_columns"
-                else "slab_receipt_id"
-                if operation == "create_slabs"
-                else "wall_receipt_id"
-            ] = str(uuid4())
+            item[receipt_key] = str(uuid4())
         receipt["prepared_receipt_path"] = _journal(receipt, "prepared")
         # Consume before dispatch, including if dispatch or verification later fails.
         state.previews.pop(confirmation_token)
-        await _dispatch(client, receipt)
+        await (_move_dispatch if operation == "move_elements" else _dispatch)(client, receipt)
         receipt["counts"] = {
             status: sum(i["status"] == status for i in receipt["items"])
             for status in (
@@ -577,3 +600,172 @@ async def create_columns(
         c if isinstance(c, ColumnCreate) else ColumnCreate.model_validate(c) for c in columns
     ]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_columns")
+
+
+class Vector(InputModel):
+    x: float
+    y: float
+    z: float = 0.0
+
+
+class ElementMove(InputModel):
+    guid: str
+    vector: Vector
+
+    @field_validator("guid")
+    @classmethod
+    def canonical_guid(cls, value: str) -> str:
+        return str(UUID(value)).upper()
+
+    @model_validator(mode="after")
+    def real_move(self) -> ElementMove:
+        v = self.vector
+        length = math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+        if length < MOVE_TOLERANCE:
+            raise ValueError("A move vector must be at least 1 mm long.")
+        if length > 10_000:
+            raise ValueError("A move vector must be at most 10 km long.")
+        return self
+
+
+async def _boxes(client: ArchicadClient, port: int, guids: list[str]) -> dict[str, dict]:
+    """2D and 3D boxes per GUID; a missing box (2D-only element, say) stays out."""
+    out: dict[str, dict] = {g: {} for g in guids}
+    for mode in ("2d", "3d"):
+        result = await get_bounding_boxes(client, guids, port, mode)
+        for row in result["boundingBoxes"]:
+            if "box" in row:
+                out[row["guid"]][mode] = row["box"]
+    return out
+
+
+async def _move_plan(
+    client: ArchicadClient, moves: list[ElementMove], port: int | None, operation: str
+) -> dict:
+    port, target, _ = await _context(client, port)
+    guids = [m.guid for m in moves]
+    everything = await client.command(port, "GetAllElements")
+    existing = {e["elementId"]["guid"].upper() for e in everything["elements"]}
+    missing = [g for g in guids if g not in existing]
+    if missing:
+        raise ValueError(f"Not in this project: {', '.join(missing)}.")
+    details = await client.tapir(
+        port,
+        "GetDetailsOfElements",
+        {
+            "elements": element_ids(guids),
+            "fields": ["type", "floorIndex", "layerIndex", "hotlinkId"],
+        },
+    )
+    rows = details.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected details response cardinality.")
+    boxes = await _boxes(client, port, guids)
+    items = []
+    for index, (move, row) in enumerate(zip(moves, rows, strict=True)):
+        if not isinstance(row, dict) or "error" in row:
+            raise ValueError(f"Element {move.guid}: cannot read it ({row}).")
+        if row.get("hotlinkId"):
+            raise ValueError(f"Element {move.guid} belongs to a hotlink and is read-only.")
+        if not boxes[move.guid]:
+            raise ValueError(f"Element {move.guid}: no bounding box, so a move cannot be checked.")
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": move.guid,
+                "type": row.get("type"),
+                "floorIndex": row.get("floorIndex"),
+                "layerIndex": row.get("layerIndex"),
+                "before": boxes[move.guid],
+                "parameters": {
+                    "elementId": {"guid": move.guid},
+                    "moveVector": move.vector.model_dump(),
+                    "copy": False,
+                },
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+def _move_mismatches(item: dict, after: dict) -> list[str]:
+    v = item["parameters"]["moveVector"]
+    shift = {"x": v["x"], "y": v["y"], "z": v["z"]}
+    differences = []
+    for mode, before in item["before"].items():
+        now = after.get(mode)
+        if now is None:
+            differences.append(f"{mode}: box missing after the move")
+            continue
+        for key, value in before.items():
+            expected = value + shift[key[0]]
+            if not math.isclose(now.get(key, math.nan), expected, abs_tol=MOVE_TOLERANCE):
+                differences.append(f"{mode}.{key}")
+    return differences
+
+
+async def _move_dispatch(client: ArchicadClient, receipt: dict) -> None:
+    items, port = receipt["items"], receipt["target"]["port"]
+    try:
+        raw = await client.tapir(
+            port,
+            "MoveElements",
+            {"elementsWithMoveVectors": [i["parameters"] for i in items]},
+            timeout=receipt["write_timeout_seconds"],
+        )
+    except ArchicadError as exc:
+        for item in items:
+            item.update(status="unknown", error=str(exc))
+        receipt["warning"] = "Move outcome is unknown. Inspect Archicad; do not retry this plan."
+        return
+    receipt["raw_response"] = raw
+    rows = raw.get("executionResults")
+    if not isinstance(rows, list) or len(rows) != len(items):
+        for item in items:
+            item.update(
+                status="unknown", error="Unexpected response cardinality; inspect Archicad."
+            )
+        return
+    moved = []
+    for item, row in zip(items, rows, strict=True):
+        item["write_response"] = row
+        if isinstance(row, dict) and row.get("success") is True:
+            item["status"] = "unverified"
+            moved.append(item)
+        elif isinstance(row, dict) and row.get("success") is False:
+            item.update(status="failed", error=row.get("error"))
+        else:
+            item.update(status="unknown", error="Unexpected move result; inspect Archicad.")
+    if not moved:
+        return
+    try:
+        after = await _boxes(client, port, [i["element_guid"] for i in moved])
+        for item in moved:
+            item["after"] = after[item["element_guid"]]
+            differences = _move_mismatches(item, item["after"])
+            item.update(status="verification_failed" if differences else "verified")
+            if differences:
+                item["mismatches"] = differences
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+
+
+async def move_elements(
+    client: ArchicadClient,
+    moves: list[dict | ElementMove],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply moving up to 50 elements, each by its own vector in metres.
+
+    Never copies. Refuses hotlinked, unknown or box-less elements in the preview, and
+    checks every 2D/3D box moved by its vector (1 mm) after applying. Never saves.
+    """
+    if not 1 <= len(moves) <= MAX_MOVES:
+        raise ValueError(f"Pass between 1 and {MAX_MOVES} moves.")
+    validated = [m if isinstance(m, ElementMove) else ElementMove.model_validate(m) for m in moves]
+    guids = [m.guid for m in validated]
+    if len(set(guids)) != len(guids):
+        raise ValueError("Each element may appear only once per call.")
+    return await _write(client, validated, port, dry_run, confirmation_token, "move_elements")

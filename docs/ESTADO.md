@@ -131,3 +131,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   gera wheel, sdist e `.mcpb` num release em rascunho. Falta instalar no Claude Desktop do
   Vitor (Windows) e testar com o ArchiCAD aberto. O Codex ficou sem créditos em 11/10/2026
   depois da T1; Claude segue a fila.
+
+- **Claude / mover elementos (T2):** branch `feat/move-elements`, empilhada sobre
+  `feat/mcpb-package`. `move_elements` pelo `MoveElements` do Tapir, sem cópia; prévia
+  recusa GUID inexistente, hotlink e elemento sem caixa; conferência por caixa 2D/3D
+  deslocada pelo vetor (1 mm). 414 testes simulados passaram. Formato da resposta tirado
+  do código-fonte do Tapir; falta teste ao vivo no projeto sem nome.

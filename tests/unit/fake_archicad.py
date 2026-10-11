@@ -83,6 +83,9 @@ class FakeArchicad:
     building_materials: dict[str, dict] = field(default_factory=dict)
     lose_slab_response: bool = False
     lose_column_response: bool = False
+    lose_move_response: bool = False
+    move_errors: dict[int, dict] = field(default_factory=dict)
+    move_ignored: bool = False  # report success without moving (verification test)
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
@@ -202,6 +205,33 @@ class FakeArchicad:
                     row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
+        if name == "MoveElements":
+            # Shape from Tapir 1.7.0 source (ElementCommands.cpp); not a live capture.
+            out = []
+            for index, entry in enumerate(args["elementsWithMoveVectors"]):
+                g = entry["elementId"]["guid"]
+                if index in self.move_errors:
+                    out.append(deepcopy(self.move_errors[index]))
+                    continue
+                if g not in self.elements:
+                    message = f"Failed to move element with guid {g}!"
+                    out.append({"success": False, "error": {"code": -1, "message": message}})
+                    continue
+                if not self.move_ignored:
+                    v = entry["moveVector"]
+                    for dim, store in (
+                        ("2D", self.bounding_boxes_2d),
+                        ("3D", self.bounding_boxes_3d),
+                    ):
+                        default = BOUNDING_BOXES_FIXTURE[dim.lower()][f"boundingBoxes{dim}"][0]
+                        row = store.get(g) or deepcopy(default)
+                        box = row.get(f"boundingBox{dim}")
+                        if box:
+                            for key in box:
+                                box[key] += v[key[0]]
+                        store[g] = row
+                out.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "CreateColumns":
             out = []
             for index, column in enumerate(args["columnsData"]):
@@ -305,6 +335,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_slab_response and command == "CreateSlabs":
             raise httpx.ReadTimeout(
                 "Injected lost slab response after model change", request=request
+            )
+        if instance.lose_move_response and command == "MoveElements":
+            raise httpx.ReadTimeout(
+                "Injected lost move response after model change", request=request
             )
         if instance.lose_column_response and command == "CreateColumns":
             raise httpx.ReadTimeout(

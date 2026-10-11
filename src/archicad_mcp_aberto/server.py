@@ -183,6 +183,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), columns, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def move_elements(
+        ctx: Context,
+        moves: list[write.ElementMove],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview moving up to 50 elements, each by its own vector {x, y, z} in metres.
+        Never copies. Refuses hotlinked or unknown elements. Review, then apply identical
+        inputs with explicit port and single-use token; checks each box moved; never saves."""
+        return await write.move_elements(client_of(ctx), moves, port, dry_run, confirmation_token)
+
     return mcp
 
 
