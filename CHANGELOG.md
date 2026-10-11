@@ -77,3 +77,4 @@
 - Add read-only `list_library_parts` and source investigation; preflight object document names against loaded Object parts before issuing a token.
 
 - Let unconfirmed object names in partial library inventories proceed per item to native creation; complete inventories still reject unknown names during preview.
+- Refresh README status for all 22 tools, recorded AC30 build 3001 BRA live checks and the nearly complete Phase 1 roadmap.

@@ -232,3 +232,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Este teste rodou no mesmo projeto e na mesma hora do teste do inventário parcial acima;
   a parede criada e desfeita mudou o conjunto de elementos, o que explica a primeira
   recusa "changed since preview" daquele teste (a trava agiu certo).
+
+- **Codex / T13:** branch docs/readme-status da origin/main 50a9072. README em inglês enumera 22 ferramentas (13 leitura/9 escrita), resultados ao vivo registrados pelo operador e Fase 1 quase completa. Somente documentação; nenhuma chamada real pelo Codex. T12 já entregue no PR #26 (fix/partial-library-inventory), não duplicada neste lote.
+
+- T13: 648 testes simulados e Ruff passaram em Windows/Python 3.12.10; código intacto.
