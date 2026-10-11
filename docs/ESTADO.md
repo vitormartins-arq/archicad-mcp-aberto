@@ -248,3 +248,16 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - T16: ModifyWalls confirmado em ExtendedElementCommands.cpp 02691b5d (wallsWithDetails). Até 50 paredes retas, só height/thickness/bottomOffset/begCoordinate/endCoordinate; prévia com antes/novos, recusa curvada/trapezoidal/hotlink/bloqueada/inexistente e resultado sem comprimento. Espessura direta requer Basic; altura desvincula o topo conforme comando nativo. Confere begThickness, altura, base/pontos e geometria após aplicar. Fixture documental, não captura real; só simulado. Notas somente acrescentadas ao fim.
 
 - T16: 760 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T15; T14–T16 com PRs base main, sem merges neste trecho do lote. T12/T13 puladas conforme última orientação do Vitor.
+
+- **Claude / T17, 11/10/2026 (o Codex ficou sem token):** `create_windows` e `create_doors`
+  em `tools/openings.py`, pelo `CreateWindows`/`CreateDoors` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp: `windowsData`/`doorsData` com `ownerWallId`,
+  `centerOffset`, `sillHeight`, `width`, `height`, `favoriteName`; resposta `elements`).
+  O Tapir 1.7.0 não recebe nome de peça da biblioteca para janela e porta: vale o padrão
+  da ferramenta ou um favorito, que a prévia confere com `GetFavoritesByType`; o recibo
+  mostra a peça que o ArchiCAD pôs (`details.libPart.name`). A prévia recusa dono que não
+  é parede, parede curva ou poligonal, bloqueada, de hotlink, inexistente e `center_offset`
+  além do fim da parede. Conferência: tipo, pavimento, parede dona, `centerOffset` e o
+  tamanho e peitoril pedidos. `write._dispatch` ganhou um parâmetro `mismatch` para não
+  crescer a cadeia de ifs. Fixture documental, não captura ao vivo. 803 testes simulados
+  e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.

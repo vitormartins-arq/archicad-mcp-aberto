@@ -55,6 +55,14 @@ CREATE_COLUMNS_FIXTURE = json.loads(
 )
 
 
+# Tapir 1.7.0 source-derived CreateWindows/CreateDoors shapes; not a live capture.
+CREATE_OPENINGS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_create_openings_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -88,6 +96,10 @@ class FakeArchicad:
     lose_beam_response: bool = False
     lose_column_response: bool = False
     lose_object_response: bool = False
+    lose_opening_response: bool = False
+    favorites: dict[str, list[str]] = field(
+        default_factory=lambda: deepcopy({"Window": ["Janela padrão"], "Door": ["Porta padrão"]})
+    )
     # Library part names CreateObjects can find; any other name fails that item.
     library_inventory: list[dict] | None = None
     library_skipped_count: int = 0
@@ -612,6 +624,37 @@ class FakeArchicad:
                 }
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetFavoritesByType":
+            return ok(
+                {"addOnCommandResponse": {"favorites": self.favorites.get(args["elementType"], [])}}
+            )
+        if name in ("CreateWindows", "CreateDoors"):
+            kind = "Window" if name == "CreateWindows" else "Door"
+            key = "windowsData" if kind == "Window" else "doorsData"
+            out = []
+            for index, data in enumerate(args[key]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                wall = data["ownerWallId"]["guid"]
+                if self.elements.get(wall) != "Wall":
+                    out.append(deepcopy(CREATE_OPENINGS_FIXTURE["missing_wall_error"]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = kind
+                row = deepcopy(CREATE_OPENINGS_FIXTURE[f"{kind.lower()}_details"])
+                row["floorIndex"] = self.details.get(wall, {}).get("floorIndex", 0)
+                details = row["details"]
+                details["ownerElementId"] = {"guid": wall}
+                details["centerOffset"] = data["centerOffset"]
+                for field_name in ("sillHeight", "width", "height"):
+                    if field_name in data:
+                        details[field_name] = data[field_name]
+                if "favoriteName" in data:
+                    details["libPart"]["name"] = f"{data['favoriteName']} (peça)"
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -703,6 +746,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost move response after model change", request=request
             )
+        if instance.lose_opening_response and command in ("CreateWindows", "CreateDoors"):
+            raise httpx.ReadTimeout("lost opening response", request=request)
         if instance.lose_object_response and command == "CreateObjects":
             raise httpx.ReadTimeout(
                 "Injected lost object response after model change", request=request

@@ -9,7 +9,7 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, edit, read, write
+from archicad_mcp_aberto.tools import attributes, edit, openings, read, write
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -358,6 +358,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Refuses locked/hotlinked/curved/trapezoidal walls; verifies fields and never saves.
         """
         return await edit.modify_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_windows(
+        ctx: Context,
+        windows: list[openings.OpeningCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 windows in existing straight walls, in metres. center_offset is
+        along the wall from its start; width/height/sill_height are optional. The Window
+        tool default or an existing favorite_name decides the library part. Requires Tapir;
+        apply identical inputs with explicit port and single-use token. Never saves."""
+        return await openings.create_windows(
+            client_of(ctx), windows, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_doors(
+        ctx: Context,
+        doors: list[openings.OpeningCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 doors in existing straight walls, in metres. center_offset is
+        along the wall from its start; width/height/sill_height are optional. The Door
+        tool default or an existing favorite_name decides the library part. Requires Tapir;
+        apply identical inputs with explicit port and single-use token. Never saves."""
+        return await openings.create_doors(client_of(ctx), doors, port, dry_run, confirmation_token)
 
     return mcp
 

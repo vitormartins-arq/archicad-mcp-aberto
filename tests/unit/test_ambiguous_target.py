@@ -7,13 +7,15 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import attributes, edit, read, write
+from archicad_mcp_aberto.tools import attributes, edit, openings, read, write
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
+    "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
@@ -105,7 +107,7 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, read, write)
+    for module in (attributes, edit, openings, read, write)
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")
@@ -179,7 +181,7 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
-    if name == "modify_walls":
+    if name in {"modify_walls", "create_windows", "create_doors"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
@@ -223,6 +225,8 @@ async def test_instance_inventory_tools_report_both_without_selecting(name):
 async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path / "receipts"))
     first, second = instances()
+    if name in {"create_windows", "create_doors"}:
+        second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     arguments = deepcopy(INPUTS[name])
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)

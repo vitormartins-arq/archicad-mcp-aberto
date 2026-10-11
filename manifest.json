@@ -162,6 +162,14 @@
     {
       "name": "modify_walls",
       "description": "Preview/edit up to 50 straight walls, with per-wall verification and receipts."
+    },
+    {
+      "name": "create_windows",
+      "description": "Preview/place up to 20 windows in existing straight walls, verified after apply."
+    },
+    {
+      "name": "create_doors",
+      "description": "Preview/place up to 20 doors in existing straight walls, verified after apply."
     }
   ],
   "compatibility": {

@@ -1,0 +1,57 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "sources": [
+      "Tapir 1.7.0 ExtendedElementCommands.cpp: CreateWindowsCommand / CreateDoorsCommand (input schema windowsData/doorsData, response elements: ElementIdsOrErrors)",
+      "Tapir 1.7.0 ElementCommands.cpp: GetDetailsOfElements case API_DoorID / API_WindowID and AddLibPartBasedElementDetails",
+      "Tapir 1.7.0 FavoritesCommands.cpp: GetFavoritesByType (response favorites: list of names)"
+    ],
+    "note": "Synthetic values shaped from the Tapir 1.7.0 source; not live captured. Replace with a live capture after the first live test."
+  },
+  "window_details": {
+    "type": "Window",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "libPart": {
+        "name": "Janela 30",
+        "parentUnID": {"guid": "A1A1A1A1-0000-0000-0000-000000000001"},
+        "ownUnID": {"guid": "A1A1A1A1-0000-0000-0000-000000000002"}
+      },
+      "ownerElementId": {"guid": "11111111-1111-1111-1111-111111111111"},
+      "ownerElementType": "Wall",
+      "width": 1.2,
+      "height": 1.2,
+      "sillHeight": 0.9,
+      "centerOffset": 2.0,
+      "reflected": false,
+      "refSide": true,
+      "oSide": true
+    }
+  },
+  "door_details": {
+    "type": "Door",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "libPart": {
+        "name": "Porta 30",
+        "parentUnID": {"guid": "B2B2B2B2-0000-0000-0000-000000000001"},
+        "ownUnID": {"guid": "B2B2B2B2-0000-0000-0000-000000000002"}
+      },
+      "ownerElementId": {"guid": "11111111-1111-1111-1111-111111111111"},
+      "ownerElementType": "Wall",
+      "width": 0.9,
+      "height": 2.1,
+      "sillHeight": 0.0,
+      "centerOffset": 2.0,
+      "reflected": false,
+      "refSide": true,
+      "oSide": true
+    }
+  },
+  "favorites": {"favorites": ["Janela padrão", "Porta padrão"]},
+  "missing_wall_error": {"error": {"code": -2130313111, "message": "Failed to load owner wall."}}
+}

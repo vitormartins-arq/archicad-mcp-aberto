@@ -204,6 +204,18 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "create_windows": (
+        "window",
+        "window_receipt_id",
+        "Each window goes into an existing wall; the Window tool default or the named "
+        "favorite decides the library part.",
+    ),
+    "create_doors": (
+        "door",
+        "door_receipt_id",
+        "Each door goes into an existing wall; the Door tool default or the named "
+        "favorite decides the library part.",
+    ),
     "modify_walls": ("wall edit", "wall_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
@@ -254,6 +266,8 @@ OPERATIONS = {
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
+    "create_windows": ("CreateWindows", "windowsData"),
+    "create_doors": ("CreateDoors", "doorsData"),
     "create_zones": ("CreateZones", "zonesData"),
     "create_beams": ("CreateBeams", "beamsData"),
     "create_walls": ("CreateWalls", "wallsData"),
@@ -439,7 +453,7 @@ def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
     return [] if expected == actual else [path]
 
 
-async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
+async def _dispatch(client: ArchicadClient, receipt: dict, mismatch=None) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     slab = receipt["operation"] == "create_slabs"
     column = receipt["operation"] == "create_columns"
@@ -503,7 +517,9 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
         for item, row in zip(succeeded, after, strict=True):
             item["after"] = row
             differences = (
-                _slab_mismatches(item, row, receipt["target"])
+                mismatch(item, row)
+                if mismatch
+                else _slab_mismatches(item, row, receipt["target"])
                 if slab
                 else _column_mismatches(item, row, receipt["target"])
                 if column
@@ -1323,6 +1339,8 @@ NAMED_PREVIEWS = {
     "rotate_elements",
     "set_gdl_parameters",
     "modify_walls",
+    "create_windows",
+    "create_doors",
 }
 
 
