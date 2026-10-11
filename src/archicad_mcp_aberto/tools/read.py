@@ -98,7 +98,8 @@ async def list_properties(
 ) -> dict[str, Any]:
     page_args(offset, limit, 200)
     port = await resolve_port(client, port)
-    properties = (await client.command(port, "GetAllPropertyIds")).get("properties", [])
+    # Archicad 29/30 return the list under "propertyIds" (verified live on AC30 build 3001).
+    properties = (await client.command(port, "GetAllPropertyIds")).get("propertyIds", [])
     page = properties[offset : offset + limit]
     details = (
         await client.command(port, "GetDetailsOfProperties", {"properties": page}) if page else {}

@@ -59,6 +59,13 @@ async def test_selection_is_read_only():
     assert not any("Select" in call and "Get" not in call for call in fake.calls)
 
 
+async def test_list_properties_returns_definitions():
+    async with client(model()) as c:
+        result = await read.list_properties(c, limit=5)
+    assert result["total"] == 1
+    assert result["propertyDefinitions"][0]["propertyDefinition"]["name"] == "Fabricante"
+
+
 async def test_property_values_keep_per_item_errors():
     async with client(model()) as c:
         result = await read.get_properties(c, [WALL, MISSING], [PROP])
