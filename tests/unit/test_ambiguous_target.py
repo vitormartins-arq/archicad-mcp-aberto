@@ -14,6 +14,8 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "get_gdl_parameters": {"element_guids": [GUID]},
+    "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
         "rotations": [{"guid": GUID, "center": {"x": 0, "y": 0}, "angle": 1.5707963267948966}]
     },
@@ -176,6 +178,9 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
+    if name in {"get_gdl_parameters", "set_gdl_parameters"}:
+        for instance in (first, second):
+            instance.elements[GUID] = "Object"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -186,7 +191,8 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     result_port = result["target"]["port"] if "target" in result else result["port"]
     assert result_port == port
     assert selected.calls and untouched.calls == []
-    assert selected.elements == untouched.elements == {GUID: "Wall"}
+    expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
+    assert selected.elements == untouched.elements == {GUID: expected_type}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 
 

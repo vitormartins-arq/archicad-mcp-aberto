@@ -150,6 +150,14 @@
     {
       "name": "rotate_elements",
       "description": "Preview/rotate up to 50 editable elements, with per-item geometry verification."
+    },
+    {
+      "name": "get_gdl_parameters",
+      "description": "Read Object GDL parameters and flags."
+    },
+    {
+      "name": "set_gdl_parameters",
+      "description": "Preview/edit existing scalar Object GDL values with read-back verification."
     }
   ],
   "compatibility": {

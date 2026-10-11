@@ -324,6 +324,28 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), rotations, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_gdl_parameters(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read GDL parameter values/types/flags for up to 100 Objects. Requires Tapir."""
+        return await read.get_gdl_parameters(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_gdl_parameters(
+        ctx: Context,
+        changes: list[edit.GDLChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/change existing scalar Object parameters; requires explicit port/token.
+        Refuses fixed/hidden/locked parameters; verifies each value. Never saves.
+        """
+        return await edit.set_gdl_parameters(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

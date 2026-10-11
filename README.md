@@ -27,10 +27,9 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha. Phase 1 is nearly complete: **22 tools**, with **13 read-only** tools and
-**9 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Rotation, GDL parameter editing
-and wall editing are the next queued additions; live Undo validation remains pending.
+Pre-alpha. Phase 1 is nearly complete: **25 tools**, with **14 read-only** tools and
+**11 write** tools. Writes preview by default and require a single-use confirmation token
+and explicit port to apply. No tool saves the project. Wall editing is the next queued addition; live Undo validation remains pending.
 
 | Tool | Access | What it does | Needs Tapir |
 |---|---|---|---|
@@ -46,6 +45,7 @@ and wall editing are the next queued additions; live Undo validation remains pen
 | `get_bounding_boxes` | Read | 2D/3D boxes in metres, with per-element errors | no |
 | `list_building_materials` | Read | Material GUIDs/indices/names and cut-fill pens | yes |
 | `find_elements` | Read | Type/story/layer/property filters and pagination | for details |
+| `get_gdl_parameters` | Read | Object GDL values/types/flags, up to 100 GUIDs | yes |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
@@ -53,6 +53,8 @@ and wall editing are the next queued additions; live Undo validation remains pen
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
+| `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
+| `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
@@ -281,3 +283,5 @@ and open to everyone's contributions.
 - `list_library_parts` reads available part GUIDs/indices/names/types using Tapir `GetAvailableLibraryParts` (registered since 1.5.0). Optional case-insensitive `name_contains`, `offset`, `limit` up to 500; partial inventory metadata is preserved. `create_objects` refuses unknown names with a complete inventory and ambiguous names in dry run. With a partial inventory, only missing items are marked `unconfirmed` with a warning; native creation resolves them per item at apply. It rechecks before applying; the selected part GUID is bound into the token. See [the source investigation](docs/LIBRARY_PARTS.md) for each confirmed command and the distinction from GetLibraries.
 
 - `rotate_elements` previews up to 50 `rotations` (`guid`, `center:{x,y}` in metres, `angle` in radians). No copies/saves/unlocking. Refuses nonexistent/hotlinked/non-editable elements. Shared confirmation, receipts and timeout. Verifies endpoints or origin/angle where available; box-only verification supports multiples of pi/2 within 1 mm, because rotating an AABB cannot predict arbitrary shapes at other angles.
+
+- `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.

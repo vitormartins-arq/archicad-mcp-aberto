@@ -253,6 +253,7 @@ __all__ = [
     "discover_archicad",
     "find_elements",
     "list_library_parts",
+    "get_gdl_parameters",
     "get_element_details",
     "get_bounding_boxes",
     "get_project_info",
@@ -437,3 +438,44 @@ async def list_library_parts(
         "skippedCount": response["skippedCount"],
         "skippedSample": response.get("skippedSample", []),
     }
+
+
+async def get_gdl_parameters(
+    client: ArchicadClient, element_guids: list[str], port: int | None = None
+) -> dict[str, Any]:
+    """Read GDL parameters of up to 100 Object GUIDs, preserving native per-item errors.
+
+    Requires Tapir GetGDLParametersOfElements; lengths in metres, angles in radians.
+    Flags, array dimensions and locked state are preserved. Changes nothing.
+    """
+    elements = element_ids(element_guids)
+    guids = [e["elementId"]["guid"] for e in elements]
+    if len(set(guids)) != len(guids):
+        raise ValueError("Duplicate GUIDs are not allowed.")
+    port = await resolve_port(client, port)
+    details = await client.tapir(
+        port, "GetDetailsOfElements", {"elements": elements, "fields": ["type"]}
+    )
+    rows = details.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(elements):
+        raise ValueError("Unexpected Object details response.")
+    result = await client.tapir(port, "GetGDLParametersOfElements", {"elements": elements})
+    parameters = result.get("gdlParametersOfElements")
+    if not isinstance(parameters, list) or len(parameters) != len(elements):
+        raise ValueError("Unexpected GDL parameter response cardinality.")
+    out = []
+    for guid, detail, row in zip(guids, rows, parameters, strict=True):
+        if not isinstance(detail, dict) or detail.get("type") != "Object":
+            out.append(
+                {
+                    "guid": guid,
+                    "error": detail.get(
+                        "error", {"message": "Element is missing or is not an Object"}
+                    )
+                    if isinstance(detail, dict)
+                    else {"message": "Cannot read Object type"},
+                }
+            )
+        else:
+            out.append({"guid": guid, **row})
+    return {"port": port, "gdlParametersOfElements": out}

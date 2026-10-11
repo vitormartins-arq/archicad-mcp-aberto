@@ -204,6 +204,7 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
         "rotation_receipt_id",
@@ -1314,7 +1315,13 @@ async def delete_elements(
     return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
 
 
-NAMED_PREVIEWS = {"move_elements", "set_property_values", "delete_elements", "rotate_elements"}
+NAMED_PREVIEWS = {
+    "move_elements",
+    "set_property_values",
+    "delete_elements",
+    "rotate_elements",
+    "set_gdl_parameters",
+}
 
 
 def _plan_digest(plan: dict) -> str:

@@ -260,3 +260,177 @@ async def rotate_elements(
         planner_override=_rotate_plan,
         dispatcher_override=_rotate_dispatch,
     )
+
+
+class GDLChange(write.InputModel):
+    element_guid: str
+    name: str
+    value: str | bool | int | float
+
+    @field_validator("element_guid")
+    @classmethod
+    def canonical_guid(cls, value):
+        return str(UUID(value)).upper()
+
+    @field_validator("name")
+    @classmethod
+    def nonblank(cls, value):
+        if not value or value != value.strip():
+            raise ValueError("Parameter name must be nonblank and unpadded.")
+        return value
+
+
+def _gdl_value(parameter, value):
+    flags = parameter.get("flags", [])
+    if not isinstance(flags, list) or not all(isinstance(f, str) for f in flags):
+        raise ValueError("Unexpected GDL flags.")
+    if parameter.get("isLocked") is True or set(flags) & {
+        "Fixed",
+        "Hidden",
+        "HiddenFromScript",
+        "Disabled",
+    }:
+        raise ValueError("Fixed, hidden, disabled or locked GDL parameters are refused.")
+    if any(parameter.get(k, 0) for k in ("dimension1", "dimension2")) or isinstance(
+        parameter.get("value"), (list, dict)
+    ):
+        raise ValueError("Array/dictionary GDL parameters are not supported.")
+    kind = parameter.get("type")
+    if kind in {"String", "Title"}:
+        if not isinstance(value, str):
+            raise ValueError("String GDL parameter requires text.")
+    elif kind == "Boolean":
+        if not isinstance(value, bool):
+            raise ValueError("Boolean GDL parameter requires true/false.")
+    elif kind == "LightSwitch":
+        if not isinstance(value, bool):
+            raise ValueError("LightSwitch requires true/false.")
+        return "On" if value else "Off"
+    elif kind in {
+        "Integer",
+        "PenColor",
+        "LineType",
+        "Material",
+        "FillPattern",
+        "BuildingMaterial",
+        "Profile",
+    }:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ValueError("Integer GDL parameter requires an integer.")
+    elif kind in {"Length", "Angle", "RealNumber", "Intensity", "RGBColor"}:
+        if (
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+        ):
+            raise ValueError("Numeric GDL parameter requires a finite number.")
+        value = float(value)
+    else:
+        raise ValueError(f"Unsupported GDL parameter type {kind!r}.")
+    return value
+
+
+async def _gdl_rows(client, port, guids, timeout=None):
+    extra = {} if timeout is None else {"timeout": timeout}
+    result = await client.tapir(
+        port, "GetGDLParametersOfElements", {"elements": read.element_ids(guids)}, **extra
+    )
+    rows = result.get("gdlParametersOfElements")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected GDL response cardinality.")
+    return dict(zip(guids, rows, strict=True))
+
+
+async def _gdl_plan(client, changes, port, operation):
+    guids = list(dict.fromkeys(c.element_guid for c in changes))
+    port, target, details = await _editable(client, guids, port)
+    if any(row["type"] != "Object" for row in details):
+        raise ValueError("Only Object GDL parameters are supported.")
+    by_guid = dict(zip(guids, details, strict=True))
+    rows = await _gdl_rows(client, port, guids)
+    items = []
+    for index, change in enumerate(changes):
+        row = rows[change.element_guid]
+        parameters = row.get("parameters") if isinstance(row, dict) else None
+        if not isinstance(parameters, list):
+            raise ValueError("Cannot read existing GDL parameters.")
+        matches = [p for p in parameters if p.get("name") == change.name]
+        if len(matches) != 1 or "value" not in matches[0]:
+            raise ValueError(f"GDL parameter {change.name!r} does not exist or is ambiguous.")
+        current = matches[0]
+        value = _gdl_value(current, change.value)
+        details = by_guid[change.element_guid]
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": change.element_guid,
+                "floorIndex": details.get("floorIndex"),
+                "layerIndex": details.get("layerIndex"),
+                "before": deepcopy(current),
+                "expected_type": current["type"],
+                "parameters": {
+                    "elementId": {"guid": change.element_guid},
+                    "gdlParameters": [{"name": change.name, "value": value}],
+                },
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _verify_gdl(client, receipt, items):
+    guids = list(dict.fromkeys(i["element_guid"] for i in items))
+    rows = await _gdl_rows(
+        client, receipt["target"]["port"], guids, receipt["write_timeout_seconds"]
+    )
+    for item in items:
+        requested = item["parameters"]["gdlParameters"][0]
+        row = rows[item["element_guid"]]
+        parameters = row.get("parameters", []) if isinstance(row, dict) else []
+        matches = [p for p in parameters if p.get("name") == requested["name"]]
+        actual = matches[0] if len(matches) == 1 else {}
+        item["after"] = actual
+        differences = write._mismatches(
+            {"type": item["expected_type"], "value": requested["value"]}, actual
+        )
+        if isinstance(requested["value"], bool) and actual.get("value") is not requested["value"]:
+            differences.append("value.type")
+        item["status"] = "verification_failed" if differences else "verified"
+        if differences:
+            item["mismatches"] = differences
+
+
+async def _gdl_dispatch(client, receipt):
+    await _execute(
+        client, receipt, "SetGDLParametersOfElements", "elementsWithGDLParameters", _verify_gdl
+    )
+
+
+async def set_gdl_parameters(
+    client: ArchicadClient,
+    changes: list[dict | GDLChange],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 100 existing scalar Object parameters, by element/name/value.
+
+    Metres/radians. Refuses fixed/hidden/locked/disabled/array parameters, hotlinks and
+    locked elements. Shared token, explicit port and per-change receipts; never saves.
+    """
+    if not 1 <= len(changes) <= 100:
+        raise ValueError("Pass between 1 and 100 GDL changes.")
+    validated = [c if isinstance(c, GDLChange) else GDLChange.model_validate(c) for c in changes]
+    pairs = [(c.element_guid, c.name) for c in validated]
+    if len(set(pairs)) != len(pairs):
+        raise ValueError("Each element/parameter pair may appear once.")
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "set_gdl_parameters",
+        planner_override=_gdl_plan,
+        dispatcher_override=_gdl_dispatch,
+    )

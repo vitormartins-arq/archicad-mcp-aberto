@@ -96,6 +96,10 @@ class FakeArchicad:
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
     locked_elements: set[str] = field(default_factory=set)
+    gdl_parameters: dict[str, list] = field(default_factory=dict)
+    gdl_errors: dict[int, dict] = field(default_factory=dict)
+    gdl_ignored: bool = False
+    lose_gdl_response: bool = False
     lose_rotate_response: bool = False
     rotate_errors: dict[int, dict] = field(default_factory=dict)
     rotate_ignored: bool = False
@@ -302,6 +306,43 @@ class FakeArchicad:
                         self.elements.pop(guid, None)
                         self.details.pop(guid, None)
                     rows.append(deepcopy(fixture["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name in {"GetGDLParametersOfElements", "SetGDLParametersOfElements"}:
+            # Official Tapir schema at 02691b5d; synthetic fixture, not live captured.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_gdl_parameters_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetGDLParametersOfElements":
+                rows = []
+                for element in args["elements"]:
+                    guid = element["elementId"]["guid"]
+                    if self.elements.get(guid) != "Object":
+                        rows.append({"error": {"code": -1, "message": "Not an Object"}})
+                    else:
+                        parameters = self.gdl_parameters.setdefault(
+                            guid, deepcopy(fixture["parameters"])
+                        )
+                        rows.append({"parameters": deepcopy(parameters)})
+                return ok({"addOnCommandResponse": {"gdlParametersOfElements": rows}})
+            rows = []
+            for index, entry in enumerate(args["elementsWithGDLParameters"]):
+                guid = entry["elementId"]["guid"]
+                if index in self.gdl_errors:
+                    rows.append(deepcopy(self.gdl_errors[index]))
+                    continue
+                parameters = self.gdl_parameters.get(guid, [])
+                wanted = entry["gdlParameters"][0]
+                matches = [p for p in parameters if p["name"] == wanted["name"]]
+                if len(matches) != 1 or guid in self.locked_elements:
+                    rows.append(deepcopy(fixture["failure"]))
+                else:
+                    if not self.gdl_ignored:
+                        matches[0]["value"] = deepcopy(wanted["value"])
+                    rows.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": rows}})
         if name == "RotateElements":
             # Schema source-confirmed at 02691b5d; not a live capture.
@@ -608,6 +649,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_delete_response and command == "DeleteElements":
             raise httpx.ReadTimeout(
                 "Injected lost deletion response after model change", request=request
+            )
+        if instance.lose_gdl_response and command == "SetGDLParametersOfElements":
+            raise httpx.ReadTimeout(
+                "Injected lost GDL response after model change", request=request
             )
         if instance.lose_rotate_response and command == "RotateElements":
             raise httpx.ReadTimeout(
