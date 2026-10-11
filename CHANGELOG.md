@@ -2,11 +2,21 @@
 
 ## Unreleased
 
+- Add `set_property_values`: up to 100 scalar property values (string, boolean, integer,
+  number, length, area, volume, angle) through the official `SetPropertyValuesOfElements`.
+  The preview reads the current value and refuses read-only, unavailable or non-scalar
+  properties and wrong value types; applying reads every value back. Same token, port,
+  receipts and timeout as the other writes. Tested live on Archicad 30 build 3001 BRA with
+  Tapir 1.7.0. The live test caught that `GetDetailsOfProperties` puts the GUID under
+  `propertyId.guid`; the fake had a `guid` key, which hid a missing name in the preview and
+  a read-only check that never fired.
+
 - Add `move_elements`: up to 50 elements, each by its own vector in metres, through
   Tapir `MoveElements` without copying. The preview refuses unknown, hotlinked or box-less
   elements and records their 2D/3D boxes; applying checks every box moved by its vector
   (1 mm). Same single-use token, explicit port, receipts and timeout as the create tools.
-  Fake response shape from the Tapir source, not yet a live capture.
+  Response shape `{"executionResults":[{"success":true}]}` confirmed live on Archicad 30
+  build 3001 BRA with Tapir 1.7.0 (untitled project, 11/10/2026).
 
 - Package for Claude Desktop: `manifest.json` (MCPB 0.4, uv runtime) and `.mcpbignore`;
   a tag `v*` workflow runs the tests and drafts a release with wheel, sdist and `.mcpb`.

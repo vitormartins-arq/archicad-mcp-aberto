@@ -136,4 +136,18 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `feat/mcpb-package`. `move_elements` pelo `MoveElements` do Tapir, sem cópia; prévia
   recusa GUID inexistente, hotlink e elemento sem caixa; conferência por caixa 2D/3D
   deslocada pelo vetor (1 mm). 414 testes simulados passaram. Formato da resposta tirado
-  do código-fonte do Tapir; falta teste ao vivo no projeto sem nome.
+  do código-fonte do Tapir. Teste ao vivo em 11/10/2026 (ArchiCAD 30 build 3001 BRA,
+  Tapir 1.7.0, projeto sem nome na porta 19723, não salvo): um pilar movido x=1,0 y=0,5 e
+  depois z=0,3, os dois `verified`; resposta crua `{"executionResults":[{"success":true}]}`,
+  igual à do fake. Arquivo: `C:\Users\vitor\Documents\Codex\teste-mover-2026-10-11.json`.
+
+- **Claude / propriedades (T3):** branch `feat/set-property-values`, empilhada sobre
+  `feat/move-elements`. `set_property_values` pelo `SetPropertyValuesOfElements` oficial,
+  até 100 valores escalares; a prévia lê o valor atual e recusa propriedade só leitura,
+  indisponível, não escalar ou tipo errado; o apply relê cada valor. 438 testes simulados
+  passaram. Teste ao vivo em 11/10/2026 (ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723, não salvo): parede 44D20163, "ID do Elemento" de "Parede-01"
+  para "teste-mcp", `verified`; resposta `{"executionResults":[{"success":true}]}`. O teste
+  mostrou que o `GetDetailsOfProperties` real põe o GUID em `propertyId.guid`: o nome não
+  aparecia na prévia e a recusa de propriedade só leitura não disparava. Corrigido, e o
+  fake passou a usar o formato real. "Fabricante" e "Modelo" vieram `notAvailable`.
