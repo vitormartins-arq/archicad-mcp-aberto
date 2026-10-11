@@ -211,3 +211,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `list_library_parts`: acha "Bidê" com o mesmo GUID do objeto colocado; inventário
   `partial=true`, 92 peças ilegíveis (código -2130313112). Com inventário parcial, um nome
   fora da lista recusa o lote inteiro na prévia, mesmo com outras peças válidas: tarefa T12.
+
+- **Codex / T13:** branch docs/readme-status da origin/main 50a9072. README em inglês enumera 22 ferramentas (13 leitura/9 escrita), resultados ao vivo registrados pelo operador e Fase 1 quase completa. Somente documentação; nenhuma chamada real pelo Codex. T12 já entregue no PR #26 (fix/partial-library-inventory), não duplicada neste lote.
+
+- T13: 648 testes simulados e Ruff passaram em Windows/Python 3.12.10; código intacto.

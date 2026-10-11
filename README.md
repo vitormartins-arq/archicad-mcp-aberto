@@ -1,7 +1,8 @@
 # archicad-mcp-aberto
 
 Open source [MCP](https://modelcontextprotocol.io) server that lets AI assistants
-(Claude, Codex, Cursor and others) work with a running Archicad: read the model and preview or create straight Basic walls safely.
+(Claude, Codex, Cursor and others) work with a running Archicad: read the model and
+preview safe model changes with explicit confirmation, per-item receipts and verification.
 
 [Leia em português](docs/LEIA-ME.pt-BR.md)
 
@@ -26,31 +27,63 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Phase 1 foundation, pre-alpha. Nine **read-only** tools plus safe wall creation:
+Pre-alpha. Phase 1 is nearly complete: **22 tools**, with **13 read-only** tools and
+**9 write** tools. Writes preview by default and require a single-use confirmation token
+and explicit port to apply. No tool saves the project. Rotation, GDL parameter editing
+and wall editing are the next queued additions; live Undo validation remains pending.
 
-| Tool | What it does | Needs Tapir |
-|---|---|---|
-| `discover_archicad` | Open instances: port, version, Tapir state, project name, counts | for the project name |
-| `list_elements` | Element GUIDs, by type, paged | no |
-| `get_selection` | Current selection, without changing it | no |
-| `list_properties` | Property definitions | no |
-| `get_properties` | Property values, with per-item errors | no |
-| `tapir_status` | Whether Tapir is loaded in each instance | yes |
-| `get_project_info` | Project name, path, Teamwork state | yes |
-| `get_stories` | Stories and levels | yes |
-| `get_element_details` | BIM details; floor plan polygons only on request | yes |
-| `get_bounding_boxes` | 2D or 3D boxes in metres, per-element errors | no |
-| `list_building_materials` | Building materials with cut-fill pens | yes |
-| `create_walls` | Preview or apply up to 20 straight Basic walls, with per-wall receipts | yes |
-| `create_slabs` | Preview or apply up to 20 simple polygon slabs | yes |
-| `create_columns` | Preview or apply up to 20 rectangular or circular columns | yes |
-| `create_objects` | Preview or apply up to 20 library part objects by name, position and angle | yes |
-| `move_elements` | Preview or apply moving up to 50 elements by a vector, box-checked | yes |
-| `set_property_values` | Preview or apply up to 100 scalar property values, read back | no |
+| Tool | Access | What it does | Needs Tapir |
+|---|---|---|---|
+| `discover_archicad` | Read | Open instances, ports, project names and counts | for project name |
+| `list_elements` | Read | Paged element GUIDs, optionally by type | no |
+| `get_selection` | Read | Current selection, without changing it | no |
+| `list_properties` | Read | Property definitions | no |
+| `get_properties` | Read | Property values, with per-item errors | no |
+| `tapir_status` | Read | Add-on availability and version | yes |
+| `get_project_info` | Read | Project name/path and Teamwork/untitled state | yes |
+| `get_stories` | Read | Story indices, names and levels | yes |
+| `get_element_details` | Read | BIM details and optional floor-plan polygons | yes |
+| `get_bounding_boxes` | Read | 2D/3D boxes in metres, with per-element errors | no |
+| `list_building_materials` | Read | Material GUIDs/indices/names and cut-fill pens | yes |
+| `find_elements` | Read | Type/story/layer/property filters and pagination | for details |
+| `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
+| `create_walls` | Write | Up to 20 straight Basic walls | yes |
+| `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
+| `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
+| `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
+| `create_beams` | Write | Up to 20 straight rectangular beams | yes |
+| `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
+| `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
+| `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
+| `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
 
-Tested so far against a simulated Archicad (unit tests). The tools were first tested
-live on Archicad 29 build 3000 (Windows) with Tapir 1.7.0 in the bridge this project
-grew from. A public matrix of tested versions comes with the live tests.
+### Reported live validation
+
+The maintainer/Claude reported live checks on **Windows, Archicad 30 build 3001 BRA,
+Tapir 1.7.0**, on 2026-10-11. Write tests used an **untitled, unsaved test project**;
+the named CRM 005 project was used for earlier read-only diagnosis. These are recorded
+operator results, not live tests executed by Codex during this documentation update.
+
+| Scope | Recorded result |
+|---|---|
+| Discovery, Tapir/project/story/selection and element reads | Passed; multiple instances identified by port |
+| Properties and BIM details | Read successfully; unavailable properties retain per-item status |
+| Floor-plan polygons | Exact duplicates removed; missing cut fills remain an open upstream investigation |
+| Bounding boxes, material reads and filtered searches | Live validation recorded as integrated in the task queue |
+| Walls and slabs | Created and verified; wall-token reuse refused; slow upper-story slab motivated longer write timeout |
+| Rectangular/circular columns | Verified after matching Archicad's circular linked-dimension normalization |
+| Objects | Known library name verified; native unknown-name error isolated per item |
+| Movement and property writes | Verified XY/Z moves and element-ID property changes |
+| Deletion | Only two test objects deleted and absence verified; original object preserved |
+| Beams and zones | Rectangular beam and manually bounded zone verified |
+| Preview names and library parts | Story/layer names shown; library inventory was partial, with 92 unreadable parts |
+| Manual smoke and `.mcpb` extension | Untitled-project smoke verified; Claude Desktop extension connected on Windows |
+
+All tools also have simulated unit coverage. Source-derived fixtures are explicitly marked
+as such; recorded captures identify their live environment. See [ESTADO](docs/ESTADO.md)
+and [the task queue](docs/FILA.md) for the operator's evidence and remaining work. Partial
+library preflight behavior is being corrected in PR #26; it is not a reason to treat an
+incomplete inventory as proof that an object name is absent.
 
 ## Install
 
@@ -216,7 +249,9 @@ Codex ran only simulated tests for this correction.
 ## Roadmap
 
 0. Foundation: connection, discovery, read tools, simulated Archicad, CI.
-1. Safe writes: wall and slab creation started; editing, objects and Undo remain. **← here**
+1. Safe writes: wall/slab/column/object/beam/zone creation, movement, property writes and
+   guarded deletion delivered. Nearly complete; rotation, GDL/wall editing and live Undo
+   validation remain. **← here**
 2. Command gateway (every official and Tapir command) and batch scripts; `.mcpb` bundle.
 3. Documentation tools: dimensions, views, publishing, view capture; GDL and libraries.
 4. First public release.
