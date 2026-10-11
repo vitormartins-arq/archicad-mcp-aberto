@@ -62,3 +62,5 @@
 - Add read-only `find_elements` with staged filters, pagination, scalar comparisons and 100-element read batches.
 
 - Add guarded `delete_elements` for untitled test projects using documented Tapir commands, with editability checks, single-use confirmation and absence verification.
+
+- Add story/layer display names to existing-element previews without binding mutable names into confirmation identity.

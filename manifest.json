@@ -121,11 +121,11 @@
     },
     {
       "name": "move_elements",
-      "description": "Preview or apply moving elements by a vector."
+      "description": "Preview or apply moving elements by a vector. Preview includes story and layer names when available."
     },
     {
       "name": "set_property_values",
-      "description": "Preview or apply property values, read back after."
+      "description": "Preview or apply property values, read back after. Preview includes story and layer names when available."
     },
     {
       "name": "find_elements",
@@ -133,7 +133,7 @@
     },
     {
       "name": "delete_elements",
-      "description": "Preview and delete editable elements only in untitled test projects; never saves."
+      "description": "Preview and delete editable elements only in untitled test projects; never saves. Preview includes story and layer names when available."
     }
   ],
   "compatibility": {
