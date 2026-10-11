@@ -283,6 +283,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await write.create_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
 
+    @mcp.tool(annotations=WRITE)
+    async def create_zones(
+        ctx: Context,
+        zones: list[write.ZoneCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 manual zones with simple polygons in metres, name/number/story.
+        Requires Tapir and explicit port/single-use token to apply. Never saves.
+        """
+        return await write.create_zones(client_of(ctx), zones, port, dry_run, confirmation_token)
+
     return mcp
 
 

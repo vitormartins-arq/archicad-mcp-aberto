@@ -167,6 +167,24 @@ class SlabCreate(InputModel):
         return self
 
 
+class ZoneCreate(InputModel):
+    outline: Annotated[list[Point], Field(min_length=3, max_length=200)]
+    name: Annotated[str, Field(min_length=1)]
+    number: Annotated[str, Field(min_length=1)]
+    floor_index: int
+
+    @model_validator(mode="after")
+    def valid_polygon(self) -> ZoneCreate:
+        if not self.name.strip() or not self.number.strip():
+            raise ValueError("Zone name and number must not be blank.")
+        # Reuse the exact slab polygon validator, including closure normalization.
+        polygon = SlabCreate(
+            outline=self.outline, floor_index=self.floor_index, thickness=1.0, level=0.0
+        )
+        self.outline = polygon.outline
+        return self
+
+
 def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
     def cross(p, q, r):
         return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
@@ -186,6 +204,7 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "create_zones": ("zone", "zone_receipt_id", "New zones inherit category/stamp defaults."),
     "create_beams": ("beam", "beam_receipt_id", "New beams inherit layer/material defaults."),
     "delete_elements": (
         "deletion",
@@ -228,6 +247,7 @@ OPERATIONS = {
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
+    "create_zones": ("CreateZones", "zonesData"),
     "create_beams": ("CreateBeams", "beamsData"),
     "create_walls": ("CreateWalls", "wallsData"),
     "create_slabs": ("CreateSlabs", "slabsData"),
@@ -309,11 +329,14 @@ async def _plan(
     items = []
     slab = operation == "create_slabs"
     column = operation == "create_columns"
+    zone = operation == "create_zones"
     beam = operation == "create_beams"
     obj = operation == "create_objects"
     kind = (
         "Beam" if beam else "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
     )
+    if zone:
+        kind = "Zone"
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
@@ -334,6 +357,8 @@ async def _plan(
             if obj
             else _beam_payload(wall)
             if beam
+            else _zone_payload(wall)
+            if zone
             else _create_payload(wall)
         )
         items.append({"index": index, "status": "ready", "parameters": payload})
@@ -383,6 +408,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     slab = receipt["operation"] == "create_slabs"
     column = receipt["operation"] == "create_columns"
+    zone = receipt["operation"] == "create_zones"
     beam = receipt["operation"] == "create_beams"
     obj = receipt["operation"] == "create_objects"
     command, key = CREATE_COMMANDS[receipt["operation"]]
@@ -450,6 +476,8 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
                 if obj
                 else _beam_mismatches(item, row, receipt["target"])
                 if beam
+                else _zone_mismatches(item, row)
+                if zone
                 else _mismatches(_expected(item), row)
             )
             item.update(status="verification_failed" if differences else "verified")
@@ -1357,3 +1385,70 @@ async def create_beams(
         raise ValueError("Pass between 1 and 20 beams.")
     validated = [b if isinstance(b, BeamCreate) else BeamCreate.model_validate(b) for b in beams]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_beams")
+
+
+def _zone_payload(zone: ZoneCreate) -> dict:
+    return {
+        "floorIndex": zone.floor_index,
+        "name": zone.name,
+        "numberStr": zone.number,
+        "geometry": {
+            "polygonCoordinates": [p.model_dump() for p in zone.outline],
+            "polygonArcs": [],
+            "holes": [],
+        },
+    }
+
+
+def _zone_mismatches(item: dict, row: Any) -> list[str]:
+    p = item["parameters"]
+    differences = _mismatches(
+        {
+            "type": "Zone",
+            "floorIndex": p["floorIndex"],
+            "details": {
+                "name": p["name"],
+                "numberStr": p["numberStr"],
+                "isManual": True,
+                "holes": [],
+            },
+        },
+        row,
+    )
+    details = row.get("details", {}) if isinstance(row, dict) else {}
+    # Tapir 1.7.0 omits polygonArcs when the outline has no arcs (as for slabs).
+    if isinstance(details, dict) and details.get("polygonArcs", []) != []:
+        differences.append("details.polygonArcs")
+    outline = details.get("polygonOutline") if isinstance(details, dict) else None
+    wanted = p["geometry"]["polygonCoordinates"]
+    if isinstance(outline, list) and len(outline) > 1 and not _mismatches(outline[0], outline[-1]):
+        outline = outline[:-1]
+    matches = False
+    if isinstance(outline, list) and len(outline) == len(wanted):
+        for sequence in (outline, list(reversed(outline))):
+            for shift in range(len(sequence)):
+                rotated = sequence[shift:] + sequence[:shift]
+                if all(not _mismatches(a, b) for a, b in zip(wanted, rotated, strict=True)):
+                    matches = True
+    if not matches:
+        differences.append("details.polygonOutline")
+    return differences
+
+
+async def create_zones(
+    client: ArchicadClient,
+    zones: list[dict | ZoneCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 manually bounded zones. Outline coordinates in metres.
+
+    Simple straight polygon, no arcs/holes; same validation as slabs. Name, number,
+    story and contour verified after creation. Category/stamp/base defaults inherited.
+    Shared single-use confirmation/explicit port/receipts/timeout; never saves.
+    """
+    if not 1 <= len(zones) <= 20:
+        raise ValueError("Pass between 1 and 20 zones.")
+    validated = [z if isinstance(z, ZoneCreate) else ZoneCreate.model_validate(z) for z in zones]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_zones")
