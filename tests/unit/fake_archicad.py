@@ -23,6 +23,13 @@ CREATE_WALLS_FIXTURE = json.loads(
 )
 
 
+# Official documentation/source-derived format; not a live capture.
+BUILDING_MATERIALS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_building_materials_documented.json"
+    ).read_text(encoding="utf-8")
+)
+
 # Documentation/source-derived; explicitly not a live response capture.
 CREATE_SLABS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_create_slabs_documented.json").read_text(
@@ -57,6 +64,7 @@ class FakeArchicad:
     details: dict[str, dict] = field(default_factory=dict)
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
+    building_materials: dict[str, dict] = field(default_factory=dict)
     lose_slab_response: bool = False
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
@@ -126,6 +134,30 @@ class FakeArchicad:
                     }
                 }
             )
+        if name == "GetAttributesByType":
+            assert args["attributeType"] == "BuildingMaterial"
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {key: deepcopy(row[key]) for key in ("attributeId", "index", "name")}
+                            for row in self.building_materials.values()
+                            if "error" not in row
+                        ]
+                    }
+                }
+            )
+        if name == "GetBuildingMaterials":
+            out = []
+            for attribute in args["attributeIds"]:
+                guid = attribute["attributeId"]["guid"]
+                row = self.building_materials.get(guid, BUILDING_MATERIALS_FIXTURE["error"])
+                if "error" in row:
+                    out.append(deepcopy(row))
+                else:
+                    keys = {"attributeId", "index", "name", *args["fields"]}
+                    out.append({key: deepcopy(value) for key, value in row.items() if key in keys})
+            return ok({"addOnCommandResponse": {"buildingMaterials": out}})
         if name == "GetStories":
             return ok({"addOnCommandResponse": {"stories": self.stories}})
         if name == "GetDetailsOfElements":

@@ -7,13 +7,14 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import read, write
+from archicad_mcp_aberto.tools import attributes, read, write
 from tests.unit.fake_archicad import FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "list_building_materials": {},
     "list_elements": {},
     "get_selection": {},
     "list_properties": {},
@@ -46,7 +47,7 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (read, write)
+    for module in (attributes, read, write)
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")
