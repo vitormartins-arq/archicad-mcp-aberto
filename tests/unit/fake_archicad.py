@@ -13,7 +13,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 
@@ -89,6 +89,8 @@ class FakeArchicad:
     lose_column_response: bool = False
     lose_object_response: bool = False
     # Library part names CreateObjects can find; any other name fails that item.
+    library_inventory: list[dict] | None = None
+    library_skipped_count: int = 0
     library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
     lose_delete_response: bool = False
     delete_ignored: bool = False
@@ -407,6 +409,39 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetAvailableLibraryParts":
+            # GetAvailableLibraryParts confirmed in LibraryCommands.cpp/AddOnMain.cpp,
+            # Tapir 1.7.0 at 02691b5d; synthetic fixture, not a live capture.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_library_parts_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = (
+                deepcopy(self.library_inventory)
+                if self.library_inventory is not None
+                else [
+                    {
+                        **deepcopy(fixture["response"]["libraryParts"][0]),
+                        "guid": str(UUID(int=index)).upper(),
+                        "index": index,
+                        "documentName": name,
+                        "fileName": f"{name}.gsm",
+                    }
+                    for index, name in enumerate(sorted(self.library_parts), 1)
+                ]
+            )
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "libraryParts": rows,
+                        "skippedCount": self.library_skipped_count,
+                        "skippedSample": [],
+                    }
+                }
+            )
         if name == "CreateObjects":
             # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0.
             out = []
