@@ -64,11 +64,8 @@ class FakeArchicad:
     details: dict[str, dict] = field(default_factory=dict)
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
-<<<<<<< HEAD
     building_materials: dict[str, dict] = field(default_factory=dict)
-=======
     lose_slab_response: bool = False
->>>>>>> origin/main
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
