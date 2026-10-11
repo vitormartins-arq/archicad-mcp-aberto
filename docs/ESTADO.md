@@ -61,7 +61,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - Fixture derivada da documentação/código-fonte oficial do Tapir 1.7.0,
   com commit e URLs registrados; **não é captura ao vivo**.
 - Validação: apenas ArchiCAD simulado; nenhuma chamada ao ArchiCAD real.
-  `uv run pytest`: 121 testes passaram em Python 3.12.10/Windows.
+  `uv run pytest`: 120 testes passaram em Python 3.12.10/Windows.
   `uv run ruff check .`: passou. Aguardar revisão e merge pelo Vitor.
 - Próxima etapa: revisão do PR; edição em entrega separada.
   Validação ao vivo de lajes, padrões herdados e Undo permanece pendente,
