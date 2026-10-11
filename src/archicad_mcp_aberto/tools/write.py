@@ -1,4 +1,4 @@
-"""Small, reviewable writes: create walls, slabs and columns, move elements.
+"""Small, reviewable writes: create walls, slabs and columns, move elements, set properties.
 
 Lengths are metres; no project is ever saved.
 
@@ -32,6 +32,7 @@ MAX_WALLS = 20
 MAX_SLABS = 20
 MAX_COLUMNS = 20
 MAX_MOVES = 50
+MAX_PROPERTY_CHANGES = 100
 MOVE_TOLERANCE = 0.001  # metres; bounding boxes are compared after a move
 PREVIEW_SECONDS = 600
 DETAIL_FIELDS = ["type", "floorIndex", "layerIndex", "hotlinkId", "details"]
@@ -173,6 +174,11 @@ OPERATIONS = {
         "move",
         "move_receipt_id",
         "Each element moves by its vector; boxes are checked after.",
+    ),
+    "set_property_values": (
+        "property change",
+        "change_receipt_id",
+        "Each value is written as shown and read back after.",
     ),
 }
 
@@ -404,7 +410,9 @@ async def _write(
         state = WriteState(session_id=client.session_id)
         _states[client] = state
     kind, receipt_key, preview_note = OPERATIONS[operation]
-    planner = _move_plan if operation == "move_elements" else _plan
+    planner = {"move_elements": _move_plan, "set_property_values": _property_plan}.get(
+        operation, _plan
+    )
     async with state.lock:
         if dry_run:
             plan = await planner(client, walls, port, operation)
@@ -447,7 +455,11 @@ async def _write(
         receipt["prepared_receipt_path"] = _journal(receipt, "prepared")
         # Consume before dispatch, including if dispatch or verification later fails.
         state.previews.pop(confirmation_token)
-        await (_move_dispatch if operation == "move_elements" else _dispatch)(client, receipt)
+        dispatcher = {
+            "move_elements": _move_dispatch,
+            "set_property_values": _property_dispatch,
+        }.get(operation, _dispatch)
+        await dispatcher(client, receipt)
         receipt["counts"] = {
             status: sum(i["status"] == status for i in receipt["items"])
             for status in (
@@ -769,3 +781,221 @@ async def move_elements(
     if len(set(guids)) != len(guids):
         raise ValueError("Each element may appear only once per call.")
     return await _write(client, validated, port, dry_run, confirmation_token, "move_elements")
+
+
+# Scalar property value types this tool writes; lists and enumerations are refused.
+SCALAR_TYPES = {
+    "string": str,
+    "boolean": bool,
+    "integer": int,
+    "number": float,
+    "length": float,
+    "area": float,
+    "volume": float,
+    "angle": float,
+}
+
+
+class PropertyChange(InputModel):
+    element_guid: str
+    property_guid: str
+    value: str | bool | int | float
+
+    @field_validator("element_guid", "property_guid")
+    @classmethod
+    def canonical_guid(cls, value: str) -> str:
+        return str(UUID(value)).upper()
+
+
+def _coerce(kind: str, value: Any) -> Any:
+    expected = SCALAR_TYPES[kind]
+    if expected is bool:
+        if not isinstance(value, bool):
+            raise ValueError("needs true or false")
+        return value
+    if expected is str:
+        if not isinstance(value, str):
+            raise ValueError("needs text")
+        return value
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("needs a number")
+    if expected is int:
+        if float(value) != int(value):
+            raise ValueError("needs a whole number")
+        return int(value)
+    if not math.isfinite(value):
+        raise ValueError("needs a finite number")
+    return float(value)
+
+
+async def _read_values(
+    client: ArchicadClient, port: int, pairs: list[tuple[str, str]], timeout: float | None = None
+) -> dict[tuple[str, str], Any]:
+    """Current value (or error) of each (element, property) pair, one request per element."""
+    out: dict[tuple[str, str], Any] = {}
+    by_element: dict[str, list[str]] = {}
+    for element, prop in pairs:
+        by_element.setdefault(element, []).append(prop)
+    elements = list(by_element)
+    properties = sorted({prop for _, prop in pairs})
+    extra = {} if timeout is None else {"timeout": timeout}
+    result = await client.command(
+        port,
+        "GetPropertyValuesOfElements",
+        {
+            "elements": element_ids(elements),
+            "properties": [{"propertyId": {"guid": g}} for g in properties],
+        },
+        **extra,
+    )
+    rows = result.get("propertyValuesForElements")
+    if not isinstance(rows, list) or len(rows) != len(elements):
+        raise ValueError("Unexpected property value response cardinality.")
+    for element, row in zip(elements, rows, strict=True):
+        values = row.get("propertyValues") if isinstance(row, dict) else None
+        for index, prop in enumerate(properties):
+            if (element, prop) not in pairs:
+                continue
+            if not isinstance(values, list) or len(values) != len(properties):
+                out[(element, prop)] = {"error": row.get("error") if isinstance(row, dict) else row}
+            else:
+                out[(element, prop)] = values[index]
+    return out
+
+
+async def _property_plan(
+    client: ArchicadClient, changes: list[PropertyChange], port: int | None, operation: str
+) -> dict:
+    port, target, _ = await _context(client, port)
+    pairs = [(c.element_guid, c.property_guid) for c in changes]
+    current = await _read_values(client, port, pairs)
+    definitions = await client.command(
+        port,
+        "GetDetailsOfProperties",
+        {"properties": [{"propertyId": {"guid": g}} for g in sorted({p for _, p in pairs})]},
+    )
+    names = {}
+    for row in definitions.get("propertyDefinitions", []):
+        definition = row.get("propertyDefinition") if isinstance(row, dict) else None
+        if isinstance(definition, dict) and definition.get("guid"):
+            names[str(definition["guid"]).upper()] = definition
+    items = []
+    for index, change in enumerate(changes):
+        label = f"Change {index} ({change.element_guid} / {change.property_guid})"
+        definition = names.get(change.property_guid, {})
+        if definition.get("isEditable") is False:
+            raise ValueError(f"{label}: the property is read-only.")
+        row = current[(change.element_guid, change.property_guid)]
+        value = row.get("propertyValue") if isinstance(row, dict) else None
+        if not isinstance(value, dict):
+            raise ValueError(f"{label}: cannot read the current value ({row}).")
+        kind = value.get("type")
+        if kind not in SCALAR_TYPES:
+            raise ValueError(f"{label}: value type {kind!r} is not supported yet.")
+        if value.get("status") == "notAvailable":
+            raise ValueError(f"{label}: the property is not available for this element.")
+        try:
+            new = _coerce(kind, change.value)
+        except ValueError as exc:
+            raise ValueError(f"{label}: a {kind} property {exc}.") from None
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": change.element_guid,
+                "property_guid": change.property_guid,
+                "property_name": definition.get("name"),
+                "before": value,
+                "parameters": {
+                    "elementId": {"guid": change.element_guid},
+                    "propertyId": {"guid": change.property_guid},
+                    "propertyValue": {"type": kind, "status": "normal", "value": new},
+                },
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+def _same_value(expected: dict, actual: Any) -> bool:
+    if not isinstance(actual, dict) or actual.get("type") != expected["type"]:
+        return False
+    a, b = expected["value"], actual.get("value")
+    if isinstance(a, float) and isinstance(b, (int, float)) and not isinstance(b, bool):
+        return math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9)
+    return a == b and type(a) is type(b)
+
+
+async def _property_dispatch(client: ArchicadClient, receipt: dict) -> None:
+    items, port = receipt["items"], receipt["target"]["port"]
+    try:
+        raw = await client.command(
+            port,
+            "SetPropertyValuesOfElements",
+            {"elementPropertyValues": [i["parameters"] for i in items]},
+            timeout=receipt["write_timeout_seconds"],
+        )
+    except ArchicadError as exc:
+        for item in items:
+            item.update(status="unknown", error=str(exc))
+        receipt["warning"] = "Outcome is unknown. Inspect Archicad; do not retry this plan."
+        return
+    receipt["raw_response"] = raw
+    rows = raw.get("executionResults")
+    if not isinstance(rows, list) or len(rows) != len(items):
+        for item in items:
+            item.update(
+                status="unknown", error="Unexpected response cardinality; inspect Archicad."
+            )
+        return
+    written = []
+    for item, row in zip(items, rows, strict=True):
+        item["write_response"] = row
+        if isinstance(row, dict) and row.get("success") is True:
+            item["status"] = "unverified"
+            written.append(item)
+        elif isinstance(row, dict) and row.get("success") is False:
+            item.update(status="failed", error=row.get("error"))
+        else:
+            item.update(status="unknown", error="Unexpected result; inspect Archicad.")
+    if not written:
+        return
+    try:
+        after = await _read_values(
+            client,
+            port,
+            [(i["element_guid"], i["property_guid"]) for i in written],
+            receipt["write_timeout_seconds"],
+        )
+        for item in written:
+            row = after[(item["element_guid"], item["property_guid"])]
+            item["after"] = row.get("propertyValue") if isinstance(row, dict) else row
+            ok = _same_value(item["parameters"]["propertyValue"], item["after"])
+            item["status"] = "verified" if ok else "verification_failed"
+            if not ok:
+                item["mismatches"] = ["propertyValue"]
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+
+
+async def set_property_values(
+    client: ArchicadClient,
+    changes: list[dict | PropertyChange],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 100 property values (element + property + new value).
+
+    Scalar types only (text, number, integer, boolean, length, area, volume, angle).
+    The preview shows the current and new value and refuses read-only or unavailable
+    properties; applying reads every value back. Never saves.
+    """
+    if not 1 <= len(changes) <= MAX_PROPERTY_CHANGES:
+        raise ValueError(f"Pass between 1 and {MAX_PROPERTY_CHANGES} property changes.")
+    validated = [
+        c if isinstance(c, PropertyChange) else PropertyChange.model_validate(c) for c in changes
+    ]
+    pairs = [(c.element_guid, c.property_guid) for c in validated]
+    if len(set(pairs)) != len(pairs):
+        raise ValueError("Each element and property pair may appear only once per call.")
+    return await _write(client, validated, port, dry_run, confirmation_token, "set_property_values")

@@ -5,7 +5,7 @@
   "display_name": "Archicad (MCP aberto)",
   "version": "0.1.0.dev0",
   "description": "Read and safely edit a running Archicad through the official JSON API and the Tapir add-on.",
-  "long_description": "Open source MCP server for Archicad. Reads elements, properties, stories and BIM details, and creates walls, slabs and columns and moves elements with a dry run first, a single-use confirmation, per-element receipts and a check after applying. It never saves the project. Needs Archicad open and, for most tools, the free Tapir add-on.",
+  "long_description": "Open source MCP server for Archicad. Reads elements, properties, stories and BIM details, and creates walls, slabs and columns moves elements and sets property values with a dry run first, a single-use confirmation, per-element receipts and a check after applying. It never saves the project. Needs Archicad open and, for most tools, the free Tapir add-on.",
   "author": {
     "name": "archicad-mcp-aberto contributors",
     "url": "https://github.com/vitormartins-arq/archicad-mcp-aberto"
@@ -118,6 +118,10 @@
     {
       "name": "move_elements",
       "description": "Preview or apply moving elements by a vector."
+    },
+    {
+      "name": "set_property_values",
+      "description": "Preview or apply property values, read back after."
     }
   ],
   "compatibility": {

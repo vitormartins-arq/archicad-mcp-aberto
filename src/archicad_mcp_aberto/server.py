@@ -196,6 +196,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         inputs with explicit port and single-use token; checks each box moved; never saves."""
         return await write.move_elements(client_of(ctx), moves, port, dry_run, confirmation_token)
 
+    @mcp.tool(annotations=WRITE)
+    async def set_property_values(
+        ctx: Context,
+        changes: list[write.PropertyChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview setting up to 100 property values: element_guid, property_guid, value.
+        Text, number, integer, boolean, length, area, volume or angle; lists and enums are
+        refused. Preview shows current and new values; apply identical inputs with explicit
+        port and single-use token; every value is read back. Never saves."""
+        return await write.set_property_values(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

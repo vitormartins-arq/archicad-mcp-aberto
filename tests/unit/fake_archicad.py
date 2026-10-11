@@ -86,6 +86,11 @@ class FakeArchicad:
     lose_move_response: bool = False
     move_errors: dict[int, dict] = field(default_factory=dict)
     move_ignored: bool = False  # report success without moving (verification test)
+    # (element guid, property guid) -> {"type", "status", "value"}; default is a text "x".
+    property_values: dict[tuple[str, str], dict] = field(default_factory=dict)
+    read_only_properties: set[str] = field(default_factory=set)
+    property_set_errors: dict[int, dict] = field(default_factory=dict)
+    property_set_ignored: bool = False
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
@@ -128,7 +133,10 @@ class FakeArchicad:
             out = []
             for p in params["properties"]:
                 g = p["propertyId"]["guid"]
-                out.append({"propertyDefinition": {"guid": g, "name": self.properties[g]}})
+                definition = {"guid": g, "name": self.properties[g]}
+                if g in self.read_only_properties:
+                    definition["isEditable"] = False
+                out.append({"propertyDefinition": definition})
             return ok({"propertyDefinitions": out})
         if command == "API.GetPropertyValuesOfElements":
             rows = []
@@ -140,11 +148,34 @@ class FakeArchicad:
                     rows.append(
                         {
                             "propertyValues": [
-                                {"propertyValue": {"value": "x"}} for _ in params["properties"]
+                                {
+                                    "propertyValue": deepcopy(
+                                        self.property_values.get(
+                                            (g, p["propertyId"]["guid"]),
+                                            {"type": "string", "status": "normal", "value": "x"},
+                                        )
+                                    )
+                                }
+                                for p in params["properties"]
                             ]
                         }
                     )
             return ok({"propertyValuesForElements": rows})
+        if command == "API.SetPropertyValuesOfElements":
+            # Shape from the official JSON API documentation; not a live capture.
+            results = []
+            for index, entry in enumerate(params["elementPropertyValues"]):
+                g, p = entry["elementId"]["guid"], entry["propertyId"]["guid"]
+                if index in self.property_set_errors:
+                    results.append(deepcopy(self.property_set_errors[index]))
+                elif g not in self.elements:
+                    error = {"code": 4002, "message": "Element not found"}
+                    results.append({"success": False, "error": error})
+                else:
+                    if not self.property_set_ignored:
+                        self.property_values[(g, p)] = deepcopy(entry["propertyValue"])
+                    results.append({"success": True})
+            return ok({"executionResults": results})
         if command == "API.ExecuteAddOnCommand":
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
