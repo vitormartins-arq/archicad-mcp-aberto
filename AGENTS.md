@@ -27,6 +27,8 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
    Add new lessons (LA-xxx) and open items (P-xxx) at the end; never renumber; re-read
    the file right before saving, because other agents edit it too.
 3. `CONTRIBUTING.md` for where code goes and the rules for a tool.
+4. `docs/FILA.md`: Codex's task queue, kept by Claude. When Vitor says "faça a próxima
+   tarefa de docs/FILA.md", follow the rules at the top of that file.
 
 ## Commands
 
@@ -43,7 +45,9 @@ disk.
 
 ## Rules
 
-- Work on a branch and open a pull request to `main`. Vitor merges.
+- Work on a branch and open a pull request to `main`. Claude merges a PR after its
+  review, green CI and, when it touches Archicad behavior, a live test (Vitor's ok,
+  11/10/2026). Codex never merges.
 - Only report tests you actually ran. Say which Archicad version, build, language and
   Tapir version a live test used. Visual approval in Archicad is Vitor's.
 - Live tests run only on a test project. Never change or save Vitor's real projects
