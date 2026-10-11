@@ -142,6 +142,20 @@ async def get_stories(client: ArchicadClient, port: int | None = None) -> dict[s
     return {"port": port, **await client.tapir(port, "GetStories")}
 
 
+def _same_polygon(a: dict, b: dict) -> bool:
+    ac, bc = a.get("coordinates"), b.get("coordinates")
+    if not isinstance(ac, list) or not isinstance(bc, list) or len(ac) != len(bc):
+        return False
+    if {k: v for k, v in a.items() if k != "coordinates"} != {
+        k: v for k, v in b.items() if k != "coordinates"
+    }:
+        return False
+    return all(
+        x.keys() == y.keys() and all(abs(x[k] - y[k]) <= 1e-9 for k in x)
+        for x, y in zip(ac, bc, strict=True)
+    )
+
+
 async def get_element_details(
     client: ArchicadClient,
     element_guids: list[str],
@@ -164,6 +178,23 @@ async def get_element_details(
         # plan symbol, and leaves the key out otherwise. Say so instead of letting the
         # missing key read as a failure.
         rows = result.get("detailsOfElements", [])
+        removed = 0
+        for row in rows:
+            if not isinstance(row, dict) or "error" in row:
+                continue
+            unique = []
+            for polygon in row.get("floorPlanPolygons", []):
+                if any(_same_polygon(polygon, previous) for previous in unique):
+                    removed += 1
+                else:
+                    unique.append(polygon)
+            if "floorPlanPolygons" in row:
+                row["floorPlanPolygons"] = unique
+        if removed:
+            result.setdefault("notes", []).append(
+                f"Removed {removed} duplicate floor plan polygon(s) within elements "
+                "(same vertex order, tolerance 1e-9 m)."
+            )
         missing = [
             r
             for r in rows
