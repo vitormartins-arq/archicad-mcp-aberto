@@ -39,6 +39,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   material nem a sobreposição explicam essas 5. Causa ainda aberta; próximo passo é ver na
   planta onde ficam essas 5 paredes (junções, sobreposição com pilares).
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
+- `create_walls` testado ao vivo em 11/10/2026 (AC30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem título, sem salvar): simulação, aplicação de 2 paredes em L com status "verified" e
+  recusa do token reaplicado passaram. Undo ainda não testado.
 
 ## Próximos passos
 
@@ -50,7 +53,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 ## Quem está com o quê
 
 - **Claude:** testes ao vivo no ArchiCAD. Agora: pendência do `floorPlanPolygons` (PR #3)
-  e teste ao vivo do `create_walls` no projeto sem nome (P-007 das lições).
+  e Undo do `create_walls` (o teste ao vivo passou).
 - **Codex:** código só contra o ArchiCAD simulado. Fase 1 entregue no PR #4 (merge em
   11/10/2026). Próxima entrega: `create_slabs`, mesmo padrão do `create_walls`, branch
   `feat/create-slabs`.
