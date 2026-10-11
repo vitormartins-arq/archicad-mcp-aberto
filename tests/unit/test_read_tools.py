@@ -116,11 +116,14 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 14
-    reads = [t for t in tools if t.name not in {"create_walls", "create_slabs", "create_columns"}]
+    assert len(tools) == 15
+    writes = {"create_walls", "create_slabs", "create_columns", "move_elements"}
+    reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
     assert len(reads) == 11
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint
+    move = next(t for t in tools if t.name == "move_elements")
+    assert move.annotations and not move.annotations.readOnlyHint
     assert creation.inputSchema["properties"]["dry_run"]["default"] is True

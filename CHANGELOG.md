@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `move_elements`: up to 50 elements, each by its own vector in metres, through
+  Tapir `MoveElements` without copying. The preview refuses unknown, hotlinked or box-less
+  elements and records their 2D/3D boxes; applying checks every box moved by its vector
+  (1 mm). Same single-use token, explicit port, receipts and timeout as the create tools.
+  Fake response shape from the Tapir source, not yet a live capture.
+
 - Package for Claude Desktop: `manifest.json` (MCPB 0.4, uv runtime) and `.mcpbignore`;
   a tag `v*` workflow runs the tests and drafts a release with wheel, sdist and `.mcpb`.
   README covers the bundle, `uvx` from GitHub and Codex. A test keeps the manifest tool

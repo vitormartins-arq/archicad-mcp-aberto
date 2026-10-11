@@ -14,6 +14,7 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "move_elements": {"moves": [{"guid": GUID, "vector": {"x": 1, "y": 0}}]},
     "get_bounding_boxes": {"element_ids": [GUID]},
     "create_columns": {
         "columns": [
@@ -137,7 +138,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     async with client(first, second) as c:
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     selected, untouched = (first, second) if port == 19723 else (second, first)
-    result_port = result["target"]["port"] if name.startswith("create_") else result["port"]
+    result_port = result["target"]["port"] if "target" in result else result["port"]
     assert result_port == port
     assert selected.calls and untouched.calls == []
     assert selected.elements == untouched.elements == {GUID: "Wall"}
