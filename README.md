@@ -27,9 +27,11 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha. Phase 1 is nearly complete: **25 tools**, with **14 read-only** tools and
-**11 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Wall editing is the next queued addition; live Undo validation remains pending.
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **14 read-only** tools and
+**12 write** tools. Writes preview by default and require a single-use confirmation token
+and explicit port to apply. No tool saves the project. Rotation, GDL parameters and
+limited straight-wall editing are available, tested only with the simulated Archicad
+in this delivery; operator live validation of these additions remains pending.
 
 | Tool | Access | What it does | Needs Tapir |
 |---|---|---|---|
@@ -55,6 +57,7 @@ and explicit port to apply. No tool saves the project. Wall editing is the next 
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
 | `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
+| `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
@@ -252,8 +255,8 @@ Codex ran only simulated tests for this correction.
 
 0. Foundation: connection, discovery, read tools, simulated Archicad, CI.
 1. Safe writes: wall/slab/column/object/beam/zone creation, movement, property writes and
-   guarded deletion delivered. Nearly complete; rotation, GDL/wall editing and live Undo
-   validation remain. **← here**
+   guarded deletion delivered. Rotation, GDL parameters and limited wall editing now
+   have simulated coverage; operator live validation remains. **← here**
 2. Command gateway (every official and Tapir command) and batch scripts; `.mcpb` bundle.
 3. Documentation tools: dimensions, views, publishing, view capture; GDL and libraries.
 4. First public release.
@@ -285,3 +288,5 @@ and open to everyone's contributions.
 - `rotate_elements` previews up to 50 `rotations` (`guid`, `center:{x,y}` in metres, `angle` in radians). No copies/saves/unlocking. Refuses nonexistent/hotlinked/non-editable elements. Shared confirmation, receipts and timeout. Verifies endpoints or origin/angle where available; box-only verification supports multiples of pi/2 within 1 mm, because rotating an AABB cannot predict arbitrary shapes at other angles.
 
 - `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
+
+- `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.

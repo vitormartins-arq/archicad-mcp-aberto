@@ -6,7 +6,7 @@ import math
 from copy import deepcopy
 from uuid import UUID
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
 from archicad_mcp_aberto.tools import read, write
@@ -433,4 +433,138 @@ async def set_gdl_parameters(
         "set_gdl_parameters",
         planner_override=_gdl_plan,
         dispatcher_override=_gdl_dispatch,
+    )
+
+
+class WallModify(write.InputModel):
+    guid: str
+    height: write.Positive | None = None
+    thickness: write.Positive | None = None
+    bottomOffset: float | None = None
+    begCoordinate: write.Point | None = None
+    endCoordinate: write.Point | None = None
+
+    @field_validator("guid")
+    @classmethod
+    def canonical_guid(cls, value):
+        return str(UUID(value)).upper()
+
+    @model_validator(mode="after")
+    def has_changes(self):
+        if not self.model_dump(exclude={"guid"}, exclude_none=True):
+            raise ValueError("Supply at least one wall field to modify.")
+        return self
+
+
+async def _wall_plan(client, walls, port, operation):
+    port, target, rows = await _editable(client, [wall.guid for wall in walls], port)
+    items = []
+    for index, (wall, row) in enumerate(zip(walls, rows, strict=True)):
+        details = row.get("details")
+        if row["type"] != "Wall" or not isinstance(details, dict):
+            raise ValueError("Only walls with readable geometry are supported.")
+        arc = details.get("arcAngle")
+        if (
+            details.get("geometryType") != "Straight"
+            or not isinstance(arc, (int, float))
+            or (isinstance(arc, bool) or not math.isfinite(arc) or abs(arc) > 1e-9)
+            or details.get("profileType") in {"Trapez", "Poly"}
+        ):
+            raise ValueError("Curved, trapezoidal or polygonal walls are refused.")
+        changes = wall.model_dump(exclude={"guid"}, exclude_none=True)
+        if "thickness" in changes and details.get("structureType") != "Basic":
+            raise ValueError("Direct thickness changes require a Basic wall.")
+        start = changes.get("begCoordinate", details.get("begCoordinate"))
+        end = changes.get("endCoordinate", details.get("endCoordinate"))
+        if not isinstance(start, dict) or not isinstance(end, dict):
+            raise ValueError("Wall endpoints are required for safe editing.")
+        start = write.Point.model_validate(start).model_dump()
+        end = write.Point.model_validate(end).model_dump()
+        if math.hypot(start["x"] - end["x"], start["y"] - end["y"]) < 1e-6:
+            raise ValueError("The resulting wall would have zero length.")
+        expected = {"geometryType": "Straight", "arcAngle": 0.0}
+        for key, value in changes.items():
+            native = "begThickness" if key == "thickness" else key
+            if native not in details:
+                raise ValueError(f"Cannot read existing wall field {native}.")
+            expected[native] = value
+        if "height" in changes:
+            expected["relativeTopStory"] = 0.0  # Native ModifyWalls unlinks height.
+        if "bottomOffset" in changes:
+            floor = next(s for s in target["stories"] if s["index"] == row["floorIndex"])
+            expected["zCoordinate"] = floor["level"] + changes["bottomOffset"]
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": wall.guid,
+                "floorIndex": row.get("floorIndex"),
+                "layerIndex": row.get("layerIndex"),
+                "before": deepcopy(row),
+                "new": changes,
+                "expected": expected,
+                "parameters": {"elementId": {"guid": wall.guid}, **changes},
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _verify_walls(client, receipt, items):
+    response = await client.tapir(
+        receipt["target"]["port"],
+        "GetDetailsOfElements",
+        {
+            "elements": read.element_ids([i["element_guid"] for i in items]),
+            "fields": write.DETAIL_FIELDS,
+        },
+        timeout=receipt["write_timeout_seconds"],
+    )
+    rows = response.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(items):
+        raise ValueError("Unexpected modified-wall response cardinality.")
+    for item, row in zip(items, rows, strict=True):
+        item["after"] = row
+        differences = write._mismatches(
+            {
+                "type": "Wall",
+                "floorIndex": item["floorIndex"],
+                "layerIndex": item["layerIndex"],
+                "details": item["expected"],
+            },
+            row,
+        )
+        item["status"] = "verification_failed" if differences else "verified"
+        if differences:
+            item["mismatches"] = differences
+
+
+async def _wall_dispatch(client, receipt):
+    await _execute(client, receipt, "ModifyWalls", "wallsWithDetails", _verify_walls)
+
+
+async def modify_walls(
+    client: ArchicadClient,
+    walls: list[dict | WallModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 straight walls. Fields are native camelCase; metres.
+
+    Only height/thickness/bottomOffset/begCoordinate/endCoordinate. Direct thickness
+    requires Basic structure; changing height unlinks the top story, as Tapir does.
+    Refuses curved/trapezoidal, hotlinked, locked/nonexistent walls. Per-wall receipts
+    and read-back verification with shared token/explicit-port/timeout; never saves.
+    """
+    validated = [w if isinstance(w, WallModify) else WallModify.model_validate(w) for w in walls]
+    _unique([w.guid for w in validated], 50)
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "modify_walls",
+        planner_override=_wall_plan,
+        dispatcher_override=_wall_dispatch,
     )

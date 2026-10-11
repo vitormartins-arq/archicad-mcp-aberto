@@ -96,6 +96,9 @@ class FakeArchicad:
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
     locked_elements: set[str] = field(default_factory=set)
+    modify_wall_errors: dict[int, dict] = field(default_factory=dict)
+    modify_wall_ignored: bool = False
+    lose_modify_wall_response: bool = False
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -306,6 +309,40 @@ class FakeArchicad:
                         self.elements.pop(guid, None)
                         self.details.pop(guid, None)
                     rows.append(deepcopy(fixture["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name == "ModifyWalls":
+            # Official Tapir source at 02691b5d; synthetic fixture, not live captured.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_modify_walls_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = []
+            for index, entry in enumerate(args["wallsWithDetails"]):
+                guid = entry["elementId"]["guid"]
+                if index in self.modify_wall_errors:
+                    rows.append(deepcopy(self.modify_wall_errors[index]))
+                    continue
+                if self.elements.get(guid) != "Wall" or guid in self.locked_elements:
+                    rows.append(deepcopy(fixture["failure"]))
+                    continue
+                if not self.modify_wall_ignored:
+                    details = self.details[guid]["details"]
+                    for key in ("height", "bottomOffset", "begCoordinate", "endCoordinate"):
+                        if key in entry:
+                            details[key] = deepcopy(entry[key])
+                    if "height" in entry:
+                        details["relativeTopStory"] = 0
+                    if "thickness" in entry:
+                        details["begThickness"] = entry["thickness"]
+                    if "bottomOffset" in entry:
+                        story = next(
+                            s
+                            for s in self.stories
+                            if s["index"] == self.details[guid]["floorIndex"]
+                        )
+                        details["zCoordinate"] = story["level"] + entry["bottomOffset"]
+                rows.append(deepcopy(fixture["success"]))
             return ok({"addOnCommandResponse": {"executionResults": rows}})
         if name in {"GetGDLParametersOfElements", "SetGDLParametersOfElements"}:
             # Official Tapir schema at 02691b5d; synthetic fixture, not live captured.
@@ -649,6 +686,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_delete_response and command == "DeleteElements":
             raise httpx.ReadTimeout(
                 "Injected lost deletion response after model change", request=request
+            )
+        if instance.lose_modify_wall_response and command == "ModifyWalls":
+            raise httpx.ReadTimeout(
+                "Injected lost wall-edit response after model change", request=request
             )
         if instance.lose_gdl_response and command == "SetGDLParametersOfElements":
             raise httpx.ReadTimeout(
