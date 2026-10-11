@@ -45,7 +45,9 @@ disk.
 
 ## Rules
 
-- Work on a branch and open a pull request to `main`. Vitor merges.
+- Work on a branch and open a pull request to `main`. Claude merges a PR after its
+  review, green CI and, when it touches Archicad behavior, a live test (Vitor's ok,
+  11/10/2026). Codex never merges.
 - Only report tests you actually ran. Say which Archicad version, build, language and
   Tapir version a live test used. Visual approval in Archicad is Vitor's.
 - Live tests run only on a test project. Never change or save Vitor's real projects

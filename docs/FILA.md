@@ -52,4 +52,4 @@ inexistente vira erro daquele item, sem derrubar os outros.
 ## Integrado
 
 - `create_walls` (#4), `create_slabs` (#5), destino ambíguo (#6), materiais (#7),
-  timeout de escrita (#8), smoke ao vivo (#9), `create_columns` (#10).
+  timeout de escrita (#8), smoke ao vivo (#9), `create_columns` (#10), `get_bounding_boxes` (#11).
