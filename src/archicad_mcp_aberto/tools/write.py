@@ -1410,13 +1410,15 @@ def _zone_mismatches(item: dict, row: Any) -> list[str]:
                 "name": p["name"],
                 "numberStr": p["numberStr"],
                 "isManual": True,
-                "polygonArcs": [],
                 "holes": [],
             },
         },
         row,
     )
     details = row.get("details", {}) if isinstance(row, dict) else {}
+    # Tapir 1.7.0 omits polygonArcs when the outline has no arcs (as for slabs).
+    if isinstance(details, dict) and details.get("polygonArcs", []) != []:
+        differences.append("details.polygonArcs")
     outline = details.get("polygonOutline") if isinstance(details, dict) else None
     wanted = p["geometry"]["polygonCoordinates"]
     if isinstance(outline, list) and len(outline) > 1 and not _mismatches(outline[0], outline[-1]):

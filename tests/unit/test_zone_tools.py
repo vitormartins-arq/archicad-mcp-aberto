@@ -169,3 +169,33 @@ async def test_journal_failure_prevents_dispatch(monkeypatch):
         with pytest.raises(OSError):
             await apply(c, [zone()])
     assert "CreateZones" not in fake.tapir_calls
+
+
+async def test_missing_polygon_arcs_key_is_verified():
+    # Tapir 1.7.0 omits polygonArcs for an outline without arcs (CommandBase.cpp,
+    # AddPolygonWithHolesFromMemoCoords); the fake must not add it either.
+    fake = FakeArchicad(19723)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [zone()])
+    row = fake.details[result["items"][0]["element_guid"]]
+    assert "polygonArcs" not in row["details"]
+    assert result["items"][0]["status"] == "verified"
+
+
+async def test_unexpected_polygon_arcs_fail_verification():
+    fake = FakeArchicad(19723)
+    original = fake._tapir
+
+    def with_arc(params):
+        response = original(params)
+        if params["addOnCommandId"]["commandName"] == "CreateZones":
+            for row in fake.details.values():
+                if row["type"] == "Zone":
+                    row["details"]["polygonArcs"] = [{"begIndex": 0, "endIndex": 1, "arcAngle": 1}]
+        return response
+
+    fake._tapir = with_arc
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [zone()])
+    assert result["items"][0]["status"] == "verification_failed"
+    assert result["items"][0]["mismatches"] == ["details.polygonArcs"]
