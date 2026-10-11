@@ -6,7 +6,10 @@
   number, length, area, volume, angle) through the official `SetPropertyValuesOfElements`.
   The preview reads the current value and refuses read-only, unavailable or non-scalar
   properties and wrong value types; applying reads every value back. Same token, port,
-  receipts and timeout as the other writes. Fake shape from the JSON API docs, not live.
+  receipts and timeout as the other writes. Tested live on Archicad 30 build 3001 BRA with
+  Tapir 1.7.0. The live test caught that `GetDetailsOfProperties` puts the GUID under
+  `propertyId.guid`; the fake had a `guid` key, which hid a missing name in the preview and
+  a read-only check that never fired.
 
 - Add `move_elements`: up to 50 elements, each by its own vector in metres, through
   Tapir `MoveElements` without copying. The preview refuses unknown, hotlinked or box-less

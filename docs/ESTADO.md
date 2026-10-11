@@ -145,4 +145,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `feat/move-elements`. `set_property_values` pelo `SetPropertyValuesOfElements` oficial,
   até 100 valores escalares; a prévia lê o valor atual e recusa propriedade só leitura,
   indisponível, não escalar ou tipo errado; o apply relê cada valor. 438 testes simulados
-  passaram. Formato tirado da documentação da JSON API; falta teste ao vivo.
+  passaram. Teste ao vivo em 11/10/2026 (ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723, não salvo): parede 44D20163, "ID do Elemento" de "Parede-01"
+  para "teste-mcp", `verified`; resposta `{"executionResults":[{"success":true}]}`. O teste
+  mostrou que o `GetDetailsOfProperties` real põe o GUID em `propertyId.guid`: o nome não
+  aparecia na prévia e a recusa de propriedade só leitura não disparava. Corrigido, e o
+  fake passou a usar o formato real. "Fabricante" e "Modelo" vieram `notAvailable`.
