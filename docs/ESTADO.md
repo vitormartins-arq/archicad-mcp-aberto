@@ -129,7 +129,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Desempacotado e rodado com `uv run --directory`, o servidor respondeu `initialize` e
   listou as 14 ferramentas (Linux, sem ArchiCAD). Workflow `release.yml` numa tag `v*`
   gera wheel, sdist e `.mcpb` num release em rascunho. Falta instalar no Claude Desktop do
-  Vitor (Windows) e testar com o ArchiCAD aberto. O Codex ficou sem créditos em 11/10/2026
+  Vitor (Windows) e testar com o ArchiCAD aberto. Instalado em 11/10/2026 no Claude Desktop
+  do Vitor (Windows, "Todos os requisitos atendidos"); `discover_archicad` pela extensão
+  listou 19723 (sem nome) e 19724 (CRM 005), ArchiCAD 30 build 3001 BRA, Tapir 1.7.0. O Codex ficou sem créditos em 11/10/2026
   depois da T1; Claude segue a fila.
 
 - **Claude / mover elementos (T2):** branch `feat/move-elements`, empilhada sobre
