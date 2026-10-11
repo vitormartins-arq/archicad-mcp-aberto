@@ -31,7 +31,10 @@ def model():
     )
 
 
-@pytest.mark.parametrize("operation", sorted(write.NAMED_PREVIEWS))
+@pytest.mark.parametrize(
+    "operation",
+    sorted(write.NAMED_PREVIEWS & {"move_elements", "set_property_values", "delete_elements"}),
+)
 async def test_preview_names_one_layer_call(operation):
     fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:
@@ -44,7 +47,10 @@ async def test_preview_names_one_layer_call(operation):
     assert requests[0]["parameters"] == {"attributeType": "Layer"}
 
 
-@pytest.mark.parametrize("operation", sorted(write.NAMED_PREVIEWS))
+@pytest.mark.parametrize(
+    "operation",
+    sorted(write.NAMED_PREVIEWS & {"move_elements", "set_property_values", "delete_elements"}),
+)
 async def test_names_change_does_not_consume_or_invalidate_token(operation, tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path))
     fake = model()
@@ -63,7 +69,10 @@ async def test_names_change_does_not_consume_or_invalidate_token(operation, tmp_
     assert result["items"][0]["layerName"] == "Renamed layer"
 
 
-@pytest.mark.parametrize("operation", sorted(write.NAMED_PREVIEWS))
+@pytest.mark.parametrize(
+    "operation",
+    sorted(write.NAMED_PREVIEWS & {"move_elements", "set_property_values", "delete_elements"}),
+)
 async def test_missing_names_are_null(operation):
     fake = model()
     fake.layers = {}

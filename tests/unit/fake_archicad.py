@@ -96,6 +96,9 @@ class FakeArchicad:
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
     locked_elements: set[str] = field(default_factory=set)
+    lose_rotate_response: bool = False
+    rotate_errors: dict[int, dict] = field(default_factory=dict)
+    rotate_ignored: bool = False
     lose_move_response: bool = False
     move_errors: dict[int, dict] = field(default_factory=dict)
     move_ignored: bool = False  # report success without moving (verification test)
@@ -299,6 +302,67 @@ class FakeArchicad:
                         self.elements.pop(guid, None)
                         self.details.pop(guid, None)
                     rows.append(deepcopy(fixture["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name == "RotateElements":
+            # Schema source-confirmed at 02691b5d; not a live capture.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_rotate_elements_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = []
+            for index, entry in enumerate(args["elementsWithRotations"]):
+                guid, rotation = entry["elementId"]["guid"], entry["rotation"]
+                if index in self.rotate_errors:
+                    rows.append(deepcopy(self.rotate_errors[index]))
+                    continue
+                if guid not in self.elements or guid in self.locked_elements:
+                    rows.append(deepcopy(fixture["failure"]))
+                    continue
+                assert entry["copy"] is False
+                origin, begin, end = (
+                    rotation["origin"],
+                    rotation["beginPoint"],
+                    rotation["endPoint"],
+                )
+                angle = math.atan2(end["y"] - origin["y"], end["x"] - origin["x"]) - math.atan2(
+                    begin["y"] - origin["y"], begin["x"] - origin["x"]
+                )
+
+                def rotated(p, origin=origin, angle=angle):
+                    x, y = p["x"] - origin["x"], p["y"] - origin["y"]
+                    return {
+                        **p,
+                        "x": origin["x"] + math.cos(angle) * x - math.sin(angle) * y,
+                        "y": origin["y"] + math.sin(angle) * x + math.cos(angle) * y,
+                    }
+
+                if not self.rotate_ignored:
+                    details = self.details.get(guid, {}).get("details", {})
+                    for key in ("origin", "begCoordinate", "endCoordinate"):
+                        if key in details:
+                            details[key] = rotated(details[key])
+                    for key in ("angle", "axisRotationAngle"):
+                        if key in details:
+                            details[key] += angle
+                    default = BOUNDING_BOXES_FIXTURE["2d"]["boundingBoxes2D"][0]
+                    row = deepcopy(self.bounding_boxes_2d.get(guid, default))
+                    box = row["boundingBox2D"]
+                    pts = [
+                        rotated({"x": x, "y": y})
+                        for x in (box["xMin"], box["xMax"])
+                        for y in (box["yMin"], box["yMax"])
+                    ]
+                    row["boundingBox2D"] = {
+                        "xMin": min(p["x"] for p in pts),
+                        "xMax": max(p["x"] for p in pts),
+                        "yMin": min(p["y"] for p in pts),
+                        "yMax": max(p["y"] for p in pts),
+                    }
+                    self.bounding_boxes_2d[guid] = row
+                rows.append(deepcopy(fixture["success"]))
             return ok({"addOnCommandResponse": {"executionResults": rows}})
         if name == "MoveElements":
             # Shape from Tapir 1.7.0 source (ElementCommands.cpp); not a live capture.
@@ -544,6 +608,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_delete_response and command == "DeleteElements":
             raise httpx.ReadTimeout(
                 "Injected lost deletion response after model change", request=request
+            )
+        if instance.lose_rotate_response and command == "RotateElements":
+            raise httpx.ReadTimeout(
+                "Injected lost rotation response after model change", request=request
             )
         if instance.lose_move_response and command == "MoveElements":
             raise httpx.ReadTimeout(

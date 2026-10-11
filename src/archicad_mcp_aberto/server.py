@@ -9,7 +9,7 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, read, write
+from archicad_mcp_aberto.tools import attributes, edit, read, write
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -308,6 +308,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Pages up to 500; optional name substring and partial-inventory diagnostics.
         """
         return await read.list_library_parts(client_of(ctx), port, name_contains, offset, limit)
+
+    @mcp.tool(annotations=WRITE)
+    async def rotate_elements(
+        ctx: Context,
+        rotations: list[edit.ElementRotation],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Rotate up to 50 elements without copies. XY centres in metres; angles in radians.
+        Requires Tapir. Preview/token/explicit port/receipts; no saving or unlocking.
+        """
+        return await edit.rotate_elements(
+            client_of(ctx), rotations, port, dry_run, confirmation_token
+        )
 
     return mcp
 

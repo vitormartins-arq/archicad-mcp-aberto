@@ -236,3 +236,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - **Codex / T13:** branch docs/readme-status da origin/main 50a9072. README em inglês enumera 22 ferramentas (13 leitura/9 escrita), resultados ao vivo registrados pelo operador e Fase 1 quase completa. Somente documentação; nenhuma chamada real pelo Codex. T12 já entregue no PR #26 (fix/partial-library-inventory), não duplicada neste lote.
 
 - T13: 648 testes simulados e Ruff passaram em Windows/Python 3.12.10; código intacto.
+
+- T14: RotateElements confirmado em ElementCommands.cpp 02691b5d (origin/beginPoint/endPoint, copy=false). Prévia/recibos/token/porta compartilhados, recusa hotlink/bloqueado/inexistente. Conferência por detalhes quando disponíveis; só caixa exige múltiplos de pi/2, pois girar AABB não prevê limites de uma forma arbitrária. Fixture documental, não captura real; só simulado. T12 reutiliza PR #26 atualizado por merge autorizado da main, preservando notas ao vivo concorrentes.
+
+- T14: 675 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Edições em tools/edit.py reutilizam o protocolo de confirmação/recibos de write.py por callbacks, preservando comportamento das criações.
