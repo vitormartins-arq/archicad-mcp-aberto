@@ -24,9 +24,14 @@ Name substring matching is case-insensitive. `total` counts the readable filtere
 
 `create_objects` validates each requested document name against Object entries in the
 inventory during dry run and again before applying. Names are matched case-insensitively;
-unknown names and ambiguous names with distinct GUIDs refuse the preview. An unconfirmed
-name in a partial inventory is reported as unconfirmed, rather than proven absent.
-The selected part GUID is bound into confirmation identity. Native per-item errors remain
+unknown names refuse the whole preview only when the inventory is complete. Names with
+distinct matching Object GUIDs remain ambiguous and refuse the preview. When
+`skippedCount > 0`, a missing name marks only that item as `status="unconfirmed"` with
+a warning; other items remain ready. No GUID is asserted for an unconfirmed item.
+Apply sends it to `CreateObjects`, which resolves the name and reports success or a
+native error per item, without aborting the other objects. Successful creations still
+undergo the usual geometry/name verification.
+For confirmed names, the selected part GUID is bound into confirmation identity. Native per-item errors remain
 possible after preflight (defaults, permissions or a change during dispatch) and retain
 per-item receipts. No files or projects are saved, deleted or unlocked by the listing.
 
