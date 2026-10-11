@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add read-only `get_bounding_boxes`: official JSON API 2D/3D boxes in metres for
+  1 to 500 GUIDs, ordered per-element results/errors, no Tapir requirement and
+  ambiguous-target refusal. Documentation-derived fixture and simulated tests only.
+
 - Add `create_columns` for straight rectangular/circular columns, absolute base level,
   shared single-use confirmation/receipts/write timeout and per-column verification.
   Add captured column detail fixtures, simulated tests, target-safety coverage and a smoke column.

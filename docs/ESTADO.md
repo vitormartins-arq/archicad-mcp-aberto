@@ -83,6 +83,12 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - **PR #5:** main integrada por merge (sem rebase), `cut_fills` preservado junto
   com `CreateSlabs`; 120 testes locais passaram e CI verde nas seis combinações.
 
+- **Codex / bounding boxes:** branch `feat/bounding-boxes`, leitura `get_bounding_boxes`
+  pela API JSON oficial, sem Tapir: 1 a 500 GUIDs, modo 2d/3d, erro por elemento e
+  recusa de destino ambíguo. Fixture documental, não captura ao vivo.
+  `uv run pytest`: 267 testes simulados passaram; Ruff passou (Windows/Python 3.12.10).
+  Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Vitor.
+
 - **Codex / pilares:** branch `feat/create-columns`, `create_columns` com seção
   retangular/circular, base em cota absoluta e confirmação/recibos/timeout compartilhados.
   Fixture de detalhes substituída pela captura fornecida pelo operador (AC30 build
@@ -96,3 +102,8 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Na captura do operador, `floorPlanPolygons` do pilar circular retorna um losango
   de quatro vértices (mais fechamento); registro do retorno do Tapir, não bug nosso.
   Codex executou somente testes simulados; nenhuma chamada ao ArchiCAD real.
+
+- **PR #11 / integração:** `origin/main` a6b45d5 integrada por merge, sem rebase,
+  preservando `create_columns` (incluindo vínculo circular) e `get_bounding_boxes`.
+  373 testes simulados e Ruff passaram em Windows/Python 3.12.10.
+  Nenhuma chamada ao ArchiCAD real; merge pelo Vitor.
