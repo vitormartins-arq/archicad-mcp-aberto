@@ -66,7 +66,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 
 1. Tarefas T12 a T16 de `docs/FILA.md` (Codex): preflight parcial de objetos, README,
    `rotate_elements`, parâmetros GDL e `modify_walls`.
-2. Claude: testar Undo (Ctrl+Z) depois de uma gravação do MCP; terminar a pendência do
+2. Claude: Undo testado (um Ctrl+Z desfaz o lote); terminar a pendência do
    `floorPlanPolygons` (5 paredes do CRM 005, só leitura).
 3. Fase 2: planejar o gateway (qualquer comando oficial ou do Tapir com as mesmas
    proteções) antes de criar muitas ferramentas soltas.
@@ -211,3 +211,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `list_library_parts`: acha "Bidê" com o mesmo GUID do objeto colocado; inventário
   `partial=true`, 92 peças ilegíveis (código -2130313112). Com inventário parcial, um nome
   fora da lista recusa o lote inteiro na prévia, mesmo com outras peças válidas: tarefa T12.
+
+- **Claude / Undo ao vivo, 11/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723, não salvo, pela extensão `.mcpb`. `create_walls` de uma parede
+  (20, 0) a (23, 0) saiu `verified` (GUID 06E90EA4, 9 para 10 elementos). Um Ctrl+Z no
+  ArchiCAD desfez a gravação inteira: o GUID deixou de existir e o projeto voltou a 9
+  elementos. CRM 005 continuou com 192. Então cada lote do MCP é um passo de Undo.
