@@ -1,0 +1,47 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementGDLParameterCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json"
+    ],
+    "note": "Official Get/SetGDLParametersOfElements schemas, synthetic values, not live capture."
+  },
+  "parameters": [
+    {
+      "name": "A",
+      "displayName": "Width",
+      "index": 1,
+      "type": "Length",
+      "value": 1.0,
+      "flags": [],
+      "isLocked": false
+    },
+    {
+      "name": "label",
+      "displayName": "Label",
+      "index": 2,
+      "type": "String",
+      "value": "Desk",
+      "flags": [],
+      "isLocked": false
+    },
+    {
+      "name": "enabled",
+      "displayName": "Enabled",
+      "index": 3,
+      "type": "Boolean",
+      "value": true,
+      "flags": [],
+      "isLocked": false
+    }
+  ],
+  "failure": {
+    "success": false,
+    "error": {
+      "code": -1,
+      "message": "Failed to change GDL parameter"
+    }
+  }
+}

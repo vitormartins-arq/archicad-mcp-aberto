@@ -80,3 +80,5 @@
 - Refresh README status for all 22 tools, recorded AC30 build 3001 BRA live checks and the nearly complete Phase 1 roadmap.
 
 - Add safe rotate_elements with native per-item errors and coordinate/angle or quarter-turn box verification.
+
+- Add Object GDL parameter reads and safe scalar writes with flag/type checks and read-back verification.

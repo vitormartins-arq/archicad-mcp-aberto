@@ -240,3 +240,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - T14: RotateElements confirmado em ElementCommands.cpp 02691b5d (origin/beginPoint/endPoint, copy=false). Prévia/recibos/token/porta compartilhados, recusa hotlink/bloqueado/inexistente. Conferência por detalhes quando disponíveis; só caixa exige múltiplos de pi/2, pois girar AABB não prevê limites de uma forma arbitrária. Fixture documental, não captura real; só simulado. T12 reutiliza PR #26 atualizado por merge autorizado da main, preservando notas ao vivo concorrentes.
 
 - T14: 675 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Edições em tools/edit.py reutilizam o protocolo de confirmação/recibos de write.py por callbacks, preservando comportamento das criações.
+
+- T15: Get/SetGDLParametersOfElements confirmados em ElementGDLParameterCommands.cpp 02691b5d. Leitura até 100 objetos, gravação até 100 pares objeto/parâmetro escalar existente; tipos/flags/arrays validados e valores relidos. Flags Fixed/Hidden/HiddenFromScript/Disabled e isLocked recusados. Fixture documental, não captura real; só simulado.
