@@ -158,5 +158,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `feat/set-property-values`. `create_objects` pelo `CreateObjects` do Tapir: nome exato da
   peça de biblioteca, x/y, andar, cota absoluta da base e ângulo; tamanho padrão da peça.
   Nome inexistente falha só aquele item. Conferência: tipo, andar, origem 3D, ângulo e nome
-  da peça. 480 testes simulados passaram. Formato tirado do código do Tapir (02691b5d);
-  falta teste ao vivo, inclusive se o Tapir 1.7.0 aceita o campo `angle`.
+  da peça. 480 testes simulados passaram. Teste ao vivo em 11/10/2026 (ArchiCAD 30 build
+  3001 BRA, Tapir 1.7.0, projeto sem nome na porta 19723, não salvo): peça "Bidê" em (5, 5)
+  com ângulo 0,5, `verified`; o Tapir aceitou `angle`. Lote com "Nao Existe 123": o Bidê
+  `verified` e o outro `failed` com `{"code":-2130313113,"message":"Not found library part
+  with name 'Nao Existe 123'"}`. A prévia não confere se a peça existe (não há comando para
+  listar peças no Tapir 1.7.0 conhecido); o erro fica isolado no item.
