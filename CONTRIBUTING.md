@@ -1,5 +1,7 @@
 # Contributing
 
+AI coding agents: read [AGENTS.md](AGENTS.md) first.
+
 Issues and pull requests are welcome in English or Portuguese.
 
 ## Setup
