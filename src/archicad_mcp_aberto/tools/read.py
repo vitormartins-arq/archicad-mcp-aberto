@@ -159,6 +159,25 @@ async def get_element_details(
     result = await client.tapir(
         port, "GetDetailsOfElements", {"elements": elements, "fields": requested}
     )
+    if "floorPlanPolygons" in requested:
+        # Tapir 1.7.0 only reports polygons it finds inside a cut fill of the element's floor
+        # plan symbol, and leaves the key out otherwise. Say so instead of letting the
+        # missing key read as a failure.
+        rows = result.get("detailsOfElements", [])
+        missing = [
+            r
+            for r in rows
+            if isinstance(r, dict) and "error" not in r and "floorPlanPolygons" not in r
+        ]
+        for row in missing:
+            row["floorPlanPolygons"] = []
+        if missing:
+            result["note"] = (
+                f"{len(missing)} element(s) returned no floor plan polygons. Tapir only "
+                "returns the polygons of a cut fill (walls, slabs, columns and other "
+                "construction elements cut by the floor plan). An element with no cut fill "
+                "on this story, an empty fill or a type outside that list returns none."
+            )
     return {"port": port, "fields": requested, **result}
 
 

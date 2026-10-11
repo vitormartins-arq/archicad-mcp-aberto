@@ -21,7 +21,12 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 ## Pendências
 
 - `get_element_details` com `floorPlanPolygons` devolve só o tipo, sem polígonos, para
-  paredes. Investigar o formato da resposta do Tapir 1.7.0.
+  as paredes de 0,08 m do projeto CRM 005. Pelo código do Tapir 1.7.0
+  (`ElementCommands.cpp`, `AddFloorPlanPolygonsIfAvailable`), ele só devolve polígonos
+  que encontra dentro de um preenchimento de corte (`APIHatch_CutFills`) da planta, e
+  omite a chave quando não acha nenhum. O MCP agora devolve lista vazia com uma nota.
+  Falta descobrir por que essas paredes não têm preenchimento de corte (fill vazio,
+  plano de corte, exibição da planta) testando outros elementos.
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos

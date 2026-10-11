@@ -37,6 +37,7 @@ class FakeArchicad:
     stories: list[dict] = field(
         default_factory=lambda: [{"index": 0, "name": "Térreo", "level": 0.0}]
     )
+    cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
 
     def handle(self, body: dict) -> dict:
@@ -107,8 +108,9 @@ class FakeArchicad:
             for e in args["elements"]:
                 g = e["elementId"]["guid"]
                 row = {"type": self.elements.get(g, "Unknown")}
-                if "floorPlanPolygons" in args["fields"]:
-                    row["floorPlanPolygons"] = []
+                # Like Tapir 1.7.0: the key is only present when a cut fill was found.
+                if "floorPlanPolygons" in args["fields"] and g in self.cut_fills:
+                    row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
         return ok({"addOnCommandResponse": {"error": {"code": 1, "message": f"Unknown {name}"}}})
