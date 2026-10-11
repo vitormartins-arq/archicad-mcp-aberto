@@ -1,0 +1,104 @@
+import pytest
+
+from archicad_mcp_aberto.connection import ArchicadClient
+from archicad_mcp_aberto.server import create_server
+from archicad_mcp_aberto.tools import read
+from tests.unit.fake_archicad import FakeArchicad, fake_transport
+
+pytestmark = pytest.mark.anyio
+
+WALL = "11111111-1111-1111-1111-111111111111"
+SLAB = "22222222-2222-2222-2222-222222222222"
+PROP = "33333333-3333-3333-3333-333333333333"
+MISSING = "44444444-4444-4444-4444-444444444444"
+
+
+def model(**kw):
+    return FakeArchicad(
+        19723,
+        elements={WALL: "Wall", SLAB: "Slab"},
+        selection=[WALL],
+        properties={PROP: "Fabricante"},
+        **kw,
+    )
+
+
+def client(*instances):
+    return ArchicadClient(transport=fake_transport(*instances))
+
+
+async def test_discover_counts():
+    async with client(model()) as c:
+        result = await read.discover_archicad(c)
+    inst = result["instances"][0]
+    assert result["status"] == "connected"
+    assert (inst["element_count"], inst["selected_count"]) == (2, 1)
+
+
+async def test_discover_waiting():
+    async with client() as c:
+        assert (await read.discover_archicad(c))["status"] == "waiting_for_archicad"
+
+
+async def test_list_elements_by_type_and_page():
+    async with client(model()) as c:
+        walls = await read.list_elements(c, element_type="Wall")
+        page = await read.list_elements(c, offset=1, limit=1)
+    assert walls["total"] == 1
+    assert page["total"] == 2 and len(page["elements"]) == 1
+    with pytest.raises(ValueError):
+        async with client(model()) as c:
+            await read.list_elements(c, limit=501)
+
+
+async def test_selection_is_read_only():
+    fake = model()
+    async with client(fake) as c:
+        result = await read.get_selection(c)
+    assert result["elements"][0]["elementId"]["guid"] == WALL
+    assert not any("Select" in call and "Get" not in call for call in fake.calls)
+
+
+async def test_property_values_keep_per_item_errors():
+    async with client(model()) as c:
+        result = await read.get_properties(c, [WALL, MISSING], [PROP])
+    rows = result["propertyValuesForElements"]
+    assert "propertyValues" in rows[0] and "error" in rows[1]
+
+
+async def test_guid_validation():
+    async with client(model()) as c:
+        with pytest.raises(ValueError):
+            await read.get_properties(c, ["not-a-guid"], [PROP])
+        with pytest.raises(ValueError):
+            await read.get_properties(c, [WALL], [])
+
+
+async def test_details_skip_floor_plan_polygons_by_default():
+    async with client(model()) as c:
+        default = await read.get_element_details(c, [WALL])
+        heavy = await read.get_element_details(c, [WALL], fields=["type", "floorPlanPolygons"])
+        with pytest.raises(ValueError):
+            await read.get_element_details(c, [WALL], fields=["nope"])
+    assert "floorPlanPolygons" not in default["detailsOfElements"][0]
+    assert "floorPlanPolygons" in heavy["detailsOfElements"][0]
+
+
+async def test_tapir_status_per_instance():
+    async with client(model(), FakeArchicad(19724, tapir_version=None)) as c:
+        result = await read.tapir_status(c)
+    state = {i["port"]: i["tapir_loaded"] for i in result["instances"]}
+    assert state == {19723: True, 19724: False}
+
+
+async def test_stories_and_project():
+    async with client(model(project_name="Casa A")) as c:
+        assert (await read.get_project_info(c))["projectName"] == "Casa A"
+        assert (await read.get_stories(c))["stories"][0]["name"] == "Térreo"
+
+
+async def test_server_registers_nine_read_only_tools():
+    server = create_server(lambda: client(model()))
+    tools = await server.list_tools()
+    assert len(tools) == 9
+    assert all(t.annotations and t.annotations.readOnlyHint for t in tools)

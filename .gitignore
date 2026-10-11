@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+receipts/
+addon/devkit/
+addon/build/
