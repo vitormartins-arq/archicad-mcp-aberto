@@ -14,6 +14,16 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "create_zones": {
+        "zones": [
+            {
+                "outline": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 0, "y": 3}],
+                "name": "Room",
+                "number": "01",
+                "floor_index": 0,
+            }
+        ]
+    },
     "create_beams": {
         "beams": [
             {

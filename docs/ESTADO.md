@@ -187,3 +187,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - T9: CreateBeams confirmado em ExtendedElementCommands.cpp no commit 02691b5d. Vigas retas retangulares, cota absoluta e dimensão em metros; confirmação/recibos/timeout compartilhados; conferência BIM e seção. Fixture documental, não captura ao vivo; somente simulado. Detalhes Tapir limitados ao primeiro segmento; usar padrão básico de um segmento na validação futura.
 
 - T9: 586 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Branch empilhada em T8, PR com base main.
+
+- T10: CreateZones existe no Tapir do commit 02691b5d (ElementCreationCommands.cpp). Zonas manuais simples, nome/número/andar, mesma validação das lajes, preview/token/porta/recibos/timeout compartilhados e conferência BIM/contorno. Categoria/carimbo/base herdados. Fixture documental, não captura real; só simulado.
+
+- T10: 619 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T9, PR base main.

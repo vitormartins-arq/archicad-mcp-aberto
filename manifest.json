@@ -138,6 +138,10 @@
     {
       "name": "create_beams",
       "description": "Preview/create up to 20 straight rectangular beams in metres, with per-beam verification."
+    },
+    {
+      "name": "create_zones",
+      "description": "Preview/create up to 20 manually bounded polygon zones, verified per item."
     }
   ],
   "compatibility": {

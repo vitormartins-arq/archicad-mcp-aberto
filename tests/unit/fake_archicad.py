@@ -84,6 +84,7 @@ class FakeArchicad:
     building_materials: dict[str, dict] = field(default_factory=dict)
     layers: dict[int, str | None] = field(default_factory=lambda: {1: "Walls"})
     lose_slab_response: bool = False
+    lose_zone_response: bool = False
     lose_beam_response: bool = False
     lose_column_response: bool = False
     lose_object_response: bool = False
@@ -324,6 +325,31 @@ class FakeArchicad:
                         store[g] = row
                 out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "CreateZones":
+            # Tapir CreateZones source-confirmed at 02691b5d; not a live capture.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_create_zones_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = []
+            for index, zone in enumerate(args["zonesData"]):
+                if index in self.create_errors:
+                    rows.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Zone"
+                row = deepcopy(fixture["details"])
+                row["floorIndex"] = zone["floorIndex"]
+                points = deepcopy(zone["geometry"]["polygonCoordinates"])
+                row["details"].update(
+                    name=zone["name"],
+                    numberStr=zone["numberStr"],
+                    polygonOutline=points + [deepcopy(points[0])],
+                )
+                self.details[guid] = row
+                rows.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": rows}})
         if name == "CreateBeams":
             # Source-confirmed at 02691b5d; synthetic fixture, not live captured.
             fixture = json.loads(
@@ -491,6 +517,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_object_response and command == "CreateObjects":
             raise httpx.ReadTimeout(
                 "Injected lost object response after model change", request=request
+            )
+        if instance.lose_zone_response and command == "CreateZones":
+            raise httpx.ReadTimeout(
+                "Injected lost zone response after model change", request=request
             )
         if instance.lose_beam_response and command == "CreateBeams":
             raise httpx.ReadTimeout(

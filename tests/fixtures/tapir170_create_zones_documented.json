@@ -1,0 +1,48 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCreationCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json"
+    ],
+    "note": "Synthetic CreateZones and GetDetailsOfElements format from official source; not live captured."
+  },
+  "details": {
+    "type": "Zone",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "name": "Room",
+      "numberStr": "01",
+      "isManual": true,
+      "polygonOutline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 4,
+          "y": 0
+        },
+        {
+          "x": 4,
+          "y": 3
+        },
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "polygonArcs": [],
+      "holes": []
+    }
+  },
+  "error": {
+    "error": {
+      "code": -1,
+      "message": "Failed to create new Zone"
+    }
+  }
+}
