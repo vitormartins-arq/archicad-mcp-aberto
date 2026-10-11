@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Credit Vitor Martins as the project's creator in LICENSE, README, LEIA-ME, pyproject and
+  the .mcpb manifest. The license stays MIT.
+
 - Add `create_objects`: up to 20 library part objects by exact name, plan position, story,
   absolute base level and angle (radians), through Tapir `CreateObjects`. Size stays the
   library part's default. A name Archicad cannot find fails only that object. Applying

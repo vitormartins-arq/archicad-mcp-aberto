@@ -3,6 +3,9 @@
 Servidor [MCP](https://modelcontextprotocol.io) aberto que deixa assistentes de IA
 (Claude, Codex, Cursor e outros) trabalharem com o ArchiCAD aberto: lê o modelo e permite simular ou criar paredes retas simples com segurança.
 
+Criado e mantido por [Vitor Martins](https://github.com/vitormartins-arq), arquiteto, com
+contribuições da comunidade.
+
 > Não é produto oficial da Graphisoft e não tem vínculo com a Graphisoft ou a Nemetschek.
 > Archicad é marca registrada da Graphisoft SE.
 
@@ -66,3 +69,7 @@ anteriormente. Testes ao vivo, Undo e edição de paredes ficam para outra etapa
 
 Veja [CONTRIBUTING.md](../CONTRIBUTING.md). Não precisa ter ArchiCAD: os testes
 unitários rodam contra um ArchiCAD simulado. Issues e PRs em português ou inglês.
+
+## Licença
+
+[MIT](../LICENSE) © 2026 Vitor Martins e colaboradores do archicad-mcp-aberto.

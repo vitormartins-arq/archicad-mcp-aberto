@@ -228,7 +228,8 @@ unit tests run against a simulated Archicad.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Created by [Vitor Martins](https://github.com/vitormartins-arq), an architect in Brazil,
+and open to everyone's contributions.
 
 - Exact floor-plan polygon duplicates within each element are removed (same vertex order, 1e-9 m tolerance); `notes` reports the removed count. Different polygons are preserved.
 
