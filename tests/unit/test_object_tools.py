@@ -98,15 +98,21 @@ async def test_library_name_match_ignores_case():
     assert result["items"][0]["status"] == "verified"
 
 
-async def test_unknown_library_part_fails_only_that_item():
+async def test_unknown_library_part_refused_in_dry_run():
     fake = FakeArchicad(19723)
     async with client(fake) as c:
-        result = await apply(c, [obj(), obj(library_part_name="Não Existe"), obj(angle=1.0)])
-    statuses = [item["status"] for item in result["items"]]
-    assert statuses == ["verified", "failed", "verified"]
-    assert "Não Existe" in result["items"][1]["error"]["message"]
+        with pytest.raises(ValueError, match="name not in loaded"):
+            await write.create_objects(c, [obj(), obj(library_part_name="Não Existe")], 19723)
+    assert "CreateObjects" not in fake.tapir_calls
+    assert not fake.elements
+
+
+async def test_native_failure_still_isolated_per_item():
+    fake = FakeArchicad(19723, create_errors={1: {"error": {"code": -1, "message": "Refused"}}})
+    async with client(fake) as c:
+        result = await apply(c, [obj(), obj(angle=0.5), obj(angle=1.0)])
+    assert [item["status"] for item in result["items"]] == ["verified", "failed", "verified"]
     assert result["status"] == "needs_review"
-    assert list(fake.elements.values()) == ["Object", "Object"]
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,25 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "introduced_version": "1.5.0",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/LibraryCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/AddOnMain.cpp"
+    ],
+    "note": "GetAvailableLibraryParts format from official pinned source, synthetic values, not live capture."
+  },
+  "response": {
+    "libraryParts": [
+      {
+        "guid": "33333333-3333-3333-3333-333333333333",
+        "index": 1,
+        "documentName": "Mesa Retangular 30",
+        "fileName": "Mesa Retangular 30.gsm",
+        "typeId": "Object"
+      }
+    ],
+    "skippedCount": 0,
+    "skippedSample": []
+  }
+}

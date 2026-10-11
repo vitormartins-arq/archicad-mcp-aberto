@@ -117,7 +117,7 @@
     },
     {
       "name": "create_objects",
-      "description": "Preview or apply library part objects by name."
+      "description": "Preview or apply library part objects by name. Refuses unknown library names in dry run."
     },
     {
       "name": "move_elements",
@@ -142,6 +142,10 @@
     {
       "name": "create_zones",
       "description": "Preview/create up to 20 manually bounded polygon zones, verified per item."
+    },
+    {
+      "name": "list_library_parts",
+      "description": "Read available library part names/GUIDs/types with filtering and pagination."
     }
   ],
   "compatibility": {

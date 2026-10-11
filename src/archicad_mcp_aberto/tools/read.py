@@ -252,6 +252,7 @@ async def get_bounding_boxes(
 __all__ = [
     "discover_archicad",
     "find_elements",
+    "list_library_parts",
     "get_element_details",
     "get_bounding_boxes",
     "get_project_info",
@@ -380,4 +381,59 @@ async def find_elements(
         "offset": offset,
         "elements": elements[offset : offset + limit],
         "errors": errors,
+    }
+
+
+async def _library_inventory(client: ArchicadClient, port: int) -> dict:
+    result = await client.tapir(port, "GetAvailableLibraryParts")
+    rows, skipped = result.get("libraryParts"), result.get("skippedCount")
+    if (
+        not isinstance(rows, list)
+        or not isinstance(skipped, int)
+        or isinstance(skipped, bool)
+        or skipped < 0
+    ):
+        raise ValueError("Unexpected library inventory response.")
+    for row in rows:
+        if not isinstance(row, dict) or not all(
+            isinstance(row.get(key), str) for key in ("guid", "documentName", "fileName", "typeId")
+        ):
+            raise ValueError("Unexpected library part response.")
+        UUID(row["guid"])
+        if not isinstance(row.get("index"), int) or isinstance(row["index"], bool):
+            raise ValueError("Unexpected library part index.")
+    return result
+
+
+async def list_library_parts(
+    client: ArchicadClient,
+    port: int | None = None,
+    name_contains: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """List available library parts (GUID/index/name/type), with up to 500 per page.
+
+    Tapir GetAvailableLibraryParts; case-insensitive substring of the display name.
+    skippedCount/partial describe unreadable entries: this may be a partial inventory.
+    No model changes. GetLibraries lists library containers, not individual parts.
+    """
+    page_args(offset, limit, 500)
+    if name_contains is not None and not isinstance(name_contains, str):
+        raise ValueError("name_contains must be a string.")
+    port = await resolve_port(client, port)
+    response = await _library_inventory(client, port)
+    parts = [
+        {**row, "name": row["documentName"] or row["fileName"]} for row in response["libraryParts"]
+    ]
+    if name_contains is not None:
+        parts = [p for p in parts if name_contains.casefold() in p["name"].casefold()]
+    return {
+        "port": port,
+        "total": len(parts),
+        "offset": offset,
+        "libraryParts": parts[offset : offset + limit],
+        "partial": response["skippedCount"] > 0,
+        "skippedCount": response["skippedCount"],
+        "skippedSample": response.get("skippedSample", []),
     }

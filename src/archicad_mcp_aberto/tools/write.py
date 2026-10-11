@@ -25,7 +25,7 @@ from weakref import WeakKeyDictionary
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, resolve_port
-from archicad_mcp_aberto.tools.read import element_ids, get_bounding_boxes
+from archicad_mcp_aberto.tools.read import _library_inventory, element_ids, get_bounding_boxes
 
 Positive = Annotated[float, Field(gt=0)]
 MAX_WALLS = 20
@@ -337,6 +337,23 @@ async def _plan(
     )
     if zone:
         kind = "Zone"
+    library_parts = {}
+    if obj:
+        inventory = await _library_inventory(client, port)
+        for row in inventory["libraryParts"]:
+            if row["typeId"] == "Object":
+                library_parts.setdefault(row["documentName"].casefold(), []).append(row)
+        for wall in walls:
+            candidates = library_parts.get(wall.library_part_name.casefold(), [])
+            if not candidates:
+                reason = (
+                    "inventory is partial; cannot confirm name"
+                    if inventory["skippedCount"]
+                    else "name not in loaded Object library parts"
+                )
+                raise ValueError(f"Library part {wall.library_part_name!r}: {reason}.")
+            if len({row["guid"].upper() for row in candidates}) != 1:
+                raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
@@ -361,7 +378,12 @@ async def _plan(
             if zone
             else _create_payload(wall)
         )
-        items.append({"index": index, "status": "ready", "parameters": payload})
+        item = {"index": index, "status": "ready", "parameters": payload}
+        if obj:
+            item["library_part_guid"] = library_parts[wall.library_part_name.casefold()][0][
+                "guid"
+            ].upper()
+        items.append(item)
     return {"operation": operation, "target": target, "items": items}
 
 

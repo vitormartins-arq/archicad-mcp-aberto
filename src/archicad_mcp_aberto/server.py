@@ -296,6 +296,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await write.create_zones(client_of(ctx), zones, port, dry_run, confirmation_token)
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_library_parts(
+        ctx: Context,
+        port: int | None = None,
+        name_contains: str | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> dict:
+        """List available library part names/GUIDs/types. Requires Tapir; no model changes.
+        Pages up to 500; optional name substring and partial-inventory diagnostics.
+        """
+        return await read.list_library_parts(client_of(ctx), port, name_contains, offset, limit)
+
     return mcp
 
 
