@@ -116,6 +116,10 @@
       "description": "Preview or apply rectangular or circular columns."
     },
     {
+      "name": "create_objects",
+      "description": "Preview or apply library part objects by name."
+    },
+    {
       "name": "move_elements",
       "description": "Preview or apply moving elements by a vector."
     },

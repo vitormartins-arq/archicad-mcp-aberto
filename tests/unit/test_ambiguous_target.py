@@ -18,6 +18,16 @@ INPUTS = {
         "changes": [{"element_guid": GUID, "property_guid": PROP, "value": "novo"}]
     },
     "move_elements": {"moves": [{"guid": GUID, "vector": {"x": 1, "y": 0}}]},
+    "create_objects": {
+        "objects": [
+            {
+                "library_part_name": "Mesa Retangular 30",
+                "origin": {"x": 1, "y": 2},
+                "floor_index": 0,
+                "base_level": 0,
+            }
+        ]
+    },
     "get_bounding_boxes": {"element_ids": [GUID]},
     "create_columns": {
         "columns": [

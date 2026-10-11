@@ -129,7 +129,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Desempacotado e rodado com `uv run --directory`, o servidor respondeu `initialize` e
   listou as 14 ferramentas (Linux, sem ArchiCAD). Workflow `release.yml` numa tag `v*`
   gera wheel, sdist e `.mcpb` num release em rascunho. Falta instalar no Claude Desktop do
-  Vitor (Windows) e testar com o ArchiCAD aberto. O Codex ficou sem créditos em 11/10/2026
+  Vitor (Windows) e testar com o ArchiCAD aberto. Instalado em 11/10/2026 no Claude Desktop
+  do Vitor (Windows, "Todos os requisitos atendidos"); `discover_archicad` pela extensão
+  listou 19723 (sem nome) e 19724 (CRM 005), ArchiCAD 30 build 3001 BRA, Tapir 1.7.0. O Codex ficou sem créditos em 11/10/2026
   depois da T1; Claude segue a fila.
 
 - **Claude / mover elementos (T2):** branch `feat/move-elements`, empilhada sobre
@@ -151,3 +153,14 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   mostrou que o `GetDetailsOfProperties` real põe o GUID em `propertyId.guid`: o nome não
   aparecia na prévia e a recusa de propriedade só leitura não disparava. Corrigido, e o
   fake passou a usar o formato real. "Fabricante" e "Modelo" vieram `notAvailable`.
+
+- **Claude / objetos (T4):** branch `feat/create-objects`, empilhada sobre
+  `feat/set-property-values`. `create_objects` pelo `CreateObjects` do Tapir: nome exato da
+  peça de biblioteca, x/y, andar, cota absoluta da base e ângulo; tamanho padrão da peça.
+  Nome inexistente falha só aquele item. Conferência: tipo, andar, origem 3D, ângulo e nome
+  da peça. 480 testes simulados passaram. Teste ao vivo em 11/10/2026 (ArchiCAD 30 build
+  3001 BRA, Tapir 1.7.0, projeto sem nome na porta 19723, não salvo): peça "Bidê" em (5, 5)
+  com ângulo 0,5, `verified`; o Tapir aceitou `angle`. Lote com "Nao Existe 123": o Bidê
+  `verified` e o outro `failed` com `{"code":-2130313113,"message":"Not found library part
+  with name 'Nao Existe 123'"}`. A prévia não confere se a peça existe (não há comando para
+  listar peças no Tapir 1.7.0 conhecido); o erro fica isolado no item.

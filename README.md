@@ -44,6 +44,7 @@ Phase 1 foundation, pre-alpha. Nine **read-only** tools plus safe wall creation:
 | `create_walls` | Preview or apply up to 20 straight Basic walls, with per-wall receipts | yes |
 | `create_slabs` | Preview or apply up to 20 simple polygon slabs | yes |
 | `create_columns` | Preview or apply up to 20 rectangular or circular columns | yes |
+| `create_objects` | Preview or apply up to 20 library part objects by name, position and angle | yes |
 | `move_elements` | Preview or apply moving up to 50 elements by a vector, box-checked | yes |
 | `set_property_values` | Preview or apply up to 100 scalar property values, read back | no |
 

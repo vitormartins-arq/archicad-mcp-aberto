@@ -8,6 +8,7 @@ real machine.
 from __future__ import annotations
 
 import json
+import math
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -83,6 +84,9 @@ class FakeArchicad:
     building_materials: dict[str, dict] = field(default_factory=dict)
     lose_slab_response: bool = False
     lose_column_response: bool = False
+    lose_object_response: bool = False
+    # Library part names CreateObjects can find; any other name fails that item.
+    library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
     lose_move_response: bool = False
     move_errors: dict[int, dict] = field(default_factory=dict)
     move_ignored: bool = False  # report success without moving (verification test)
@@ -297,6 +301,34 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateObjects":
+            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0.
+            out = []
+            for index, obj in enumerate(args["objectsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                lookup = {n.casefold(): n for n in self.library_parts}
+                found = lookup.get(obj["libraryPartName"].casefold())
+                if found is None:
+                    message = f"Not found library part with name '{obj['libraryPartName']}'"
+                    out.append({"error": {"code": -2130313113, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Object"
+                self.details[guid] = {
+                    "type": "Object",
+                    "floorIndex": obj["floorIndex"],
+                    "layerIndex": 1,
+                    "details": {
+                        "libPart": {"name": found},
+                        "origin": deepcopy(obj["coordinates"]),
+                        "dimensions": {"x": 1.2, "y": 0.8, "z": 0.75},
+                        "angle": obj.get("angle", 0.0) % math.tau,
+                    },
+                }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -371,6 +403,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_move_response and command == "MoveElements":
             raise httpx.ReadTimeout(
                 "Injected lost move response after model change", request=request
+            )
+        if instance.lose_object_response and command == "CreateObjects":
+            raise httpx.ReadTimeout(
+                "Injected lost object response after model change", request=request
             )
         if instance.lose_column_response and command == "CreateColumns":
             raise httpx.ReadTimeout(
