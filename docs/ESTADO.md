@@ -172,3 +172,10 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - T7: delete_elements sobre T6; somente projeto sem título, recusa hotlink/bloqueado/inexistente, preview tipo/andar/camada e verificação de ausência. Correção da fila: API.DeleteElements não consta no wrapper JSON oficial; usado DeleteElements do Tapir 1.7.0, com FilterElements(IsEditable). Fixture documental/fonte, não captura real. Sem salvar/desbloquear/repetir automaticamente; só simulado.
 
 - T7: 540 testes simulados e Ruff passaram em Windows/Python 3.12.10, incluindo nova checagem de projeto logo antes da exclusão, erros parciais, timeout e exclusão ignorada. Nenhuma chamada real. PR empilhado em T6, ambos com base main; Codex não faz merge.
+
+- **Claude / teste ao vivo de `delete_elements` (#21), 11/10/2026:** ArchiCAD 30 build 3001
+  BRA, Tapir 1.7.0, projeto sem nome na porta 19723, não salvo, com ok do Vitor. Apagados só
+  os dois Bidês criados pelo teste de `create_objects` (033EC36F, 3A45EDBB): `verified`,
+  resposta `{"executionResults":[{"success":true},{"success":true}]}`, igual ao fake. O Bidê
+  original do Vitor ficou. A prévia mostra andar e camada só por índice; mostrar os nomes
+  fica como melhoria.
