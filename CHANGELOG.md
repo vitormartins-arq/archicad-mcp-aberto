@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `create_walls`: dry-run by default, single-use reviewed plans, local per-wall
+  receipts, native per-element errors and geometry verification after creation.
+  This initial scope covers straight Basic walls and is tested against the simulated Archicad.
 - `get_element_details` returns `floorPlanPolygons: []` and a note when Tapir finds no cut
   fill for an element, instead of silently leaving the key out.
 

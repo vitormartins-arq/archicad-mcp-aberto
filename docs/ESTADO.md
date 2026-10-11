@@ -3,7 +3,7 @@
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
-**Última atualização:** 11/10/2026, Claude.
+**Última atualização:** 11/10/2026, Codex (Fase 1; notas de leitura preservadas).
 
 ## Feito
 
@@ -46,3 +46,12 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 2. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
    simulação por padrão, recibo de cada escrita, erro por elemento e conferência depois
    de aplicar. Começar por paredes. Testar Undo de verdade.
+
+## Quem está com o quê
+
+- **Claude:** testes ao vivo no ArchiCAD. Agora: pendência do `floorPlanPolygons` (PR #3)
+  e teste ao vivo do `create_walls` no projeto sem nome (P-007 das lições).
+- **Codex:** código só contra o ArchiCAD simulado. Fase 1 entregue no PR #4 (merge em
+  11/10/2026). Próxima entrega: `create_slabs`, mesmo padrão do `create_walls`, branch
+  `feat/create-slabs`.
+- Um não mexe na branch do outro. Merge sempre pelo Vitor.

@@ -1,0 +1,81 @@
+{
+  "environment": {
+    "archicad_version": 30,
+    "build": 3001,
+    "language": "BRA",
+    "os": "Windows",
+    "tapir": "1.7.0",
+    "captured": "2026-10-11",
+    "project": "Unsaved test project, port explicitly selected",
+    "note": "Copied from live responses. Element and attribute GUIDs are replaced with stable test UUIDs. These existing captures are reused here; this branch is tested only against the fake Archicad."
+  },
+  "wall_details": {
+    "type": "Wall",
+    "floorIndex": 0,
+    "layerIndex": 22,
+    "details": {
+      "geometryType": "Straight",
+      "arcAngle": 0,
+      "structureType": "Basic",
+      "zCoordinate": 0,
+      "begCoordinate": {
+        "x": 0,
+        "y": 15
+      },
+      "endCoordinate": {
+        "x": 4,
+        "y": 15
+      },
+      "height": 3,
+      "bottomOffset": 0,
+      "offset": 0,
+      "flipped": false,
+      "begThickness": 0.18,
+      "endThickness": 0.18,
+      "buildingMaterialId": {
+        "guid": "66666666-6666-6666-6666-666666666666"
+      },
+      "referenceLineLocation": "Center",
+      "profileType": "Normal",
+      "slantAlpha": 1.570796327,
+      "slantBeta": 1.570796327,
+      "topOffset": 0,
+      "relativeTopStory": 0,
+      "zoneRel": "Boundary",
+      "visibility": {
+        "showOnHome": true,
+        "showAllAbove": false,
+        "showAllBelow": false,
+        "showRelAbove": 0,
+        "showRelBelow": 0
+      },
+      "isAutoOnStoryVisibility": false,
+      "referenceMaterial": {
+        "overridden": false
+      },
+      "oppositeMaterial": {
+        "overridden": false
+      },
+      "sideMaterial": {
+        "overridden": false
+      },
+      "cutFillPen": {
+        "overridden": false
+      },
+      "cutFillBackgroundPen": {
+        "overridden": false
+      }
+    }
+  },
+  "create_success": {
+    "elementId": {
+      "guid": "55555555-5555-5555-5555-555555555555"
+    }
+  },
+  "create_error": {
+    "error": {
+      "code": -2130313112,
+      "message": "Zero-length wall: 'begCoordinate' and 'endCoordinate' are identical."
+    }
+  }
+}
