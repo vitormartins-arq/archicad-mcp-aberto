@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_slabs`: simple polygons, absolute project level, dry-run default,
+  single-use confirmation, per-slab receipts/errors and geometry verification.
+  Tapir 1.7.0 fixture derived from documentation/source; simulated tests only.
+
 - Add `create_walls`: dry-run by default, single-use reviewed plans, local per-wall
   receipts, native per-element errors and geometry verification after creation.
   This initial scope covers straight Basic walls and is tested against the simulated Archicad.
