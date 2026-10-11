@@ -38,7 +38,10 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   63022645, D83685A3, 91EF50D5). Desligar a sobreposição não mudou nada. Então nem o
   material nem a sobreposição explicam essas 5. Causa ainda aberta; próximo passo é ver na
   planta onde ficam essas 5 paredes (junções, sobreposição com pilares).
-- Testar com duas instâncias abertas (recusa de destino ambíguo).
+- P-005: recusa de destino ambíguo coberta no simulado, branch `feat/ambiguous-target`.
+  Todas as ferramentas com `port` recusam duas instâncias sem destino explícito.
+  Descoberta e estado do Tapir listam ambas; aplicação exige porta explícita.
+  Nenhum teste ao vivo nesta entrega.
 - `create_walls` testado ao vivo em 11/10/2026 (AC30 build 3001 BRA, Tapir 1.7.0, projeto
   sem título, sem salvar): simulação, aplicação de 2 paredes em L com status "verified" e
   recusa do token reaplicado passaram. Undo ainda não testado.
@@ -52,9 +55,30 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
 ## Quem está com o quê
 
-- **Claude:** testes ao vivo no ArchiCAD. Agora: pendência do `floorPlanPolygons` (PR #3)
+- **Fase 1: Codex**, branch `feat/create-slabs`, PR para `main` (merge pelo Vitor).
+  `create_walls` na main (PR #4). Entrega atual: `create_slabs`, contorno simples
+  em metros, andar, espessura e nível absoluto no projeto; sem furos/arcos.
+  Dry run por padrão, token de uso único, recibo por laje, erro por elemento
+  e conferência do contorno, espessura, andar e níveis após aplicar.
+- `tools/read.py` e `fix/floor-plan-polygons-note` ficam fora desta entrega.
+- Fixture derivada da documentação/código-fonte oficial do Tapir 1.7.0,
+  com commit e URLs registrados; **não é captura ao vivo**.
+- Validação: apenas ArchiCAD simulado; nenhuma chamada ao ArchiCAD real.
+  `uv run pytest`: 120 testes passaram em Python 3.12.10/Windows.
+  `uv run ruff check .`: passou. Aguardar revisão e merge pelo Vitor.
+- Próxima etapa: revisão do PR; edição em entrega separada.
+  Validação ao vivo de lajes, padrões herdados e Undo permanece pendente,
+  em etapa autorizada num projeto de teste.
+- **Claude:** testes ao vivo no ArchiCAD. Agora: pendência do `floorPlanPolygons` (PR #3 integrado)
   e Undo do `create_walls` (o teste ao vivo passou).
 - **Codex:** código só contra o ArchiCAD simulado. Fase 1 entregue no PR #4 (merge em
-  11/10/2026). Próxima entrega: `create_slabs`, mesmo padrão do `create_walls`, branch
-  `feat/create-slabs`.
+  11/10/2026). `create_slabs` entregue no PR #5, branch `feat/create-slabs`;
+  main integrada por merge, preservando `cut_fills` e as notas do PR #3.
 - Um não mexe na branch do outro. Merge sempre pelo Vitor.
+
+- **Codex / P-005:** branch `feat/ambiguous-target`, criada da main com PR #3 integrado,
+  independente do PR #5. Apenas testes simulados e esta nota; implementação intacta.
+  78 casos novos; `uv run pytest`: 144 passaram em Windows/Python 3.12.10.
+  `uv run ruff check .`: passou. Merge pelo Vitor.
+- **PR #5:** main integrada por merge (sem rebase), `cut_fills` preservado junto
+  com `CreateSlabs`; 120 testes locais passaram e CI verde nas seis combinações.

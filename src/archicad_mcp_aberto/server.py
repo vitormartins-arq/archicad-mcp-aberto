@@ -12,7 +12,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import attributes, read, write
 
 INSTRUCTIONS = """\
-Archicad MCP (read tools and safe wall creation).
+Archicad MCP (read tools and safe wall and slab creation).
 - Call discover_archicad first. It lists open instances with port, version, Tapir state
   and project name.
 - With several instances open, ask the user which project to use and pass its port.
@@ -21,7 +21,7 @@ Archicad MCP (read tools and safe wall creation).
 - "busy" (error 4001) means Archicad is in user input. Ask the user to finish, then retry.
   It does not mean an add-on is missing.
 - Tools that say "requires Tapir" need the free Tapir add-on loaded (see tapir_status).
-- Wall writes dry-run by default. Show the plan to the user before applying, then
+- Wall and slab writes dry-run by default. Show the plan to the user before applying, then
   repeat the same inputs with dry_run=false, the explicit port and confirmation_token.
   Tokens expire after ten minutes, work only in this session and can be consumed once.
 - Receipts are local. No tool saves the Archicad project. After any unknown outcome,
@@ -141,6 +141,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """List material GUID/index/name and cut-fill index/foreground/background pens.
         Requires Tapir 1.7.0. Optional GUID filter; changes nothing."""
         return await attributes.list_building_materials(client_of(ctx), port, attribute_guids)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_slabs(
+        ctx: Context,
+        slabs: list[write.SlabCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 simple polygon slabs. Metres; level is absolute project Z.
+        Requires Tapir. Straight edges, no holes, top reference plane; layer/material
+        inherit defaults. Review before applying identical inputs with dry_run=false,
+        explicit port and single-use confirmation_token. Verifies each slab and returns
+        local receipts. Never saves the project."""
+        return await write.create_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
 
     return mcp
 

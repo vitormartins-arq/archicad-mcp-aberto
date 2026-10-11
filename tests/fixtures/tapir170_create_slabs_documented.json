@@ -1,0 +1,89 @@
+{
+  "provenance": {
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "live_capture": false,
+    "note": "Synthetic examples derived from official documentation/source, not a live Archicad capture.",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCreationCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/CommandBase.cpp"
+    ]
+  },
+  "create_request": {
+    "slabsData": [
+      {
+        "polygonCoordinates": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 4,
+            "y": 0
+          },
+          {
+            "x": 4,
+            "y": 3
+          },
+          {
+            "x": 0,
+            "y": 3
+          }
+        ],
+        "floorIndex": 0,
+        "thickness": 0.2,
+        "level": 0.0,
+        "referencePlaneLocation": "Top",
+        "polygonArcs": [],
+        "holes": []
+      }
+    ]
+  },
+  "slab_details": {
+    "type": "Slab",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "structureType": "Basic",
+      "thickness": 0.2,
+      "level": 0.0,
+      "zCoordinate": 0.0,
+      "referencePlaneLocation": "Top",
+      "polygonOutline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 4,
+          "y": 0
+        },
+        {
+          "x": 4,
+          "y": 3
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "holes": []
+    }
+  },
+  "create_success": {
+    "elementId": {
+      "guid": "66666666-6666-6666-6666-666666666666"
+    }
+  },
+  "create_error": {
+    "error": {
+      "code": -1,
+      "message": "Failed to create new Slab"
+    }
+  }
+}
