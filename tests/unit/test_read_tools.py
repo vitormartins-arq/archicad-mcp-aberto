@@ -88,7 +88,16 @@ async def test_details_skip_floor_plan_polygons_by_default():
         with pytest.raises(ValueError):
             await read.get_element_details(c, [WALL], fields=["nope"])
     assert "floorPlanPolygons" not in default["detailsOfElements"][0]
-    assert "floorPlanPolygons" in heavy["detailsOfElements"][0]
+    assert heavy["detailsOfElements"][0]["floorPlanPolygons"] == []
+    assert "no floor plan polygons" in heavy["note"]
+
+
+async def test_floor_plan_polygons_pass_through():
+    square = [{"coordinates": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 0.1}]}]
+    async with client(model(cut_fills={WALL: square})) as c:
+        result = await read.get_element_details(c, [WALL], fields=["floorPlanPolygons"])
+    assert result["detailsOfElements"][0]["floorPlanPolygons"] == square
+    assert "note" not in result
 
 
 async def test_tapir_status_per_instance():

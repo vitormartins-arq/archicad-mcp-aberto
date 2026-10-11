@@ -49,6 +49,7 @@ class FakeArchicad:
     details: dict[str, dict] = field(default_factory=dict)
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
+    cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
@@ -124,8 +125,9 @@ class FakeArchicad:
                 g = e["elementId"]["guid"]
                 full = self.details.get(g, {"type": self.elements.get(g, "Unknown")})
                 row = {key: deepcopy(value) for key, value in full.items() if key in args["fields"]}
-                if "floorPlanPolygons" in args["fields"]:
-                    row["floorPlanPolygons"] = []
+                # Like Tapir 1.7.0: the key is only present when a cut fill was found.
+                if "floorPlanPolygons" in args["fields"] and g in self.cut_fills:
+                    row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
         if name == "CreateWalls":

@@ -21,8 +21,27 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 ## Pendências
 
 - `get_element_details` com `floorPlanPolygons` devolve só o tipo, sem polígonos, para
-  paredes. Investigar o formato da resposta do Tapir 1.7.0.
+  as paredes de 0,08 m do projeto CRM 005. Pelo código do Tapir 1.7.0
+  (`ElementCommands.cpp`, `AddFloorPlanPolygonsIfAvailable`), ele só devolve polígonos
+  que encontra dentro de um preenchimento de corte (`APIHatch_CutFills`) da planta, e
+  omite a chave quando não acha nenhum. O MCP agora devolve lista vazia com uma nota.
+  Releitura em 11/10/2026 com a planta 0. ANDAR aberta (AC30 build 3001 BRA, Tapir
+  1.7.0, só leitura): das 10 paredes lidas, 5 vieram com polígonos (uma com 4 polígonos,
+  uma com 2) e 5 sem, de espessuras variadas (0,08, 0,15 e 0,34 m). Na tela todas têm
+  corte preto sólido.
+  Teste em projeto sem título, sem salvar (11/10/2026): 5 paredes de 0,20 m (solta, em L,
+  em sequência reta). Com o material padrão, que não mostra preenchimento de corte, nenhuma
+  devolveu polígono. Com "Concreto - Estrutural", todas devolveram, cada uma com o seu (no
+  L, o canto fica com uma parede, em 2 triângulos).
+  Releitura do CRM 005 com a sobreposição gráfica desligada: 13 paredes Basic, todas com o
+  mesmo material e corte cinza visível na tela. 8 têm polígono e 5 não (F426B8A1, D3ED1C3F,
+  63022645, D83685A3, 91EF50D5). Desligar a sobreposição não mudou nada. Então nem o
+  material nem a sobreposição explicam essas 5. Causa ainda aberta; próximo passo é ver na
+  planta onde ficam essas 5 paredes (junções, sobreposição com pilares).
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
+- `create_walls` testado ao vivo em 11/10/2026 (AC30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem título, sem salvar): simulação, aplicação de 2 paredes em L com status "verified" e
+  recusa do token reaplicado passaram. Undo ainda não testado.
 
 ## Próximos passos
 
@@ -33,12 +52,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
 ## Quem está com o quê
 
-- **Fase 1: Codex**, branch `feat/create-walls`, PR para `main` (merge pelo Vitor).
-  Escopo desta entrega: somente `create_walls`, simulação por padrão, plano de revisão,
-  recibo por parede, erro por elemento e conferência após aplicar.
-- `tools/read.py` e `fix/floor-plan-polygons-note` ficam fora desta entrega.
-- Validação desta etapa: apenas ArchiCAD simulado; nenhuma chamada nova ao ArchiCAD real.
-  `uv run pytest`: 65 testes passaram em Python 3.12.10/Windows.
-  `uv run ruff check .`: passou. Aguardar revisão e merge do PR pelo Vitor.
-- Próximo passo da Fase 1: revisão deste PR; edição de paredes em entrega separada.
-  Testes ao vivo e Undo precisam de uma nova etapa autorizada em projeto de teste.
+- **Claude:** testes ao vivo no ArchiCAD. Agora: pendência do `floorPlanPolygons` (PR #3)
+  e Undo do `create_walls` (o teste ao vivo passou).
+- **Codex:** código só contra o ArchiCAD simulado. Fase 1 entregue no PR #4 (merge em
+  11/10/2026). Próxima entrega: `create_slabs`, mesmo padrão do `create_walls`, branch
+  `feat/create-slabs`.
+- Um não mexe na branch do outro. Merge sempre pelo Vitor.
