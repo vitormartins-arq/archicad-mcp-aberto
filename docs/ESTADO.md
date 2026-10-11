@@ -25,8 +25,12 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   (`ElementCommands.cpp`, `AddFloorPlanPolygonsIfAvailable`), ele só devolve polígonos
   que encontra dentro de um preenchimento de corte (`APIHatch_CutFills`) da planta, e
   omite a chave quando não acha nenhum. O MCP agora devolve lista vazia com uma nota.
-  Falta descobrir por que essas paredes não têm preenchimento de corte (fill vazio,
-  plano de corte, exibição da planta) testando outros elementos.
+  Releitura em 11/10/2026 com a planta 0. ANDAR aberta (AC30 build 3001 BRA, Tapir
+  1.7.0, só leitura): das 10 paredes lidas, 5 vieram com polígonos (uma com 4 polígonos,
+  uma com 2) e 5 sem, de espessuras variadas (0,08, 0,15 e 0,34 m). Na tela todas têm
+  corte preto sólido. Hipótese não confirmada: nas junções o Archicad funde os
+  preenchimentos de corte, e o Tapir entrega o polígono fundido a uma parede só.
+  Próximo teste: projeto de teste com uma parede solta e duas paredes unidas.
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos
