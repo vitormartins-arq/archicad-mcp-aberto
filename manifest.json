@@ -130,6 +130,10 @@
     {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
+    },
+    {
+      "name": "delete_elements",
+      "description": "Preview and delete editable elements only in untitled test projects; never saves."
     }
   ],
   "compatibility": {

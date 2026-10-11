@@ -14,6 +14,7 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "delete_elements": {"element_guids": [GUID]},
     "find_elements": {},
     "set_property_values": {
         "changes": [{"element_guid": GUID, "property_guid": PROP, "value": "novo"}]
@@ -149,6 +150,10 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
+    if name == "delete_elements":
+        for instance in (first, second):
+            instance.project_name = ""
+            instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     selected, untouched = (first, second) if port == 19723 else (second, first)

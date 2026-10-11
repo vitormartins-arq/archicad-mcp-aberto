@@ -255,6 +255,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             limit,
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def delete_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Delete up to 50 editable elements, only in an untitled test project. Requires Tapir.
+        Preview then apply with explicit port and single-use token. Never saves or unlocks.
+        """
+        return await write.delete_elements(
+            client_of(ctx), element_guids, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 
