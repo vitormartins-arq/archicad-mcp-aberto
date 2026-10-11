@@ -974,8 +974,10 @@ async def _property_plan(
     names = {}
     for row in definitions.get("propertyDefinitions", []):
         definition = row.get("propertyDefinition") if isinstance(row, dict) else None
-        if isinstance(definition, dict) and definition.get("guid"):
-            names[str(definition["guid"]).upper()] = definition
+        # Live shape (AC30 build 3001): the GUID is under propertyId, not a "guid" key.
+        identifier = definition.get("propertyId") if isinstance(definition, dict) else None
+        if isinstance(identifier, dict) and identifier.get("guid"):
+            names[str(identifier["guid"]).upper()] = definition
     items = []
     for index, change in enumerate(changes):
         label = f"Change {index} ({change.element_guid} / {change.property_guid})"
