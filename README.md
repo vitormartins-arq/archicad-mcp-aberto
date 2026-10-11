@@ -27,10 +27,9 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha. Phase 1 is nearly complete: **22 tools**, with **13 read-only** tools and
-**9 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Rotation, GDL parameter editing
-and wall editing are the next queued additions; live Undo validation remains pending.
+Pre-alpha. Phase 1 is nearly complete: **25 tools**, with **14 read-only** tools and
+**11 write** tools. Writes preview by default and require a single-use confirmation token
+and explicit port to apply. No tool saves the project. Wall editing is the next queued addition; live Undo validation remains pending.
 
 | Tool | Access | What it does | Needs Tapir |
 |---|---|---|---|
@@ -46,6 +45,7 @@ and wall editing are the next queued additions; live Undo validation remains pen
 | `get_bounding_boxes` | Read | 2D/3D boxes in metres, with per-element errors | no |
 | `list_building_materials` | Read | Material GUIDs/indices/names and cut-fill pens | yes |
 | `find_elements` | Read | Type/story/layer/property filters and pagination | for details |
+| `get_gdl_parameters` | Read | Object GDL values/types/flags, up to 100 GUIDs | yes |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
@@ -53,6 +53,8 @@ and wall editing are the next queued additions; live Undo validation remains pen
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
+| `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
+| `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |

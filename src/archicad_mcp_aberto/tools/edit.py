@@ -282,6 +282,8 @@ class GDLChange(write.InputModel):
 
 def _gdl_value(parameter, value):
     flags = parameter.get("flags", [])
+    if not isinstance(flags, list) or not all(isinstance(f, str) for f in flags):
+        raise ValueError("Unexpected GDL flags.")
     if parameter.get("isLocked") is True or set(flags) & {
         "Fixed",
         "Hidden",
@@ -391,6 +393,8 @@ async def _verify_gdl(client, receipt, items):
         differences = write._mismatches(
             {"type": item["expected_type"], "value": requested["value"]}, actual
         )
+        if isinstance(requested["value"], bool) and actual.get("value") is not requested["value"]:
+            differences.append("value.type")
         item["status"] = "verification_failed" if differences else "verified"
         if differences:
             item["mismatches"] = differences
