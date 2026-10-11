@@ -28,9 +28,14 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Releitura em 11/10/2026 com a planta 0. ANDAR aberta (AC30 build 3001 BRA, Tapir
   1.7.0, só leitura): das 10 paredes lidas, 5 vieram com polígonos (uma com 4 polígonos,
   uma com 2) e 5 sem, de espessuras variadas (0,08, 0,15 e 0,34 m). Na tela todas têm
-  corte preto sólido. Hipótese não confirmada: nas junções o Archicad funde os
-  preenchimentos de corte, e o Tapir entrega o polígono fundido a uma parede só.
-  Próximo teste: projeto de teste com uma parede solta e duas paredes unidas.
+  corte preto sólido.
+  Teste em projeto sem título, sem salvar (11/10/2026): 5 paredes de 0,20 m (solta, em L,
+  em sequência reta). Com o material composto padrão, sem preenchimento de corte, nenhuma
+  devolveu polígono. Com o material básico "Concreto - Estrutural", todas devolveram: no L,
+  a parede horizontal leva o quadrado do canto em 2 triângulos e a vertical começa
+  recortada; na sequência reta cada parede tem o seu retângulo. Então cada parede recebe
+  o seu polígono, e o que decide é o material ter preenchimento de corte. A hipótese da
+  junção fundida caiu. Falta conferir o material das paredes sem polígono do CRM 005.
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos
