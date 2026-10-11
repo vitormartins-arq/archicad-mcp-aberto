@@ -66,7 +66,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 
 1. Tarefas T12 a T16 de `docs/FILA.md` (Codex): preflight parcial de objetos, README,
    `rotate_elements`, parâmetros GDL e `modify_walls`.
-2. Claude: testar Undo (Ctrl+Z) depois de uma gravação do MCP; terminar a pendência do
+2. Claude: Undo testado (um Ctrl+Z desfaz o lote); terminar a pendência do
    `floorPlanPolygons` (5 paredes do CRM 005, só leitura).
 3. Fase 2: planejar o gateway (qualquer comando oficial ou do Tapir com as mesmas
    proteções) antes de criar muitas ferramentas soltas.
@@ -223,3 +223,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `{"code":-2130313113,...}`. Na primeira tentativa o apply recusou com "changed since
   preview" sem nada gravado; a segunda passou. Seis leituras seguidas do inventário deram
   o mesmo resultado, então a causa da primeira recusa não foi identificada.
+
+- **Claude / Undo ao vivo, 11/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723, não salvo, pela extensão `.mcpb`. `create_walls` de uma parede
+  (20, 0) a (23, 0) saiu `verified` (GUID 06E90EA4, 9 para 10 elementos). Um Ctrl+Z no
+  ArchiCAD desfez a gravação inteira: o GUID deixou de existir e o projeto voltou a 9
+  elementos. CRM 005 continuou com 192. Então cada lote do MCP é um passo de Undo.
+  Este teste rodou no mesmo projeto e na mesma hora do teste do inventário parcial acima;
+  a parede criada e desfeita mudou o conjunto de elementos, o que explica a primeira
+  recusa "changed since preview" daquele teste (a trava agiu certo).
