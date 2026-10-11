@@ -195,3 +195,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - T11: investigação em docs/LIBRARY_PARTS.md com fontes por comando. GetAvailableLibraryParts confirmado e registrado desde 1.5.0 no Tapir 02691b5d: GUID/índice/documentName/fileName/typeId e skippedCount. GetLibraries lista bibliotecas, não peças. Nenhum catálogo equivalente encontrado nas listas JSON oficiais AC29/30. Implementada list_library_parts só leitura e create_objects recusa nome ausente/tipo errado/ambíguo no dry run, conferindo novamente antes de aplicar. Inventário parcial é sinalizado; não se afirma ausência definitiva. Corrige a nota histórica que dizia não haver comando conhecido. Fixture documental, não captura real; só simulado.
 
 - T11: 646 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T10, PR base main. T8–T11 entregues em sequência; nenhum merge pelo Codex e FILA.md intacta.
+
+- **Codex / inventário parcial:** branch fix/partial-library-inventory da origin/main 4238b67. create_objects marca só nomes ausentes como unconfirmed com aviso quando skippedCount > 0; apply deixa o CreateObjects decidir por item e confere sucessos. Inventário completo continua recusando nome desconhecido. Apenas simulado; docs/LIBRARY_PARTS.md e README ajustados.
+
+- Correção do inventário parcial: 651 testes simulados e Ruff passaram em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Claude/Vitor.

@@ -72,3 +72,5 @@
   the missing key (found in review against the Tapir source; the fake used to send `[]`).
 
 - Add read-only `list_library_parts` and source investigation; preflight object document names against loaded Object parts before issuing a token.
+
+- Let unconfirmed object names in partial library inventories proceed per item to native creation; complete inventories still reject unknown names during preview.
