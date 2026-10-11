@@ -344,8 +344,7 @@ class FakeArchicad:
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateObjects":
-            # Shape from Tapir source (ElementCreationCommands.cpp, ElementCommands.cpp at
-            # 02691b5d); not a live capture. The not-found error code is synthetic.
+            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0.
             out = []
             for index, obj in enumerate(args["objectsData"]):
                 if index in self.create_errors:
@@ -355,7 +354,7 @@ class FakeArchicad:
                 found = lookup.get(obj["libraryPartName"].casefold())
                 if found is None:
                     message = f"Not found library part with name '{obj['libraryPartName']}'"
-                    out.append({"error": {"code": -2130313112, "message": message}})
+                    out.append({"error": {"code": -2130313113, "message": message}})
                     continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Object"
