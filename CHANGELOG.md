@@ -6,7 +6,8 @@
   absolute base level and angle (radians), through Tapir `CreateObjects`. Size stays the
   library part's default. A name Archicad cannot find fails only that object. Applying
   checks type, story, 3D origin, angle (on the circle) and library part name. Same token,
-  port, receipts and timeout as the other writes. Fake shape from the Tapir source, not live.
+  port, receipts and timeout as the other writes. Tested live on Archicad 30 build 3001 BRA
+  with Tapir 1.7.0, including the not-found error the fake now copies.
 
 - Add `set_property_values`: up to 100 scalar property values (string, boolean, integer,
   number, length, area, volume, angle) through the official `SetPropertyValuesOfElements`.
