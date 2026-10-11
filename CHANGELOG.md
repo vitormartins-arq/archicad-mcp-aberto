@@ -64,3 +64,5 @@
 - Add guarded `delete_elements` for untitled test projects using documented Tapir commands, with editability checks, single-use confirmation and absence verification.
 
 - Add story/layer display names to existing-element previews without binding mutable names into confirmation identity.
+
+- Add safe `create_beams` with rectangular section, absolute level and post-write geometry verification.

@@ -270,6 +270,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), element_guids, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def create_beams(
+        ctx: Context,
+        beams: list[write.BeamCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview straight rectangular beams, up to 20. Metres; level is absolute Z.
+        Requires Tapir, explicit port and single-use token to apply; never saves.
+        """
+        return await write.create_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
+
     return mcp
 
 

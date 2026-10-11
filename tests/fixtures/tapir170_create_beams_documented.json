@@ -1,0 +1,48 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ExtendedElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json"
+    ],
+    "note": "Synthetic values from CreateBeams and GetDetailsOfElements/AddBeamSectionFromMemo schemas; not live captured."
+  },
+  "details": {
+    "type": "Beam",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "begCoordinate": {
+        "x": 0,
+        "y": 0
+      },
+      "endCoordinate": {
+        "x": 4,
+        "y": 0
+      },
+      "zCoordinate": 3,
+      "level": 3,
+      "width": 0.2,
+      "height": 0.4,
+      "offset": 0,
+      "slantAngle": 0,
+      "isSlanted": false,
+      "profileAngle": 0,
+      "arcAngle": 0,
+      "verticalCurveHeight": 0,
+      "anchorPoint": "Center",
+      "circleBased": false,
+      "isWidthAndHeightLinked": false,
+      "beamShape": "Straight"
+    }
+  },
+  "error": {
+    "error": {
+      "code": -1,
+      "message": "Failed to create new Beam"
+    }
+  }
+}
