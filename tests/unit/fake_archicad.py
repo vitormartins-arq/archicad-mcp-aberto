@@ -99,6 +99,7 @@ class FakeArchicad:
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
+    command_requests: list[dict] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
 
@@ -106,6 +107,7 @@ class FakeArchicad:
         command = body.get("command", "")
         params = body.get("parameters", {})
         self.calls.append(command)
+        self.command_requests.append(deepcopy(body))
         if self.busy:
             return fail(4001, "Invalid program status (ongoing user input)")
         if command == "API.GetProductInfo":

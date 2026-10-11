@@ -164,3 +164,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `verified` e o outro `failed` com `{"code":-2130313113,"message":"Not found library part
   with name 'Nao Existe 123'"}`. A prévia não confere se a peça existe (não há comando para
   listar peças no Tapir 1.7.0 conhecido); o erro fica isolado no item.
+
+- T6: find_elements, filtros baratos antes das propriedades, lotes de 100 e paginação até 500; só simulado. Pilha remota T2–T5 preservada (branches já existentes, puladas conforme fila); commit local alternativo T2 preservado em wip/local-move-elements-c280574, sem push.
+
+- T6: validação local em Windows/Python 3.12.10: 511 testes simulados e Ruff passaram; nenhuma chamada real.

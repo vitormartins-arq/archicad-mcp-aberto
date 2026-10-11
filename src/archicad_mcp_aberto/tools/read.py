@@ -6,6 +6,7 @@ with Tapir 1.7.0.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Literal
 from uuid import UUID
 
@@ -250,6 +251,7 @@ async def get_bounding_boxes(
 
 __all__ = [
     "discover_archicad",
+    "find_elements",
     "get_element_details",
     "get_bounding_boxes",
     "get_project_info",
@@ -260,3 +262,122 @@ __all__ = [
     "list_properties",
     "tapir_status",
 ]
+
+
+async def find_elements(
+    client: ArchicadClient,
+    port: int | None = None,
+    element_type: str | None = None,
+    floor_index: int | None = None,
+    layer_index: int | None = None,
+    property_guid: str | None = None,
+    operator: Literal["equal", "contains", "greater", "less"] = "equal",
+    value: str | int | float | bool | None = None,
+    offset: int = 0,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Filter elements cheaply first, then paginate matches (up to 500).
+
+    Property comparisons use normal scalar values with no string/number coercion.
+    contains is case-sensitive; errors/unavailable values do not match and are reported.
+    Detail/property reads use batches of at most 100. No model changes.
+    """
+    page_args(offset, limit, 500)
+    for name, index in (("floor_index", floor_index), ("layer_index", layer_index)):
+        if index is not None and (not isinstance(index, int) or isinstance(index, bool)):
+            raise ValueError(f"{name} must be an integer.")
+    if operator not in {"equal", "contains", "greater", "less"}:
+        raise ValueError("Invalid property operator.")
+    if property_guid is None and (value is not None or operator != "equal"):
+        raise ValueError("Property comparisons require property_guid.")
+    if property_guid is not None:
+        property_guid = property_ids([property_guid])[0]["propertyId"]["guid"]
+        if value is None or not isinstance(value, (str, int, float, bool)):
+            raise ValueError("A property filter needs a scalar value.")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("Property filter value must be finite.")
+        if operator == "contains" and not isinstance(value, str):
+            raise ValueError("contains requires a string value.")
+        if operator in {"greater", "less"} and (
+            not isinstance(value, (int, float)) or isinstance(value, bool)
+        ):
+            raise ValueError("greater/less require a numeric value.")
+    port = await resolve_port(client, port)
+    if property_guid is not None:
+        available = (await client.command(port, "GetAllPropertyIds")).get("propertyIds", [])
+        if property_guid not in {p["propertyId"]["guid"].upper() for p in available}:
+            raise ValueError(f"Property {property_guid} does not exist in this project.")
+    response = (
+        await client.command(port, "GetElementsByType", {"elementType": element_type})
+        if element_type
+        else await client.command(port, "GetAllElements")
+    )
+    elements = response["elements"]
+    errors = []
+    if floor_index is not None or layer_index is not None:
+        fields = (["floorIndex"] if floor_index is not None else []) + (
+            ["layerIndex"] if layer_index is not None else []
+        )
+        filtered = []
+        for start in range(0, len(elements), 100):
+            batch = elements[start : start + 100]
+            details = await client.tapir(
+                port, "GetDetailsOfElements", {"elements": batch, "fields": fields}
+            )
+            rows = details.get("detailsOfElements")
+            if not isinstance(rows, list) or len(rows) != len(batch):
+                raise ValueError("Unexpected details response cardinality.")
+            for element, row in zip(batch, rows, strict=True):
+                if not isinstance(row, dict) or "error" in row:
+                    errors.append({**element, "stage": "details", "error": row})
+                elif (floor_index is None or row.get("floorIndex") == floor_index) and (
+                    layer_index is None or row.get("layerIndex") == layer_index
+                ):
+                    filtered.append(element)
+        elements = filtered
+    if property_guid is not None:
+        filtered = []
+        for start in range(0, len(elements), 100):
+            batch = elements[start : start + 100]
+            guids = [e["elementId"]["guid"] for e in batch]
+            response = await get_properties(client, guids, [property_guid], port)
+            rows = response.get("propertyValuesForElements")
+            if not isinstance(rows, list) or len(rows) != len(batch):
+                raise ValueError("Unexpected property response cardinality.")
+            for element, row in zip(batch, rows, strict=True):
+                values = row.get("propertyValues") if isinstance(row, dict) else None
+                property_value = (
+                    values[0].get("propertyValue")
+                    if isinstance(values, list) and len(values) == 1 and isinstance(values[0], dict)
+                    else None
+                )
+                if not isinstance(property_value, dict) or property_value.get("status") != "normal":
+                    errors.append({**element, "stage": "property", "error": row})
+                    continue
+                actual = property_value.get("value")
+                numeric = (
+                    isinstance(actual, (int, float))
+                    and not isinstance(actual, bool)
+                    and isinstance(value, (int, float))
+                    and not isinstance(value, bool)
+                    and math.isfinite(actual)
+                )
+                matches = (
+                    (actual == value and (type(actual) is type(value) or numeric))
+                    if operator == "equal"
+                    else isinstance(actual, str) and value in actual
+                    if operator == "contains"
+                    else numeric and actual > value
+                    if operator == "greater"
+                    else numeric and actual < value
+                )
+                if matches:
+                    filtered.append(element)
+        elements = filtered
+    return {
+        "port": port,
+        "total": len(elements),
+        "offset": offset,
+        "elements": elements[offset : offset + limit],
+        "errors": errors,
+    }
