@@ -35,7 +35,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   a parede horizontal leva o quadrado do canto em 2 triângulos e a vertical começa
   recortada; na sequência reta cada parede tem o seu retângulo. Então cada parede recebe
   o seu polígono, e o que decide é o material ter preenchimento de corte. A hipótese da
-  junção fundida caiu. Falta conferir o material das paredes sem polígono do CRM 005.
+  junção fundida caiu. No CRM 005 as paredes parecem pretas por uma sobreposição gráfica
+  do Vitor, que pinta todas de preto; isso esconde que algumas não têm preenchimento de
+  corte no material. Falta conferir o material das paredes sem polígono do CRM 005.
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos
