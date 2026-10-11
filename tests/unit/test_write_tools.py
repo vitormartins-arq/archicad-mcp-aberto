@@ -5,6 +5,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
+import httpx
 import pytest
 
 from archicad_mcp_aberto.connection import ArchicadClient
@@ -358,3 +359,45 @@ async def test_final_receipt_failure_returns_result_and_prepared_path(monkeypatc
     assert result["status"] == "verified" and len(fake.elements) == 1
     assert "receipt_error" in result
     assert Path(result["prepared_receipt_path"]).exists()
+
+
+def timing_client(fake, seen):
+    inner = fake_transport(fake)
+
+    class Recorder(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            body = json.loads(request.content)
+            name = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+            seen[name or body["command"]] = request.extensions["timeout"]["read"]
+            return await inner.handle_async_request(request)
+
+    return ArchicadClient(transport=Recorder())
+
+
+@pytest.mark.parametrize(("env", "expected"), [(None, 120.0), ("45", 45.0)])
+async def test_writes_wait_longer_than_reads(monkeypatch, env, expected):
+    if env is None:
+        monkeypatch.delenv("ARCHICAD_MCP_WRITE_TIMEOUT", raising=False)
+    else:
+        monkeypatch.setenv("ARCHICAD_MCP_WRITE_TIMEOUT", env)
+    seen = {}
+    async with timing_client(FakeArchicad(19723), seen) as c:
+        result = await apply(c, [wall()])
+    assert result["status"] == "verified"
+    assert result["write_timeout_seconds"] == expected
+    assert seen["CreateWalls"] == seen["GetDetailsOfElements"] == expected
+    assert seen["GetStories"] == c.timeout
+
+
+@pytest.mark.parametrize("env", ["0", "-5", "nan", "abc"])
+async def test_invalid_write_timeout_keeps_the_preview_unconsumed(monkeypatch, env):
+    fake = FakeArchicad(19723)
+    async with client(fake) as c:
+        preview = await write.create_walls(c, [wall()], 19723)
+        monkeypatch.setenv("ARCHICAD_MCP_WRITE_TIMEOUT", env)
+        with pytest.raises(ValueError):
+            await write.create_walls(c, [wall()], 19723, False, preview["confirmation_token"])
+        monkeypatch.delenv("ARCHICAD_MCP_WRITE_TIMEOUT")
+        result = await write.create_walls(c, [wall()], 19723, False, preview["confirmation_token"])
+    assert result["status"] == "verified"
+    assert fake.tapir_calls.count("CreateWalls") == 1

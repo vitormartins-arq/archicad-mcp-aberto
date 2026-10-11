@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Writes and their verification wait up to 120 s (`ARCHICAD_MCP_WRITE_TIMEOUT`).
+  A live `CreateSlabs` on an upper story took over 12 s and was reported as unknown.
 - Add `create_slabs`: simple polygons, absolute project level, dry-run default,
   single-use confirmation, per-slab receipts/errors and geometry verification.
   Tapir 1.7.0 fixture derived from documentation/source; simulated tests only.

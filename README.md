@@ -109,7 +109,8 @@ A failed wall does not hide successful walls. Local JSON receipts are written be
 and after dispatch to `~/.archicad-mcp-aberto/receipts`; set
 `ARCHICAD_MCP_RECEIPTS_DIR` to use another folder. If the prepared receipt cannot be
 written, creation is blocked. If the response is lost, the outcome is `unknown`;
-inspect the model and do not retry the same batch. `unverified` and
+inspect the model and do not retry the same batch. Writes and their verification wait up to 120 s
+(set `ARCHICAD_MCP_WRITE_TIMEOUT` in seconds); reads keep the 12 s default. `unverified` and
 `verification_failed` also require review. Partial successes are not rolled back
 automatically. The server never saves the Archicad project.
 

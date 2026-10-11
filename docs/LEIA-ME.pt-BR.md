@@ -56,6 +56,8 @@ ou erro do Tapir e conferência da geometria. Os arquivos ficam em
 `~/.archicad-mcp-aberto/receipts`; a pasta pode ser configurada com
 `ARCHICAD_MCP_RECEIPTS_DIR`. Se houver falha depois do envio, confira o modelo antes
 de tentar novamente: uma parede pode ter sido criada mesmo sem resposta.
+Escritas e a conferência delas esperam até 120 s (configurável com
+`ARCHICAD_MCP_WRITE_TIMEOUT`, em segundos); leituras continuam com 12 s.
 
 Esta entrega foi validada apenas no simulado, usando formatos de resposta capturados
 anteriormente. Testes ao vivo, Undo e edição de paredes ficam para outra etapa.
