@@ -38,6 +38,14 @@ CREATE_SLABS_FIXTURE = json.loads(
 )
 
 
+# Documentation-derived JSON API format, not a live capture.
+BOUNDING_BOXES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "json_api_bounding_boxes_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -67,6 +75,8 @@ class FakeArchicad:
     building_materials: dict[str, dict] = field(default_factory=dict)
     lose_slab_response: bool = False
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
+    bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
+    bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
@@ -81,6 +91,18 @@ class FakeArchicad:
             return ok(
                 {"version": self.version, "buildNumber": self.build, "languageCode": self.language}
             )
+        if command in {"API.Get2DBoundingBoxes", "API.Get3DBoundingBoxes"}:
+            dimension = "2D" if command == "API.Get2DBoundingBoxes" else "3D"
+            configured = self.bounding_boxes_2d if dimension == "2D" else self.bounding_boxes_3d
+            default = BOUNDING_BOXES_FIXTURE[dimension.lower()][f"boundingBoxes{dimension}"][0]
+            out = []
+            for element in params["elements"]:
+                guid = element["elementId"]["guid"]
+                row = configured.get(
+                    guid, default if guid in self.elements else BOUNDING_BOXES_FIXTURE["error"]
+                )
+                out.append(deepcopy(row))
+            return ok({f"boundingBoxes{dimension}": out})
         if command == "API.GetAllElements":
             return ok({"elements": [self._id(g) for g in self.elements]})
         if command == "API.GetElementsByType":

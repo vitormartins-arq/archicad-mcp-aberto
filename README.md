@@ -133,6 +133,26 @@ The fixture `tests/fixtures/tapir170_create_slabs_documented.json` records pinne
 Tapir 1.7.0 source links. It is documentation/source-derived, **not a live capture**.
 This delivery was tested only against the simulated Archicad.
 
+## Element bounding boxes
+
+`get_bounding_boxes` reads 1 to 500 `element_ids` (GUID strings), with optional
+`port` and `mode: "2d"` (default) or `"3d"`. It uses the official JSON API without
+Tapir and refuses an ambiguous destination when multiple instances are open.
+
+The response contains `port`, `mode` and `boundingBoxes` in input order. Each item
+has `guid` and either `box` or the original per-element `error`; one missing element
+does not hide other boxes. Coordinates are metres: xMin/yMin/xMax/yMax, plus zMin/zMax
+for 3D. 2D boxes refer to the floor-plan view and 3D boxes to the 3D view, relative
+to the global origin. Some element types may not support bounding boxes.
+
+```json
+{"element_ids": ["11111111-1111-1111-1111-111111111111"], "port": 19723, "mode": "3d"}
+```
+
+The fixture follows [Graphisoft's official JSON API documentation](https://archicadapi.graphisoft.com/archicadPythonPackage/archicad.html)
+and Python wrapper. It is synthetic, not a live capture; this delivery was tested
+only against the fake Archicad.
+
 ## Roadmap
 
 0. Foundation: connection, discovery, read tools, simulated Archicad, CI.

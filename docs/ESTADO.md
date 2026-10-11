@@ -82,3 +82,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `uv run ruff check .`: passou. Merge pelo Vitor.
 - **PR #5:** main integrada por merge (sem rebase), `cut_fills` preservado junto
   com `CreateSlabs`; 120 testes locais passaram e CI verde nas seis combinações.
+
+- **Codex / bounding boxes:** branch `feat/bounding-boxes`, leitura `get_bounding_boxes`
+  pela API JSON oficial, sem Tapir: 1 a 500 GUIDs, modo 2d/3d, erro por elemento e
+  recusa de destino ambíguo. Fixture documental, não captura ao vivo.
+  `uv run pytest`: 267 testes simulados passaram; Ruff passou (Windows/Python 3.12.10).
+  Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Vitor.

@@ -14,6 +14,7 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "get_bounding_boxes": {"element_ids": [GUID]},
     "list_building_materials": {},
     "list_elements": {},
     "get_selection": {},

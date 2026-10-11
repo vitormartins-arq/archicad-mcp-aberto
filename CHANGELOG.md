@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add read-only `get_bounding_boxes`: official JSON API 2D/3D boxes in metres for
+  1 to 500 GUIDs, ordered per-element results/errors, no Tapir requirement and
+  ambiguous-target refusal. Documentation-derived fixture and simulated tests only.
+
 - Writes and their verification wait up to 120 s (`ARCHICAD_MCP_WRITE_TIMEOUT`).
   A live `CreateSlabs` on an upper story took over 12 s and was reported as unknown.
 - Add `create_slabs`: simple polygons, absolute project level, dry-run default,

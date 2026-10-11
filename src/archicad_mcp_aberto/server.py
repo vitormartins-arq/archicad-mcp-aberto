@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import Context, FastMCP
 
@@ -118,6 +118,17 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         layerIndex, drawIndex, details, hotlinkId, floorPlanPolygons. floorPlanPolygons is
         slow and only returned when asked for."""
         return await read.get_element_details(client_of(ctx), element_guids, port, fields)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_bounding_boxes(
+        ctx: Context,
+        element_ids: list[str],
+        port: int | None = None,
+        mode: Literal["2d", "3d"] = "2d",
+    ) -> dict:
+        """Read 2D/3D boxes in metres for 1 to 500 GUIDs; errors per element.
+        Official JSON API, no Tapir required. Changes nothing."""
+        return await read.get_bounding_boxes(client_of(ctx), element_ids, port, mode)
 
     @mcp.tool(annotations=WRITE)
     async def create_walls(
