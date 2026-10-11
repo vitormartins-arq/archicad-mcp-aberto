@@ -1,41 +1,398 @@
 {
   "provenance": {
     "tapir_version": "1.7.0",
-    "kind": "documentation_and_source",
-    "live_capture": false,
-    "note": "Synthetic values; format derived from official documentation/source, not a live Archicad capture.",
+    "kind": "live_capture",
+    "live_capture": true,
+    "note": "GetDetailsOfElements responses captured live by the operator; imported read-only. The legacy fixture filename is retained. Create error is synthetic and source-derived, not captured.",
     "sources": [
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCreationCommands.cpp",
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCommands.cpp",
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/CommandBase.cpp"
-    ]
+    ],
+    "archicad_version": 30,
+    "archicad_build": 3001,
+    "language": "BRA",
+    "os": "Windows",
+    "capture_date": "2026-10-11",
+    "source_file": "teste-pilares-2026-10-11.json",
+    "source_sha256": "772304bda46c729149ce95af5c9cace46ecbb1932a2d27e9e886aaf55d78540e"
   },
   "column_details": {
     "type": "Column",
     "floorIndex": 0,
-    "layerIndex": 1,
+    "layerIndex": 23,
+    "drawIndex": 7,
+    "id": "P01",
     "details": {
       "origin": {
-        "x": 0,
-        "y": 0
+        "x": 20,
+        "y": 20
       },
+      "coreAnchor": "Center",
+      "zCoordinate": 0,
       "height": 3,
       "bottomOffset": 0,
-      "zCoordinate": 0,
       "axisRotationAngle": 0,
-      "coreAnchor": "Center",
       "isSlanted": false,
-      "slantAngle": 0,
+      "slantAngle": 1.570796327,
+      "slantDirectionAngle": 0,
+      "isFlipped": false,
+      "wrapping": false,
+      "topOffset": 0,
+      "relativeTopStory": 0,
+      "cutFillPen": {
+        "overridden": false
+      },
+      "cutFillBackgroundPen": {
+        "overridden": false
+      },
+      "coverFill": {
+        "use": true,
+        "useFromSurface": true,
+        "orientationComesFrom3D": false,
+        "fillId": {
+          "guid": "3FC53BC7-6A41-B24C-B89B-8083139AA127"
+        },
+        "foregroundPen": 88,
+        "backgroundPen": 19,
+        "transformationType": "Global",
+        "transformation": {
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "xAxis": {
+            "x": 1,
+            "y": 0
+          },
+          "yAxis": {
+            "x": 0,
+            "y": 1
+          }
+        }
+      },
       "width": 0.3,
       "depth": 0.5,
+      "isWidthAndHeightLinked": false,
       "circleBased": false,
-      "isWidthAndHeightLinked": false
-    }
+      "buildingMaterialId": {
+        "guid": "4314C62C-B98B-2547-86DE-A4F707A1CF77"
+      }
+    },
+    "floorPlanPolygons": [
+      {
+        "coordinates": [
+          {
+            "x": 19.85,
+            "y": 19.75
+          },
+          {
+            "x": 20.15,
+            "y": 19.75
+          },
+          {
+            "x": 20.15,
+            "y": 20.25
+          },
+          {
+            "x": 19.85,
+            "y": 20.25
+          },
+          {
+            "x": 19.85,
+            "y": 19.75
+          }
+        ]
+      }
+    ]
   },
   "create_error": {
     "error": {
       "code": -1,
       "message": "Failed to create new Column"
     }
+  },
+  "raw_get_details": [
+    {
+      "guid": "633C9D8C-D74E-442B-9175-FBEF5CB723FD",
+      "resposta": {
+        "detailsOfElements": [
+          {
+            "type": "Column",
+            "floorIndex": 0,
+            "layerIndex": 23,
+            "drawIndex": 7,
+            "id": "P01",
+            "details": {
+              "origin": {
+                "x": 20,
+                "y": 20
+              },
+              "coreAnchor": "Center",
+              "zCoordinate": 0,
+              "height": 3,
+              "bottomOffset": 0,
+              "axisRotationAngle": 0,
+              "isSlanted": false,
+              "slantAngle": 1.570796327,
+              "slantDirectionAngle": 0,
+              "isFlipped": false,
+              "wrapping": false,
+              "topOffset": 0,
+              "relativeTopStory": 0,
+              "cutFillPen": {
+                "overridden": false
+              },
+              "cutFillBackgroundPen": {
+                "overridden": false
+              },
+              "coverFill": {
+                "use": true,
+                "useFromSurface": true,
+                "orientationComesFrom3D": false,
+                "fillId": {
+                  "guid": "3FC53BC7-6A41-B24C-B89B-8083139AA127"
+                },
+                "foregroundPen": 88,
+                "backgroundPen": 19,
+                "transformationType": "Global",
+                "transformation": {
+                  "origin": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "xAxis": {
+                    "x": 1,
+                    "y": 0
+                  },
+                  "yAxis": {
+                    "x": 0,
+                    "y": 1
+                  }
+                }
+              },
+              "width": 0.3,
+              "depth": 0.5,
+              "isWidthAndHeightLinked": false,
+              "circleBased": false,
+              "buildingMaterialId": {
+                "guid": "4314C62C-B98B-2547-86DE-A4F707A1CF77"
+              }
+            },
+            "floorPlanPolygons": [
+              {
+                "coordinates": [
+                  {
+                    "x": 19.85,
+                    "y": 19.75
+                  },
+                  {
+                    "x": 20.15,
+                    "y": 19.75
+                  },
+                  {
+                    "x": 20.15,
+                    "y": 20.25
+                  },
+                  {
+                    "x": 19.85,
+                    "y": 20.25
+                  },
+                  {
+                    "x": 19.85,
+                    "y": 19.75
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "guid": "A166DBB7-496A-4A2D-B6C7-0D3B87784524",
+      "resposta": {
+        "detailsOfElements": [
+          {
+            "type": "Column",
+            "floorIndex": 0,
+            "layerIndex": 23,
+            "drawIndex": 7,
+            "id": "P02",
+            "details": {
+              "origin": {
+                "x": 22,
+                "y": 20
+              },
+              "coreAnchor": "Center",
+              "zCoordinate": 0,
+              "height": 3,
+              "bottomOffset": 0,
+              "axisRotationAngle": 0,
+              "isSlanted": false,
+              "slantAngle": 1.570796327,
+              "slantDirectionAngle": 0,
+              "isFlipped": false,
+              "wrapping": false,
+              "topOffset": 0,
+              "relativeTopStory": 0,
+              "cutFillPen": {
+                "overridden": false
+              },
+              "cutFillBackgroundPen": {
+                "overridden": false
+              },
+              "coverFill": {
+                "use": true,
+                "useFromSurface": true,
+                "orientationComesFrom3D": false,
+                "fillId": {
+                  "guid": "3FC53BC7-6A41-B24C-B89B-8083139AA127"
+                },
+                "foregroundPen": 88,
+                "backgroundPen": 19,
+                "transformationType": "Global",
+                "transformation": {
+                  "origin": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "xAxis": {
+                    "x": 1,
+                    "y": 0
+                  },
+                  "yAxis": {
+                    "x": 0,
+                    "y": 1
+                  }
+                }
+              },
+              "width": 0.4,
+              "depth": 0.4,
+              "isWidthAndHeightLinked": true,
+              "circleBased": true,
+              "buildingMaterialId": {
+                "guid": "4314C62C-B98B-2547-86DE-A4F707A1CF77"
+              }
+            },
+            "floorPlanPolygons": [
+              {
+                "coordinates": [
+                  {
+                    "x": 21.8,
+                    "y": 20
+                  },
+                  {
+                    "x": 22,
+                    "y": 19.8
+                  },
+                  {
+                    "x": 22.2,
+                    "y": 20
+                  },
+                  {
+                    "x": 22,
+                    "y": 20.2
+                  },
+                  {
+                    "x": 21.8,
+                    "y": 20
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "circular_column_details": {
+    "type": "Column",
+    "floorIndex": 0,
+    "layerIndex": 23,
+    "drawIndex": 7,
+    "id": "P02",
+    "details": {
+      "origin": {
+        "x": 22,
+        "y": 20
+      },
+      "coreAnchor": "Center",
+      "zCoordinate": 0,
+      "height": 3,
+      "bottomOffset": 0,
+      "axisRotationAngle": 0,
+      "isSlanted": false,
+      "slantAngle": 1.570796327,
+      "slantDirectionAngle": 0,
+      "isFlipped": false,
+      "wrapping": false,
+      "topOffset": 0,
+      "relativeTopStory": 0,
+      "cutFillPen": {
+        "overridden": false
+      },
+      "cutFillBackgroundPen": {
+        "overridden": false
+      },
+      "coverFill": {
+        "use": true,
+        "useFromSurface": true,
+        "orientationComesFrom3D": false,
+        "fillId": {
+          "guid": "3FC53BC7-6A41-B24C-B89B-8083139AA127"
+        },
+        "foregroundPen": 88,
+        "backgroundPen": 19,
+        "transformationType": "Global",
+        "transformation": {
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "xAxis": {
+            "x": 1,
+            "y": 0
+          },
+          "yAxis": {
+            "x": 0,
+            "y": 1
+          }
+        }
+      },
+      "width": 0.4,
+      "depth": 0.4,
+      "isWidthAndHeightLinked": true,
+      "circleBased": true,
+      "buildingMaterialId": {
+        "guid": "4314C62C-B98B-2547-86DE-A4F707A1CF77"
+      }
+    },
+    "floorPlanPolygons": [
+      {
+        "coordinates": [
+          {
+            "x": 21.8,
+            "y": 20
+          },
+          {
+            "x": 22,
+            "y": 19.8
+          },
+          {
+            "x": 22.2,
+            "y": 20
+          },
+          {
+            "x": 22,
+            "y": 20.2
+          },
+          {
+            "x": 21.8,
+            "y": 20
+          }
+        ]
+      }
+    ]
   }
 }

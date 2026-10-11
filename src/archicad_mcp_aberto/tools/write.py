@@ -524,7 +524,7 @@ def _column_payload(column: ColumnCreate) -> dict:
         "width": column.diameter if circular else column.width,
         "depth": column.diameter if circular else column.depth,
         "circleBased": circular,
-        "isWidthAndHeightLinked": False,
+        "isWidthAndHeightLinked": circular,
         "axisRotationAngle": 0.0,
         "coreAnchor": "Center",
     }
@@ -548,7 +548,7 @@ def _column_mismatches(item: dict, row: Any, target: dict) -> list[str]:
             "width": p["width"],
             "depth": p["depth"],
             "circleBased": p["circleBased"],
-            "isWidthAndHeightLinked": False,
+            "isWidthAndHeightLinked": p["circleBased"],
         },
     }
     differences = _mismatches(expected, row)

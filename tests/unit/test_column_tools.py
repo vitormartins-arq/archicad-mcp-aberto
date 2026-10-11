@@ -429,7 +429,8 @@ async def test_circular_diameter_maps_to_both_dimensions():
     p = result["items"][0]["parameters"]
     assert p["circleBased"] is True and p["width"] == p["depth"] == 0.45
     assert result["status"] == "verified"
-    assert CREATE_COLUMNS_FIXTURE["provenance"]["live_capture"] is False
+    assert p["isWidthAndHeightLinked"] is True
+    assert CREATE_COLUMNS_FIXTURE["provenance"]["live_capture"] is True
 
 
 @pytest.mark.parametrize(
@@ -483,3 +484,20 @@ async def test_wall_token_cannot_authorize_columns():
         with pytest.raises(ValueError, match="changed since preview"):
             await write.create_columns(c, [column()], 19723, False, preview["confirmation_token"])
     assert not fake.elements
+
+
+async def test_circular_sent_unlinked_is_normalized_and_verified(monkeypatch):
+    original = write._column_payload
+
+    def unlinked_payload(value):
+        payload = original(value)
+        payload["isWidthAndHeightLinked"] = False
+        return payload
+
+    monkeypatch.setattr(write, "_column_payload", unlinked_payload)
+    fake = FakeArchicad(19723)
+    async with client(fake) as c:
+        result = await apply(c, [column(section="circular", diameter=0.4, width=None, depth=None)])
+    assert result["items"][0]["parameters"]["isWidthAndHeightLinked"] is False
+    assert result["items"][0]["after"]["details"]["isWidthAndHeightLinked"] is True
+    assert result["status"] == "verified"

@@ -38,7 +38,7 @@ CREATE_SLABS_FIXTURE = json.loads(
 )
 
 
-# Official source/documentation-derived; not a live response capture.
+# Live GetDetailsOfElements capture: AC30 build 3001 BRA, Windows, Tapir 1.7.0.
 CREATE_COLUMNS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_create_columns_documented.json").read_text(
         encoding="utf-8"
@@ -188,7 +188,11 @@ class FakeArchicad:
                     continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Column"
-                row = deepcopy(CREATE_COLUMNS_FIXTURE["column_details"])
+                row = deepcopy(
+                    CREATE_COLUMNS_FIXTURE[
+                        "circular_column_details" if column["circleBased"] else "column_details"
+                    ]
+                )
                 row["floorIndex"] = column["floorIndex"]
                 floor = next(s for s in self.stories if s["index"] == column["floorIndex"])
                 coords = column["coordinates"]
@@ -200,7 +204,9 @@ class FakeArchicad:
                     width=column["width"],
                     depth=column["depth"],
                     circleBased=column["circleBased"],
-                    isWidthAndHeightLinked=column["isWidthAndHeightLinked"],
+                    isWidthAndHeightLinked=(
+                        column["circleBased"] or column["isWidthAndHeightLinked"]
+                    ),
                     axisRotationAngle=column["axisRotationAngle"],
                     coreAnchor=column["coreAnchor"],
                 )
