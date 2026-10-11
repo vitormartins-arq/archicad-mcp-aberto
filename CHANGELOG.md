@@ -54,3 +54,5 @@
   project name and Tapir state, nine read-only tools, simulated Archicad and CI.
 
 - Deduplicate repeated floor-plan polygons within each element and report the removed count.
+
+- Add read-only `find_elements` with staged filters, pagination, scalar comparisons and 100-element read batches.

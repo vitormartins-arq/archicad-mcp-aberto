@@ -228,6 +228,33 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements(
+        ctx: Context,
+        port: int | None = None,
+        element_type: str | None = None,
+        floor_index: int | None = None,
+        layer_index: int | None = None,
+        property_guid: str | None = None,
+        operator: Literal["equal", "contains", "greater", "less"] = "equal",
+        value: str | int | float | bool | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> dict:
+        """Filter type/story/layer and scalar properties; pages up to 500, batches of 100."""
+        return await read.find_elements(
+            client_of(ctx),
+            port,
+            element_type,
+            floor_index,
+            layer_index,
+            property_guid,
+            operator,
+            value,
+            offset,
+            limit,
+        )
+
     return mcp
 
 

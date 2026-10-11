@@ -155,3 +155,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Nome inexistente falha só aquele item. Conferência: tipo, andar, origem 3D, ângulo e nome
   da peça. 480 testes simulados passaram. Formato tirado do código do Tapir (02691b5d);
   falta teste ao vivo, inclusive se o Tapir 1.7.0 aceita o campo `angle`.
+
+- T6: find_elements, filtros baratos antes das propriedades, lotes de 100 e paginação até 500; só simulado. Pilha remota T2–T5 preservada (branches já existentes, puladas conforme fila); commit local alternativo T2 preservado em wip/local-move-elements-c280574, sem push.
+
+- T6: validação local em Windows/Python 3.12.10: 511 testes simulados e Ruff passaram; nenhuma chamada real.

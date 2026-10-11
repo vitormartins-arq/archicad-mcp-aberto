@@ -231,3 +231,5 @@ unit tests run against a simulated Archicad.
 [MIT](LICENSE)
 
 - Exact floor-plan polygon duplicates within each element are removed (same vertex order, 1e-9 m tolerance); `notes` reports the removed count. Different polygons are preserved.
+
+- `find_elements` filters by `element_type`, `floor_index`, `layer_index` and optional `property_guid`/`operator`/`value`. Operators: `equal`, case-sensitive `contains`, `greater`, `less`. It returns total matches, offset, a page of up to 500 element IDs and read errors. Missing properties are refused; unavailable values do not match. Type filtering precedes detail reads, and story/layer filtering precedes property reads, in batches of 100.

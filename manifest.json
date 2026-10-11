@@ -126,6 +126,10 @@
     {
       "name": "set_property_values",
       "description": "Preview or apply property values, read back after."
+    },
+    {
+      "name": "find_elements",
+      "description": "Filter elements by type, story, layer and scalar property, with pagination."
     }
   ],
   "compatibility": {
