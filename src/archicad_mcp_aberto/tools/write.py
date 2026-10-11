@@ -457,6 +457,7 @@ async def _write(
     async with state.lock:
         if dry_run:
             plan = await planner(client, walls, port, operation)
+            await _preview_names(client, plan)
             now = time.monotonic()
             state.previews = {k: v for k, v in state.previews.items() if v[0] > now}
             if len(state.previews) >= 32:
@@ -477,7 +478,8 @@ async def _write(
         if entry is None or entry[0] <= time.monotonic():
             raise ValueError("Preview missing, expired or already consumed. Run a new dry run.")
         plan = await planner(client, walls, port, operation)
-        if _digest(plan) != _digest(entry[1]):
+        await _preview_names(client, plan)
+        if _plan_digest(plan) != _plan_digest(entry[1]):
             raise ValueError(
                 "Parameters, target, stories or element IDs changed since preview. "
                 "Run a new dry run."
@@ -1221,3 +1223,55 @@ async def delete_elements(
     if len(set(guids)) != len(guids):
         raise ValueError("Duplicate element GUIDs are not allowed.")
     return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
+
+
+NAMED_PREVIEWS = {"move_elements", "set_property_values", "delete_elements"}
+
+
+def _plan_digest(plan: dict) -> str:
+    """Display names are not model identity; indices and story levels still are."""
+    comparable = deepcopy(plan)
+    if plan["operation"] in NAMED_PREVIEWS:
+        for story in comparable["target"]["stories"]:
+            story.pop("name", None)
+        for item in comparable["items"]:
+            item.pop("floorName", None)
+            item.pop("layerName", None)
+    return _digest(comparable)
+
+
+async def _preview_names(client: ArchicadClient, plan: dict) -> None:
+    if plan["operation"] not in NAMED_PREVIEWS:
+        return
+    port = plan["target"]["port"]
+    items = plan["items"]
+    # Property previews did not need element geometry; read just the two indices once.
+    if plan["operation"] == "set_property_values":
+        guids = list(dict.fromkeys(i["element_guid"] for i in items))
+        response = await client.tapir(
+            port,
+            "GetDetailsOfElements",
+            {"elements": element_ids(guids), "fields": ["floorIndex", "layerIndex"]},
+        )
+        rows = response.get("detailsOfElements", [])
+        indices = dict(zip(guids, rows, strict=False)) if isinstance(rows, list) else {}
+        for item in items:
+            row = indices.get(item["element_guid"], {})
+            for key in ("floorIndex", "layerIndex"):
+                item[key] = row.get(key) if isinstance(row, dict) else None
+    floors = {story["index"]: story.get("name") for story in plan["target"]["stories"]}
+    layers = {}
+    try:
+        response = await client.tapir(port, "GetAttributesByType", {"attributeType": "Layer"})
+        for row in response.get("attributes", []):
+            if isinstance(row, dict) and isinstance(row.get("name"), str):
+                layers[row.get("index")] = row["name"]
+    except ArchicadError:
+        pass  # A display-name lookup must not prevent a safe preview.
+    for item in items:
+        before = item.get("before", {})
+        for key in ("floorIndex", "layerIndex"):
+            if key not in item:
+                item[key] = before.get(key) if isinstance(before, dict) else None
+        item["floorName"] = floors.get(item["floorIndex"])
+        item["layerName"] = layers.get(item["layerIndex"])

@@ -1,0 +1,7 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/AttributeCommands.cpp",
+ "note": "GetAttributesByType Layer headers from official source, synthetic values, not live capture."},
+ "attributes": [{"attributeId": {"guid": "33333333-3333-3333-3333-333333333333"},
+ "index": 1, "name": "Walls", "modificationTime": 0}]
+}

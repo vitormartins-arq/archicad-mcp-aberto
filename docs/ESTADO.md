@@ -179,3 +179,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   resposta `{"executionResults":[{"success":true},{"success":true}]}`, igual ao fake. O Bidê
   original do Vitor ficou. A prévia mostra andar e camada só por índice; mostrar os nomes
   fica como melhoria.
+
+- T8: nomes de andar/camada nas prévias de mover/propriedades; helper também cobre delete_elements quando disponível. Uma chamada GetAttributesByType(Layer) por prévia; nome ausente vira null. Nomes fora do digest; índices/cotas continuam vinculados. Fixture documental do commit 02691b5d, não captura ao vivo. T7 integrada na main 5039baf; T8 reiniciada dessa main conforme Vitor, sem cherry-pick.
+
+- T8: 551 testes simulados e Ruff passaram em Windows/Python 3.12.10; nenhuma chamada real. Base origin/main 5039baf, sem cherry-pick/merge.

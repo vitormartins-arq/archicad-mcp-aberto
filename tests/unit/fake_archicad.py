@@ -82,6 +82,7 @@ class FakeArchicad:
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
+    layers: dict[int, str | None] = field(default_factory=lambda: {1: "Walls"})
     lose_slab_response: bool = False
     lose_column_response: bool = False
     lose_object_response: bool = False
@@ -210,6 +211,18 @@ class FakeArchicad:
                     }
                 }
             )
+        if name == "GetAttributesByType" and args["attributeType"] == "Layer":
+            # Official Tapir schema in tapir170_layers_documented.json; not live captured.
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_layers_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = [
+                {**deepcopy(fixture["attributes"][0]), "index": index, "name": name}
+                for index, name in self.layers.items()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
         if name == "GetAttributesByType":
             assert args["attributeType"] == "BuildingMaterial"
             return ok(
