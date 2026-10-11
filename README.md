@@ -1,8 +1,7 @@
 # archicad-mcp-aberto
 
 Open source [MCP](https://modelcontextprotocol.io) server that lets AI assistants
-(Claude, Codex, Cursor and others) work with a running Archicad: read the model today,
-and create and edit elements safely in the next phases.
+(Claude, Codex, Cursor and others) work with a running Archicad: read the model and preview or create straight Basic walls safely.
 
 [Leia em português](docs/LEIA-ME.pt-BR.md)
 
@@ -27,7 +26,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Phase 0, pre-alpha. Nine **read-only** tools:
+Phase 1 foundation, pre-alpha. Nine **read-only** tools plus safe wall creation:
 
 | Tool | What it does | Needs Tapir |
 |---|---|---|
@@ -40,6 +39,7 @@ Phase 0, pre-alpha. Nine **read-only** tools:
 | `get_project_info` | Project name, path, Teamwork state | yes |
 | `get_stories` | Stories and levels | yes |
 | `get_element_details` | BIM details; floor plan polygons only on request | yes |
+| `create_walls` | Preview or apply up to 20 straight Basic walls, with per-wall receipts | yes |
 
 Tested so far against a simulated Archicad (unit tests). The tools were first tested
 live on Archicad 29 build 3000 (Windows) with Tapir 1.7.0 in the bridge this project
@@ -71,13 +71,56 @@ Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports
   never picks the first port.
 - "Busy" (error 4001) is reported as busy, not as a missing add-on.
 - Heavy reads (floor plan polygons) only run when asked for.
-- Write tools (next phase) will dry-run by default, keep a receipt of every write and
-  check the result after applying.
+- `create_walls` dry-runs by default. Review the plan with the user before applying;
+  writes have per-wall receipts and a geometry check after applying. No tool saves the project.
+
+## Wall creation
+
+`create_walls` accepts `walls`, an optional `port`, `dry_run` (default `true`), and
+`confirmation_token`. This initial scope supports straight Basic walls only. Lengths
+are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`:
+
+```json
+{
+  "walls": [{
+    "start": {"x": 0, "y": 0},
+    "end": {"x": 4, "y": 0},
+    "floor_index": 0,
+    "height": 3.0,
+    "thickness": 0.2
+  }],
+  "port": 19723
+}
+```
+
+Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`
+and `reference_line` (`Outside`, `Center` or `Inside`). New walls inherit Archicad's
+current default layer and building material.
+
+The default call only reads the target and returns a preview. After the user reviews
+it, repeat the same wall inputs with the preview's explicit port, `dry_run: false`
+and its `confirmation_token`. Tokens expire in ten minutes, belong to one client
+session and are consumed once. Changed inputs, project information, story structure
+or element IDs require a new preview. Invalid input rejects the batch before writing.
+
+Apply returns one receipt item per input wall, including a unique `wall_receipt_id`,
+parameters, the created GUID or the original Tapir error, and verification results.
+A failed wall does not hide successful walls. Local JSON receipts are written before
+and after dispatch to `~/.archicad-mcp-aberto/receipts`; set
+`ARCHICAD_MCP_RECEIPTS_DIR` to use another folder. If the prepared receipt cannot be
+written, creation is blocked. If the response is lost, the outcome is `unknown`;
+inspect the model and do not retry the same batch. `unverified` and
+`verification_failed` also require review. Partial successes are not rolled back
+automatically. The server never saves the Archicad project.
+
+This create-only implementation is tested against the fake Archicad. Its response
+fixtures reuse earlier captured Tapir 1.7.0 responses; no new live tests were run for
+this scope. Live validation and Undo are separate work.
 
 ## Roadmap
 
-0. Foundation: connection, discovery, read tools, simulated Archicad, CI. **← here**
-1. Safe writes: walls, slabs, objects, properties, selection; real Undo tests.
+0. Foundation: connection, discovery, read tools, simulated Archicad, CI.
+1. Safe writes: wall creation started; editing, slabs, objects and Undo remain. **← here**
 2. Command gateway (every official and Tapir command) and batch scripts; `.mcpb` bundle.
 3. Documentation tools: dimensions, views, publishing, view capture; GDL and libraries.
 4. First public release.

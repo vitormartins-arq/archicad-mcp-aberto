@@ -10,6 +10,7 @@ import os
 from collections.abc import Sequence
 from types import TracebackType
 from typing import Any
+from uuid import UUID, uuid4
 
 import httpx
 
@@ -61,12 +62,14 @@ class ArchicadClient:
         self.probe_timeout = probe_timeout
         self._transport = transport
         self._http: httpx.AsyncClient | None = None
+        self.session_id: UUID | None = None
 
     async def __aenter__(self) -> ArchicadClient:
         # trust_env=False: never send local Archicad traffic through a system proxy.
         self._http = httpx.AsyncClient(
             trust_env=False, timeout=self.timeout, transport=self._transport
         )
+        self.session_id = uuid4()
         return self
 
     async def __aexit__(
@@ -78,6 +81,7 @@ class ArchicadClient:
         if self._http is not None:
             await self._http.aclose()
             self._http = None
+            self.session_id = None
 
     def check_port(self, port: int) -> None:
         if port not in self.ports:

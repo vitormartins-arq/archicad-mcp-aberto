@@ -9,10 +9,10 @@ from typing import Any
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import read
+from archicad_mcp_aberto.tools import read, write
 
 INSTRUCTIONS = """\
-Archicad MCP (read-only in this version).
+Archicad MCP (read tools and safe wall creation).
 - Call discover_archicad first. It lists open instances with port, version, Tapir state
   and project name.
 - With several instances open, ask the user which project to use and pass its port.
@@ -21,9 +21,20 @@ Archicad MCP (read-only in this version).
 - "busy" (error 4001) means Archicad is in user input. Ask the user to finish, then retry.
   It does not mean an add-on is missing.
 - Tools that say "requires Tapir" need the free Tapir add-on loaded (see tapir_status).
+- Wall writes dry-run by default. Show the plan to the user before applying, then
+  repeat the same inputs with dry_run=false, the explicit port and confirmation_token.
+  Tokens expire after ten minutes, work only in this session and can be consumed once.
+- Receipts are local. No tool saves the Archicad project. After any unknown outcome,
+  inspect the model before preparing a new plan; never blindly retry a write.
 """
 
 READ_ONLY = {"readOnlyHint": True, "openWorldHint": False}
+WRITE = {
+    "readOnlyHint": False,
+    "destructiveHint": True,
+    "idempotentHint": False,
+    "openWorldHint": False,
+}
 
 
 def create_server(client_factory: Callable[[], ArchicadClient] | None = None) -> FastMCP:
@@ -107,6 +118,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         layerIndex, drawIndex, details, hotlinkId, floorPlanPolygons. floorPlanPolygons is
         slow and only returned when asked for."""
         return await read.get_element_details(client_of(ctx), element_guids, port, fields)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_walls(
+        ctx: Context,
+        walls: list[write.WallCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview straight Basic walls (up to 20). All lengths are metres.
+        Requires Tapir. Review the preview with the user, then repeat identical inputs
+        with dry_run=false, explicit port and confirmation_token. New walls inherit the
+        default layer and building material. Returns per-wall results and local receipts;
+        verifies geometry after writing. Never saves the project."""
+        return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     return mcp
 
