@@ -146,3 +146,10 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   até 100 valores escalares; a prévia lê o valor atual e recusa propriedade só leitura,
   indisponível, não escalar ou tipo errado; o apply relê cada valor. 438 testes simulados
   passaram. Formato tirado da documentação da JSON API; falta teste ao vivo.
+
+- **Claude / objetos (T4):** branch `feat/create-objects`, empilhada sobre
+  `feat/set-property-values`. `create_objects` pelo `CreateObjects` do Tapir: nome exato da
+  peça de biblioteca, x/y, andar, cota absoluta da base e ângulo; tamanho padrão da peça.
+  Nome inexistente falha só aquele item. Conferência: tipo, andar, origem 3D, ângulo e nome
+  da peça. 480 testes simulados passaram. Formato tirado do código do Tapir (02691b5d);
+  falta teste ao vivo, inclusive se o Tapir 1.7.0 aceita o campo `angle`.

@@ -184,6 +184,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_objects(
+        ctx: Context,
+        objects: list[write.ObjectCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 library part objects by exact name, in metres and radians.
+        base_level is absolute project Z; size stays the part's default. Requires Tapir;
+        review then apply identical inputs with explicit port and single-use token.
+        An unknown name fails only that object. Verifies each object; never saves."""
+        return await write.create_objects(
+            client_of(ctx), objects, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def move_elements(
         ctx: Context,
         moves: list[write.ElementMove],

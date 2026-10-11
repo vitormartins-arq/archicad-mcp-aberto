@@ -1,4 +1,4 @@
-"""Small, reviewable writes: create walls, slabs and columns, move elements, set properties.
+"""Small, reviewable writes: create walls, slabs, columns and objects, move, set properties.
 
 Lengths are metres; no project is ever saved.
 
@@ -31,6 +31,7 @@ Positive = Annotated[float, Field(gt=0)]
 MAX_WALLS = 20
 MAX_SLABS = 20
 MAX_COLUMNS = 20
+MAX_OBJECTS = 20
 MAX_MOVES = 50
 MAX_PROPERTY_CHANGES = 100
 MOVE_TOLERANCE = 0.001  # metres; bounding boxes are compared after a move
@@ -94,6 +95,21 @@ class ColumnCreate(InputModel):
         elif self.diameter is None or self.width is not None or self.depth is not None:
             raise ValueError("Circular columns require diameter and no width/depth.")
         return self
+
+
+class ObjectCreate(InputModel):
+    library_part_name: Annotated[str, Field(min_length=1, max_length=255)]
+    origin: Point
+    floor_index: int
+    base_level: float
+    angle: float = 0.0
+
+    @field_validator("library_part_name")
+    @classmethod
+    def visible_name(cls, value: str) -> str:
+        if value != value.strip():
+            raise ValueError("library_part_name must not start or end with spaces.")
+        return value
 
 
 class SlabCreate(InputModel):
@@ -170,6 +186,12 @@ OPERATIONS = {
         "column_receipt_id",
         "New columns inherit Archicad's default layer and building material.",
     ),
+    "create_objects": (
+        "object",
+        "object_receipt_id",
+        "New objects keep the library part's default size and the Object tool's layer. "
+        "A library part name Archicad cannot find fails only that object.",
+    ),
     "move_elements": (
         "move",
         "move_receipt_id",
@@ -180,6 +202,15 @@ OPERATIONS = {
         "change_receipt_id",
         "Each value is written as shown and read back after.",
     ),
+}
+
+
+# operation -> (Tapir create command, list key in its parameters)
+CREATE_COMMANDS = {
+    "create_walls": ("CreateWalls", "wallsData"),
+    "create_slabs": ("CreateSlabs", "slabsData"),
+    "create_columns": ("CreateColumns", "columnsData"),
+    "create_objects": ("CreateObjects", "objectsData"),
 }
 
 
@@ -256,7 +287,8 @@ async def _plan(
     items = []
     slab = operation == "create_slabs"
     column = operation == "create_columns"
-    kind = "Column" if column else "Slab" if slab else "Wall"
+    obj = operation == "create_objects"
+    kind = "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
@@ -273,6 +305,8 @@ async def _plan(
             if slab
             else _column_payload(wall)
             if column
+            else _object_payload(wall)
+            if obj
             else _create_payload(wall)
         )
         items.append({"index": index, "status": "ready", "parameters": payload})
@@ -322,15 +356,13 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     slab = receipt["operation"] == "create_slabs"
     column = receipt["operation"] == "create_columns"
+    obj = receipt["operation"] == "create_objects"
+    command, key = CREATE_COMMANDS[receipt["operation"]]
     try:
         raw = await client.tapir(
             port,
-            "CreateColumns" if column else "CreateSlabs" if slab else "CreateWalls",
-            {
-                "columnsData" if column else "slabsData" if slab else "wallsData": [
-                    i["parameters"] for i in items
-                ]
-            },
+            command,
+            {key: [i["parameters"] for i in items]},
             timeout=receipt["write_timeout_seconds"],
         )
     except ArchicadError as exc:
@@ -386,6 +418,8 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
                 if slab
                 else _column_mismatches(item, row, receipt["target"])
                 if column
+                else _object_mismatches(item, row)
+                if obj
                 else _mismatches(_expected(item), row)
             )
             item.update(status="verification_failed" if differences else "verified")
@@ -612,6 +646,61 @@ async def create_columns(
         c if isinstance(c, ColumnCreate) else ColumnCreate.model_validate(c) for c in columns
     ]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_columns")
+
+
+def _object_payload(obj: ObjectCreate) -> dict:
+    return {
+        "libraryPartName": obj.library_part_name,
+        "coordinates": {**obj.origin.model_dump(), "z": obj.base_level},
+        "floorIndex": obj.floor_index,
+        "angle": obj.angle,
+    }
+
+
+def _object_mismatches(item: dict, row: Any) -> list[str]:
+    p = item["parameters"]
+    expected = {
+        "type": "Object",
+        "floorIndex": p["floorIndex"],
+        "details": {"origin": p["coordinates"]},
+    }
+    differences = _mismatches(expected, row)
+    details = row.get("details") if isinstance(row, dict) else None
+    details = details if isinstance(details, dict) else {}
+    angle = details.get("angle")
+    if not isinstance(angle, (float, int)) or isinstance(angle, bool):
+        differences.append("details.angle")
+    else:
+        # Archicad may store the angle in another turn; compare on the circle.
+        turn = (angle - p["angle"]) % math.tau
+        if min(turn, math.tau - turn) > 1e-7:
+            differences.append("details.angle")
+    library_part = details.get("libPart")
+    name = library_part.get("name") if isinstance(library_part, dict) else None
+    if not isinstance(name, str) or name.casefold() != p["libraryPartName"].casefold():
+        differences.append("details.libPart.name")
+    return differences
+
+
+async def create_objects(
+    client: ArchicadClient,
+    objects: list[dict | ObjectCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 library part objects by name. Metres, radians.
+
+    base_level is absolute project Z. Size and parameters stay the library part's
+    defaults; layer and pens inherit the Object tool. A name Archicad cannot find
+    fails only that object. Shares the token, receipt and timeout policy.
+    """
+    if not 1 <= len(objects) <= MAX_OBJECTS:
+        raise ValueError(f"Pass between 1 and {MAX_OBJECTS} objects.")
+    validated = [
+        o if isinstance(o, ObjectCreate) else ObjectCreate.model_validate(o) for o in objects
+    ]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_objects")
 
 
 class Vector(InputModel):
