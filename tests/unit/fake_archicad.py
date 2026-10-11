@@ -8,10 +8,19 @@ real machine.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import httpx
+
+CREATE_WALLS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "ac30_tapir170_create_walls.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 def ok(result: Any) -> dict:
@@ -37,7 +46,12 @@ class FakeArchicad:
     stories: list[dict] = field(
         default_factory=lambda: [{"index": 0, "name": "Térreo", "level": 0.0}]
     )
+    details: dict[str, dict] = field(default_factory=dict)
+    create_errors: dict[int, dict] = field(default_factory=dict)
+    lose_create_response: bool = False
     calls: list[str] = field(default_factory=list)
+    tapir_calls: list[str] = field(default_factory=list)
+    tapir_requests: list[dict] = field(default_factory=list)
 
     def handle(self, body: dict) -> dict:
         command = body.get("command", "")
@@ -88,6 +102,8 @@ class FakeArchicad:
             return fail(4010, "Add-On command is not registered")
         name = params["addOnCommandId"]["commandName"]
         args = params.get("addOnCommandParameters", {})
+        self.tapir_calls.append(name)
+        self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
         if name == "GetAddOnVersion":
             return ok({"addOnCommandResponse": {"version": self.tapir_version}})
         if name == "GetProjectInfo":
@@ -106,11 +122,37 @@ class FakeArchicad:
             out = []
             for e in args["elements"]:
                 g = e["elementId"]["guid"]
-                row = {"type": self.elements.get(g, "Unknown")}
+                full = self.details.get(g, {"type": self.elements.get(g, "Unknown")})
+                row = {key: deepcopy(value) for key, value in full.items() if key in args["fields"]}
                 if "floorPlanPolygons" in args["fields"]:
                     row["floorPlanPolygons"] = []
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
+        if name == "CreateWalls":
+            out = []
+            for index, wall in enumerate(args["wallsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Wall"
+                row = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
+                row["floorIndex"] = wall["floorIndex"]
+                floor = next(s for s in self.stories if s["index"] == wall["floorIndex"])
+                row["details"].update(
+                    begCoordinate=wall["begCoordinate"],
+                    endCoordinate=wall["endCoordinate"],
+                    height=wall["height"],
+                    begThickness=wall["thickness"],
+                    endThickness=wall["thickness"],
+                    bottomOffset=wall["zCoordinate"],
+                    zCoordinate=floor["level"] + wall["zCoordinate"],
+                    offset=wall["offset"],
+                    referenceLineLocation=wall["referenceLineLocation"],
+                )
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         return ok({"addOnCommandResponse": {"error": {"code": 1, "message": f"Unknown {name}"}}})
 
     @staticmethod
@@ -125,6 +167,11 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         instance = by_port.get(request.url.port)
         if instance is None:
             raise httpx.ConnectError("Connection refused", request=request)
-        return httpx.Response(200, json=instance.handle(json.loads(request.content)))
+        body = json.loads(request.content)
+        response = instance.handle(body)
+        command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if instance.lose_create_response and command == "CreateWalls":
+            raise httpx.ReadTimeout("Injected lost response after model change", request=request)
+        return httpx.Response(200, json=response)
 
     return httpx.MockTransport(handler)

@@ -3,7 +3,7 @@
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
-**Última atualização:** 11/10/2026, Claude.
+**Última atualização:** 11/10/2026, Codex (Fase 1; notas de leitura preservadas).
 
 ## Feito
 
@@ -30,3 +30,15 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 2. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
    simulação por padrão, recibo de cada escrita, erro por elemento e conferência depois
    de aplicar. Começar por paredes. Testar Undo de verdade.
+
+## Quem está com o quê
+
+- **Fase 1: Codex**, branch `feat/create-walls`, PR para `main` (merge pelo Vitor).
+  Escopo desta entrega: somente `create_walls`, simulação por padrão, plano de revisão,
+  recibo por parede, erro por elemento e conferência após aplicar.
+- `tools/read.py` e `fix/floor-plan-polygons-note` ficam fora desta entrega.
+- Validação desta etapa: apenas ArchiCAD simulado; nenhuma chamada nova ao ArchiCAD real.
+  `uv run pytest`: 65 testes passaram em Python 3.12.10/Windows.
+  `uv run ruff check .`: passou. Aguardar revisão e merge do PR pelo Vitor.
+- Próximo passo da Fase 1: revisão deste PR; edição de paredes em entrega separada.
+  Testes ao vivo e Undo precisam de uma nova etapa autorizada em projeto de teste.

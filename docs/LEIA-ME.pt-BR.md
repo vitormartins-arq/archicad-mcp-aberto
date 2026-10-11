@@ -1,8 +1,7 @@
 # archicad-mcp-aberto
 
 Servidor [MCP](https://modelcontextprotocol.io) aberto que deixa assistentes de IA
-(Claude, Codex, Cursor e outros) trabalharem com o ArchiCAD aberto: hoje lê o modelo;
-nas próximas fases cria e edita elementos com segurança.
+(Claude, Codex, Cursor e outros) trabalharem com o ArchiCAD aberto: lê o modelo e permite simular ou criar paredes retas simples com segurança.
 
 > Não é produto oficial da Graphisoft e não tem vínculo com a Graphisoft ou a Nemetschek.
 > Archicad é marca registrada da Graphisoft SE.
@@ -21,7 +20,7 @@ JSON oficial e o Tapir. Nada sai do computador: sem telemetria e sem internet.
 
 ## Situação
 
-Fase 0, pré-alfa. Nove ferramentas **somente de leitura** (lista no
+Início da Fase 1, pré-alfa. Nove ferramentas **somente de leitura** e `create_walls` (lista no
 [README em inglês](../README.md#status)). Medidas sempre em SI (metros), qualquer que
 seja a unidade do projeto.
 
@@ -37,8 +36,29 @@ do ArchiCAD pela página de
 - Com mais de uma instância aberta, nada roda sem destino explícito.
 - "Ocupado" (erro 4001) é informado como ocupado, não como add-on ausente.
 - Leituras pesadas (polígonos de planta) só quando pedidas.
-- As ferramentas de escrita, na próxima fase, vão simular por padrão, guardar um recibo
-  de cada escrita e conferir o resultado depois de aplicar.
+- `create_walls` simula por padrão. A aplicação exige revisão do plano, destino explícito
+  e o código de confirmação da simulação. Guarda recibos por parede e confere a geometria.
+  Nenhuma ferramenta salva o projeto do ArchiCAD.
+
+## Criar paredes
+
+A ferramenta `create_walls` começa com paredes retas de estrutura simples (`Basic`),
+até 20 por chamada. Informe início e fim da linha de referência, pavimento, altura e
+espessura em metros. Ela usa o vegetal e o material de construção padrão do ArchiCAD.
+O exemplo completo e os campos opcionais estão no [README](../README.md#wall-creation).
+
+A primeira chamada apenas simula. Depois de revisar o plano com o usuário, repita os
+mesmos dados com `dry_run=false`, a porta explícita e `confirmation_token` da simulação.
+Esse código vale por dez minutos, na mesma sessão, e só pode ser usado uma vez.
+
+Cada parede tem seu próprio registro dentro do recibo do lote, com parâmetros, GUID
+ou erro do Tapir e conferência da geometria. Os arquivos ficam em
+`~/.archicad-mcp-aberto/receipts`; a pasta pode ser configurada com
+`ARCHICAD_MCP_RECEIPTS_DIR`. Se houver falha depois do envio, confira o modelo antes
+de tentar novamente: uma parede pode ter sido criada mesmo sem resposta.
+
+Esta entrega foi validada apenas no simulado, usando formatos de resposta capturados
+anteriormente. Testes ao vivo, Undo e edição de paredes ficam para outra etapa.
 
 ## Contribuir
 
