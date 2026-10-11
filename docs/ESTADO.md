@@ -123,3 +123,11 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   Nenhuma chamada ao ArchiCAD real; merge pelo Vitor.
 
 - T1: deduplicação de polígonos por elemento (ordem idêntica, tolerância 1e-9 m), contagem em notes; somente simulado.
+
+- **Claude / empacotamento (T5):** branch `feat/mcpb-package`. `manifest.json` (MCPB 0.4,
+  runtime uv) e `.mcpbignore`; `mcpb pack` 2.1.2 gera um `.mcpb` de 79 kB com 16 arquivos.
+  Desempacotado e rodado com `uv run --directory`, o servidor respondeu `initialize` e
+  listou as 14 ferramentas (Linux, sem ArchiCAD). Workflow `release.yml` numa tag `v*`
+  gera wheel, sdist e `.mcpb` num release em rascunho. Falta instalar no Claude Desktop do
+  Vitor (Windows) e testar com o ArchiCAD aberto. O Codex ficou sem créditos em 11/10/2026
+  depois da T1; Claude segue a fila.

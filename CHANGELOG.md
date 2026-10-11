@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Package for Claude Desktop: `manifest.json` (MCPB 0.4, uv runtime) and `.mcpbignore`;
+  a tag `v*` workflow runs the tests and drafts a release with wheel, sdist and `.mcpb`.
+  README covers the bundle, `uvx` from GitHub and Codex. A test keeps the manifest tool
+  list and version in step with the server.
+
 - Add read-only `get_bounding_boxes`: official JSON API 2D/3D boxes in metres for
   1 to 500 GUIDs, ordered per-element results/errors, no Tapir requirement and
   ambiguous-target refusal. Documentation-derived fixture and simulated tests only.

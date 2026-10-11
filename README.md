@@ -39,7 +39,11 @@ Phase 1 foundation, pre-alpha. Nine **read-only** tools plus safe wall creation:
 | `get_project_info` | Project name, path, Teamwork state | yes |
 | `get_stories` | Stories and levels | yes |
 | `get_element_details` | BIM details; floor plan polygons only on request | yes |
+| `get_bounding_boxes` | 2D or 3D boxes in metres, per-element errors | no |
+| `list_building_materials` | Building materials with cut-fill pens | yes |
 | `create_walls` | Preview or apply up to 20 straight Basic walls, with per-wall receipts | yes |
+| `create_slabs` | Preview or apply up to 20 simple polygon slabs | yes |
+| `create_columns` | Preview or apply up to 20 rectangular or circular columns | yes |
 
 Tested so far against a simulated Archicad (unit tests). The tools were first tested
 live on Archicad 29 build 3000 (Windows) with Tapir 1.7.0 in the bridge this project
@@ -47,7 +51,21 @@ grew from. A public matrix of tested versions comes with the live tests.
 
 ## Install
 
-Requires [uv](https://docs.astral.sh/uv/). Until the first release, run from a clone:
+Requires [uv](https://docs.astral.sh/uv/) and, for most tools, the
+[Tapir](https://github.com/ENZYME-APD/tapir-archicad-automation/releases) add-on in Archicad.
+
+### Claude Desktop (one click)
+
+Download `archicad-mcp-aberto-<version>.mcpb` from the
+[releases](https://github.com/vitormartins-arq/archicad-mcp-aberto/releases) and open it
+(or drag it onto Settings > Extensions in Claude Desktop). The extension asks for the ports
+to scan and the write timeout; the defaults work for a normal install.
+
+To build the bundle yourself from a clone: `npx @anthropic-ai/mcpb@2.1.2 pack .`
+
+### Manual configuration (Claude Desktop, Codex and other clients)
+
+From a clone:
 
 ```json
 {
@@ -58,6 +76,27 @@ Requires [uv](https://docs.astral.sh/uv/). Until the first release, run from a c
     }
   }
 }
+```
+
+Without a clone, straight from GitHub:
+
+```json
+{
+  "mcpServers": {
+    "archicad": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/vitormartins-arq/archicad-mcp-aberto", "archicad-mcp-aberto"]
+    }
+  }
+}
+```
+
+In Codex, add the same command to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.archicad]
+command = "uvx"
+args = ["--from", "git+https://github.com/vitormartins-arq/archicad-mcp-aberto", "archicad-mcp-aberto"]
 ```
 
 Then install Tapir for your Archicad version from its
