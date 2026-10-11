@@ -66,7 +66,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 
 1. Tarefas T12 a T16 de `docs/FILA.md` (Codex): preflight parcial de objetos, README,
    `rotate_elements`, parâmetros GDL e `modify_walls`.
-2. Claude: testar Undo (Ctrl+Z) depois de uma gravação do MCP; terminar a pendência do
+2. Claude: Undo testado (um Ctrl+Z desfaz o lote); terminar a pendência do
    `floorPlanPolygons` (5 paredes do CRM 005, só leitura).
 3. Fase 2: planejar o gateway (qualquer comando oficial ou do Tapir com as mesmas
    proteções) antes de criar muitas ferramentas soltas.
@@ -211,6 +211,27 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `list_library_parts`: acha "Bidê" com o mesmo GUID do objeto colocado; inventário
   `partial=true`, 92 peças ilegíveis (código -2130313112). Com inventário parcial, um nome
   fora da lista recusa o lote inteiro na prévia, mesmo com outras peças válidas: tarefa T12.
+
+- **Codex / inventário parcial:** branch fix/partial-library-inventory da origin/main 4238b67. create_objects marca só nomes ausentes como unconfirmed com aviso quando skippedCount > 0; apply deixa o CreateObjects decidir por item e confere sucessos. Inventário completo continua recusando nome desconhecido. Apenas simulado; docs/LIBRARY_PARTS.md e README ajustados.
+
+- Correção do inventário parcial: 651 testes simulados e Ruff passaram em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Claude/Vitor.
+
+- **Claude / teste ao vivo desta correção, 11/10/2026:** mesmo ambiente (AC30 build 3001
+  BRA, Tapir 1.7.0, projeto sem nome na porta 19723, não salvo). Lote ["Bidê" em (20, 5),
+  "Nao Existe 123" em (22, 5)]: prévia com o Bidê `ready` (GUID da peça) e o outro
+  `unconfirmed` com aviso; apply `needs_review`, Bidê `verified` e o outro `failed` com
+  `{"code":-2130313113,...}`. Na primeira tentativa o apply recusou com "changed since
+  preview" sem nada gravado; a segunda passou. Seis leituras seguidas do inventário deram
+  o mesmo resultado, então a causa da primeira recusa não foi identificada.
+
+- **Claude / Undo ao vivo, 11/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723, não salvo, pela extensão `.mcpb`. `create_walls` de uma parede
+  (20, 0) a (23, 0) saiu `verified` (GUID 06E90EA4, 9 para 10 elementos). Um Ctrl+Z no
+  ArchiCAD desfez a gravação inteira: o GUID deixou de existir e o projeto voltou a 9
+  elementos. CRM 005 continuou com 192. Então cada lote do MCP é um passo de Undo.
+  Este teste rodou no mesmo projeto e na mesma hora do teste do inventário parcial acima;
+  a parede criada e desfeita mudou o conjunto de elementos, o que explica a primeira
+  recusa "changed since preview" daquele teste (a trava agiu certo).
 
 - **Codex / T13:** branch docs/readme-status da origin/main 50a9072. README em inglês enumera 22 ferramentas (13 leitura/9 escrita), resultados ao vivo registrados pelo operador e Fase 1 quase completa. Somente documentação; nenhuma chamada real pelo Codex. T12 já entregue no PR #26 (fix/partial-library-inventory), não duplicada neste lote.
 

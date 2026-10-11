@@ -346,12 +346,12 @@ async def _plan(
         for wall in walls:
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
             if not candidates:
-                reason = (
-                    "inventory is partial; cannot confirm name"
-                    if inventory["skippedCount"]
-                    else "name not in loaded Object library parts"
+                if inventory["skippedCount"] > 0:
+                    continue  # An unreadable part may still resolve during CreateObjects.
+                raise ValueError(
+                    f"Library part {wall.library_part_name!r}: "
+                    "name not in loaded Object library parts."
                 )
-                raise ValueError(f"Library part {wall.library_part_name!r}: {reason}.")
             if len({row["guid"].upper() for row in candidates}) != 1:
                 raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
     for index, wall in enumerate(walls):
@@ -380,9 +380,15 @@ async def _plan(
         )
         item = {"index": index, "status": "ready", "parameters": payload}
         if obj:
-            item["library_part_guid"] = library_parts[wall.library_part_name.casefold()][0][
-                "guid"
-            ].upper()
+            candidates = library_parts.get(wall.library_part_name.casefold(), [])
+            if candidates:
+                item["library_part_guid"] = candidates[0]["guid"].upper()
+            else:
+                item.update(
+                    status="unconfirmed",
+                    warning="Library inventory is partial; this name could not be confirmed. "
+                    "CreateObjects resolves it at apply and reports any error for this item.",
+                )
         items.append(item)
     return {"operation": operation, "target": target, "items": items}
 

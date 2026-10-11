@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Credit Vitor Martins as the project's creator in LICENSE, README, LEIA-ME, pyproject and
+  the .mcpb manifest. The license stays MIT.
+
 - Add `create_objects`: up to 20 library part objects by exact name, plan position, story,
   absolute base level and angle (radians), through Tapir `CreateObjects`. Size stays the
   library part's default. A name Archicad cannot find fails only that object. Applying
@@ -73,4 +76,5 @@
 
 - Add read-only `list_library_parts` and source investigation; preflight object document names against loaded Object parts before issuing a token.
 
+- Let unconfirmed object names in partial library inventories proceed per item to native creation; complete inventories still reject unknown names during preview.
 - Refresh README status for all 22 tools, recorded AC30 build 3001 BRA live checks and the nearly complete Phase 1 roadmap.
