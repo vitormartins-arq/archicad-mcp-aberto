@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_columns` for straight rectangular/circular columns, absolute base level,
+  shared single-use confirmation/receipts/write timeout and per-column verification.
+  Add documented Tapir fixtures, simulated tests, target-safety coverage and a smoke column.
+
 - Writes and their verification wait up to 120 s (`ARCHICAD_MCP_WRITE_TIMEOUT`).
   A live `CreateSlabs` on an upper story took over 12 s and was reported as unknown.
 - Add `create_slabs`: simple polygons, absolute project level, dry-run default,

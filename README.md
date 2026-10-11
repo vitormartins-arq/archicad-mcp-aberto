@@ -133,6 +133,23 @@ The fixture `tests/fixtures/tapir170_create_slabs_documented.json` records pinne
 Tapir 1.7.0 source links. It is documentation/source-derived, **not a live capture**.
 This delivery was tested only against the simulated Archicad.
 
+## Safe column creation
+
+`create_columns` previews up to 20 straight columns using the same confirmation,
+receipt and timeout policy as walls/slabs. Each column takes `origin: {x, y}`,
+`floor_index`, positive `height` and `base_level` (absolute project Z, all in metres).
+Use `section: "rectangular"` with positive `width`/`depth` (the default section), or
+`section: "circular"` with positive `diameter` and no width/depth. The core is centered
+and unrotated; rectangular dimensions are explicitly unlinked.
+
+Layer/material and other Column tool defaults are inherited. Verification checks
+position, story, height, base levels, dimensions, section, rotation/anchor and that
+the column is not slanted or profile-based; incompatible defaults require review.
+The Tapir command cannot explicitly reset every inherited Column setting. Keep the
+Column tool defaults straight with a basic section before a live run. Each result
+has a `column_receipt_id`. The fixture is official-source/documentation-derived,
+not a live capture. Only simulated tests were executed for this delivery.
+
 ## Roadmap
 
 0. Foundation: connection, discovery, read tools, simulated Archicad, CI.

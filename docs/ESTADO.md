@@ -82,3 +82,9 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   `uv run ruff check .`: passou. Merge pelo Vitor.
 - **PR #5:** main integrada por merge (sem rebase), `cut_fills` preservado junto
   com `CreateSlabs`; 120 testes locais passaram e CI verde nas seis combinações.
+
+- **Codex / pilares:** branch `feat/create-columns`, `create_columns` com seção
+  retangular/circular, base em cota absoluta e confirmação/recibos/timeout compartilhados.
+  Fixture documental do Tapir 1.7.0, não captura ao vivo. Smoke do PR #9 incorporado
+  como dependência para incluir um pilar. 347 testes simulados passaram e Ruff passou
+  em Windows/Python 3.12.10. Nenhuma chamada real; merge pelo Vitor.

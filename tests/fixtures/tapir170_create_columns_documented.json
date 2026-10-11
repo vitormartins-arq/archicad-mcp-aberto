@@ -1,0 +1,41 @@
+{
+  "provenance": {
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "live_capture": false,
+    "note": "Synthetic values; format derived from official documentation/source, not a live Archicad capture.",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCreationCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/CommandBase.cpp"
+    ]
+  },
+  "column_details": {
+    "type": "Column",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "height": 3,
+      "bottomOffset": 0,
+      "zCoordinate": 0,
+      "axisRotationAngle": 0,
+      "coreAnchor": "Center",
+      "isSlanted": false,
+      "slantAngle": 0,
+      "width": 0.3,
+      "depth": 0.5,
+      "circleBased": false,
+      "isWidthAndHeightLinked": false
+    }
+  },
+  "create_error": {
+    "error": {
+      "code": -1,
+      "message": "Failed to create new Column"
+    }
+  }
+}
