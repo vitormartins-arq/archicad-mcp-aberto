@@ -121,3 +121,5 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   preservando `create_columns` (incluindo vínculo circular) e `get_bounding_boxes`.
   373 testes simulados e Ruff passaram em Windows/Python 3.12.10.
   Nenhuma chamada ao ArchiCAD real; merge pelo Vitor.
+
+- T1: deduplicação de polígonos por elemento (ordem idêntica, tolerância 1e-9 m), contagem em notes; somente simulado.
