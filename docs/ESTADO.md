@@ -3,7 +3,7 @@
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
-**Última atualização:** 11/10/2026, Codex (Fase 1; notas de leitura preservadas).
+**Última atualização:** 11/10/2026 23h, Claude (PRs #22 a #25 integrados e testados ao vivo).
 
 ## Feito
 
@@ -61,11 +61,16 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
 ## Próximos passos
 
-1. Resolver a pendência do `floorPlanPolygons` (ver acima).
-2. Tarefas do Codex em `docs/FILA.md`; Claude revisa, testa ao vivo e faz o merge.
-3. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
-   simulação por padrão, recibo de cada escrita, erro por elemento e conferência depois
-   de aplicar. Começar por paredes. Testar Undo de verdade.
+Situação em 11/10/2026: 22 ferramentas na `main` (13 de leitura, 9 de gravação), todas
+testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
+
+1. Tarefas T12 a T16 de `docs/FILA.md` (Codex): preflight parcial de objetos, README,
+   `rotate_elements`, parâmetros GDL e `modify_walls`.
+2. Claude: testar Undo (Ctrl+Z) depois de uma gravação do MCP; terminar a pendência do
+   `floorPlanPolygons` (5 paredes do CRM 005, só leitura).
+3. Fase 2: planejar o gateway (qualquer comando oficial ou do Tapir com as mesmas
+   proteções) antes de criar muitas ferramentas soltas.
+4. Ainda não testado: Teamwork, AC28 e AC29.
 
 ## Quem está com o quê
 
@@ -196,6 +201,25 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
 - T11: 646 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T10, PR base main. T8–T11 entregues em sequência; nenhum merge pelo Codex e FILA.md intacta.
 
+- **Claude / teste ao vivo dos PRs #22 a #25, 11/10/2026:** ArchiCAD 30 build 3001 BRA,
+  Tapir 1.7.0, projeto sem nome na porta 19723 (`isUntitled` conferido antes de cada
+  gravação), não salvo, CRM 005 não tocado. Código em `acd9266`.
+  `create_beams`: viga (0, 8) a (4, 8), cota 2,80, 0,20 x 0,40, `verified`.
+  `create_zones`: zona "Teste MCP" Z01 de (10, 8) a (14, 11), `verified`; o Tapir real não
+  mandou `polygonArcs`, como previsto na revisão (correção 512fff0 antes do merge).
+  Prévias com nomes: "Pavimento Térreo", "EST - Viga" e "ARQ - Zona".
+  `list_library_parts`: acha "Bidê" com o mesmo GUID do objeto colocado; inventário
+  `partial=true`, 92 peças ilegíveis (código -2130313112). Com inventário parcial, um nome
+  fora da lista recusa o lote inteiro na prévia, mesmo com outras peças válidas: tarefa T12.
+
 - **Codex / inventário parcial:** branch fix/partial-library-inventory da origin/main 4238b67. create_objects marca só nomes ausentes como unconfirmed com aviso quando skippedCount > 0; apply deixa o CreateObjects decidir por item e confere sucessos. Inventário completo continua recusando nome desconhecido. Apenas simulado; docs/LIBRARY_PARTS.md e README ajustados.
 
 - Correção do inventário parcial: 651 testes simulados e Ruff passaram em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Claude/Vitor.
+
+- **Claude / teste ao vivo desta correção, 11/10/2026:** mesmo ambiente (AC30 build 3001
+  BRA, Tapir 1.7.0, projeto sem nome na porta 19723, não salvo). Lote ["Bidê" em (20, 5),
+  "Nao Existe 123" em (22, 5)]: prévia com o Bidê `ready` (GUID da peça) e o outro
+  `unconfirmed` com aviso; apply `needs_review`, Bidê `verified` e o outro `failed` com
+  `{"code":-2130313113,...}`. Na primeira tentativa o apply recusou com "changed since
+  preview" sem nada gravado; a segunda passou. Seis leituras seguidas do inventário deram
+  o mesmo resultado, então a causa da primeira recusa não foi identificada.
