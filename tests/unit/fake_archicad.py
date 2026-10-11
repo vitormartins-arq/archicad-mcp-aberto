@@ -139,7 +139,8 @@ class FakeArchicad:
             out = []
             for p in params["properties"]:
                 g = p["propertyId"]["guid"]
-                definition = {"guid": g, "name": self.properties[g]}
+                # Key layout seen live on AC30 build 3001 (propertyId.guid, not "guid").
+                definition = {"propertyId": {"guid": g}, "name": self.properties[g]}
                 if g in self.read_only_properties:
                     definition["isEditable"] = False
                 out.append({"propertyDefinition": definition})
