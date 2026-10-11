@@ -27,8 +27,8 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
    Add new lessons (LA-xxx) and open items (P-xxx) at the end; never renumber; re-read
    the file right before saving, because other agents edit it too.
 3. `CONTRIBUTING.md` for where code goes and the rules for a tool.
-4. `docs/FILA.md`: Codex's task queue, kept by Claude. When Vitor says "faça a próxima
-   tarefa de docs/FILA.md", follow the rules at the top of that file.
+4. `docs/FILA.md`: Codex's task queue, kept by Claude. When Vitor says "faça as tarefas
+   de docs/FILA.md", follow the rules at the top of that file.
 
 ## Commands
 
