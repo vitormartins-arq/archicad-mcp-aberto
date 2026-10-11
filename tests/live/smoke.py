@@ -19,7 +19,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--port", type=int, required=True, help="Explicit Archicad port")
     result.add_argument(
-        "--write", action="store_true", help="Create test walls/slab in an untitled project"
+        "--write", action="store_true", help="Create test walls/slab/column in an untitled project"
     )
     result.add_argument(
         "--report-dir",
@@ -186,9 +186,20 @@ async def run_smoke(
                     "level": story["level"],
                 }
             ]
+            column_inputs = [
+                {
+                    "origin": {"x": x + 12, "y": y},
+                    "floor_index": story["index"],
+                    "height": 3,
+                    "base_level": story["level"],
+                    "width": 0.3,
+                    "depth": 0.5,
+                }
+            ]
             for tool, inputs, count, item_id in (
                 (write.create_walls, wall_inputs, 2, "wall_receipt_id"),
                 (write.create_slabs, slab_inputs, 1, "slab_receipt_id"),
+                (write.create_columns, column_inputs, 1, "column_receipt_id"),
             ):
                 await _untitled(client, port)
                 entry = {"tool": tool.__name__, "inputs": inputs}

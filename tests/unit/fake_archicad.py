@@ -38,6 +38,14 @@ CREATE_SLABS_FIXTURE = json.loads(
 )
 
 
+# Live GetDetailsOfElements capture: AC30 build 3001 BRA, Windows, Tapir 1.7.0.
+CREATE_COLUMNS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_create_columns_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -66,6 +74,7 @@ class FakeArchicad:
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
     lose_slab_response: bool = False
+    lose_column_response: bool = False
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
@@ -171,6 +180,39 @@ class FakeArchicad:
                     row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
+        if name == "CreateColumns":
+            out = []
+            for index, column in enumerate(args["columnsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Column"
+                row = deepcopy(
+                    CREATE_COLUMNS_FIXTURE[
+                        "circular_column_details" if column["circleBased"] else "column_details"
+                    ]
+                )
+                row["floorIndex"] = column["floorIndex"]
+                floor = next(s for s in self.stories if s["index"] == column["floorIndex"])
+                coords = column["coordinates"]
+                row["details"].update(
+                    origin={"x": coords["x"], "y": coords["y"]},
+                    height=column["height"],
+                    zCoordinate=coords["z"],
+                    bottomOffset=coords["z"] - floor["level"],
+                    width=column["width"],
+                    depth=column["depth"],
+                    circleBased=column["circleBased"],
+                    isWidthAndHeightLinked=(
+                        column["circleBased"] or column["isWidthAndHeightLinked"]
+                    ),
+                    axisRotationAngle=column["axisRotationAngle"],
+                    coreAnchor=column["coreAnchor"],
+                )
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -241,6 +283,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_slab_response and command == "CreateSlabs":
             raise httpx.ReadTimeout(
                 "Injected lost slab response after model change", request=request
+            )
+        if instance.lose_column_response and command == "CreateColumns":
+            raise httpx.ReadTimeout(
+                "Injected lost column response after model change", request=request
             )
         return httpx.Response(200, json=response)
 

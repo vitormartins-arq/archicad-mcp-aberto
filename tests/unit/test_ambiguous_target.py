@@ -14,6 +14,18 @@ pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "create_columns": {
+        "columns": [
+            {
+                "origin": {"x": 0, "y": 0},
+                "floor_index": 0,
+                "height": 3,
+                "base_level": 0,
+                "width": 0.3,
+                "depth": 0.5,
+            }
+        ]
+    },
     "list_building_materials": {},
     "list_elements": {},
     "get_selection": {},

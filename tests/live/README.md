@@ -26,12 +26,13 @@ The runner uses story 0 when available, otherwise the first reported story.
 
 It previews/applies two 4 m / 3 m walls in an L (height 3 m, thickness 0.20 m), then
 one separate 4 by 3 m slab (thickness 0.20 m, absolute top level at the story level).
-Each batch has a fresh single-use preview token and verified per-element receipts.
+It then creates one separate rectangular column (0.30 by 0.50 m, height 3 m,
+base at the story level). Each batch has a fresh single-use preview token and verified per-element receipts.
 Inherited tool defaults may produce verification failures; the report retains them.
 A failure or unknown outcome stops subsequent writes without retry or rollback.
 
 **The runner never saves, deletes elements or runs Undo.** Inspect the result and
-use manual Undo to revert successful batches (slab, then walls). Partial writes must
+use manual Undo to revert successful batches (column, slab, then walls). Partial writes must
 be inspected before undoing or attempting a new run; an unknown outcome can already
 have created elements.
 

@@ -102,11 +102,13 @@ async def test_write_creates_l_walls_and_slab_and_checks_receipts(tmp_path):
     fake = SmokeFake(19723, stories=[{"index": 0, "name": "Ground", "level": 3}])
     report = await run(fake, tmp_path, write=True)
     assert report["status"] == "passed"
-    assert list(fake.elements.values()) == ["Wall", "Wall", "Slab"]
-    walls, slabs = report["writes"]
+    assert list(fake.elements.values()) == ["Wall", "Wall", "Slab", "Column"]
+    walls, slabs, columns = report["writes"]
     assert walls["inputs"][0]["end"] == walls["inputs"][1]["start"]
     assert slabs["inputs"][0]["level"] == 3
-    for entry, count in zip(report["writes"], [2, 1], strict=True):
+    assert columns["inputs"][0]["base_level"] == 3
+    assert fake.tapir_calls.count("CreateColumns") == 1
+    for entry, count in zip(report["writes"], [2, 1, 1], strict=True):
         assert entry["preview"]["dry_run"] is True
         assert entry["receipt"]["dry_run"] is False
         assert entry["receipt"]["counts"]["verified"] == count
