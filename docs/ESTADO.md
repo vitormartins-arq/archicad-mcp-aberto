@@ -30,14 +30,14 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   uma com 2) e 5 sem, de espessuras variadas (0,08, 0,15 e 0,34 m). Na tela todas têm
   corte preto sólido.
   Teste em projeto sem título, sem salvar (11/10/2026): 5 paredes de 0,20 m (solta, em L,
-  em sequência reta). Com o material composto padrão, sem preenchimento de corte, nenhuma
-  devolveu polígono. Com o material básico "Concreto - Estrutural", todas devolveram: no L,
-  a parede horizontal leva o quadrado do canto em 2 triângulos e a vertical começa
-  recortada; na sequência reta cada parede tem o seu retângulo. Então cada parede recebe
-  o seu polígono, e o que decide é o material ter preenchimento de corte. A hipótese da
-  junção fundida caiu. No CRM 005 as paredes parecem pretas por uma sobreposição gráfica
-  do Vitor, que pinta todas de preto; isso esconde que algumas não têm preenchimento de
-  corte no material. Falta conferir o material das paredes sem polígono do CRM 005.
+  em sequência reta). Com o material padrão, que não mostra preenchimento de corte, nenhuma
+  devolveu polígono. Com "Concreto - Estrutural", todas devolveram, cada uma com o seu (no
+  L, o canto fica com uma parede, em 2 triângulos).
+  Releitura do CRM 005 com a sobreposição gráfica desligada: 13 paredes Basic, todas com o
+  mesmo material e corte cinza visível na tela. 8 têm polígono e 5 não (F426B8A1, D3ED1C3F,
+  63022645, D83685A3, 91EF50D5). Desligar a sobreposição não mudou nada. Então nem o
+  material nem a sobreposição explicam essas 5. Causa ainda aberta; próximo passo é ver na
+  planta onde ficam essas 5 paredes (junções, sobreposição com pilares).
 - Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos
