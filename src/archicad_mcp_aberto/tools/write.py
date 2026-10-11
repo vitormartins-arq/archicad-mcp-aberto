@@ -28,6 +28,7 @@ from archicad_mcp_aberto.tools.read import element_ids
 Positive = Annotated[float, Field(gt=0)]
 MAX_WALLS = 20
 MAX_SLABS = 20
+MAX_COLUMNS = 20
 PREVIEW_SECONDS = 600
 DETAIL_FIELDS = ["type", "floorIndex", "layerIndex", "hotlinkId", "details"]
 
@@ -67,6 +68,26 @@ class WallCreate(InputModel):
     def nonzero_length(self) -> WallCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A wall must have a reference line at least 0.000001 m long.")
+        return self
+
+
+class ColumnCreate(InputModel):
+    origin: Point
+    floor_index: int
+    height: Positive
+    base_level: float
+    section: Literal["rectangular", "circular"] = "rectangular"
+    width: Positive | None = None
+    depth: Positive | None = None
+    diameter: Positive | None = None
+
+    @model_validator(mode="after")
+    def valid_section(self) -> ColumnCreate:
+        if self.section == "rectangular":
+            if self.width is None or self.depth is None or self.diameter is not None:
+                raise ValueError("Rectangular columns require width/depth and no diameter.")
+        elif self.diameter is None or self.width is not None or self.depth is not None:
+            raise ValueError("Circular columns require diameter and no width/depth.")
         return self
 
 
@@ -199,11 +220,11 @@ async def _plan(
     port, target, floors = await _context(client, port)
     items = []
     slab = operation == "create_slabs"
+    column = operation == "create_columns"
+    kind = "Column" if column else "Slab" if slab else "Wall"
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
-            raise ValueError(
-                f"{'Slab' if slab else 'Wall'} {index}: story {wall.floor_index} does not exist."
-            )
+            raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
         payload = (
             {
                 "polygonCoordinates": [p.model_dump() for p in wall.outline],
@@ -215,6 +236,8 @@ async def _plan(
                 "holes": [],
             }
             if slab
+            else _column_payload(wall)
+            if column
             else _create_payload(wall)
         )
         items.append({"index": index, "status": "ready", "parameters": payload})
@@ -263,11 +286,16 @@ def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
 async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     slab = receipt["operation"] == "create_slabs"
+    column = receipt["operation"] == "create_columns"
     try:
         raw = await client.tapir(
             port,
-            "CreateSlabs" if slab else "CreateWalls",
-            {"slabsData" if slab else "wallsData": [i["parameters"] for i in items]},
+            "CreateColumns" if column else "CreateSlabs" if slab else "CreateWalls",
+            {
+                "columnsData" if column else "slabsData" if slab else "wallsData": [
+                    i["parameters"] for i in items
+                ]
+            },
             timeout=receipt["write_timeout_seconds"],
         )
     except ArchicadError as exc:
@@ -321,6 +349,8 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
             differences = (
                 _slab_mismatches(item, row, receipt["target"])
                 if slab
+                else _column_mismatches(item, row, receipt["target"])
+                if column
                 else _mismatches(_expected(item), row)
             )
             item.update(status="verification_failed" if differences else "verified")
@@ -344,6 +374,7 @@ async def _write(
     if state is None or state.session_id != client.session_id:
         state = WriteState(session_id=client.session_id)
         _states[client] = state
+    kind = {"create_columns": "column", "create_slabs": "slab", "create_walls": "wall"}[operation]
     async with state.lock:
         if dry_run:
             plan = await _plan(client, walls, port, operation)
@@ -359,14 +390,11 @@ async def _write(
                 "confirmation_token": token,
                 "expires_in_seconds": PREVIEW_SECONDS,
                 "note": "Review this plan with the user before applying. No model changes. "
-                f"New {'slabs' if operation == 'create_slabs' else 'walls'} inherit "
+                f"New {kind}s inherit "
                 "Archicad's default layer and building material.",
             }
         if port is None:
-            raise ValueError(
-                f"Applying a {'slab' if operation == 'create_slabs' else 'wall'} "
-                "plan requires its explicit port."
-            )
+            raise ValueError(f"Applying a {kind} plan requires its explicit port.")
         entry = state.previews.get(confirmation_token or "")
         if entry is None or entry[0] <= time.monotonic():
             raise ValueError("Preview missing, expired or already consumed. Run a new dry run.")
@@ -386,9 +414,13 @@ async def _write(
             "status": "outcome_unknown",
         }
         for item in receipt["items"]:
-            item["slab_receipt_id" if operation == "create_slabs" else "wall_receipt_id"] = str(
-                uuid4()
-            )
+            item[
+                "column_receipt_id"
+                if operation == "create_columns"
+                else "slab_receipt_id"
+                if operation == "create_slabs"
+                else "wall_receipt_id"
+            ] = str(uuid4())
         receipt["prepared_receipt_path"] = _journal(receipt, "prepared")
         # Consume before dispatch, including if dispatch or verification later fails.
         state.previews.pop(confirmation_token)
@@ -481,3 +513,67 @@ async def create_slabs(
         raise ValueError(f"Pass between 1 and {MAX_SLABS} slabs.")
     validated = [s if isinstance(s, SlabCreate) else SlabCreate.model_validate(s) for s in slabs]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_slabs")
+
+
+def _column_payload(column: ColumnCreate) -> dict:
+    circular = column.section == "circular"
+    return {
+        "coordinates": {**column.origin.model_dump(), "z": column.base_level},
+        "floorIndex": column.floor_index,
+        "height": column.height,
+        "width": column.diameter if circular else column.width,
+        "depth": column.diameter if circular else column.depth,
+        "circleBased": circular,
+        "isWidthAndHeightLinked": circular,
+        "axisRotationAngle": 0.0,
+        "coreAnchor": "Center",
+    }
+
+
+def _column_mismatches(item: dict, row: Any, target: dict) -> list[str]:
+    p = item["parameters"]
+    coords = p["coordinates"]
+    story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
+    expected = {
+        "type": "Column",
+        "floorIndex": p["floorIndex"],
+        "details": {
+            "origin": {"x": coords["x"], "y": coords["y"]},
+            "height": p["height"],
+            "zCoordinate": coords["z"],
+            "bottomOffset": coords["z"] - story["level"],
+            "axisRotationAngle": 0.0,
+            "coreAnchor": "Center",
+            "isSlanted": False,
+            "width": p["width"],
+            "depth": p["depth"],
+            "circleBased": p["circleBased"],
+            "isWidthAndHeightLinked": p["circleBased"],
+        },
+    }
+    differences = _mismatches(expected, row)
+    details = row.get("details") if isinstance(row, dict) else None
+    if isinstance(details, dict) and "profileId" in details:
+        differences.append("details.profileId")
+    return differences
+
+
+async def create_columns(
+    client: ArchicadClient,
+    columns: list[dict | ColumnCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 straight columns. Metres; base_level is absolute project Z.
+
+    Rectangular width/depth or circular diameter; centered, unrotated core.
+    Layer/material and other defaults inherit the Column tool; incompatible defaults
+    are reported by verification. Shares the wall/slab token, receipt and timeout policy.
+    """
+    if not 1 <= len(columns) <= MAX_COLUMNS:
+        raise ValueError(f"Pass between 1 and {MAX_COLUMNS} columns.")
+    validated = [
+        c if isinstance(c, ColumnCreate) else ColumnCreate.model_validate(c) for c in columns
+    ]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_columns")

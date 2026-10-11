@@ -168,6 +168,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         local receipts. Never saves the project."""
         return await write.create_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
 
+    @mcp.tool(annotations=WRITE)
+    async def create_columns(
+        ctx: Context,
+        columns: list[write.ColumnCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 straight rectangular/circular columns, in metres.
+        base_level is absolute project Z. Requires Tapir; review then apply identical
+        inputs with explicit port and single-use token. Verifies each column; never saves."""
+        return await write.create_columns(
+            client_of(ctx), columns, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

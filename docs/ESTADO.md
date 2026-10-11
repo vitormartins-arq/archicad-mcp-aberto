@@ -88,3 +88,22 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
   recusa de destino ambíguo. Fixture documental, não captura ao vivo.
   `uv run pytest`: 267 testes simulados passaram; Ruff passou (Windows/Python 3.12.10).
   Nenhuma chamada ao ArchiCAD real; revisão e merge pelo Vitor.
+
+- **Codex / pilares:** branch `feat/create-columns`, `create_columns` com seção
+  retangular/circular, base em cota absoluta e confirmação/recibos/timeout compartilhados.
+  Fixture de detalhes substituída pela captura fornecida pelo operador (AC30 build
+  3001 BRA, Windows, Tapir 1.7.0, 11/10/2026). Smoke do PR #9 incorporado
+  como dependência para incluir um pilar. 348 testes simulados passaram e Ruff passou
+  em Windows/Python 3.12.10. Nenhuma chamada real; merge pelo Vitor.
+
+- **PR #10 / correção circular:** envio e conferência esperam vínculo de dimensões
+  verdadeiro para circular e falso para retangular. O simulado reproduz o vínculo
+  verdadeiro mesmo quando enviado falso. Captura original somente lida.
+  Na captura do operador, `floorPlanPolygons` do pilar circular retorna um losango
+  de quatro vértices (mais fechamento); registro do retorno do Tapir, não bug nosso.
+  Codex executou somente testes simulados; nenhuma chamada ao ArchiCAD real.
+
+- **PR #11 / integração:** `origin/main` a6b45d5 integrada por merge, sem rebase,
+  preservando `create_columns` (incluindo vínculo circular) e `get_bounding_boxes`.
+  373 testes simulados e Ruff passaram em Windows/Python 3.12.10.
+  Nenhuma chamada ao ArchiCAD real; merge pelo Vitor.
