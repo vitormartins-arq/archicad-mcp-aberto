@@ -32,6 +32,18 @@ PREVIEW_SECONDS = 600
 DETAIL_FIELDS = ["type", "floorIndex", "layerIndex", "hotlinkId", "details"]
 
 
+def write_timeout() -> float:
+    """Seconds to wait for a write or its verification (ARCHICAD_MCP_WRITE_TIMEOUT).
+
+    A CreateSlabs call on an upper story took over 12 s live on Archicad 30, so writes
+    get a longer wait than reads before the outcome is reported as unknown.
+    """
+    value = float(os.environ.get("ARCHICAD_MCP_WRITE_TIMEOUT") or 120)
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError("ARCHICAD_MCP_WRITE_TIMEOUT must be a positive number of seconds.")
+    return value
+
+
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
 
@@ -256,6 +268,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
             port,
             "CreateSlabs" if slab else "CreateWalls",
             {"slabsData" if slab else "wallsData": [i["parameters"] for i in items]},
+            timeout=receipt["write_timeout_seconds"],
         )
     except ArchicadError as exc:
         for item in items:
@@ -298,6 +311,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict) -> None:
                 "elements": element_ids([i["element_guid"] for i in succeeded]),
                 "fields": DETAIL_FIELDS,
             },
+            timeout=receipt["write_timeout_seconds"],
         )
         after = verified.get("detailsOfElements")
         if not isinstance(after, list) or len(after) != len(succeeded):
@@ -362,8 +376,10 @@ async def _write(
                 "Parameters, target, stories or element IDs changed since preview. "
                 "Run a new dry run."
             )
+        timeout = write_timeout()
         receipt = {
             **deepcopy(plan),
+            "write_timeout_seconds": timeout,
             "receipt_id": str(uuid4()),
             "dry_run": False,
             "started_at": datetime.now(UTC).isoformat(),
