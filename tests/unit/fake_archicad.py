@@ -87,6 +87,10 @@ class FakeArchicad:
     lose_object_response: bool = False
     # Library part names CreateObjects can find; any other name fails that item.
     library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
+    lose_delete_response: bool = False
+    delete_ignored: bool = False
+    delete_errors: dict[int, dict] = field(default_factory=dict)
+    locked_elements: set[str] = field(default_factory=set)
     lose_move_response: bool = False
     move_errors: dict[int, dict] = field(default_factory=dict)
     move_ignored: bool = False  # report success without moving (verification test)
@@ -199,7 +203,7 @@ class FakeArchicad:
             return ok(
                 {
                     "addOnCommandResponse": {
-                        "isUntitled": False,
+                        "isUntitled": not self.project_name,
                         "isTeamwork": False,
                         "projectName": self.project_name,
                     }
@@ -242,6 +246,42 @@ class FakeArchicad:
                     row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
+        if name == "FilterElements":
+            # Tapir source-derived schema; not a live capture. No unlocking.
+            assert args["filters"] == ["IsEditable"]
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "elements": [
+                            deepcopy(e)
+                            for e in args["elements"]
+                            if e["elementId"]["guid"] in self.elements
+                            and e["elementId"]["guid"] not in self.locked_elements
+                        ]
+                    }
+                }
+            )
+        if name == "DeleteElements":
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_delete_elements_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            rows = []
+            for index, element in enumerate(args["elements"]):
+                guid = element["elementId"]["guid"]
+                if index in self.delete_errors:
+                    rows.append(deepcopy(self.delete_errors[index]))
+                elif guid in self.locked_elements:
+                    rows.append(deepcopy(fixture["failure"]))
+                else:
+                    if not self.delete_ignored:
+                        self.elements.pop(guid, None)
+                        self.details.pop(guid, None)
+                    rows.append(deepcopy(fixture["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
         if name == "MoveElements":
             # Shape from Tapir 1.7.0 source (ElementCommands.cpp); not a live capture.
             out = []
@@ -401,6 +441,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_slab_response and command == "CreateSlabs":
             raise httpx.ReadTimeout(
                 "Injected lost slab response after model change", request=request
+            )
+        if instance.lose_delete_response and command == "DeleteElements":
+            raise httpx.ReadTimeout(
+                "Injected lost deletion response after model change", request=request
             )
         if instance.lose_move_response and command == "MoveElements":
             raise httpx.ReadTimeout(

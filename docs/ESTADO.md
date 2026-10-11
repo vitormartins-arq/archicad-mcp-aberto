@@ -159,3 +159,7 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - T6: find_elements, filtros baratos antes das propriedades, lotes de 100 e paginação até 500; só simulado. Pilha remota T2–T5 preservada (branches já existentes, puladas conforme fila); commit local alternativo T2 preservado em wip/local-move-elements-c280574, sem push.
 
 - T6: validação local em Windows/Python 3.12.10: 511 testes simulados e Ruff passaram; nenhuma chamada real.
+
+- T7: delete_elements sobre T6; somente projeto sem título, recusa hotlink/bloqueado/inexistente, preview tipo/andar/camada e verificação de ausência. Correção da fila: API.DeleteElements não consta no wrapper JSON oficial; usado DeleteElements do Tapir 1.7.0, com FilterElements(IsEditable). Fixture documental/fonte, não captura real. Sem salvar/desbloquear/repetir automaticamente; só simulado.
+
+- T7: 540 testes simulados e Ruff passaram em Windows/Python 3.12.10, incluindo nova checagem de projeto logo antes da exclusão, erros parciais, timeout e exclusão ignorada. Nenhuma chamada real. PR empilhado em T6, ambos com base main; Codex não faz merge.

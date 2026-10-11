@@ -56,3 +56,5 @@
 - Deduplicate repeated floor-plan polygons within each element and report the removed count.
 
 - Add read-only `find_elements` with staged filters, pagination, scalar comparisons and 100-element read batches.
+
+- Add guarded `delete_elements` for untitled test projects using documented Tapir commands, with editability checks, single-use confirmation and absence verification.

@@ -171,6 +171,11 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "delete_elements": (
+        "deletion",
+        "delete_receipt_id",
+        "Only editable elements in an untitled test project can be deleted. Never saves.",
+    ),
     "create_walls": (
         "wall",
         "wall_receipt_id",
@@ -444,9 +449,11 @@ async def _write(
         state = WriteState(session_id=client.session_id)
         _states[client] = state
     kind, receipt_key, preview_note = OPERATIONS[operation]
-    planner = {"move_elements": _move_plan, "set_property_values": _property_plan}.get(
-        operation, _plan
-    )
+    planner = {
+        "move_elements": _move_plan,
+        "set_property_values": _property_plan,
+        "delete_elements": _delete_plan,
+    }.get(operation, _plan)
     async with state.lock:
         if dry_run:
             plan = await planner(client, walls, port, operation)
@@ -491,6 +498,7 @@ async def _write(
         state.previews.pop(confirmation_token)
         dispatcher = {
             "move_elements": _move_dispatch,
+            "delete_elements": _delete_dispatch,
             "set_property_values": _property_dispatch,
         }.get(operation, _dispatch)
         await dispatcher(client, receipt)
@@ -1088,3 +1096,126 @@ async def set_property_values(
     if len(set(pairs)) != len(pairs):
         raise ValueError("Each element and property pair may appear only once per call.")
     return await _write(client, validated, port, dry_run, confirmation_token, "set_property_values")
+
+
+async def _delete_plan(
+    client: ArchicadClient, guids: list[str], port: int | None, operation: str
+) -> dict:
+    port, target, _ = await _context(client, port)
+    if target["project"].get("isUntitled") is not True:
+        raise ValueError("Deletion requires an untitled test project (isUntitled=true).")
+    elements = element_ids(guids)
+    details = await client.tapir(
+        port,
+        "GetDetailsOfElements",
+        {"elements": elements, "fields": ["type", "floorIndex", "layerIndex", "hotlinkId"]},
+    )
+    rows = details.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected deletion details response cardinality.")
+    for guid, row in zip(guids, rows, strict=True):
+        if not isinstance(row, dict) or "error" in row or not row.get("type"):
+            raise ValueError(f"Element {guid} does not exist or cannot be read.")
+        if row.get("hotlinkId"):
+            raise ValueError(f"Element {guid} belongs to a hotlink.")
+        if not all(
+            isinstance(row.get(key), int) and not isinstance(row[key], bool)
+            for key in ("floorIndex", "layerIndex")
+        ):
+            raise ValueError(f"Element {guid}: missing story/layer data.")
+    editable = await client.tapir(
+        port, "FilterElements", {"elements": elements, "filters": ["IsEditable"]}
+    )
+    editable_rows = editable.get("elements")
+    if not isinstance(editable_rows, list):
+        raise ValueError("Unexpected editable-filter response.")
+    editable_guids = {e["elementId"]["guid"].upper() for e in editable_rows}
+    if set(guids) - editable_guids:
+        raise ValueError("Locked/non-editable elements cannot be deleted.")
+    return {
+        "operation": operation,
+        "target": target,
+        "items": [
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": guid,
+                "before": row,
+                "parameters": {"elementId": {"guid": guid}},
+            }
+            for index, (guid, row) in enumerate(zip(guids, rows, strict=True))
+        ],
+    }
+
+
+async def _delete_dispatch(client: ArchicadClient, receipt: dict) -> None:
+    items, port = receipt["items"], receipt["target"]["port"]
+    timeout = receipt["write_timeout_seconds"]
+    # Recheck immediately before the destructive command, including after journaling.
+    try:
+        project = await client.tapir(port, "GetProjectInfo", timeout=timeout)
+        if project != receipt["target"]["project"] or project.get("isUntitled") is not True:
+            for item in items:
+                item.update(status="failed", error="Project changed; deletion not dispatched.")
+            return
+        raw = await client.tapir(
+            port, "DeleteElements", {"elements": [i["parameters"] for i in items]}, timeout=timeout
+        )
+    except ArchicadError as exc:
+        for item in items:
+            item.update(status="unknown", error=str(exc))
+        receipt["warning"] = "Outcome unknown; inspect Archicad and never retry this token."
+        return
+    receipt["raw_response"] = raw
+    rows = raw.get("executionResults")
+    if not isinstance(rows, list) or len(rows) != len(items):
+        for item in items:
+            item.update(status="unknown", error="Unexpected deletion response cardinality.")
+        return
+    deleted = []
+    for item, row in zip(items, rows, strict=True):
+        item["write_response"] = row
+        if isinstance(row, dict) and row.get("success") is True:
+            item["status"] = "unverified"
+            deleted.append(item)
+        elif isinstance(row, dict) and row.get("success") is False and "error" in row:
+            item.update(status="failed", error=row["error"])
+        else:
+            item.update(status="unknown", error="Unexpected deletion result.")
+    if not deleted:
+        return
+    try:
+        response = await client.command(port, "GetAllElements", timeout=timeout)
+        remaining = response.get("elements")
+        if not isinstance(remaining, list):
+            raise ValueError("Unexpected deletion verification response.")
+        present = {e["elementId"]["guid"].upper() for e in remaining}
+        for item in deleted:
+            exists = item["element_guid"] in present
+            item["after"] = {"exists": exists}
+            item["status"] = "verification_failed" if exists else "verified"
+            if exists:
+                item["mismatches"] = ["element still exists"]
+    except (ArchicadError, ValueError, KeyError, TypeError) as exc:
+        receipt["verification_error"] = str(exc)
+
+
+async def delete_elements(
+    client: ArchicadClient,
+    element_guids: list[str],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Delete up to 50 editable, non-hotlinked elements in an untitled test project.
+
+    Uses Tapir DeleteElements (not an official JSON API command). Preview lists type,
+    story and layer. Single-use token, explicit port, receipts, absence verification.
+    No saves, unlocking, or automatic retries. Archicad may remove owned subelements.
+    """
+    if not 1 <= len(element_guids) <= 50:
+        raise ValueError("Pass between 1 and 50 element GUIDs.")
+    guids = [item["elementId"]["guid"] for item in element_ids(element_guids)]
+    if len(set(guids)) != len(guids):
+        raise ValueError("Duplicate element GUIDs are not allowed.")
+    return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
