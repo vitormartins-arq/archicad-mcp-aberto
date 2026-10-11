@@ -1,0 +1,71 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/dist/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "archicad-mcp-aberto",
+  "display_name": "Archicad (MCP aberto)",
+  "version": "0.1.0.dev0",
+  "description": "Read and safely edit a running Archicad through the official JSON API and the Tapir add-on.",
+  "long_description": "Open source MCP server for Archicad. Reads elements, properties, stories and BIM details, and creates walls, slabs and columns with a dry run first, a single-use confirmation, per-element receipts and a check after applying. It never saves the project. Needs Archicad open and, for most tools, the free Tapir add-on.",
+  "author": {
+    "name": "archicad-mcp-aberto contributors",
+    "url": "https://github.com/vitormartins-arq/archicad-mcp-aberto"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vitormartins-arq/archicad-mcp-aberto"
+  },
+  "homepage": "https://github.com/vitormartins-arq/archicad-mcp-aberto",
+  "support": "https://github.com/vitormartins-arq/archicad-mcp-aberto/issues",
+  "license": "MIT",
+  "keywords": ["archicad", "bim", "tapir", "architecture"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/archicad_mcp_aberto/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "archicad-mcp-aberto"],
+      "env": {
+        "ARCHICAD_MCP_PORTS": "${user_config.ports}",
+        "ARCHICAD_MCP_WRITE_TIMEOUT": "${user_config.write_timeout}"
+      }
+    }
+  },
+  "user_config": {
+    "ports": {
+      "type": "string",
+      "title": "Archicad ports",
+      "description": "Ports to scan for open Archicad instances, as a range or a comma list.",
+      "default": "19723-19743",
+      "required": false
+    },
+    "write_timeout": {
+      "type": "number",
+      "title": "Write timeout (seconds)",
+      "description": "How long a create call waits for Archicad before the outcome is reported as unknown.",
+      "default": 120,
+      "min": 10,
+      "max": 600,
+      "required": false
+    }
+  },
+  "tools": [
+    {"name": "discover_archicad", "description": "List open Archicad instances with port, version, Tapir state and project."},
+    {"name": "list_elements", "description": "List element GUIDs, optionally of one type."},
+    {"name": "get_selection", "description": "Read the current selection."},
+    {"name": "list_properties", "description": "List property definitions and their GUIDs."},
+    {"name": "get_properties", "description": "Read property values of elements."},
+    {"name": "tapir_status", "description": "Check whether the Tapir add-on is loaded."},
+    {"name": "get_project_info", "description": "Project name, path and Teamwork state."},
+    {"name": "get_stories", "description": "Stories and their levels."},
+    {"name": "get_element_details", "description": "BIM details of elements, floor plan polygons on request."},
+    {"name": "get_bounding_boxes", "description": "2D or 3D bounding boxes of elements, in metres."},
+    {"name": "list_building_materials", "description": "Building materials with cut-fill pens."},
+    {"name": "create_walls", "description": "Preview or apply straight Basic walls."},
+    {"name": "create_slabs", "description": "Preview or apply simple polygon slabs."},
+    {"name": "create_columns", "description": "Preview or apply rectangular or circular columns."}
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin"],
+    "runtimes": {"python": ">=3.11"}
+  }
+}
