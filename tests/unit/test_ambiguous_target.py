@@ -8,12 +8,13 @@ import pytest
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import attributes, edit, read, write
-from tests.unit.fake_archicad import FakeArchicad, fake_transport
+from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
@@ -178,6 +179,9 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
+    if name == "modify_walls":
+        for instance in (first, second):
+            instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
         for instance in (first, second):
             instance.elements[GUID] = "Object"

@@ -158,6 +158,10 @@
     {
       "name": "set_gdl_parameters",
       "description": "Preview/edit existing scalar Object GDL values with read-back verification."
+    },
+    {
+      "name": "modify_walls",
+      "description": "Preview/edit up to 50 straight walls, with per-wall verification and receipts."
     }
   ],
   "compatibility": {

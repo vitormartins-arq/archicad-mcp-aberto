@@ -346,6 +346,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def modify_walls(
+        ctx: Context,
+        walls: list[edit.WallModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 straight walls: height/thickness/base/endpoints in metres.
+        Refuses locked/hotlinked/curved/trapezoidal walls; verifies fields and never saves.
+        """
+        return await edit.modify_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
+
     return mcp
 
 

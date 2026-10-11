@@ -244,3 +244,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - T15: Get/SetGDLParametersOfElements confirmados em ElementGDLParameterCommands.cpp 02691b5d. Leitura até 100 objetos, gravação até 100 pares objeto/parâmetro escalar existente; tipos/flags/arrays validados e valores relidos. Flags Fixed/Hidden/HiddenFromScript/Disabled e isLocked recusados. Fixture documental, não captura real; só simulado.
 
 - T14 reposicionada em origin/main 75e2a19, sem merge, após a orientação do Vitor: 678 testes simulados e Ruff passaram antes do push. T15 empilhada nessa base; 721 testes simulados e Ruff passaram em Windows/Python 3.12.10. Nenhuma chamada real.
+
+- T16: ModifyWalls confirmado em ExtendedElementCommands.cpp 02691b5d (wallsWithDetails). Até 50 paredes retas, só height/thickness/bottomOffset/begCoordinate/endCoordinate; prévia com antes/novos, recusa curvada/trapezoidal/hotlink/bloqueada/inexistente e resultado sem comprimento. Espessura direta requer Basic; altura desvincula o topo conforme comando nativo. Confere begThickness, altura, base/pontos e geometria após aplicar. Fixture documental, não captura real; só simulado. Notas somente acrescentadas ao fim.
+
+- T16: 760 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T15; T14–T16 com PRs base main, sem merges neste trecho do lote. T12/T13 puladas conforme última orientação do Vitor.

@@ -82,3 +82,5 @@
 - Add safe rotate_elements with native per-item errors and coordinate/angle or quarter-turn box verification.
 
 - Add Object GDL parameter reads and safe scalar writes with flag/type checks and read-back verification.
+
+- Add safe limited ModifyWalls edits with shape/editability checks and requested-field verification.

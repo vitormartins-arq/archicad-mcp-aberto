@@ -204,6 +204,7 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "modify_walls": ("wall edit", "wall_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
@@ -1321,6 +1322,7 @@ NAMED_PREVIEWS = {
     "delete_elements",
     "rotate_elements",
     "set_gdl_parameters",
+    "modify_walls",
 }
 
 
