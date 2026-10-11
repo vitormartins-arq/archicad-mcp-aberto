@@ -116,8 +116,8 @@ async def test_stories_and_project():
 async def test_server_registers_nine_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 10
-    reads = [t for t in tools if t.name != "create_walls"]
+    assert len(tools) == 11
+    reads = [t for t in tools if t.name not in {"create_walls", "create_slabs"}]
     creation = next(t for t in tools if t.name == "create_walls")
     assert len(reads) == 9
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)

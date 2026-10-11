@@ -117,10 +117,25 @@ This create-only implementation is tested against the fake Archicad. Its respons
 fixtures reuse earlier captured Tapir 1.7.0 responses; no new live tests were run for
 this scope. Live validation and Undo are separate work.
 
+## Safe slab creation
+
+`create_slabs` shares the wall preview, single-use confirmation token, explicit port,
+local receipts and post-write verification. Pass up to 20 `slabs`, each with `outline`
+(3 to 200 `{x, y}` points in metres), `floor_index`, positive `thickness` and `level`.
+`level` is absolute project Z: a slab at 3.15 m on a 3 m story has a 0.15 m offset.
+Straight edges and simple concave polygons are supported; no holes or arcs.
+The top reference plane is explicit. Layer, material and structure inherit defaults;
+incompatible defaults or changed geometry are reported by verification.
+Each slab has its own `slab_receipt_id`. The server never saves the project.
+
+The fixture `tests/fixtures/tapir170_create_slabs_documented.json` records pinned
+Tapir 1.7.0 source links. It is documentation/source-derived, **not a live capture**.
+This delivery was tested only against the simulated Archicad.
+
 ## Roadmap
 
 0. Foundation: connection, discovery, read tools, simulated Archicad, CI.
-1. Safe writes: wall creation started; editing, slabs, objects and Undo remain. **← here**
+1. Safe writes: wall and slab creation started; editing, objects and Undo remain. **← here**
 2. Command gateway (every official and Tapir command) and batch scripts; `.mcpb` bundle.
 3. Documentation tools: dimensions, views, publishing, view capture; GDL and libraries.
 4. First public release.

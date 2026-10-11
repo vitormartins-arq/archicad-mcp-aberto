@@ -23,6 +23,14 @@ CREATE_WALLS_FIXTURE = json.loads(
 )
 
 
+# Documentation/source-derived; explicitly not a live response capture.
+CREATE_SLABS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_create_slabs_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -49,6 +57,7 @@ class FakeArchicad:
     details: dict[str, dict] = field(default_factory=dict)
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
+    lose_slab_response: bool = False
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     calls: list[str] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
@@ -130,6 +139,29 @@ class FakeArchicad:
                     row["floorPlanPolygons"] = self.cut_fills[g]
                 out.append(row)
             return ok({"addOnCommandResponse": {"detailsOfElements": out}})
+        if name == "CreateSlabs":
+            out = []
+            for index, slab in enumerate(args["slabsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Slab"
+                row = deepcopy(CREATE_SLABS_FIXTURE["slab_details"])
+                row["floorIndex"] = slab["floorIndex"]
+                floor = next(s for s in self.stories if s["index"] == slab["floorIndex"])
+                points = deepcopy(slab["polygonCoordinates"])
+                row["details"].update(
+                    thickness=slab["thickness"],
+                    level=slab["level"] - floor["level"],
+                    zCoordinate=slab["level"],
+                    referencePlaneLocation=slab["referencePlaneLocation"],
+                    polygonOutline=points + [deepcopy(points[0])],
+                    holes=deepcopy(slab["holes"]),
+                )
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateWalls":
             out = []
             for index, wall in enumerate(args["wallsData"]):
@@ -174,6 +206,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
+        if instance.lose_slab_response and command == "CreateSlabs":
+            raise httpx.ReadTimeout(
+                "Injected lost slab response after model change", request=request
+            )
         return httpx.Response(200, json=response)
 
     return httpx.MockTransport(handler)
