@@ -13,16 +13,20 @@ onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 - Primeiro teste ao vivo: ArchiCAD 30 build 3001 BRA, Windows, Tapir 1.7.0, projeto vazio.
   Passaram descoberta, Tapir, projeto, pavimentos, seleção e lista de elementos.
 - Corrigido `list_properties` (PR #1): o ArchiCAD devolve `propertyIds`.
+- Segundo teste ao vivo, mesmo ambiente, projeto com 192 elementos e 13 paredes:
+  `list_properties` (999 definições), `get_properties` (espessura 0,08 m em 2 paredes,
+  `notAvailable` para propriedades de porta/janela) e `get_element_details` (altura
+  2,70 m, espessura 0,08 m) passaram. Nenhuma leitura travou.
 
-## Em andamento
+## Pendências
 
-- Teste ao vivo de `list_properties`, `get_properties` e `get_element_details` num
-  projeto com paredes.
+- `get_element_details` com `floorPlanPolygons` devolve só o tipo, sem polígonos, para
+  paredes. Investigar o formato da resposta do Tapir 1.7.0.
+- Testar com duas instâncias abertas (recusa de destino ambíguo).
 
 ## Próximos passos
 
-1. Fechar o teste acima e registrar o resultado no `Licoes-aprendidas.md`.
-2. Testar com duas instâncias abertas (recusa de destino ambíguo).
-3. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
+1. Resolver a pendência do `floorPlanPolygons`.
+2. Fase 1, escrita segura: criar e editar paredes, lajes e objetos pelo Tapir, com
    simulação por padrão, recibo de cada escrita, erro por elemento e conferência depois
    de aplicar. Começar por paredes. Testar Undo de verdade.
