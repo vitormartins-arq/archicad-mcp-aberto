@@ -57,7 +57,7 @@ class FakeArchicad:
         if command == "API.GetSelectedElements":
             return ok({"elements": [self._id(g) for g in self.selection]})
         if command == "API.GetAllPropertyIds":
-            return ok({"properties": [{"propertyId": {"guid": g}} for g in self.properties]})
+            return ok({"propertyIds": [{"propertyId": {"guid": g}} for g in self.properties]})
         if command == "API.GetDetailsOfProperties":
             out = []
             for p in params["properties"]:
