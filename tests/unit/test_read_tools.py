@@ -113,13 +113,13 @@ async def test_stories_and_project():
         assert (await read.get_stories(c))["stories"][0]["name"] == "Térreo"
 
 
-async def test_server_registers_ten_read_only_tools_and_wall_creation():
+async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 13
+    assert len(tools) == 14
     reads = [t for t in tools if t.name not in {"create_walls", "create_slabs", "create_columns"}]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 10
+    assert len(reads) == 11
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

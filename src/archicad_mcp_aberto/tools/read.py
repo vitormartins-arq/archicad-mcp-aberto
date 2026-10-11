@@ -6,7 +6,7 @@ with Tapir 1.7.0.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from archicad_mcp_aberto.connection import (
@@ -181,9 +181,46 @@ async def get_element_details(
     return {"port": port, "fields": requested, **result}
 
 
+async def get_bounding_boxes(
+    client: ArchicadClient,
+    element_ids: list[str],
+    port: int | None = None,
+    mode: Literal["2d", "3d"] = "2d",
+) -> dict[str, Any]:
+    """Read boxes of 1 to 500 elements in metres, preserving order and per-item errors.
+
+    Uses the official JSON API, without Tapir. 2D bounds refer to the floor-plan view;
+    3D bounds refer to the 3D view, both relative to the global origin.
+    """
+    if not 1 <= len(element_ids) <= 500:
+        raise ValueError("Pass between 1 and 500 element GUIDs per call.")
+    if mode not in ("2d", "3d"):
+        raise ValueError("mode must be '2d' or '3d'.")
+    guids = [str(UUID(g)).upper() for g in element_ids]
+    elements = [{"elementId": {"guid": guid}} for guid in guids]
+    port = await resolve_port(client, port)
+    dimension = "2D" if mode == "2d" else "3D"
+    response = await client.command(port, f"Get{dimension}BoundingBoxes", {"elements": elements})
+    rows = response.get(f"boundingBoxes{dimension}")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected bounding box response cardinality.")
+    fields = ["xMin", "yMin", "xMax", "yMax"]
+    if mode == "3d":
+        fields += ["zMin", "zMax"]
+    boxes = []
+    for guid, row in zip(guids, rows, strict=True):
+        if "error" in row:
+            boxes.append({"guid": guid, "error": row["error"]})
+        else:
+            box = row[f"boundingBox{dimension}"]
+            boxes.append({"guid": guid, "box": {field: box[field] for field in fields}})
+    return {"port": port, "mode": mode, "boundingBoxes": boxes}
+
+
 __all__ = [
     "discover_archicad",
     "get_element_details",
+    "get_bounding_boxes",
     "get_project_info",
     "get_properties",
     "get_selection",
