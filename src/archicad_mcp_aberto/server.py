@@ -9,7 +9,7 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, edit, openings, read, write
+from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -388,6 +388,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         tool default or an existing favorite_name decides the library part. Requires Tapir;
         apply identical inputs with explicit port and single-use token. Never saves."""
         return await openings.create_doors(client_of(ctx), doors, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def run_read_command(
+        ctx: Context,
+        command: str,
+        parameters: dict[str, Any] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Run one read-only command from a closed list and return the raw response.
+        command is 'API.<Command>' (official JSON API) or 'Tapir.<Command>' (Tapir add-on),
+        e.g. 'Tapir.GetHotlinks'; parameters are sent unchanged. Writes, saves and unlisted
+        commands are refused; see docs/GATEWAY.md. Prefer the dedicated tools when one fits."""
+        return await gateway.run_read_command(client_of(ctx), command, parameters, port)
 
     return mcp
 

@@ -262,6 +262,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   crescer a cadeia de ifs. Fixture documental, não captura ao vivo. 803 testes simulados
   e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.
 
+- **Claude / T18, 12/10/2026:** `run_read_command` em `tools/gateway.py`, empilhada na T17.
+  Lista fechada, sem prefixo: 61 comandos oficiais (pacote `archicad` 30.3000 da
+  Graphisoft, `releases/ac30/b3000commands.py`, todos os Get* mais IsAlive e
+  IsAddOnCommandAvailable) e 85 do Tapir 1.7.0 (RegisterCommand em AddOnMain.cpp, Get* e
+  FilterElements). Fora de propósito: GetPointFromUser e GetScriptUIResult (esperam o
+  usuário no ArchiCAD), GetUserGSID e GetSpecialFolders (dados da conta e do PC). O nome
+  exige `API.` ou `Tapir.` porque alguns existem nos dois. Lista em `docs/GATEWAY.md`, com
+  teste que confere doc e código. 837 testes simulados e Ruff passaram. Falta o teste ao vivo.
 - **Claude / T17 ao vivo, 12/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
   sem nome na porta 19723 (isUntitled=true), não salvo, pelo clone de teste no PC do Vitor
   no commit d2deabe. Parede (30,0)–(34,0) 1A494F56; janela em 1,0 m (peitoril 0,9,

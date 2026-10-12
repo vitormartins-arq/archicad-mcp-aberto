@@ -7,13 +7,14 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import attributes, edit, openings, read, write
+from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
 INPUTS = {
+    "run_read_command": {"command": "Tapir.GetStories"},
     "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
@@ -107,7 +108,7 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, openings, read, write)
+    for module in (attributes, edit, gateway, openings, read, write)
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")

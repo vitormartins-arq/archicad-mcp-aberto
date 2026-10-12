@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `run_read_command`: one read-only command from a closed list (61 official JSON API
+  commands from the `archicad` 30.3000 package, 85 Tapir 1.7.0 commands from its
+  `AddOnMain.cpp`), named `API.<Command>` or `Tapir.<Command>`, parameters sent unchanged
+  and the response returned raw. Anything not written out in the list is refused before it
+  reaches Archicad. The list lives in `docs/GATEWAY.md`, kept in step by a unit test.
+
 - Add `create_windows` and `create_doors`: up to 20 openings each in existing straight walls,
   through Tapir `CreateWindows`/`CreateDoors`, with wall GUID, offset along the wall, and
   optional size, sill and favorite name. Tapir 1.7.0 has no library part name input for
