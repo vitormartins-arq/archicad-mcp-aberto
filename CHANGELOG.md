@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `rotate_elements` receipts add `normalized_angles` when Archicad stores an angle outside
+  [0, 2π), as the 2π seen live after rotating an object back. Nothing is written again.
+
 - Add `run_read_command`: one read-only command from a closed list (61 official JSON API
   commands from the `archicad` 30.3000 package, 85 Tapir 1.7.0 commands from its
   `AddOnMain.cpp`), named `API.<Command>` or `Tapir.<Command>`, parameters sent unchanged

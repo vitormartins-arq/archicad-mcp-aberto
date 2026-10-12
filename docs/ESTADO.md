@@ -270,3 +270,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   usuário no ArchiCAD), GetUserGSID e GetSpecialFolders (dados da conta e do PC). O nome
   exige `API.` ou `Tapir.` porque alguns existem nos dois. Lista em `docs/GATEWAY.md`, com
   teste que confere doc e código. 837 testes simulados e Ruff passaram. Falta o teste ao vivo.
+
+- **Claude / T19, 12/10/2026:** depois do `rotate_elements`, quando o ArchiCAD grava um
+  ângulo fora de [0, 2π) (o 2π visto ao vivo no Bidê, ou um negativo), o item do recibo
+  ganha `normalized_angles` com o valor em [0, 2π); a menos de 1e-7 de uma volta vira 0.
+  Nada é gravado de novo. A conferência já comparava no círculo e não mudou. Empilhada na
+  T18. FILA.md: T12 a T16 passaram para "Integrado" e T17 a T19 ficam marcadas como
+  feitas pelo Claude. 841 testes simulados e Ruff passaram. Falta o teste ao vivo.

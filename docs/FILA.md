@@ -29,43 +29,8 @@ caso abra o PR dessa tarefa explicando o que falta.
 
 ## A fazer
 
-### T12 · `fix/library-partial-preflight`
-No `create_objects`, quando `GetAvailableLibraryParts` vier parcial (`skippedCount` > 0),
-um nome fora da lista não recusa o lote inteiro: aquele item sai `unconfirmed` na prévia,
-com aviso, e o `CreateObjects` decide no apply (o erro por item já é tratado). Com
-inventário completo, nome desconhecido continua recusado. Ao vivo (AC30 build 3001 BRA,
-Tapir 1.7.0) vieram 92 peças ilegíveis, código -2130313112, então hoje qualquer nome fora
-da lista bloqueia tudo. Ajuste `docs/LIBRARY_PARTS.md`, que já descreve o comportamento
-certo. Testes: parcial + nome desconhecido (item `unconfirmed`, outros `ready`), completo
-+ nome desconhecido (recusa).
-
-### T13 · `docs/readme-status`
-README (inglês) e a tabela de status: listar as 22 ferramentas atuais (13 de leitura, 9
-de gravação), o que foi testado ao vivo e em qual ambiente (AC30 build 3001 BRA, Tapir
-1.7.0, projeto sem nome), e o roadmap com a Fase 1 quase completa. Nada de código.
-
-### T14 · `feat/rotate-elements`
-Ferramenta `rotate_elements` (até 50 GUIDs, centro x, y e ângulo em radianos) pelo
-`RotateElements` do Tapir (`elementsWithRotations`, com `rotation.origin`, `beginPoint`,
-`endPoint`; confira o formato em `ElementCommands.cpp`). Mesmo padrão de
-`move_elements`: prévia com tipo, andar e camada, recusa hotlink/bloqueado/inexistente,
-token, porta explícita, recibo, erro por item. Conferência: caixa 2D girada em torno do
-centro (tolerância 1 mm) ou, quando houver, coordenadas/ângulo dos detalhes.
-
-### T15 · `feat/gdl-parameters`
-Leitura `get_gdl_parameters` (até 100 GUIDs de objeto) pelo `GetGDLParametersOfElements`
-do Tapir e gravação `set_gdl_parameters` pelo `SetGDLParametersOfElements`
-(`elementsWithGDLParameters`). A gravação aceita só valores escalares (número, texto,
-booleano) de parâmetros que já existem no objeto; a prévia mostra valor atual e novo;
-a conferência relê. Recuse parâmetros fixos/ocultos quando o Tapir informar. Mesmo
-padrão de segurança de `set_property_values`.
-
-### T16 · `feat/modify-walls`
-Ferramenta `modify_walls` (até 50 paredes) pelo `ModifyWalls` do Tapir
-(`wallsWithDetails`), só com `height`, `thickness`, `bottomOffset` e
-`begCoordinate`/`endCoordinate` de parede reta. A prévia mostra os valores atuais e os
-novos lidos do `GetDetailsOfElements`; a conferência relê cada campo. Recuse parede
-curva, trapezoidal, hotlink e bloqueada. Mesmo padrão de segurança de `create_walls`.
+Nada novo para o Codex agora. T17 a T19 foram feitas pelo Claude enquanto o Codex estava
+sem token (PRs #34, #35 e #36, aguardando teste ao vivo e merge); não as refaça.
 
 ## Integrado
 
@@ -75,3 +40,5 @@ curva, trapezoidal, hotlink e bloqueada. Mesmo padrão de segurança de `create_
   T4 `create_objects` (#14 a #19), T6 `find_elements` (#20), T7 `delete_elements` (#21),
   T8 nomes nas prévias (#22), T9 `create_beams` (#23), T10 `create_zones` (#24),
   T11 `list_library_parts` (#25). Todos testados ao vivo.
+- T12 inventário parcial (#26), T13 README (#30), T14 `rotate_elements` (#31),
+  T15 parâmetros GDL (#32), T16 `modify_walls` (#33). Todos testados ao vivo.
