@@ -48,6 +48,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_building_materials` | Read | Material GUIDs/indices/names and cut-fill pens | yes |
 | `find_elements` | Read | Type/story/layer/property filters and pagination | for details |
 | `get_gdl_parameters` | Read | Object GDL values/types/flags, up to 100 GUIDs | yes |
+| `run_read_command` | Read | One read-only official or Tapir command from a closed list, raw response | some |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
@@ -292,5 +293,7 @@ and open to everyone's contributions.
 - `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
 
 - `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.
+
+- `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 
 - `create_windows` and `create_doors` preview up to 20 openings, each with `wall_guid`, `center_offset` (metres along the wall's reference line from its start) and optional `sill_height`, `width`, `height` and `favorite_name`. Tapir 1.7.0 `CreateWindows`/`CreateDoors` take no library part name: the Window or Door tool default decides the part, or an existing favorite (checked in the preview with `GetFavoritesByType`). The preview refuses missing, non-wall, curved or polygonal, hotlinked and locked owners and offsets past the wall end. Applying checks type, story, owner wall, offset and any size or sill you gave, and reports the library part Archicad placed. Same token, port, receipts and timeout; never saves. Source-derived fixture, not live captured.

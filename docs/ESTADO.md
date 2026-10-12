@@ -261,3 +261,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   tamanho e peitoril pedidos. `write._dispatch` ganhou um parâmetro `mismatch` para não
   crescer a cadeia de ifs. Fixture documental, não captura ao vivo. 803 testes simulados
   e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.
+
+- **Claude / T18, 12/10/2026:** `run_read_command` em `tools/gateway.py`, empilhada na T17.
+  Lista fechada, sem prefixo: 61 comandos oficiais (pacote `archicad` 30.3000 da
+  Graphisoft, `releases/ac30/b3000commands.py`, todos os Get* mais IsAlive e
+  IsAddOnCommandAvailable) e 85 do Tapir 1.7.0 (RegisterCommand em AddOnMain.cpp, Get* e
+  FilterElements). Fora de propósito: GetPointFromUser e GetScriptUIResult (esperam o
+  usuário no ArchiCAD), GetUserGSID e GetSpecialFolders (dados da conta e do PC). O nome
+  exige `API.` ou `Tapir.` porque alguns existem nos dois. Lista em `docs/GATEWAY.md`, com
+  teste que confere doc e código. 837 testes simulados e Ruff passaram. Falta o teste ao vivo.

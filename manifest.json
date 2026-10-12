@@ -170,6 +170,10 @@
     {
       "name": "create_doors",
       "description": "Preview/place up to 20 doors in existing straight walls, verified after apply."
+    },
+    {
+      "name": "run_read_command",
+      "description": "Run one read-only official JSON API or Tapir command from a closed list; raw response."
     }
   ],
   "compatibility": {
