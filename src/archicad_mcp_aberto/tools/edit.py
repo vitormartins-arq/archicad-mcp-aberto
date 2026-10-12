@@ -170,6 +170,12 @@ async def _rotate_plan(client, rotations, port, operation):
     return {"operation": operation, "target": target, "items": items}
 
 
+def _normalized_angle(angle):
+    """The same direction in [0, 2*pi); values within 1e-7 of a full turn become 0."""
+    normalized = angle % math.tau
+    return 0.0 if math.tau - normalized < 1e-7 else normalized
+
+
 async def _verify_rotation(client, receipt, items):
     port, timeout = receipt["target"]["port"], receipt["write_timeout_seconds"]
     guids = [i["element_guid"] for i in items]
@@ -210,8 +216,14 @@ async def _verify_rotation(client, receipt, items):
                     or not math.isfinite(found)
                 ):
                     differences.append(key)
-                elif abs(math.remainder(found - wanted, math.tau)) > 1e-7:
-                    differences.append(key)
+                else:
+                    if abs(math.remainder(found - wanted, math.tau)) > 1e-7:
+                        differences.append(key)
+                    normalized = _normalized_angle(found)
+                    if normalized != found:
+                        # Archicad can store a full turn as 2*pi (seen live on an Object);
+                        # report the [0, 2*pi) value without writing it back.
+                        item.setdefault("normalized_angles", {})[key] = normalized
             differences += write._mismatches(expected, actual)
         else:
             box = boxes[item["element_guid"]]

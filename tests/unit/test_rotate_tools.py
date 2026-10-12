@@ -157,3 +157,36 @@ async def test_explicit_port_and_changed_plan():
                 c, [rotation(angle=0.5)], 19723, False, preview["confirmation_token"]
             )
     assert "RotateElements" not in fake.tapir_calls
+
+
+async def test_full_turn_stored_as_two_pi_is_reported_as_zero():
+    # Seen live on AC30 build 3001: rotating a Bidê back left its angle at 2*pi.
+    fake = model()
+    fake.details[GUID]["details"]["angle"] = 3 * math.pi / 2
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [rotation()])
+    item = result["items"][0]
+    assert result["status"] == "verified"
+    assert item["after"]["details"]["angle"] == pytest.approx(math.tau)
+    assert item["normalized_angles"] == {"angle": 0.0}
+    assert fake.tapir_calls.count("RotateElements") == 1
+
+
+async def test_negative_stored_angle_is_reported_in_range():
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        result = await apply(c, [rotation(angle=-math.pi / 4)])
+    assert result["items"][0]["normalized_angles"]["angle"] == pytest.approx(7 * math.pi / 4)
+
+
+async def test_angle_in_range_adds_no_normalized_value():
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        result = await apply(c, [rotation()])
+    assert "normalized_angles" not in result["items"][0]
+
+
+def test_normalized_angle_edges():
+    assert edit._normalized_angle(0.0) == 0.0
+    assert edit._normalized_angle(math.tau) == 0.0
+    assert edit._normalized_angle(math.tau - 1e-9) == 0.0
+    assert edit._normalized_angle(-math.pi) == pytest.approx(math.pi)
+    assert edit._normalized_angle(5 * math.pi) == pytest.approx(math.pi)
