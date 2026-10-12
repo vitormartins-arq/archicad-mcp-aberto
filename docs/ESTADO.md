@@ -277,3 +277,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Nada é gravado de novo. A conferência já comparava no círculo e não mudou. Empilhada na
   T18. FILA.md: T12 a T16 passaram para "Integrado" e T17 a T19 ficam marcadas como
   feitas pelo Claude. 841 testes simulados e Ruff passaram. Falta o teste ao vivo.
+- **Claude / T17 ao vivo, 12/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723 (isUntitled=true), não salvo, pelo clone de teste no PC do Vitor
+  no commit d2deabe. Parede (30,0)–(34,0) 1A494F56; janela em 1,0 m (peitoril 0,9,
+  1,0 × 1,2) `verified`, peça "Abertura Simples de Janela"; porta em 3,0 m sem favorito
+  `verified`, "Abertura Simples de Porta"; janela com o favorito "Basculante Alumínio com
+  Vidro" em 2,0 m `verified`, peça "Janela", 0,8 × 0,8 e peitoril 1,3 do favorito. Os
+  detalhes reais de Window/Door batem com o fixture, que agora é a captura ao vivo. Achado:
+  os favoritos "- Default" começam com espaço; o validador recusava esses nomes e agora
+  os mantém exatos. T18 ao vivo: GetHotlinks, GetProductInfo e GetStories responderam;
+  SaveProject e SetPropertyValuesOfElements recusados sem nenhuma chamada HTTP. T19 ao vivo:
+  Bidê CF75E5C0 girado +π/2 (1,5708, sem normalized_angles) e −π/2 (gravado 2π,
+  normalized_angles {"angle": 0.0}), ambos `verified`.

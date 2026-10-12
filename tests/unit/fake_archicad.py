@@ -55,7 +55,7 @@ CREATE_COLUMNS_FIXTURE = json.loads(
 )
 
 
-# Tapir 1.7.0 source-derived CreateWindows/CreateDoors shapes; not a live capture.
+# Window/Door details captured live (AC30 build 3001 BRA, Tapir 1.7.0); see the fixture.
 CREATE_OPENINGS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_create_openings_documented.json").read_text(
         encoding="utf-8"
