@@ -248,3 +248,29 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - T16: ModifyWalls confirmado em ExtendedElementCommands.cpp 02691b5d (wallsWithDetails). Até 50 paredes retas, só height/thickness/bottomOffset/begCoordinate/endCoordinate; prévia com antes/novos, recusa curvada/trapezoidal/hotlink/bloqueada/inexistente e resultado sem comprimento. Espessura direta requer Basic; altura desvincula o topo conforme comando nativo. Confere begThickness, altura, base/pontos e geometria após aplicar. Fixture documental, não captura real; só simulado. Notas somente acrescentadas ao fim.
 
 - T16: 760 testes simulados e Ruff passaram em Windows/Python 3.12.10, sem chamada real. Branch empilhada em T15; T14–T16 com PRs base main, sem merges neste trecho do lote. T12/T13 puladas conforme última orientação do Vitor.
+
+- **Claude / T17, 11/10/2026 (o Codex ficou sem token):** `create_windows` e `create_doors`
+  em `tools/openings.py`, pelo `CreateWindows`/`CreateDoors` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp: `windowsData`/`doorsData` com `ownerWallId`,
+  `centerOffset`, `sillHeight`, `width`, `height`, `favoriteName`; resposta `elements`).
+  O Tapir 1.7.0 não recebe nome de peça da biblioteca para janela e porta: vale o padrão
+  da ferramenta ou um favorito, que a prévia confere com `GetFavoritesByType`; o recibo
+  mostra a peça que o ArchiCAD pôs (`details.libPart.name`). A prévia recusa dono que não
+  é parede, parede curva ou poligonal, bloqueada, de hotlink, inexistente e `center_offset`
+  além do fim da parede. Conferência: tipo, pavimento, parede dona, `centerOffset` e o
+  tamanho e peitoril pedidos. `write._dispatch` ganhou um parâmetro `mismatch` para não
+  crescer a cadeia de ifs. Fixture documental, não captura ao vivo. 803 testes simulados
+  e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.
+
+- **Claude / T17 ao vivo, 12/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto
+  sem nome na porta 19723 (isUntitled=true), não salvo, pelo clone de teste no PC do Vitor
+  no commit d2deabe. Parede (30,0)–(34,0) 1A494F56; janela em 1,0 m (peitoril 0,9,
+  1,0 × 1,2) `verified`, peça "Abertura Simples de Janela"; porta em 3,0 m sem favorito
+  `verified`, "Abertura Simples de Porta"; janela com o favorito "Basculante Alumínio com
+  Vidro" em 2,0 m `verified`, peça "Janela", 0,8 × 0,8 e peitoril 1,3 do favorito. Os
+  detalhes reais de Window/Door batem com o fixture, que agora é a captura ao vivo. Achado:
+  os favoritos "- Default" começam com espaço; o validador recusava esses nomes e agora
+  os mantém exatos. T18 ao vivo: GetHotlinks, GetProductInfo e GetStories responderam;
+  SaveProject e SetPropertyValuesOfElements recusados sem nenhuma chamada HTTP. T19 ao vivo:
+  Bidê CF75E5C0 girado +π/2 (1,5708, sem normalized_angles) e −π/2 (gravado 2π,
+  normalized_angles {"angle": 0.0}), ambos `verified`.

@@ -1,0 +1,75 @@
+{
+  "provenance": {
+    "live_capture": true,
+    "archicad": "30 build 3001 BRA (Windows)",
+    "tapir_version": "1.7.0",
+    "kind": "live_capture",
+    "note": "Window/Door GetDetailsOfElements rows captured live on 12/10/2026 in an untitled project (wall GUID replaced by the test GUID 1111...). Favorites list trimmed; the missing_wall_error row is still source-derived (Tapir 1.7.0 CreateWindows/CreateDoors), not live."
+  },
+  "window_details": {
+    "type": "Window",
+    "floorIndex": 0,
+    "layerIndex": 22,
+    "details": {
+      "libPart": {
+        "name": "Abertura Simples de Janela",
+        "parentUnID": {
+          "guid": "BCEF86BC-954F-4861-8913-7B183C964396"
+        },
+        "ownUnID": {
+          "guid": "05A15B9B-AA9A-4D38-AE53-95C335CFA1BB"
+        }
+      },
+      "ownerElementId": {
+        "guid": "11111111-1111-1111-1111-111111111111"
+      },
+      "ownerElementType": "Wall",
+      "width": 1,
+      "height": 1.2,
+      "sillHeight": 0.9,
+      "centerOffset": 1,
+      "reflected": false,
+      "refSide": false,
+      "oSide": false
+    }
+  },
+  "door_details": {
+    "type": "Door",
+    "floorIndex": 0,
+    "layerIndex": 22,
+    "details": {
+      "libPart": {
+        "name": "Abertura Simples de Porta",
+        "parentUnID": {
+          "guid": "2EC5287F-2262-4CAB-BE0A-0C3307066128"
+        },
+        "ownUnID": {
+          "guid": "F6FAB810-3A56-4C74-8EB8-B58738A9EE9B"
+        }
+      },
+      "ownerElementId": {
+        "guid": "11111111-1111-1111-1111-111111111111"
+      },
+      "ownerElementType": "Wall",
+      "width": 1.2,
+      "height": 2.1,
+      "sillHeight": 0,
+      "centerOffset": 3,
+      "reflected": false,
+      "refSide": false,
+      "oSide": false
+    }
+  },
+  "favorites": {
+    "favorites": [
+      "Basculante Alumínio com Vidro",
+      " Porta de Abrir em Madeira - Default"
+    ]
+  },
+  "missing_wall_error": {
+    "error": {
+      "code": -2130313111,
+      "message": "Failed to load owner wall."
+    }
+  }
+}

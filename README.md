@@ -58,6 +58,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
 | `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
+| `create_windows` | Write | Up to 20 windows in existing straight walls | yes |
+| `create_doors` | Write | Up to 20 doors in existing straight walls | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
@@ -290,3 +292,5 @@ and open to everyone's contributions.
 - `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
 
 - `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.
+
+- `create_windows` and `create_doors` preview up to 20 openings, each with `wall_guid`, `center_offset` (metres along the wall's reference line from its start) and optional `sill_height`, `width`, `height` and `favorite_name`. Tapir 1.7.0 `CreateWindows`/`CreateDoors` take no library part name: the Window or Door tool default decides the part, or an existing favorite (checked in the preview with `GetFavoritesByType`). The preview refuses missing, non-wall, curved or polygonal, hotlinked and locked owners and offsets past the wall end. Applying checks type, story, owner wall, offset and any size or sill you gave, and reports the library part Archicad placed (with a favorite, that is the part name, not the favorite name). Favorite names are matched exactly, leading spaces included. Same token, port, receipts and timeout; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.

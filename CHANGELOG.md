@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `create_windows` and `create_doors`: up to 20 openings each in existing straight walls,
+  through Tapir `CreateWindows`/`CreateDoors`, with wall GUID, offset along the wall, and
+  optional size, sill and favorite name. Tapir 1.7.0 has no library part name input for
+  these, so the tool default or the favorite decides the part and the receipt reports it.
+  Verifies type, story, owner wall, offset and the given size and sill. Tested live on
+  Archicad 30 build 3001 BRA with Tapir 1.7.0; the fake copies the live Window/Door details.
+  Favorite names are kept exactly, since live favorites can start with a space.
+
 - Credit Vitor Martins as the project's creator in LICENSE, README, LEIA-ME, pyproject and
   the .mcpb manifest. The license stays MIT.
 
