@@ -53,7 +53,7 @@ async def test_preview_then_apply_verifies_owner_offset_and_size(operation):
             await TOOLS[operation](c, rows, 19723, False, preview["confirmation_token"])
     assert result["status"] == "verified"
     item = result["items"][0]
-    assert item["library_part_name"] in {"Janela 30", "Porta 30"}
+    assert item["library_part_name"] in {"Abertura Simples de Janela", "Abertura Simples de Porta"}
     receipt_key = "window_receipt_id" if operation == "create_windows" else "door_receipt_id"
     assert item[receipt_key]
     request = next(r for r in fake.tapir_requests if r["command"] == COMMANDS[operation])
@@ -127,7 +127,7 @@ async def test_preview_refuses_bad_owners(setup, rows, message):
         {"wall_guid": WALL, "center_offset": -0.1},
         {"wall_guid": WALL, "center_offset": 1, "width": 0},
         {"wall_guid": WALL, "center_offset": 1, "height": -1},
-        {"wall_guid": WALL, "center_offset": 1, "favorite_name": " Porta"},
+        {"wall_guid": WALL, "center_offset": 1, "favorite_name": "   "},
         {"wall_guid": WALL, "center_offset": 1, "library_part_name": "Porta"},
         {"wall_guid": "not-a-guid", "center_offset": 1},
     ],
@@ -225,3 +225,16 @@ async def test_owner_guid_case_does_not_fail_verification():
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         result = await apply(c, "create_doors", rows)
     assert result["status"] == "verified"
+
+
+async def test_favorite_name_with_leading_space_is_kept_exactly():
+    # Live AC30 build 3001 BRA: the "- Default" favorites start with a space.
+    name = " Porta de Abrir em Madeira - Default"
+    fake = model()
+    fake.favorites["Door"].append(name)
+    rows = [{"wall_guid": WALL, "center_offset": 2.0, "favorite_name": name}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "create_doors", rows)
+    assert result["status"] == "verified"
+    request = next(r for r in fake.tapir_requests if r["command"] == "CreateDoors")
+    assert request["parameters"]["doorsData"][0]["favoriteName"] == name

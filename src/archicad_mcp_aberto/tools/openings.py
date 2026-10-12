@@ -37,8 +37,10 @@ class OpeningCreate(write.InputModel):
     @field_validator("favorite_name")
     @classmethod
     def visible_name(cls, value: str | None) -> str | None:
-        if value is not None and value != value.strip():
-            raise ValueError("favorite_name must not start or end with spaces.")
+        # Kept exactly: live AC30 BRA favorites such as " Porta de Abrir em Madeira - Default"
+        # start with a space, and Tapir looks the favorite up by its exact name.
+        if value is not None and not value.strip():
+            raise ValueError("favorite_name must not be blank.")
         return value
 
 
