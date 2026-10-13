@@ -141,6 +141,8 @@ class FakeArchicad:
     modify_ignored: bool = False
     lose_modify_response: bool = False
     lose_roof_response: bool = False
+    # Roof tool default; a Composite default keeps its own thickness (0.30 m live, 13/10).
+    roof_default_structure: str = "Basic"
     lose_text_response: bool = False
     # Archicad stores what it is given unless told otherwise (verification tests).
     text_stored_as: str | None = None
@@ -703,8 +705,10 @@ class FakeArchicad:
                 row["floorIndex"] = roof["floorIndex"]
                 details = row["details"]
                 points = deepcopy(roof["polygonCoordinates"])
+                structure = roof.get("structureType", self.roof_default_structure)
                 details.update(
-                    thickness=roof["thickness"],
+                    structureType=structure,
+                    thickness=roof["thickness"] if structure == "Basic" else 0.30,
                     level=roof["level"] - story["level"],
                     zCoordinate=roof["level"],
                     polygonOutline=points + [deepcopy(points[0])],

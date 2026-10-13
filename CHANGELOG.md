@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `create_roofs` now sends `structureType: Basic`. Live on 13/10/2026 (Archicad 30 build
+  3001 BRA, Tapir 1.7.0) a Composite Roof tool default kept its own 0.30 m when 0.25 m
+  was asked, so all three roofs ended `verification_failed`.
+
 - Add `create_roofs` (Tapir `CreateRoofs`): up to 20 single-plane roofs (pivot line and
   slope) or multi-plane roofs (polygon as pivot polygon, optional levels and eaves
   overhang), absolute level as in `create_slabs`. Add `create_texts` (Tapir
