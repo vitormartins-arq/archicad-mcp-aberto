@@ -29,8 +29,11 @@ caso abra o PR dessa tarefa explicando o que falta.
 
 ## A fazer
 
-Nada novo para o Codex agora. T17 a T19 foram feitas pelo Claude enquanto o Codex estava
-sem token (PRs #34, #35 e #36, aguardando teste ao vivo e merge); não as refaça.
+Nada novo para o Codex agora. Desde 13/10/2026 o Claude constrói em lotes na nuvem (uma
+branch e um PR por lote) e o Vitor valida ao vivo pela lista de `docs/VALIDAR.md`.
+
+- Lote 1, branch `lote/edicao-elementos` (Claude): `modify_slabs`, `modify_columns`,
+  `modify_beams`, `modify_windows`, `modify_doors` e `modify_objects`. Não refaça.
 
 ## Integrado
 
@@ -42,3 +45,5 @@ sem token (PRs #34, #35 e #36, aguardando teste ao vivo e merge); não as refaç
   T11 `list_library_parts` (#25). Todos testados ao vivo.
 - T12 inventário parcial (#26), T13 README (#30), T14 `rotate_elements` (#31),
   T15 parâmetros GDL (#32), T16 `modify_walls` (#33). Todos testados ao vivo.
+- T17 janelas e portas (#34), T18 `run_read_command` (#35), T19 ângulos normalizados
+  (#36). Feitas pelo Claude; testadas ao vivo.

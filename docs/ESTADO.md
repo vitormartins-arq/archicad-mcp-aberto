@@ -289,3 +289,17 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   SaveProject e SetPropertyValuesOfElements recusados sem nenhuma chamada HTTP. T19 ao vivo:
   Bidê CF75E5C0 girado +π/2 (1,5708, sem normalized_angles) e −π/2 (gravado 2π,
   normalized_angles {"angle": 0.0}), ambos `verified`.
+
+- **Claude / lote 1 na nuvem, 13/10/2026:** novo modo pedido pelo Vitor: o Claude trabalha
+  sozinho com o ArchiCAD simulado e o CI, sem pedir para abrir o ArchiCAD; o que falta
+  conferir ao vivo fica em `docs/VALIDAR.md` (inclui #32 e #33 para confirmação rápida).
+  Branch `lote/edicao-elementos`: `tools/modify.py` com `modify_slabs`, `modify_columns`,
+  `modify_beams`, `modify_windows`, `modify_doors` e `modify_objects`, no padrão do
+  `modify_walls` (reaproveita `edit._editable`, `_unique` e `_execute`). Campos lidos no
+  código do Tapir 1.7.0 (ExtendedElementCommands.cpp e ElementCreationCommands.cpp).
+  Achado no código: `ModifySlabs` e `ModifyObjects` recebem z absoluto e escolhem o
+  pavimento pelo `GetFloorIndexAndOffset`; o MCP recebe o nível relativo ao pavimento e
+  recusa o que mudaria o elemento de pavimento. Abaixo do pavimento mais baixo o Tapir
+  mantém no pavimento 0. Seção ligada ou redonda manda o mesmo valor nos dois lados.
+  Fixture `tapir170_modify_elements_documented.json`, não é captura ao vivo. 977 testes
+  simulados e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.
