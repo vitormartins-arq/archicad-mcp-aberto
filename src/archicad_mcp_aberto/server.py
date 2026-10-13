@@ -9,7 +9,7 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
+from archicad_mcp_aberto.tools import attributes, edit, gateway, modify, openings, read, write
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -358,6 +358,96 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Refuses locked/hotlinked/curved/trapezoidal walls; verifies fields and never saves.
         """
         return await edit.modify_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_slabs(
+        ctx: Context,
+        slabs: list[modify.SlabModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 slabs: thickness (Basic only) and level, metres from the
+        slab's story. Refuses a level that would move it to another story, locked and
+        hotlinked slabs; verifies fields and never saves.
+        """
+        return await modify.modify_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_columns(
+        ctx: Context,
+        columns: list[modify.ColumnModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 columns: origin, bottomOffset, height, width, depth in
+        metres. Height unlinks the top story; round/linked sections take one size.
+        Refuses locked/hotlinked columns; verifies fields and never saves.
+        """
+        return await modify.modify_columns(
+            client_of(ctx), columns, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_beams(
+        ctx: Context,
+        beams: list[modify.BeamModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 straight beams: begCoordinate, endCoordinate, level (from
+        its story), width, height in metres. Refuses curved, zero-length, locked and
+        hotlinked beams; verifies fields and never saves.
+        """
+        return await modify.modify_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_windows(
+        ctx: Context,
+        windows: list[modify.OpeningModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 windows in walls: width, height, sillHeight, centerOffset
+        (along the wall from its start), metres. Refuses offsets past the wall end,
+        locked/hotlinked windows; verifies fields and never saves.
+        """
+        return await modify.modify_windows(
+            client_of(ctx), windows, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_doors(
+        ctx: Context,
+        doors: list[modify.OpeningModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 doors in walls: width, height, sillHeight, centerOffset
+        (along the wall from its start), metres. Refuses offsets past the wall end,
+        locked/hotlinked doors; verifies fields and never saves.
+        """
+        return await modify.modify_doors(client_of(ctx), doors, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_objects(
+        ctx: Context,
+        objects: list[modify.ObjectModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 objects: origin {x, y}, level from its story and
+        dimensions {x, y, z} in metres. Refuses a level that changes story, locked and
+        hotlinked objects; verifies fields and never saves.
+        """
+        return await modify.modify_objects(
+            client_of(ctx), objects, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=WRITE)
     async def create_windows(

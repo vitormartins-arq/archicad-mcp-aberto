@@ -217,6 +217,24 @@ OPERATIONS = {
         "favorite decides the library part.",
     ),
     "modify_walls": ("wall edit", "wall_edit_receipt_id", "Only requested fields are modified."),
+    "modify_slabs": ("slab edit", "slab_edit_receipt_id", "Only requested fields are modified."),
+    "modify_columns": (
+        "column edit",
+        "column_edit_receipt_id",
+        "Only requested fields are modified.",
+    ),
+    "modify_beams": ("beam edit", "beam_edit_receipt_id", "Only requested fields are modified."),
+    "modify_windows": (
+        "window edit",
+        "window_edit_receipt_id",
+        "Only requested fields are modified.",
+    ),
+    "modify_doors": ("door edit", "door_edit_receipt_id", "Only requested fields are modified."),
+    "modify_objects": (
+        "object edit",
+        "object_edit_receipt_id",
+        "Only requested fields are modified.",
+    ),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
@@ -1339,6 +1357,12 @@ NAMED_PREVIEWS = {
     "rotate_elements",
     "set_gdl_parameters",
     "modify_walls",
+    "modify_slabs",
+    "modify_columns",
+    "modify_beams",
+    "modify_windows",
+    "modify_doors",
+    "modify_objects",
     "create_windows",
     "create_doors",
 }

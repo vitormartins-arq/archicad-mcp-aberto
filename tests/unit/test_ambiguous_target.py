@@ -7,17 +7,33 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
+from archicad_mcp_aberto.tools import attributes, edit, gateway, modify, openings, read, write
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
+from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
+# modify_* tool -> element type it edits
+MODIFY_TYPES = {
+    "modify_slabs": "Slab",
+    "modify_columns": "Column",
+    "modify_beams": "Beam",
+    "modify_windows": "Window",
+    "modify_doors": "Door",
+    "modify_objects": "Object",
+}
 INPUTS = {
     "run_read_command": {"command": "Tapir.GetStories"},
     "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
+    "modify_slabs": {"slabs": [{"guid": GUID, "thickness": 0.2}]},
+    "modify_columns": {"columns": [{"guid": GUID, "height": 3.0}]},
+    "modify_beams": {"beams": [{"guid": GUID, "level": 3.0}]},
+    "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
+    "modify_doors": {"doors": [{"guid": GUID, "width": 1.0}]},
+    "modify_objects": {"objects": [{"guid": GUID, "origin": {"x": 0, "y": 0}}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
@@ -108,7 +124,7 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, gateway, openings, read, write)
+    for module in (attributes, edit, gateway, modify, openings, read, write)
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")
@@ -188,6 +204,10 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
         for instance in (first, second):
             instance.elements[GUID] = "Object"
+    if name in MODIFY_TYPES:
+        for instance in (first, second):
+            instance.elements[GUID] = MODIFY_TYPES[name]
+            instance.details[GUID] = deepcopy(MODIFY_ROWS[MODIFY_TYPES[name]])
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -199,6 +219,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert result_port == port
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
+    expected_type = MODIFY_TYPES.get(name, expected_type)
     assert selected.elements == untouched.elements == {GUID: expected_type}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 

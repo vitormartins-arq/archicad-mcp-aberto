@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors`
+  and `modify_objects` (new `tools/modify.py`), following `modify_walls`: dry run, token,
+  explicit port, per-element receipts and read-back of every requested field. They use
+  Tapir 1.7.0 `ModifySlabs`, `ModifyColumns`, `ModifyBeams`, `ModifyWindows`,
+  `ModifyDoors` and `ModifyObjects`. Levels are offsets from the element's story; a slab
+  or object level that Tapir would place on another story is refused. The fake's Modify*
+  results come from the Tapir source, not a live capture. Not yet tested live; the steps
+  are in `docs/VALIDAR.md`.
+
 - `rotate_elements` receipts add `normalized_angles` when Archicad stores an angle outside
   [0, 2π), as the 2π seen live after rotating an object back. Nothing is written again.
 

@@ -164,6 +164,30 @@
       "description": "Preview/edit up to 50 straight walls, with per-wall verification and receipts."
     },
     {
+      "name": "modify_slabs",
+      "description": "Preview/edit thickness and level of up to 50 slabs, with read-back verification and receipts."
+    },
+    {
+      "name": "modify_columns",
+      "description": "Preview/edit position, base, height and section of up to 50 columns, with verification and receipts."
+    },
+    {
+      "name": "modify_beams",
+      "description": "Preview/edit endpoints, level and section of up to 50 straight beams, with verification and receipts."
+    },
+    {
+      "name": "modify_windows",
+      "description": "Preview/edit size, sill and position of up to 50 windows in walls, with verification and receipts."
+    },
+    {
+      "name": "modify_doors",
+      "description": "Preview/edit size, sill and position of up to 50 doors in walls, with verification and receipts."
+    },
+    {
+      "name": "modify_objects",
+      "description": "Preview/edit position, level and dimensions of up to 50 objects, with verification and receipts."
+    },
+    {
       "name": "create_windows",
       "description": "Preview/place up to 20 windows in existing straight walls, verified after apply."
     },

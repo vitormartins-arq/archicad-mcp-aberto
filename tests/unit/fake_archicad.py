@@ -63,6 +63,23 @@ CREATE_OPENINGS_FIXTURE = json.loads(
 )
 
 
+# Tapir 1.7.0 source-derived Modify* results; explicitly not a live capture.
+MODIFY_ELEMENTS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_modify_elements_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+# command -> (element type it edits, list key)
+MODIFY_COMMANDS = {
+    "ModifySlabs": ("Slab", "slabsWithDetails"),
+    "ModifyColumns": ("Column", "columnsWithDetails"),
+    "ModifyBeams": ("Beam", "beamsWithDetails"),
+    "ModifyWindows": ("Window", "windowsWithDetails"),
+    "ModifyDoors": ("Door", "doorsWithDetails"),
+    "ModifyObjects": ("Object", "objectsWithDetails"),
+}
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -111,6 +128,10 @@ class FakeArchicad:
     modify_wall_errors: dict[int, dict] = field(default_factory=dict)
     modify_wall_ignored: bool = False
     lose_modify_wall_response: bool = False
+    # ModifySlabs/Columns/Beams/Windows/Doors/Objects
+    modify_errors: dict[int, dict] = field(default_factory=dict)
+    modify_ignored: bool = False
+    lose_modify_response: bool = False
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -356,6 +377,8 @@ class FakeArchicad:
                         details["zCoordinate"] = story["level"] + entry["bottomOffset"]
                 rows.append(deepcopy(fixture["success"]))
             return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name in MODIFY_COMMANDS:
+            return self._modify(name, args)
         if name in {"GetGDLParametersOfElements", "SetGDLParametersOfElements"}:
             # Official Tapir schema at 02691b5d; synthetic fixture, not live captured.
             fixture = json.loads(
@@ -705,6 +728,49 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {"elements": out}})
         return ok({"addOnCommandResponse": {"error": {"code": 1, "message": f"Unknown {name}"}}})
 
+    def _floor(self, z: float) -> tuple[int, float]:
+        """Tapir's GetFloorIndexAndOffset: the highest story at or below z."""
+        found = None
+        for story in sorted(self.stories, key=lambda s: s["index"]):
+            if story["level"] > z:
+                break
+            found = story
+        return (found["index"], z - found["level"]) if found else (0, z)
+
+    def _modify(self, name: str, args: dict) -> dict:
+        kind, key = MODIFY_COMMANDS[name]
+        rows = []
+        for index, entry in enumerate(args[key]):
+            guid = entry["elementId"]["guid"]
+            if index in self.modify_errors:
+                rows.append(deepcopy(self.modify_errors[index]))
+                continue
+            if self.elements.get(guid) != kind or guid in self.locked_elements:
+                rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["failures"][name]))
+                continue
+            if not self.modify_ignored:
+                row = self.details[guid]
+                details = row["details"]
+                story = next(s for s in self.stories if s["index"] == row["floorIndex"])
+                changes = {k: deepcopy(v) for k, v in entry.items() if k != "elementId"}
+                if "zCoordinate" in changes:  # slabs: absolute, Tapir picks the story
+                    z = changes.pop("zCoordinate")
+                    row["floorIndex"], details["level"] = self._floor(z)
+                    details["zCoordinate"] = z
+                if "coordinates" in changes:  # objects: absolute, Tapir picks the story
+                    coordinates = changes.pop("coordinates")
+                    row["floorIndex"], _ = self._floor(coordinates["z"])
+                    details["origin"] = coordinates
+                if name == "ModifyColumns" and "bottomOffset" in changes:
+                    details["zCoordinate"] = story["level"] + changes["bottomOffset"]
+                if name == "ModifyColumns" and "height" in changes:
+                    details["relativeTopStory"] = 0
+                if name == "ModifyBeams" and "level" in changes:
+                    details["zCoordinate"] = story["level"] + changes["level"]
+                details.update(changes)
+            rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["success"]))
+        return ok({"addOnCommandResponse": {"executionResults": rows}})
+
     @staticmethod
     def _id(guid: str) -> dict:
         return {"elementId": {"guid": guid}}
@@ -733,6 +799,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_modify_wall_response and command == "ModifyWalls":
             raise httpx.ReadTimeout(
                 "Injected lost wall-edit response after model change", request=request
+            )
+        if instance.lose_modify_response and command in MODIFY_COMMANDS:
+            raise httpx.ReadTimeout(
+                "Injected lost element-edit response after model change", request=request
             )
         if instance.lose_gdl_response and command == "SetGDLParametersOfElements":
             raise httpx.ReadTimeout(

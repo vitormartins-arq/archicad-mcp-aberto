@@ -1,0 +1,32 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ExtendedElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCreationCommands.cpp"
+    ],
+    "note": "ModifySlabs/ModifyColumns/ModifyBeams/ModifyWindows/ModifyDoors/ModifyObjects input keys and executionResults read in the Tapir 1.7.0 source. Messages are the source's own strings; codes are synthetic. Not a live capture."
+  },
+  "success": {"success": true},
+  "failures": {
+    "ModifySlabs": {"success": false, "error": {"code": -1, "message": "Failed to modify slab."}},
+    "ModifyColumns": {"success": false, "error": {"code": -1, "message": "Failed to modify column."}},
+    "ModifyBeams": {"success": false, "error": {"code": -1, "message": "Failed to modify beam."}},
+    "ModifyWindows": {"success": false, "error": {"code": -1, "message": "Failed to modify window."}},
+    "ModifyDoors": {"success": false, "error": {"code": -1, "message": "Failed to modify door."}},
+    "ModifyObjects": {"success": false, "error": {"code": -2130313112, "message": "Element is not of the expected type."}}
+  },
+  "object_details": {
+    "type": "Object",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "libPart": {"name": "Mesa Retangular 30"},
+      "origin": {"x": 2, "y": 3, "z": 0},
+      "dimensions": {"x": 1.2, "y": 0.8, "z": 0.75},
+      "angle": 0
+    }
+  }
+}

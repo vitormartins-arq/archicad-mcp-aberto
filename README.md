@@ -59,6 +59,12 @@ in this delivery; operator live validation of these additions remains pending.
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
 | `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
+| `modify_slabs` | Write | Thickness and level of up to 50 slabs, read back after apply | yes |
+| `modify_columns` | Write | Position, base, height and section of up to 50 columns | yes |
+| `modify_beams` | Write | Endpoints, level and section of up to 50 straight beams | yes |
+| `modify_windows` | Write | Size, sill and position of up to 50 windows in walls | yes |
+| `modify_doors` | Write | Size, sill and position of up to 50 doors in walls | yes |
+| `modify_objects` | Write | Position, level and dimensions of up to 50 objects | yes |
 | `create_windows` | Write | Up to 20 windows in existing straight walls | yes |
 | `create_doors` | Write | Up to 20 doors in existing straight walls | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
@@ -293,6 +299,8 @@ and open to everyone's contributions.
 - `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
 
 - `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.
+
+- `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors` and `modify_objects` work like `modify_walls`: up to 50 entries, each a `guid` plus at least one field, native camelCase, metres. Slabs: `thickness` (Basic only) and `level` from the slab's story. Columns: `origin`, `bottomOffset`, `height` (unlinks the top story, as Tapir does), `width`, `depth`. Beams: `begCoordinate`, `endCoordinate`, `level` from its story, `width`, `height`; curved and zero-length beams are refused. Windows and doors: `width`, `height`, `sillHeight` and `centerOffset` along the owner wall from its start, refused past the wall end. Objects: `origin` `{x, y}`, `level` from its story and `dimensions` `{x, y, z}` (z is the part's ZZYZX). Round or linked sections take one size for both. Tapir places slabs and objects on the story that holds their absolute z, so a level that would move one to another story is refused. Single-use confirmation, explicit port, per-element receipts and read-back verification through Tapir 1.7.0 `ModifySlabs`/`ModifyColumns`/`ModifyBeams`/`ModifyWindows`/`ModifyDoors`/`ModifyObjects`; never saves. Not yet tested live (see [docs/VALIDAR.md](docs/VALIDAR.md)).
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 
