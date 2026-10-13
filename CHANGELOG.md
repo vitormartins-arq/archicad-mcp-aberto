@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `create_roofs` now sends `structureType: Basic`. Live on 13/10/2026 (Archicad 30 build
+  3001 BRA, Tapir 1.7.0) a Composite Roof tool default kept its own 0.30 m when 0.25 m
+  was asked, so all three roofs ended `verification_failed`.
+
 - Add `list_classifications` and `set_classifications` (new `tools/classifications.py`):
   read the classification systems and one system's item tree, and classify or unclassify
   up to 100 elements through the official `SetClassificationsOfElements`, with preview,

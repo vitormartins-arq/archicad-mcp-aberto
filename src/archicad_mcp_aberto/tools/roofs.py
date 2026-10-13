@@ -68,6 +68,9 @@ def _payload(roof: RoofCreate) -> dict:
         "floorIndex": roof.floor_index,
         "level": roof.level,
         "thickness": roof.thickness,
+        # A Composite Roof tool default ignores thickness (seen live 13/10/2026); Basic keeps
+        # the tool's building material and takes the thickness.
+        "structureType": "Basic",
         "polygonCoordinates": [p.model_dump() for p in roof.outline],
         "polygonArcs": [],
         "holes": [],
@@ -110,6 +113,7 @@ def _mismatches(target: dict):
         story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
         details: dict[str, Any] = {
             "roofClass": item["roof_class"],
+            "structureType": "Basic",
             "thickness": p["thickness"],
             "level": p["level"] - story["level"],
             "zCoordinate": p["level"],

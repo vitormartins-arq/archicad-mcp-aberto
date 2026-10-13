@@ -94,6 +94,16 @@ async def test_single_plane_roof():
     assert result["items"][0]["after"]["details"]["roofClass"] == "SinglePlane"
 
 
+async def test_roof_is_basic_even_with_a_composite_tool_default():
+    # Live 13/10/2026: a Composite Roof tool default kept 0.30 m when 0.25 m was asked.
+    fake = model(roof_default_structure="Composite")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(roofs.create_roofs, c, [multi(), single()])
+    assert result["status"] == "verified"
+    assert all(r["structureType"] == "Basic" for r in sent(fake, "CreateRoofs", "roofsData"))
+    assert result["items"][0]["after"]["details"]["thickness"] == 0.25
+
+
 async def test_closed_outline_is_normalized():
     fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:
