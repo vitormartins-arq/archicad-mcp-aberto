@@ -136,6 +136,18 @@
       "description": "Preview or apply element classifications (or remove them), read back after."
     },
     {
+      "name": "list_layers",
+      "description": "List the project's layers with their hidden, locked, wireframe and intersection settings."
+    },
+    {
+      "name": "create_layers",
+      "description": "Preview or add layers by name; existing names are refused, never overwritten. Read back after."
+    },
+    {
+      "name": "set_element_layers",
+      "description": "Preview or move editable elements to existing layers by name, read back after."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

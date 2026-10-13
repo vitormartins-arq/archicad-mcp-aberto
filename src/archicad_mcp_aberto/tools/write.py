@@ -309,6 +309,16 @@ OPERATIONS = {
         "fill_receipt_id",
         "New fills keep the Fill tool's settings unless named here.",
     ),
+    "create_layers": (
+        "layer",
+        "layer_receipt_id",
+        "New layers are added; an existing name is never overwritten.",
+    ),
+    "set_element_layers": (
+        "layer change",
+        "layer_change_receipt_id",
+        "Each element moves to its layer and is read back after.",
+    ),
     "create_labels": (
         "label",
         "label_receipt_id",
@@ -1400,6 +1410,7 @@ NAMED_PREVIEWS = {
     "move_elements",
     "set_property_values",
     "set_classifications",
+    "set_element_layers",
     "create_lines",
     "create_polylines",
     "create_arcs",

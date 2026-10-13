@@ -350,3 +350,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `tapir170_drafting_documented.json`, não é captura ao vivo. 1221 testes simulados e
   Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
 
+- **Claude / lote 6 na nuvem, 13/10/2026:** branch `lote/camadas`, empilhada no lote 5.
+  `tools/layers.py` com `list_layers`, `create_layers` e `set_element_layers`, pelos
+  comandos do Tapir 1.7.0 lidos no código (`GetLayers`, `CreateLayers`,
+  `SetDetailsOfElements`). `CreateLayers` vai sempre com `overwriteExisting: false` e o
+  MCP recusa na prévia um nome que já existe; o Tapir responde "Already exists." se o
+  nome aparecer entre a prévia e a aplicação. `GetLayers` vai sem `fields` (volta tudo).
+  O ArchiCAD simulado agora dá a cada camada seu próprio GUID. Fixture
+  `tapir170_layers_create_documented.json`, não é captura ao vivo. 1263 testes simulados
+  e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

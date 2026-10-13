@@ -137,3 +137,16 @@ Faça na planta do térreo, numa área vazia.
 - [ ] **Camada.** Repita uma linha pedindo uma camada pelo nome. Esperado: a linha na
   camada pedida; um nome que não existe é recusado na prévia.
 
+## Lote 6: camadas
+
+- [ ] **list_layers.** "Liste as camadas do projeto." Esperado: as mesmas camadas da
+  janela Configurações de Camadas, com oculta, travada e aramado batendo.
+- [ ] **create_layers.** "Crie as camadas 'MCP Teste' e 'MCP Travada' (travada)."
+  Esperado: `verified`, as duas aparecem nas Configurações de Camadas e a segunda está
+  travada. Depois peça de novo "Crie a camada 'MCP Teste'": deve ser recusada na prévia.
+- [ ] **set_element_layers.** "Mova a parede de teste para a camada 'MCP Teste'."
+  Esperado: `verified` e a parede na camada nova. Conte se o elemento sumiu da vista
+  (a camada nova pode nascer oculta pela combinação de camadas ativa).
+- [ ] **Elemento em camada travada.** Peça para mover um elemento que esteja na camada
+  'MCP Travada'. Esperado: recusado na prévia como não editável.
+

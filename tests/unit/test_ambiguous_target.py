@@ -14,6 +14,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     gateway,
     labels,
+    layers,
     modify,
     openings,
     read,
@@ -59,6 +60,9 @@ INPUTS = {
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
     "list_classifications": {},
+    "list_layers": {},
+    "create_layers": {"layers": [{"name": "Cotas"}]},
+    "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
     "create_lines": {
         "lines": [{"start": {"x": 0, "y": 0}, "end": {"x": 1, "y": 0}, "floor_index": 0}]
     },
@@ -187,6 +191,7 @@ TARGETED = {
         edit,
         gateway,
         labels,
+        layers,
         modify,
         openings,
         read,

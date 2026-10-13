@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add layers (new `tools/layers.py`): `list_layers`, `create_layers` and
+  `set_element_layers` through Tapir 1.7.0 `GetLayers`, `CreateLayers` and
+  `SetDetailsOfElements`. New layers never overwrite an existing name; elements move to a
+  layer by name with preview, token, receipts and read-back. The fake now gives each layer
+  its own GUID. Its shapes come from the Tapir source, not a live capture. Not yet tested
+  live.
+
 - Add 2D drafting (new `tools/drafting.py`): `create_lines`, `create_polylines`,
   `create_arcs`, `create_circles` and `create_fills` through Tapir 1.7.0
   `CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles` and

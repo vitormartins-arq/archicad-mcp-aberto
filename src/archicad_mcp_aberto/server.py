@@ -21,6 +21,7 @@ from archicad_mcp_aberto.tools import (
     write,
 )
 from archicad_mcp_aberto.tools import labels as labels_tool
+from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 
@@ -270,6 +271,44 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Ambiguous names are refused. Preview shows current and new items; apply identical
         inputs with explicit port and single-use token; each is read back. Never saves."""
         return await classifications.set_classifications(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layers(ctx: Context, port: int | None = None) -> dict:
+        """List the project's layers: guid, index, name, hidden, locked, wireframe and
+        intersection group. Requires Tapir."""
+        return await layers_tool.list_layers(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layers(
+        ctx: Context,
+        layers: list[layers_tool.LayerCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 layers: name, optional hidden, locked, wireframe and
+        intersection_group. A name the project already has is refused, never overwritten.
+        Apply identical inputs with explicit port and single-use token; each layer is read
+        back. Requires Tapir. Never saves."""
+        return await layers_tool.create_layers(
+            client_of(ctx), layers, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_element_layers(
+        ctx: Context,
+        changes: list[layers_tool.LayerMove],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview moving up to 100 editable elements to existing layers: element_guid and
+        layer (name). Unknown or ambiguous names are refused. Preview shows current and new
+        layer; apply identical inputs with explicit port and single-use token; each element
+        is read back. Requires Tapir. Never saves."""
+        return await layers_tool.set_element_layers(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 

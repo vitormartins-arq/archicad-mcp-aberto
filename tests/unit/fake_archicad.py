@@ -95,6 +95,17 @@ DRAFTING_FIXTURE = json.loads(
     )
 )
 # name -> (element type, list key)
+LAYERS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_layers_create_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+def layer_guid(index: int) -> str:
+    return f"44444444-4444-4444-8444-{index:012d}"
+
+
 DRAFTING_COMMANDS = {
     "CreateLineElements": ("Line", "linesData"),
     "CreatePolylines": ("PolyLine", "polylinesData"),
@@ -146,6 +157,12 @@ class FakeArchicad:
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
     layers: dict[int, str | None] = field(default_factory=lambda: {1: "Walls"})
+    # layer index -> {"isHidden", "isLocked", "isWireframe", "intersectionGroupNr"}
+    layer_flags: dict[int, dict] = field(default_factory=dict)
+    layer_create_errors: dict[int, dict] = field(default_factory=dict)
+    layer_move_errors: dict[int, dict] = field(default_factory=dict)
+    layer_move_ignored: bool = False
+    lose_layer_response: bool = False
     lose_slab_response: bool = False
     lose_zone_response: bool = False
     lose_beam_response: bool = False
@@ -365,10 +382,68 @@ class FakeArchicad:
                 ).read_text(encoding="utf-8")
             )
             rows = [
-                {**deepcopy(fixture["attributes"][0]), "index": index, "name": name}
+                {
+                    **deepcopy(fixture["attributes"][0]),
+                    "attributeId": {"guid": layer_guid(index)},
+                    "index": index,
+                    "name": name,
+                }
                 for index, name in self.layers.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetLayers":
+            by_guid = {layer_guid(i): i for i, n in self.layers.items() if n is not None}
+            out = []
+            for attribute in args["attributeIds"]:
+                index = by_guid.get(attribute["attributeId"]["guid"].upper())
+                if index is None:
+                    out.append(deepcopy(LAYERS_FIXTURE["get_error"]))
+                    continue
+                flags = {
+                    "isHidden": False,
+                    "isLocked": False,
+                    "isWireframe": False,
+                    "intersectionGroupNr": 1,
+                    **self.layer_flags.get(index, {}),
+                }
+                wanted = args.get("fields", list(flags))
+                out.append(
+                    {
+                        "attributeId": {"guid": layer_guid(index)},
+                        "index": index,
+                        "name": self.layers[index],
+                        **{k: v for k, v in flags.items() if k in wanted},
+                    }
+                )
+            return ok({"addOnCommandResponse": {"layers": out}})
+        if name == "CreateLayers":
+            assert args.get("overwriteExisting") is False
+            out = []
+            for position, data in enumerate(args["layerDataArray"]):
+                if position in self.layer_create_errors:
+                    out.append(deepcopy(self.layer_create_errors[position]))
+                elif data["name"] in self.layers.values():
+                    out.append(deepcopy(LAYERS_FIXTURE["already_exists"]))
+                else:
+                    index = max(self.layers, default=0) + 1
+                    self.layers[index] = data["name"]
+                    self.layer_flags[index] = {k: v for k, v in data.items() if k != "name"}
+                    out.append({"attributeId": {"guid": layer_guid(index)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "SetDetailsOfElements":
+            out = []
+            for position, row in enumerate(args["elementsWithDetails"]):
+                guid = row["elementId"]["guid"]
+                if position in self.layer_move_errors:
+                    out.append(deepcopy(self.layer_move_errors[position]))
+                elif guid not in self.elements:
+                    out.append(deepcopy(LAYERS_FIXTURE["set_details_missing"]))
+                else:
+                    if not self.layer_move_ignored:
+                        current = self.details.setdefault(guid, {"type": self.elements[guid]})
+                        current.update(row["details"])
+                    out.append(deepcopy(LAYERS_FIXTURE["set_details_ok"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "GetAttributesByType" and args["attributeType"] == "Fill":
             return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":
@@ -1080,6 +1155,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost text response", request=request)
         if instance.lose_drafting_response and command in DRAFTING_COMMANDS:
             raise httpx.ReadTimeout("Injected lost drafting response", request=request)
+        if instance.lose_layer_response and command in ("CreateLayers", "SetDetailsOfElements"):
+            raise httpx.ReadTimeout("Injected lost layer response", request=request)
         if instance.lose_label_response and command == "CreateLabels":
             raise httpx.ReadTimeout("Injected lost label response", request=request)
         if instance.lose_classification_response and (
