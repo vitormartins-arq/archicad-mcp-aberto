@@ -289,3 +289,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   SaveProject e SetPropertyValuesOfElements recusados sem nenhuma chamada HTTP. T19 ao vivo:
   Bidê CF75E5C0 girado +π/2 (1,5708, sem normalized_angles) e −π/2 (gravado 2π,
   normalized_angles {"angle": 0.0}), ambos `verified`.
+
+
+## 2026-10-13 — Codex: validação ao vivo do lote editar-telhados-textos
+
+- Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, porta 19723. Vitor autorizou explicitamente o projeto de teste salvo `C:\Users\vitor\Downloads\Sem Nome.pln` (`isUntitled=false`), sem salvar. Pacote instalado conferido byte a byte contra `archicad-mcp-aberto-lote3-editar-telhados-textos.mcpb`; chamadas MCP pelo servidor desse pacote, com prévia/token/porta explícita. Nenhum salvamento, exclusão ou Undo.
+- Checklist da branch `lote/editar-telhados-textos`, `docs/VALIDAR.md`: `modify_walls`, `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors`, duas criações de texto e `modify_texts` deram `verified`. Recusas esperadas conferidas: laje acima do andar seguinte, janela além do fim da parede e edição de telhado SinglePlane.
+- A peça genérica Mesa falhou na criação com código -2130313112. Mesa de Jantar Retangular foi criada com `verified`; nela, `set_gdl_parameters` A=1.5 falhou na conferência (A relido 1.8), e `modify_objects` falhou somente nas dimensões (pedido 2 x 1 x 0.9, retorno 1.8 x 1.8 x 0.85). Posição (3,7) e nível 0.4 conferidos. Causa do comportamento GDL ainda não estabelecida.
+- Três criações de telhado (SinglePlane, MultiPlane e MultiPlane com dois níveis) terminaram `verification_failed` por espessura: pedido 0.25 m, retorno 0.30 m, estrutura Composite herdada. `modify_roofs` com espessura foi recusado na prévia por requerer Basic; não houve apply desse item.
+- Inspeção visual continua com Vitor. A seção visual do projeto de 12/10 foi pulada: este projeto estava vazio e não continha aqueles elementos. Casos adicionais de pilar circular e viga curva não foram executados. Relatório e recibos: `C:\Users\vitor\Documents\Codex\validacao-mcp-lote3-2026-10-13`. Nenhuma correção de código nesta rodada.
