@@ -76,3 +76,13 @@ dia ainda estiver aberto (senão, pule).
 - [ ] **create_texts.** "Escreva 'Sala' em (2,3) no térreo, com 3,5 mm, centralizado, e
   um texto de duas linhas girado 90°." Esperado: `verified`; o tamanho é em milímetros
   de papel. Conte se as duas linhas saíram certas.
+
+## Lote 3: editar telhados e textos
+
+Use o telhado de várias águas e os textos do lote 2.
+
+- [ ] **modify_roofs.** "Mude o beiral do telhado para 0,6 m, a espessura para 0,3 m e
+  suba 0,2 m." Esperado: `verified`. No telhado de uma água, a prévia deve recusar (o
+  Tapir 1.7.0 só edita telhado de várias águas).
+- [ ] **modify_texts.** "Troque 'Sala' por 'Sala de estar', mova para (3,4), 5 mm,
+  alinhado à direita e girado 45°." Esperado: `verified` e o texto no mesmo pavimento.

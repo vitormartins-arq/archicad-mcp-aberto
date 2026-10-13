@@ -315,3 +315,13 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   visual da parede com janelas e do Bidê) foi para `docs/VALIDAR.md`. Fixture
   `tapir170_create_roofs_texts_documented.json`, não é captura ao vivo. 1034 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 3 na nuvem, 13/10/2026:** branch `lote/editar-telhados-textos`,
+  empilhada no lote 2. `modify_roofs` e `modify_texts` em `tools/modify.py`. Do código do
+  Tapir 1.7.0: `ModifyRoofs` recusa telhado de uma água ("Only multi-plane roofs are
+  supported") e toma `level` como Z absoluto sem `floorIndex`, então o MCP recusa o que
+  mudaria de pavimento; `ModifyTexts` aceita `floorIndex` junto com `coordinate`, e o MCP
+  manda o pavimento atual para o texto não mudar de pavimento; altura, ângulo e
+  alinhamento vão em `style`. A conferência do lote passou a comparar ângulo no círculo,
+  texto com quebra LF e listas item a item. 1079 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Falta o teste ao vivo.
