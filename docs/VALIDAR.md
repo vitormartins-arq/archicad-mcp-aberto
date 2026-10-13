@@ -116,3 +116,24 @@ Use a parede, a laje e o pilar do lote 1.
 - [ ] **create_labels.** "Ponha uma etiqueta 'Parede de tijolo' na parede, com 2,5 mm, e
   uma etiqueta solta 'Nota' em (2,3) no térreo." Esperado: `verified`; a etiqueta da parede
   acompanha a parede quando ela se move. Conte onde o texto ficou em relação à seta.
+
+## Lote 5: desenho 2D
+
+Faça na planta do térreo, numa área vazia.
+
+- [ ] **create_lines.** "Desenhe uma linha de (0,10) a (5,10) com a pena 5." Esperado:
+  `verified`; a linha aparece na planta com a pena 5.
+- [ ] **create_polylines.** "Desenhe uma polilinha fechada no retângulo de (0,12) a (4,15)."
+  Esperado: `verified`. Conte se a caixa conferida bateu (a pena da polilinha não é
+  conferida, o Tapir não a informa).
+- [ ] **create_arcs.** "Desenhe um arco de centro (8,12), raio 2, de 0° a 90°." Esperado:
+  `verified`; o arco vai no sentido anti-horário, do leste para o norte. Conte se saiu
+  para o lado errado.
+- [ ] **create_circles.** "Desenhe um círculo de centro (12,12) e raio 1." Esperado:
+  `verified`.
+- [ ] **create_fills.** "Faça uma hachura de tijolo no retângulo de (0,17) a (4,20)", com
+  o nome de uma hachura que exista no projeto. Esperado: `verified` e a hachura certa.
+  Um nome que não existe deve ser recusado na prévia.
+- [ ] **Camada.** Repita uma linha pedindo uma camada pelo nome. Esperado: a linha na
+  camada pedida; um nome que não existe é recusado na prévia.
+

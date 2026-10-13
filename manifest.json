@@ -156,6 +156,26 @@
       "description": "Preview/create up to 20 plain texts on stories, with verification and receipts."
     },
     {
+      "name": "create_lines",
+      "description": "Preview/create up to 50 straight 2D lines on a story, with verification."
+    },
+    {
+      "name": "create_polylines",
+      "description": "Preview/create up to 50 straight-segment 2D polylines, checked by plan box."
+    },
+    {
+      "name": "create_arcs",
+      "description": "Preview/create up to 50 circular 2D arcs, with verification."
+    },
+    {
+      "name": "create_circles",
+      "description": "Preview/create up to 50 full 2D circles, with verification."
+    },
+    {
+      "name": "create_fills",
+      "description": "Preview/create up to 50 fills (hatches) on simple polygons, checked by plan box."
+    },
+    {
       "name": "create_labels",
       "description": "Preview/create up to 20 text labels, free or attached to an element, with verification."
     },

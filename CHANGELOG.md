@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add 2D drafting (new `tools/drafting.py`): `create_lines`, `create_polylines`,
+  `create_arcs`, `create_circles` and `create_fills` through Tapir 1.7.0
+  `CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles` and
+  `CreateHatches`. Layer and fill go by name, the pen by index. Polylines and fills are
+  checked by their plan box, because Tapir reports no geometry for them. The fake's shapes
+  come from the Tapir source, not a live capture. Not yet tested live.
+
 - `create_roofs` now sends `structureType: Basic`. Live on 13/10/2026 (Archicad 30 build
   3001 BRA, Tapir 1.7.0) a Composite Roof tool default kept its own 0.30 m when 0.25 m
   was asked, so all three roofs ended `verification_failed`.

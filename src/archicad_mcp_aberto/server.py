@@ -12,6 +12,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    drafting,
     edit,
     gateway,
     modify,
@@ -523,6 +524,74 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await texts_tool.create_texts(
             client_of(ctx), texts, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_lines(
+        ctx: Context,
+        lines: list[drafting.LineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 straight 2D lines: start and end {x, y} in metres, floor_index,
+        optional layer (name) and pen (index). Requires Tapir; apply identical inputs with
+        explicit port and single-use token; each is read back. Never saves."""
+        return await drafting.create_lines(client_of(ctx), lines, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_polylines(
+        ctx: Context,
+        polylines: list[drafting.PolylineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 straight-segment polylines: points (2 to 500, metres; repeat the
+        first point to close), floor_index, optional layer (name) and pen. Requires Tapir;
+        apply with explicit port and token; the plan box is checked. Never saves."""
+        return await drafting.create_polylines(
+            client_of(ctx), polylines, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_arcs(
+        ctx: Context,
+        arcs: list[drafting.ArcCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 circular arcs: center, radius (metres), start_angle and end_angle
+        (radians, counter-clockwise), floor_index, optional layer and pen. Requires Tapir;
+        apply with explicit port and token; each is read back. Never saves."""
+        return await drafting.create_arcs(client_of(ctx), arcs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_circles(
+        ctx: Context,
+        circles: list[drafting.CircleCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 full circles: center and radius in metres, floor_index, optional
+        layer and pen. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await drafting.create_circles(
+            client_of(ctx), circles, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_fills(
+        ctx: Context,
+        fills: list[drafting.FillCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 fills (hatches) on simple polygons: outline (metres), floor_index,
+        optional layer, fill (name, e.g. a hatch pattern), pen (fill) and contour_pen.
+        Requires Tapir; apply with explicit port and token; the plan box is checked."""
+        return await drafting.create_fills(client_of(ctx), fills, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
     async def create_labels(

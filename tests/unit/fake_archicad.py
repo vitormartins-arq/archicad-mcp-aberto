@@ -88,6 +88,20 @@ CLASSIFICATIONS_FIXTURE = json.loads(
         encoding="utf-8"
     )
 )
+# 2D drafting (lines, polylines, arcs, circles, hatches), from the Tapir 1.7.0 source.
+DRAFTING_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_drafting_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+# name -> (element type, list key)
+DRAFTING_COMMANDS = {
+    "CreateLineElements": ("Line", "linesData"),
+    "CreatePolylines": ("PolyLine", "polylinesData"),
+    "CreateArcs": ("Arc", "arcsData"),
+    "CreateCircles": ("Circle", "circlesData"),
+    "CreateHatches": ("Hatch", "hatchesData"),
+}
 # CreateLabels and the Label details, from the Tapir 1.7.0 source; not live.
 LABELS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_create_labels_documented.json").read_text(
@@ -161,6 +175,9 @@ class FakeArchicad:
     roof_default_structure: str = "Basic"
     lose_text_response: bool = False
     lose_label_response: bool = False
+    lose_drafting_response: bool = False
+    # Shift every created 2D box by this much in x (verification tests).
+    drafting_box_shift: float = 0.0
     # Archicad stores what it is given unless told otherwise (verification tests).
     text_stored_as: str | None = None
     # (element guid, system guid) -> item guid; a missing pair is unclassified.
@@ -352,6 +369,8 @@ class FakeArchicad:
                 for index, name in self.layers.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Fill":
+            return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":
             assert args["attributeType"] == "BuildingMaterial"
             return ok(
@@ -808,6 +827,50 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name in DRAFTING_COMMANDS:
+            kind, key = DRAFTING_COMMANDS[name]
+            out = []
+            for index, data in enumerate(args[key]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = kind
+                details = deepcopy(DRAFTING_FIXTURE["details"][kind])
+                for field_name in (
+                    "begCoordinate",
+                    "endCoordinate",
+                    "origin",
+                    "radius",
+                    "begAngle",
+                    "endAngle",
+                    "linePenIndex",
+                    "fillPenIndex",
+                    "contourPenIndex",
+                    "fillId",
+                ):
+                    if field_name in data and field_name in details:
+                        details[field_name] = deepcopy(data[field_name])
+                self.details[guid] = {
+                    "type": kind,
+                    "floorIndex": data.get("floorInd", 0),
+                    "layerIndex": data.get("layerIndex", 1),
+                    "details": details,
+                }
+                if "coordinates" in data:
+                    xs = [q["x"] for q in data["coordinates"]]
+                    ys = [q["y"] for q in data["coordinates"]]
+                    shift = self.drafting_box_shift
+                    self.bounding_boxes_2d[guid] = {
+                        "boundingBox2D": {
+                            "xMin": min(xs) + shift,
+                            "yMin": min(ys),
+                            "xMax": max(xs) + shift,
+                            "yMax": max(ys),
+                        }
+                    }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateLabels":
             out = []
             for index, label in enumerate(args["labelsData"]):
@@ -1015,6 +1078,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost roof response", request=request)
         if instance.lose_text_response and command == "CreateTexts":
             raise httpx.ReadTimeout("Injected lost text response", request=request)
+        if instance.lose_drafting_response and command in DRAFTING_COMMANDS:
+            raise httpx.ReadTimeout("Injected lost drafting response", request=request)
         if instance.lose_label_response and command == "CreateLabels":
             raise httpx.ReadTimeout("Injected lost label response", request=request)
         if instance.lose_classification_response and (

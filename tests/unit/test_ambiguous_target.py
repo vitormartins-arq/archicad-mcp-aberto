@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    drafting,
     edit,
     gateway,
     labels,
@@ -58,6 +59,29 @@ INPUTS = {
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
     "list_classifications": {},
+    "create_lines": {
+        "lines": [{"start": {"x": 0, "y": 0}, "end": {"x": 1, "y": 0}, "floor_index": 0}]
+    },
+    "create_polylines": {
+        "polylines": [{"points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}], "floor_index": 0}]
+    },
+    "create_arcs": {
+        "arcs": [
+            {
+                "center": {"x": 0, "y": 0},
+                "radius": 1,
+                "start_angle": 0,
+                "end_angle": 1.0,
+                "floor_index": 0,
+            }
+        ]
+    },
+    "create_circles": {"circles": [{"center": {"x": 0, "y": 0}, "radius": 1, "floor_index": 0}]},
+    "create_fills": {
+        "fills": [
+            {"outline": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 0, "y": 3}], "floor_index": 0}
+        ]
+    },
     "set_classifications": {
         "changes": [{"element_guid": GUID, "system": "Uniclass", "item": None}]
     },
@@ -159,6 +183,7 @@ TARGETED = {
     for module in (
         attributes,
         classifications,
+        drafting,
         edit,
         gateway,
         labels,

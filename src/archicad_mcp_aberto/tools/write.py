@@ -296,6 +296,19 @@ OPERATIONS = {
         "classification_receipt_id",
         "Each classification is written as shown and read back after.",
     ),
+    "create_lines": ("line", "line_receipt_id", "New lines take line type from the Line tool."),
+    "create_polylines": (
+        "polyline",
+        "polyline_receipt_id",
+        "New polylines take line type from the Polyline tool.",
+    ),
+    "create_arcs": ("arc", "arc_receipt_id", "New arcs take line type from the Arc tool."),
+    "create_circles": ("circle", "circle_receipt_id", "New circles take line type from the tool."),
+    "create_fills": (
+        "fill",
+        "fill_receipt_id",
+        "New fills keep the Fill tool's settings unless named here.",
+    ),
     "create_labels": (
         "label",
         "label_receipt_id",
@@ -317,6 +330,11 @@ CREATE_COMMANDS = {
     "create_roofs": ("CreateRoofs", "roofsData"),
     "create_texts": ("CreateTexts", "textsData"),
     "create_labels": ("CreateLabels", "labelsData"),
+    "create_lines": ("CreateLineElements", "linesData"),
+    "create_polylines": ("CreatePolylines", "polylinesData"),
+    "create_arcs": ("CreateArcs", "arcsData"),
+    "create_circles": ("CreateCircles", "circlesData"),
+    "create_fills": ("CreateHatches", "hatchesData"),
 }
 
 
@@ -1382,6 +1400,11 @@ NAMED_PREVIEWS = {
     "move_elements",
     "set_property_values",
     "set_classifications",
+    "create_lines",
+    "create_polylines",
+    "create_arcs",
+    "create_circles",
+    "create_fills",
     "delete_elements",
     "rotate_elements",
     "set_gdl_parameters",

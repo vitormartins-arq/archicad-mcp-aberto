@@ -60,6 +60,11 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_roofs` | Write | Up to 20 single- or multi-plane roofs from simple polygons | yes |
 | `create_texts` | Write | Up to 20 plain texts on stories | yes |
 | `create_labels` | Write | Up to 20 text labels, free or attached to an element | yes |
+| `create_lines` | Write | Up to 50 straight 2D lines on a story | yes |
+| `create_polylines` | Write | Up to 50 straight-segment 2D polylines | yes |
+| `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
+| `create_circles` | Write | Up to 50 full 2D circles | yes |
+| `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
 | `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
@@ -318,6 +323,8 @@ and open to everyone's contributions.
 - `list_classifications` without `system` lists the project's classification systems (GUID, name, version). With `system` (GUID or name, case ignored) it returns that system's items as a flat tree: `guid`, `id` (the code you see in Archicad), `name`, `parent_guid` and `depth`; `query` filters by id or name. `set_classifications` previews up to 100 `{element_guid, system, item}` changes; `item` is a GUID, an id code or a name, and `null` removes the element's classification in that system. Names that match several systems or items are refused, so pass the GUID. The preview shows the current and the new item and flags changes that change nothing; locked, hotlinked and missing elements are refused. Official JSON API `SetClassificationsOfElements`, read back with `GetClassificationsOfElements`; same token, port, receipts and timeout; never saves. Not yet tested live.
 
 - `create_labels` previews up to 20 text labels. With `element_guid` the label is attached to that element and sits on its story (`floor_index` is refused); `position` is then optional and moves the leader start. A free label needs `position` (metres) and `floor_index`. Optional `height_mm` (paper millimetres); font and the rest come from the Label tool default. Applying checks type, story, class, text, owner and the position and size you gave. Tapir 1.7.0 `CreateLabels`; never saves. Not yet tested live.
+
+- `create_lines`, `create_polylines`, `create_arcs`, `create_circles` and `create_fills` draw 2D elements on a story: up to 50 per call, each with `floor_index` and optional `layer` (the layer name, case ignored) and `pen` (pen-table index 1 to 255). Lines take `start` and `end`; polylines take `points` (2 to 500, straight segments; repeat the first point to close); arcs take `center`, `radius`, `start_angle` and `end_angle` (radians, counter-clockwise); circles take `center` and `radius`; fills take a simple `outline` polygon, optional `fill` (the fill name, such as a hatch pattern) and `contour_pen` (`pen` is the fill pen). Names that match nothing or several attributes are refused. Line type and the rest come from the tool defaults. Applying reads back type, story, layer and the geometry and pens Tapir reports; Tapir 1.7.0 gives no geometry for polylines and fills, so their plan box is compared within 1 mm, and a polyline's pen is not checked. Tapir 1.7.0 `CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles` and `CreateHatches`; never saves. Not yet tested live.
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 

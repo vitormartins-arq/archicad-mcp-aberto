@@ -1,0 +1,64 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCreationCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/AttributeCommands.cpp"
+    ],
+    "note": "CreateLineElements/CreatePolylines/CreateArcs/CreateCircles/CreateHatches inputs and the GetDetailsOfElements keys for Line, PolyLine, Arc, Circle and Hatch read in the Tapir 1.7.0 source. PolyLine and Hatch details carry no geometry. Values are synthetic, not a live capture."
+  },
+  "details": {
+    "Line": {
+      "begCoordinate": {"x": 0, "y": 0},
+      "endCoordinate": {"x": 1, "y": 0},
+      "zCoordinate": 0,
+      "roomSeparator": false,
+      "linePenIndex": 1,
+      "lineTypeId": {"guid": "44444444-4444-4444-8444-444444444444"}
+    },
+    "PolyLine": {"zCoordinate": 0},
+    "Arc": {
+      "origin": {"x": 0, "y": 0},
+      "radius": 1,
+      "angle": 0,
+      "ratio": 1,
+      "begAngle": 0,
+      "endAngle": 1.5708,
+      "reflected": false,
+      "roomSeparator": false,
+      "linePenIndex": 1,
+      "lineTypeId": {"guid": "44444444-4444-4444-8444-444444444444"},
+      "zCoordinate": 0
+    },
+    "Circle": {
+      "origin": {"x": 0, "y": 0},
+      "radius": 1,
+      "angle": 0,
+      "ratio": 1,
+      "reflected": false,
+      "roomSeparator": false,
+      "linePenIndex": 1,
+      "lineTypeId": {"guid": "44444444-4444-4444-8444-444444444444"},
+      "zCoordinate": 0
+    },
+    "Hatch": {
+      "contourPenIndex": 1,
+      "fillPenIndex": 1,
+      "fillBackgroundPenIndex": 0,
+      "fillId": {"guid": "55555555-5555-4555-8555-555555555551"},
+      "buildingMaterialId": {"guid": "00000000-0000-0000-0000-000000000000"},
+      "roomSpecial": -1,
+      "showArea": false,
+      "zCoordinate": 0
+    }
+  },
+  "fills": [
+    {"attributeId": {"guid": "55555555-5555-4555-8555-555555555551"}, "index": 1, "name": "Cheio", "modificationTime": 0},
+    {"attributeId": {"guid": "55555555-5555-4555-8555-555555555552"}, "index": 2, "name": "Tijolo", "modificationTime": 0},
+    {"attributeId": {"guid": "55555555-5555-4555-8555-555555555553"}, "index": 3, "name": "Concreto", "modificationTime": 0},
+    {"attributeId": {"guid": "55555555-5555-4555-8555-555555555554"}, "index": 4, "name": "concreto", "modificationTime": 0}
+  ]
+}

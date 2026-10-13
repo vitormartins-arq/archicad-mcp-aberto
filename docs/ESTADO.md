@@ -337,3 +337,16 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   sem ele precisa de `begCoordinate`). Fixtures `ac30_classifications_documented.json` e
   `tapir170_create_labels_documented.json`, não são captura ao vivo. 1141 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 5 na nuvem, 13/10/2026:** branch `lote/desenho-2d`, empilhada no lote 4.
+  `tools/drafting.py` com `create_lines`, `create_polylines`, `create_arcs`,
+  `create_circles` e `create_fills`, pelos comandos do Tapir 1.7.0 lidos no código
+  (`CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles`,
+  `CreateHatches`). Achado no código: os detalhes de PolyLine trazem só `zCoordinate` e
+  os de Hatch só penas e hachura, então o MCP confere a caixa 2D (`Get2DBoundingBoxes`)
+  dessas duas. Antes, no mesmo dia: o teste ao vivo do Codex (PR #41) mostrou telhado com
+  0,30 m em vez de 0,25 m por estrutura Composta padrão; `create_roofs` agora manda
+  `structureType: Basic` (commit no lote 2, levado aos lotes 3 e 4). Fixture
+  `tapir170_drafting_documented.json`, não é captura ao vivo. 1221 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
