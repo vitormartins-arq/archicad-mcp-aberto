@@ -52,3 +52,27 @@ O que vale observar e contar ao Claude, porque o simulado não sabe:
   que daria `verification_failed` mesmo com a mudança certa;
 - se a seção de pilar ou viga muda nas duas direções quando estão ligadas;
 - se a janela ou a porta muda de verdade a abertura na parede.
+
+## Conferência visual pendente dos testes ao vivo de 12/10/2026
+
+Os recibos já deram `verified`; falta só o olho do Vitor, se o projeto sem nome daquele
+dia ainda estiver aberto (senão, pule).
+
+- [ ] Parede de (30,0) a (34,0), com 4 m: janela "Abertura Simples de Janela" a 1,0 m do
+  início (1,0 × 1,2, peitoril 0,9), janela pelo favorito "Basculante Alumínio com Vidro"
+  a 2,0 m e porta "Abertura Simples de Porta" a 3,0 m, certas na planta e no 3D.
+- [ ] O Bidê Objeto-0004 na posição e orientação originais (girado 90° e de volta).
+
+## Lote 2: telhados e textos
+
+- [ ] **create_roofs, uma água.** "Crie um telhado de uma água sobre a laje 4 × 3, com
+  pivô na borda de baixo, 30° de inclinação e 0,25 m de espessura." Esperado: `verified`
+  e o telhado subindo para o lado esquerdo da linha de pivô. Conte se subiu para o lado
+  errado.
+- [ ] **create_roofs, várias águas.** "Crie um telhado de quatro águas sobre o mesmo
+  contorno, beiral de 0,5 m." Esperado: `verified`; o contorno cresce pelo beiral. Teste
+  também com `levels` (por exemplo 30° e depois 15° a 1 m de altura) e veja se o
+  ArchiCAD lê a altura do nível como você espera.
+- [ ] **create_texts.** "Escreva 'Sala' em (2,3) no térreo, com 3,5 mm, centralizado, e
+  um texto de duas linhas girado 90°." Esperado: `verified`; o tamanho é em milímetros
+  de papel. Conte se as duas linhas saíram certas.

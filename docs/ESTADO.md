@@ -303,3 +303,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   mantém no pavimento 0. Seção ligada ou redonda manda o mesmo valor nos dois lados.
   Fixture `tapir170_modify_elements_documented.json`, não é captura ao vivo. 977 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 2 na nuvem, 13/10/2026:** branch `lote/telhados-textos`, empilhada no
+  lote 1. `tools/roofs.py` (`create_roofs`) e `tools/texts.py` (`create_texts`), pelo
+  `CreateRoofs` e `CreateTexts` do Tapir 1.7.0 (lidos no código: `roofsData` com
+  `pivotLine`/`angle` para uma água ou `levels`/`eavesOverhang` para várias; `textsData`
+  com `coordinate`, `text`, `height` em mm, `angle`, `justification`, `floorIndex`).
+  Conferência: no telhado de várias águas o contorno do ArchiCAD cresce pelo beiral, então
+  o MCP confere o `pivotPolygonOutline`. `write._same_polygon` saiu de
+  `_slab_mismatches` para ser reaproveitado. O recado do teste ao vivo de 12/10 (conferência
+  visual da parede com janelas e do Bidê) foi para `docs/VALIDAR.md`. Fixture
+  `tapir170_create_roofs_texts_documented.json`, não é captura ao vivo. 1034 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
