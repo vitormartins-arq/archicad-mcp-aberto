@@ -302,4 +302,4 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   recusa o que mudaria o elemento de pavimento. Abaixo do pavimento mais baixo o Tapir
   mantém no pavimento 0. Seção ligada ou redonda manda o mesmo valor nos dois lados.
   Fixture `tapir170_modify_elements_documented.json`, não é captura ao vivo. 977 testes
-  simulados e Ruff passaram (Linux, Python 3.12). Falta o teste ao vivo.
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
