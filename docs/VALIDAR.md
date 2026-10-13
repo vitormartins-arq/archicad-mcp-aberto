@@ -18,10 +18,10 @@ Anote a versão, o build, o idioma do ArchiCAD e a versão do Tapir.
 
 ## Confirmação rápida (já testados ao vivo em 11/10/2026)
 
-- [ ] **#32 parâmetros GDL.** "Crie um objeto Mesa no projeto sem nome, mostre os
+- [ ] **#32 parâmetros GDL.** (13/10: a Mesa genérica não foi achada na biblioteca; na Mesa de Jantar Retangular o A foi relido 1,8 em vez de 1,5. Refazer com outra peça, ver abaixo.) "Crie um objeto Mesa no projeto sem nome, mostre os
   parâmetros GDL dele e mude o A para 1,5 m." Esperado: `get_gdl_parameters` lista o A;
   `set_gdl_parameters` volta `verified` e a mesa fica com 1,5 m.
-- [ ] **#33 modify_walls.** "Crie uma parede de 5 m e mude a altura para 4 m e a espessura
+- [x] **#33 modify_walls.** (13/10, `verified`) "Crie uma parede de 5 m e mude a altura para 4 m e a espessura
   para 0,3 m." Esperado: `verified`; a parede fica com 4 m e 0,3 m.
 
 ## Lote 1: editar o que já existe no modelo
@@ -30,19 +30,19 @@ Prepare antes: "No projeto sem nome, crie uma parede de (0,0) a (6,0), uma laje 
 um pilar em (8,0), uma viga de (0,4) a (5,4), uma janela e uma porta na parede e uma mesa
 em (2,6)."
 
-- [ ] **modify_slabs.** "Mude a espessura da laje para 0,25 m e o nível para 0,5 m."
+- [x] **modify_slabs.** (13/10, `verified`; recusa acima do próximo pavimento conferida) "Mude a espessura da laje para 0,25 m e o nível para 0,5 m."
   Esperado: `verified`; a laje sobe 0,5 m e fica mais grossa. Pedir um nível que
   passaria do próximo pavimento deve ser recusado já na prévia.
-- [ ] **modify_columns.** "Mova o pilar para (9,1), altura 3,5 m e seção 0,4 × 0,6 m."
+- [x] **modify_columns.** (13/10, `verified`; pilar redondo não testado) "Mova o pilar para (9,1), altura 3,5 m e seção 0,4 × 0,6 m."
   Esperado: `verified`; o topo deixa de seguir o pavimento de cima (como faz o Tapir).
   Pilar redondo: só aceita um tamanho para os dois lados.
-- [ ] **modify_beams.** "Leve a viga até (6,4), nível 2,8 m e seção 0,25 × 0,5 m."
+- [x] **modify_beams.** (13/10, `verified`; viga curva não testada) "Leve a viga até (6,4), nível 2,8 m e seção 0,25 × 0,5 m."
   Esperado: `verified`. Viga curva deve ser recusada.
-- [ ] **modify_windows.** "Aumente a janela para 1,5 m de largura, peitoril 1,1 m e mova
+- [x] **modify_windows.** (13/10, `verified`; recusa além do fim da parede conferida) "Aumente a janela para 1,5 m de largura, peitoril 1,1 m e mova
   para 2 m do início da parede." Esperado: `verified`; um offset além do fim da parede é
   recusado na prévia.
-- [ ] **modify_doors.** "Porta com 0,9 × 2,1 m." Esperado: `verified`.
-- [ ] **modify_objects.** "Mova a mesa para (3,7), nível 0,4 m, e mude o tamanho para
+- [x] **modify_doors.** (13/10, `verified`) "Porta com 0,9 × 2,1 m." Esperado: `verified`.
+- [ ] **modify_objects.** (13/10: posição e nível `verified`; dimensões pedidas 2 × 1 × 0,9 voltaram 1,8 × 1,8 × 0,85 na Mesa de Jantar Retangular) "Mova a mesa para (3,7), nível 0,4 m, e mude o tamanho para
   2 × 1 × 0,9 m." Esperado: `verified`. Se a peça não tiver altura (ZZYZX), o recibo
   diz `verification_failed` em `dimensions.z`; isso é para anotar, não é um erro do MCP.
 
@@ -65,15 +65,15 @@ dia ainda estiver aberto (senão, pule).
 
 ## Lote 2: telhados e textos
 
-- [ ] **create_roofs, uma água.** "Crie um telhado de uma água sobre a laje 4 × 3, com
+- [ ] **create_roofs, uma água.** (13/10: espessura voltou 0,30 porque o padrão do Telhado era Composto; corrigido, o MCP agora cria Básico. Refazer.) "Crie um telhado de uma água sobre a laje 4 × 3, com
   pivô na borda de baixo, 30° de inclinação e 0,25 m de espessura." Esperado: `verified`
   e o telhado subindo para o lado esquerdo da linha de pivô. Conte se subiu para o lado
   errado.
-- [ ] **create_roofs, várias águas.** "Crie um telhado de quatro águas sobre o mesmo
+- [ ] **create_roofs, várias águas.** (13/10: mesma falha de espessura; refazer.) "Crie um telhado de quatro águas sobre o mesmo
   contorno, beiral de 0,5 m." Esperado: `verified`; o contorno cresce pelo beiral. Teste
   também com `levels` (por exemplo 30° e depois 15° a 1 m de altura) e veja se o
   ArchiCAD lê a altura do nível como você espera.
-- [ ] **create_texts.** "Escreva 'Sala' em (2,3) no térreo, com 3,5 mm, centralizado, e
+- [x] **create_texts.** (13/10, `verified`; falta o olho do Vitor nas duas linhas) "Escreva 'Sala' em (2,3) no térreo, com 3,5 mm, centralizado, e
   um texto de duas linhas girado 90°." Esperado: `verified`; o tamanho é em milímetros
   de papel. Conte se as duas linhas saíram certas.
 
@@ -81,11 +81,23 @@ dia ainda estiver aberto (senão, pule).
 
 Use o telhado de várias águas e os textos do lote 2.
 
-- [ ] **modify_roofs.** "Mude o beiral do telhado para 0,6 m, a espessura para 0,3 m e
+- [ ] **modify_roofs.** (13/10: recusa do telhado de uma água conferida; a espessura foi recusada porque o telhado era Composto. Refazer num telhado criado de novo, que agora sai Básico.) "Mude o beiral do telhado para 0,6 m, a espessura para 0,3 m e
   suba 0,2 m." Esperado: `verified`. No telhado de uma água, a prévia deve recusar (o
   Tapir 1.7.0 só edita telhado de várias águas).
-- [ ] **modify_texts.** "Troque 'Sala' por 'Sala de estar', mova para (3,4), 5 mm,
+- [x] **modify_texts.** (13/10, `verified`) "Troque 'Sala' por 'Sala de estar', mova para (3,4), 5 mm,
   alinhado à direita e girado 45°." Esperado: `verified` e o texto no mesmo pavimento.
+
+## O que a rodada de 13/10/2026 deixou em aberto
+
+O Codex rodou os lotes 1 a 3 no Windows, ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, no
+projeto de teste `Sem Nome.pln` autorizado pelo Vitor, sem salvar.
+
+- **Peça que não aceita o tamanho pedido.** Na Mesa de Jantar Retangular o A foi relido
+  1,8 (pedido 1,5) e as dimensões voltaram 1,8 × 1,8 × 0,85. Parece a peça limitando os
+  valores (lista fixa de tamanhos), não o MCP: o recibo disse `verification_failed`, que
+  é o certo. Para confirmar, repita com uma peça de tamanho livre (um bloco ou caixa) e
+  veja se aí dá `verified`.
+- **Telhados.** Refazer os três telhados do lote 2 e o `modify_roofs` com o pacote novo.
 
 ## Lote 4: classificações e etiquetas
 
