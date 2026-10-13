@@ -1,3 +1,4 @@
+import math
 from copy import deepcopy
 
 import pytest
@@ -10,6 +11,7 @@ from tests.unit.fake_archicad import (
     CREATE_SLABS_FIXTURE,
     CREATE_WALLS_FIXTURE,
     MODIFY_ELEMENTS_FIXTURE,
+    ROOFS_TEXTS_FIXTURE,
     FakeArchicad,
     fake_transport,
 )
@@ -46,6 +48,11 @@ ROWS = {
     "Window": CREATE_OPENINGS_FIXTURE["window_details"],
     "Door": CREATE_OPENINGS_FIXTURE["door_details"],
     "Object": MODIFY_ELEMENTS_FIXTURE["object_details"],
+    "Roof": ROOFS_TEXTS_FIXTURE["roof_details"],
+    "Text": {
+        **ROOFS_TEXTS_FIXTURE["text_details"],
+        "details": {**ROOFS_TEXTS_FIXTURE["text_details"]["details"], "text": "Sala"},
+    },
 }
 TOOLS = {
     "Slab": (modify.modify_slabs, "ModifySlabs", "slabsWithDetails"),
@@ -54,6 +61,8 @@ TOOLS = {
     "Window": (modify.modify_windows, "ModifyWindows", "windowsWithDetails"),
     "Door": (modify.modify_doors, "ModifyDoors", "doorsWithDetails"),
     "Object": (modify.modify_objects, "ModifyObjects", "objectsWithDetails"),
+    "Roof": (modify.modify_roofs, "ModifyRoofs", "roofsWithDetails"),
+    "Text": (modify.modify_texts, "ModifyTexts", "textsWithDetails"),
 }
 SAMPLE = {
     "Slab": {"thickness": 0.25},
@@ -62,6 +71,8 @@ SAMPLE = {
     "Window": {"width": 1.5},
     "Door": {"height": 2.2},
     "Object": {"origin": {"x": 5, "y": 6}},
+    "Roof": {"eavesOverhang": 0.6},
+    "Text": {"text": "Cozinha"},
 }
 
 
@@ -362,3 +373,102 @@ async def test_journal_failure_prevents_dispatch(monkeypatch):
         with pytest.raises(OSError):
             await apply(c, "Door", [{"guid": ELEMENT, "width": 1.0}])
     assert "ModifyDoors" not in fake.tapir_calls
+
+
+@pytest.mark.parametrize(
+    ("change", "payload", "after"),
+    [
+        ({"thickness": 0.3}, {"thickness": 0.3}, {"thickness": 0.3}),
+        ({"level": 0.5}, {"level": 3.5}, {"level": 0.5, "zCoordinate": 3.5}),
+        ({"eavesOverhang": 0.2}, {"eavesOverhang": 0.2}, {"eavesOverhang": 0.2}),
+        (
+            {"levels": [{"height": 0, "angle": 0.6}, {"height": 1.5, "angle": 0.3}]},
+            {
+                "levels": [
+                    {"levelHeight": 0, "levelAngle": 0.6},
+                    {"levelHeight": 1.5, "levelAngle": 0.3},
+                ]
+            },
+            {"levels": [{"height": 0, "angle": 0.6}, {"height": 1.5, "angle": 0.3}]},
+        ),
+    ],
+)
+async def test_roof_fields(change, payload, after):
+    fake = model("Roof")
+    fake.details[ELEMENT]["floorIndex"] = 1  # level is from the roof's own story
+    fake.details[ELEMENT]["details"].update(level=0, zCoordinate=3)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Roof", [{"guid": ELEMENT, **change}])
+    assert result["status"] == "verified"
+    assert sent(fake, "Roof") == [{"elementId": {"guid": ELEMENT}, **payload}]
+    for key, value in after.items():
+        assert result["items"][0]["after"]["details"][key] == value
+
+
+async def test_single_plane_roof_refused():
+    fake = model("Roof")
+    fake.details[ELEMENT]["details"]["roofClass"] = "SinglePlane"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="multi-plane"):
+            await modify.modify_roofs(c, [{"guid": ELEMENT, "thickness": 0.3}], 19723)
+    assert "ModifyRoofs" not in fake.tapir_calls
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"levels": [{"height": 1, "angle": 0.5}, {"height": 0, "angle": 0.5}]},
+        {"levels": []},
+        {"levels": [{"height": 0, "angle": 0}]},
+        {"eavesOverhang": -0.1},
+    ],
+)
+async def test_invalid_roof_edits_refused_before_network(change):
+    fake = model("Roof")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError):
+            await modify.modify_roofs(c, [{"guid": ELEMENT, **change}])
+    assert not fake.calls
+
+
+async def test_roof_level_that_changes_story_refused():
+    fake = model("Roof")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="another story"):
+            await modify.modify_roofs(c, [{"guid": ELEMENT, "level": 3.2}], 19723)
+
+
+async def test_text_fields_and_story_kept():
+    fake = model("Text")
+    fake.details[ELEMENT]["floorIndex"] = 1
+    change = {
+        "text": "Linha 1\r\nLinha 2",
+        "position": {"x": 4, "y": 5},
+        "angle": 2 * math.pi,
+        "heightMm": 3.5,
+        "justification": "Right",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Text", [{"guid": ELEMENT, **change}])
+    assert result["status"] == "verified"
+    assert sent(fake, "Text") == [
+        {
+            "elementId": {"guid": ELEMENT},
+            "coordinate": {"x": 4, "y": 5, "z": 3.0},
+            "floorIndex": 1,
+            "text": "Linha 1\nLinha 2",
+            "style": {"angle": 2 * math.pi, "height": 3.5, "justification": "Right"},
+        }
+    ]
+    assert result["items"][0]["after"]["floorIndex"] == 1
+
+
+@pytest.mark.parametrize(
+    "change", [{"text": "  "}, {"heightMm": 0}, {"justification": "Middle"}, {"font": "Arial"}]
+)
+async def test_invalid_text_edits_refused_before_network(change):
+    fake = model("Text")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError):
+            await modify.modify_texts(c, [{"guid": ELEMENT, **change}])
+    assert not fake.calls

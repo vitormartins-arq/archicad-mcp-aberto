@@ -32,6 +32,8 @@ MODIFY_TYPES = {
     "modify_windows": "Window",
     "modify_doors": "Door",
     "modify_objects": "Object",
+    "modify_roofs": "Roof",
+    "modify_texts": "Text",
 }
 INPUTS = {
     "run_read_command": {"command": "Tapir.GetStories"},
@@ -39,6 +41,8 @@ INPUTS = {
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
     "modify_slabs": {"slabs": [{"guid": GUID, "thickness": 0.2}]},
+    "modify_roofs": {"roofs": [{"guid": GUID, "thickness": 0.2}]},
+    "modify_texts": {"texts": [{"guid": GUID, "text": "Sala"}]},
     "create_roofs": {
         "roofs": [
             {

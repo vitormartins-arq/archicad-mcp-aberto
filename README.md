@@ -67,6 +67,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `modify_windows` | Write | Size, sill and position of up to 50 windows in walls | yes |
 | `modify_doors` | Write | Size, sill and position of up to 50 doors in walls | yes |
 | `modify_objects` | Write | Position, level and dimensions of up to 50 objects | yes |
+| `modify_roofs` | Write | Thickness, level, overhang and levels of up to 50 multi-plane roofs | yes |
+| `modify_texts` | Write | Content, position, angle, size and justification of up to 50 texts | yes |
 | `create_windows` | Write | Up to 20 windows in existing straight walls | yes |
 | `create_doors` | Write | Up to 20 doors in existing straight walls | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
@@ -307,6 +309,8 @@ and open to everyone's contributions.
 - `create_roofs` previews up to 20 roofs, each with `outline` (simple polygon, metres), `floor_index`, `level` (absolute project Z, as in `create_slabs`) and `thickness`. With `pivot_line` (`start`, `end`) and `angle` (radians, between 0 and π/2) it makes one plane rising on the left of the line direction. Without them it makes a multi-plane roof on the polygon as pivot polygon, with optional `levels` (1 to 16 `{height, angle}`, heights non-decreasing) and `eaves_overhang`; omitted values keep the Roof tool default. Applying checks type, story, class, thickness, level, slope, pivot line or levels, and the polygon (the pivot polygon for multi-plane roofs, whose contour grows by the overhang). Tapir 1.7.0 `CreateRoofs`; never saves. Not yet tested live.
 
 - `create_texts` previews up to 20 plain texts with `text` (newlines make lines), `position` (metres), `floor_index`, `angle` (radians), optional `height_mm` (Archicad sizes text in paper millimetres) and `justification`. Font and other style come from the Text tool default. Applying checks type, story, position, text, angle (on the circle) and any size or justification you gave. Tapir 1.7.0 `CreateTexts`; never saves. Not yet tested live.
+
+- `modify_roofs` and `modify_texts` follow the same pattern. Roofs: `thickness` (Basic only), `level` from the roof's story, `eavesOverhang` and `levels` (`{height, angle}`, heights non-decreasing); Tapir 1.7.0 `ModifyRoofs` edits only multi-plane roofs, so single-plane roofs are refused in the preview. Texts: `text`, `position` (the text stays on its story), `angle` (radians), `heightMm` (paper millimetres) and `justification`, through `ModifyTexts`; text is compared with LF line endings and angles on the circle. Not yet tested live.
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 

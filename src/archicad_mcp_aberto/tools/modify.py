@@ -13,13 +13,13 @@ from __future__ import annotations
 
 import math
 from copy import deepcopy
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient
-from archicad_mcp_aberto.tools import edit, read, write
+from archicad_mcp_aberto.tools import edit, read, roofs, texts, write
 
 MAX_EDITS = 50
 
@@ -77,6 +77,35 @@ class ObjectModify(_Edit):
     origin: write.Point | None = None
     level: float | None = None
     dimensions: Dimensions | None = None
+
+
+class RoofModify(_Edit):
+    thickness: write.Positive | None = None
+    level: float | None = None
+    eavesOverhang: Annotated[float, Field(ge=0)] | None = None
+    levels: Annotated[list[roofs.RoofLevel], Field(min_length=1, max_length=16)] | None = None
+
+    @model_validator(mode="after")
+    def ordered_levels(self):
+        heights = [level.height for level in self.levels or []]
+        if heights != sorted(heights):
+            raise ValueError("Roof levels must be ordered by non-decreasing height.")
+        return self
+
+
+class TextModify(_Edit):
+    text: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
+    position: write.Point | None = None
+    angle: float | None = None
+    heightMm: write.Positive | None = None
+    justification: Literal["Left", "Center", "Right", "Full"] | None = None
+
+    @field_validator("text")
+    @classmethod
+    def visible(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("text must not be blank.")
+        return value if value is None else texts._lines(value)
 
 
 def _number(details, key, label):
@@ -248,6 +277,54 @@ def _object(change, row, target, label, extra):
     return changes, parameters, expected
 
 
+def _roof(change, row, target, label, extra):
+    details, changes = row["details"], change.model_dump(exclude={"guid"}, exclude_none=True)
+    if details.get("roofClass") != "MultiPlane":
+        raise ValueError(f"{label}: Tapir 1.7.0 edits only multi-plane roofs.")
+    parameters, expected = {}, {}
+    if "thickness" in changes:
+        if details.get("structureType") != "Basic":
+            raise ValueError(f"{label}: direct thickness changes require a Basic roof.")
+        _number(details, "thickness", label)
+        parameters["thickness"] = expected["thickness"] = changes["thickness"]
+    if "level" in changes:
+        _number(details, "level", label)
+        z = _story(target, row)["level"] + changes["level"]
+        _same_story(target, row, z, label)
+        parameters["level"] = z  # Tapir takes the roof level as absolute Z here.
+        expected.update(level=changes["level"], zCoordinate=z)
+    if "eavesOverhang" in changes:
+        _number(details, "eavesOverhang", label)
+        parameters["eavesOverhang"] = expected["eavesOverhang"] = changes["eavesOverhang"]
+    if "levels" in changes:
+        parameters["levels"] = [
+            {"levelHeight": v["height"], "levelAngle": v["angle"]} for v in changes["levels"]
+        ]
+        expected["levels"] = changes["levels"]
+    return changes, parameters, expected
+
+
+def _text(change, row, target, label, extra):
+    details, changes = row["details"], change.model_dump(exclude={"guid"}, exclude_none=True)
+    parameters, expected, style = {}, {}, {}
+    if "position" in changes:
+        # Keep the text on its story: an explicit floorIndex wins over the z in ModifyTexts.
+        parameters["coordinate"] = {**changes["position"], "z": _story(target, row)["level"]}
+        parameters["floorIndex"] = row["floorIndex"]
+        expected["position"] = changes["position"]
+    if "text" in changes:
+        parameters["text"] = expected["text"] = changes["text"]
+    for key, native in (("angle", "angle"), ("heightMm", "height"), ("justification", None)):
+        if key in changes:
+            native = native or key
+            if native != "justification":
+                _number(details, native, label)
+            style[native] = expected[native] = changes[key]
+    if style:
+        parameters["style"] = style
+    return changes, parameters, expected
+
+
 async def _owner_walls(client, port, rows):
     guids = []
     for row in rows:
@@ -275,6 +352,8 @@ SPECS = {
     "modify_windows": (("Window",), "ModifyWindows", "windowsWithDetails", _opening),
     "modify_doors": (("Door",), "ModifyDoors", "doorsWithDetails", _opening),
     "modify_objects": (("Object",), "ModifyObjects", "objectsWithDetails", _object),
+    "modify_roofs": (("Roof",), "ModifyRoofs", "roofsWithDetails", _roof),
+    "modify_texts": (("Text",), "ModifyTexts", "textsWithDetails", _text),
 }
 
 
@@ -307,6 +386,33 @@ async def _plan(client, edits, port, operation):
     return {"operation": operation, "target": target, "items": items}
 
 
+def _detail_mismatches(expected, actual):
+    """Angles compare on the circle, text in LF form, lists item by item."""
+    differences = []
+    for key, wanted in expected.items():
+        found, path = actual.get(key), f"details.{key}"
+        if key == "angle":
+            if (
+                not isinstance(found, (int, float))
+                or isinstance(found, bool)
+                or not math.isfinite(found)
+                or abs(math.remainder(found - wanted, math.tau)) > 1e-7
+            ):
+                differences.append(path)
+        elif key == "text":
+            if not isinstance(found, str) or texts._lines(found) != wanted:
+                differences.append(path)
+        elif isinstance(wanted, list):
+            if not isinstance(found, list) or len(found) != len(wanted):
+                differences.append(path)
+            else:
+                for index, (a, b) in enumerate(zip(wanted, found, strict=True)):
+                    differences += write._mismatches(a, b, f"{path}.{index}")
+        else:
+            differences += write._mismatches(wanted, found, path)
+    return differences
+
+
 async def _verify(client, receipt, items):
     response = await client.tapir(
         receipt["target"]["port"],
@@ -327,9 +433,12 @@ async def _verify(client, receipt, items):
                 "type": item["type"],
                 "floorIndex": item["floorIndex"],
                 "layerIndex": item["layerIndex"],
-                "details": item["expected"],
             },
             row,
+        )
+        details = row.get("details") if isinstance(row, dict) else None
+        differences += _detail_mismatches(
+            item["expected"], details if isinstance(details, dict) else {}
         )
         item["status"] = "verification_failed" if differences else "verified"
         if differences:
@@ -438,4 +547,34 @@ async def modify_objects(
     """
     return await _modify(
         client, objects, ObjectModify, port, dry_run, confirmation_token, "modify_objects"
+    )
+
+
+async def modify_roofs(
+    client: ArchicadClient,
+    roofs: list[dict | RoofModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 multi-plane roofs: thickness (Basic only), level from its
+    story, eavesOverhang and levels (height, angle). Single-plane roofs are refused.
+    """
+    return await _modify(
+        client, roofs, RoofModify, port, dry_run, confirmation_token, "modify_roofs"
+    )
+
+
+async def modify_texts(
+    client: ArchicadClient,
+    texts: list[dict | TextModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 texts: text, position (stays on its story), angle,
+    heightMm (paper millimetres) and justification.
+    """
+    return await _modify(
+        client, texts, TextModify, port, dry_run, confirmation_token, "modify_texts"
     )

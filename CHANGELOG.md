@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `modify_roofs` (Tapir `ModifyRoofs`, multi-plane roofs only: thickness, level from
+  its story, eaves overhang, levels) and `modify_texts` (Tapir `ModifyTexts`: content,
+  position on the same story, angle, height in paper millimetres, justification), in
+  `tools/modify.py` with the same preview, token, receipts and read-back. The read-back now
+  compares angles on the circle, text in LF form and lists item by item. Not yet tested
+  live.
+
 - Add `create_roofs` (Tapir `CreateRoofs`): up to 20 single-plane roofs (pivot line and
   slope) or multi-plane roofs (polygon as pivot polygon, optional levels and eaves
   overhang), absolute level as in `create_slabs`. Add `create_texts` (Tapir

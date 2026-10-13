@@ -491,6 +491,34 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def modify_roofs(
+        ctx: Context,
+        roofs: list[modify.RoofModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 multi-plane roofs: thickness (Basic), level from its
+        story, eavesOverhang, levels {height, angle}; metres, radians. Refuses
+        single-plane, locked and hotlinked roofs; verifies fields and never saves.
+        """
+        return await modify.modify_roofs(client_of(ctx), roofs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_texts(
+        ctx: Context,
+        texts: list[modify.TextModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 texts: text, position (metres, stays on its story),
+        angle (radians), heightMm (paper mm) and justification. Refuses locked and
+        hotlinked texts; verifies fields and never saves.
+        """
+        return await modify.modify_texts(client_of(ctx), texts, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
     async def create_windows(
         ctx: Context,
         windows: list[openings.OpeningCreate],

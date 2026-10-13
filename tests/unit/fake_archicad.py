@@ -77,6 +77,8 @@ MODIFY_COMMANDS = {
     "ModifyWindows": ("Window", "windowsWithDetails"),
     "ModifyDoors": ("Door", "doorsWithDetails"),
     "ModifyObjects": ("Object", "objectsWithDetails"),
+    "ModifyRoofs": ("Roof", "roofsWithDetails"),
+    "ModifyTexts": ("Text", "textsWithDetails"),
 }
 
 
@@ -833,6 +835,31 @@ class FakeArchicad:
                 details = row["details"]
                 story = next(s for s in self.stories if s["index"] == row["floorIndex"])
                 changes = {k: deepcopy(v) for k, v in entry.items() if k != "elementId"}
+                if name == "ModifyRoofs":
+                    if details.get("roofClass") != "MultiPlane":
+                        rows.append(
+                            deepcopy(MODIFY_ELEMENTS_FIXTURE["failures"]["ModifyRoofsSingle"])
+                        )
+                        continue
+                    if "level" in changes:  # absolute, Tapir picks the story
+                        z = changes.pop("level")
+                        row["floorIndex"], details["level"] = self._floor(z)
+                        details["zCoordinate"] = z
+                    if "levels" in changes:
+                        details["levels"] = [
+                            {"height": v["levelHeight"], "angle": v["levelAngle"]}
+                            for v in changes.pop("levels")
+                        ]
+                if name == "ModifyTexts":
+                    if "coordinate" in changes:
+                        coordinate = changes.pop("coordinate")
+                        details["position"] = {k: coordinate[k] for k in ("x", "y")}
+                        row["floorIndex"] = changes.pop(
+                            "floorIndex", self._floor(coordinate["z"])[0]
+                        )
+                    details.update(changes.pop("style", {}))
+                    if "text" in changes:
+                        changes["text"] = changes["text"].replace("\r\n", "\n")
                 if "zCoordinate" in changes:  # slabs: absolute, Tapir picks the story
                     z = changes.pop("zCoordinate")
                     row["floorIndex"], details["level"] = self._floor(z)

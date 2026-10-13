@@ -230,6 +230,8 @@ OPERATIONS = {
         "Only requested fields are modified.",
     ),
     "modify_doors": ("door edit", "door_edit_receipt_id", "Only requested fields are modified."),
+    "modify_roofs": ("roof edit", "roof_edit_receipt_id", "Only requested fields are modified."),
+    "modify_texts": ("text edit", "text_edit_receipt_id", "Only requested fields are modified."),
     "modify_objects": (
         "object edit",
         "object_edit_receipt_id",
@@ -1378,6 +1380,8 @@ NAMED_PREVIEWS = {
     "modify_windows",
     "modify_doors",
     "modify_objects",
+    "modify_roofs",
+    "modify_texts",
     "create_windows",
     "create_doors",
 }

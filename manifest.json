@@ -196,6 +196,14 @@
       "description": "Preview/edit position, level and dimensions of up to 50 objects, with verification and receipts."
     },
     {
+      "name": "modify_roofs",
+      "description": "Preview/edit thickness, level, overhang and levels of up to 50 multi-plane roofs, with verification and receipts."
+    },
+    {
+      "name": "modify_texts",
+      "description": "Preview/edit content, position, angle, size and justification of up to 50 texts, with verification and receipts."
+    },
+    {
       "name": "create_windows",
       "description": "Preview/place up to 20 windows in existing straight walls, verified after apply."
     },
