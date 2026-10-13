@@ -7,7 +7,17 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import attributes, edit, gateway, modify, openings, read, write
+from archicad_mcp_aberto.tools import (
+    attributes,
+    edit,
+    gateway,
+    modify,
+    openings,
+    read,
+    roofs,
+    texts,
+    write,
+)
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
 from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
 
@@ -29,6 +39,17 @@ INPUTS = {
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
     "modify_slabs": {"slabs": [{"guid": GUID, "thickness": 0.2}]},
+    "create_roofs": {
+        "roofs": [
+            {
+                "outline": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 0, "y": 3}],
+                "floor_index": 0,
+                "level": 3.0,
+                "thickness": 0.2,
+            }
+        ]
+    },
+    "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "modify_columns": {"columns": [{"guid": GUID, "height": 3.0}]},
     "modify_beams": {"beams": [{"guid": GUID, "level": 3.0}]},
     "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
@@ -124,7 +145,7 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, gateway, modify, openings, read, write)
+    for module in (attributes, edit, gateway, modify, openings, read, roofs, texts, write)
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")

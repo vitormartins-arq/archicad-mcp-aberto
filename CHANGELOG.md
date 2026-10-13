@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `create_roofs` (Tapir `CreateRoofs`): up to 20 single-plane roofs (pivot line and
+  slope) or multi-plane roofs (polygon as pivot polygon, optional levels and eaves
+  overhang), absolute level as in `create_slabs`. Add `create_texts` (Tapir
+  `CreateTexts`): up to 20 plain texts with position, story, angle and optional height in
+  paper millimetres and justification. Both verify what Archicad stored. The fake's
+  shapes come from the Tapir 1.7.0 source, not a live capture. Not yet tested live.
+
 - Add `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors`
   and `modify_objects` (new `tools/modify.py`), following `modify_walls`: dry run, token,
   explicit port, per-element receipts and read-back of every requested field. They use

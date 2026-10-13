@@ -1,0 +1,48 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "kind": "documentation_and_source",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ExtendedElementCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCreationCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCommands.cpp"
+    ],
+    "note": "CreateRoofs roofsData / CreateTexts textsData inputs and the Roof/Text GetDetailsOfElements keys read in the Tapir 1.7.0 source. Values are synthetic, not a live capture."
+  },
+  "roof_details": {
+    "type": "Roof",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "roofClass": "MultiPlane",
+      "structureType": "Basic",
+      "thickness": 0.25,
+      "level": 3,
+      "zCoordinate": 3,
+      "buildingMaterialId": {"guid": "4314C62C-B98B-2547-86DE-A4F707A1CF77"},
+      "eavesOverhang": 0.3,
+      "levels": [{"height": 0, "angle": 0.5236}],
+      "pivotPolygonOutline": [],
+      "polygonOutline": [],
+      "polygonArcs": [],
+      "holes": []
+    }
+  },
+  "text_details": {
+    "type": "Text",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "details": {
+      "position": {"x": 0, "y": 0},
+      "angle": 0,
+      "height": 2.5,
+      "pen": 1,
+      "justification": "Left",
+      "zCoordinate": 0,
+      "text": "",
+      "paragraphCount": 1
+    }
+  },
+  "create_error": {"error": {"code": -1, "message": "Failed to create roof."}}
+}

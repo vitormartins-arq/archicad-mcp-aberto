@@ -243,6 +243,16 @@ OPERATIONS = {
     ),
     "create_zones": ("zone", "zone_receipt_id", "New zones inherit category/stamp defaults."),
     "create_beams": ("beam", "beam_receipt_id", "New beams inherit layer/material defaults."),
+    "create_roofs": (
+        "roof",
+        "roof_receipt_id",
+        "New roofs inherit the Roof tool's layer and building material.",
+    ),
+    "create_texts": (
+        "text",
+        "text_receipt_id",
+        "New texts take font and style from the Text tool default.",
+    ),
     "delete_elements": (
         "deletion",
         "delete_receipt_id",
@@ -292,6 +302,8 @@ CREATE_COMMANDS = {
     "create_slabs": ("CreateSlabs", "slabsData"),
     "create_columns": ("CreateColumns", "columnsData"),
     "create_objects": ("CreateObjects", "objectsData"),
+    "create_roofs": ("CreateRoofs", "roofsData"),
+    "create_texts": ("CreateTexts", "textsData"),
 }
 
 
@@ -666,6 +678,20 @@ async def create_walls(
     return await _write(client, validated, port, dry_run, confirmation_token)
 
 
+def _same_polygon(wanted: list, outline: Any) -> bool:
+    """Same vertices in any starting point or direction; a closing repeat is ignored."""
+    if isinstance(outline, list) and len(outline) > 1 and not _mismatches(outline[0], outline[-1]):
+        outline = outline[:-1]
+    if not isinstance(outline, list) or len(outline) != len(wanted):
+        return False
+    for sequence in (outline, list(reversed(outline))):
+        for shift in range(len(sequence)):
+            rotated = sequence[shift:] + sequence[:shift]
+            if all(not _mismatches(a, b) for a, b in zip(wanted, rotated, strict=True)):
+                return True
+    return False
+
+
 def _slab_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     p = item["parameters"]
     story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
@@ -684,18 +710,7 @@ def _slab_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     details = row.get("details", {}) if isinstance(row, dict) else {}
     if not isinstance(details, dict):
         return differences
-    outline = details.get("polygonOutline")
-    wanted = p["polygonCoordinates"]
-    if isinstance(outline, list) and len(outline) > 1 and not _mismatches(outline[0], outline[-1]):
-        outline = outline[:-1]
-    matches = False
-    if isinstance(outline, list) and len(outline) == len(wanted):
-        for sequence in (outline, list(reversed(outline))):
-            for shift in range(len(sequence)):
-                rotated = sequence[shift:] + sequence[:shift]
-                if all(not _mismatches(a, b) for a, b in zip(wanted, rotated, strict=True)):
-                    matches = True
-    if not matches:
+    if not _same_polygon(p["polygonCoordinates"], details.get("polygonOutline")):
         differences.append("details.polygonOutline")
     if details.get("polygonArcs", []) != []:
         differences.append("details.polygonArcs")

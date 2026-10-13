@@ -80,6 +80,14 @@ MODIFY_COMMANDS = {
 }
 
 
+# CreateRoofs/CreateTexts and their details, from the Tapir 1.7.0 source; not live.
+ROOFS_TEXTS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
+    ).read_text(encoding="utf-8")
+)
+
+
 def ok(result: Any) -> dict:
     return {"succeeded": True, "result": result}
 
@@ -132,6 +140,10 @@ class FakeArchicad:
     modify_errors: dict[int, dict] = field(default_factory=dict)
     modify_ignored: bool = False
     lose_modify_response: bool = False
+    lose_roof_response: bool = False
+    lose_text_response: bool = False
+    # Archicad stores what it is given unless told otherwise (verification tests).
+    text_stored_as: str | None = None
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -678,6 +690,74 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateRoofs":
+            out = []
+            for index, roof in enumerate(args["roofsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Roof"
+                row = deepcopy(ROOFS_TEXTS_FIXTURE["roof_details"])
+                story = next(s for s in self.stories if s["index"] == roof["floorIndex"])
+                row["floorIndex"] = roof["floorIndex"]
+                details = row["details"]
+                points = deepcopy(roof["polygonCoordinates"])
+                details.update(
+                    thickness=roof["thickness"],
+                    level=roof["level"] - story["level"],
+                    zCoordinate=roof["level"],
+                    polygonOutline=points + [deepcopy(points[0])],
+                )
+                if "pivotLine" in roof:
+                    for key in ("eavesOverhang", "levels", "pivotPolygonOutline"):
+                        details.pop(key)
+                    details.update(
+                        roofClass="SinglePlane",
+                        angle=roof["angle"],
+                        pivotLine={
+                            "begin": deepcopy(roof["pivotLine"]["begCoordinate"]),
+                            "end": deepcopy(roof["pivotLine"]["endCoordinate"]),
+                        },
+                    )
+                else:
+                    # Multi-plane: the outline is the pivot polygon; the contour grows.
+                    details["pivotPolygonOutline"] = deepcopy(points)
+                    grow = roof.get("eavesOverhang", details["eavesOverhang"])
+                    details["eavesOverhang"] = grow
+                    details["polygonOutline"] = [
+                        {"x": p["x"] + grow, "y": p["y"] + grow} for p in points
+                    ]
+                    if "levels" in roof:
+                        details["levels"] = [
+                            {"height": v["levelHeight"], "angle": v["levelAngle"]}
+                            for v in roof["levels"]
+                        ]
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateTexts":
+            out = []
+            for index, text in enumerate(args["textsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Text"
+                row = deepcopy(ROOFS_TEXTS_FIXTURE["text_details"])
+                row["floorIndex"] = text["floorIndex"]
+                details = row["details"]
+                details["position"] = {k: text["coordinate"][k] for k in ("x", "y")}
+                details["text"] = (
+                    self.text_stored_as if self.text_stored_as is not None else text["text"]
+                )
+                for key in ("angle", "height", "justification"):
+                    if key in text:
+                        details[key] = text[key]
+                details["paragraphCount"] = details["text"].count("\n") + 1
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -800,6 +880,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost wall-edit response after model change", request=request
             )
+        if instance.lose_roof_response and command == "CreateRoofs":
+            raise httpx.ReadTimeout("Injected lost roof response", request=request)
+        if instance.lose_text_response and command == "CreateTexts":
+            raise httpx.ReadTimeout("Injected lost text response", request=request)
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request

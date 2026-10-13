@@ -140,6 +140,14 @@
       "description": "Preview/create up to 20 straight rectangular beams in metres, with per-beam verification."
     },
     {
+      "name": "create_roofs",
+      "description": "Preview/create up to 20 single- or multi-plane roofs from simple polygons, with verification and receipts."
+    },
+    {
+      "name": "create_texts",
+      "description": "Preview/create up to 20 plain texts on stories, with verification and receipts."
+    },
+    {
       "name": "create_zones",
       "description": "Preview/create up to 20 manually bounded polygon zones, verified per item."
     },

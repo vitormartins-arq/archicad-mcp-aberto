@@ -9,7 +9,17 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, edit, gateway, modify, openings, read, write
+from archicad_mcp_aberto.tools import (
+    attributes,
+    edit,
+    gateway,
+    modify,
+    openings,
+    read,
+    write,
+)
+from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import texts as texts_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -447,6 +457,37 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await modify.modify_objects(
             client_of(ctx), objects, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_roofs(
+        ctx: Context,
+        roofs: list[roofs_tool.RoofCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 roofs from simple polygons; metres, radians, absolute level.
+        pivot_line + angle makes one plane rising on the line's left; without them a
+        multi-plane roof on the polygon (optional levels, eaves_overhang). Requires Tapir;
+        apply identical inputs with explicit port and single-use token. Never saves."""
+        return await roofs_tool.create_roofs(
+            client_of(ctx), roofs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_texts(
+        ctx: Context,
+        texts: list[texts_tool.TextCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 plain texts: position in metres on a story, angle in radians,
+        optional height_mm (paper millimetres) and justification; style from the Text
+        tool default. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await texts_tool.create_texts(
+            client_of(ctx), texts, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)
