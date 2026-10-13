@@ -9,8 +9,10 @@ from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, reso
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attributes,
+    classifications,
     edit,
     gateway,
+    labels,
     modify,
     openings,
     read,
@@ -54,6 +56,11 @@ INPUTS = {
         ]
     },
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
+    "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "list_classifications": {},
+    "set_classifications": {
+        "changes": [{"element_guid": GUID, "system": "Uniclass", "item": None}]
+    },
     "modify_columns": {"columns": [{"guid": GUID, "height": 3.0}]},
     "modify_beams": {"beams": [{"guid": GUID, "level": 3.0}]},
     "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
@@ -149,7 +156,19 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, gateway, modify, openings, read, roofs, texts, write)
+    for module in (
+        attributes,
+        classifications,
+        edit,
+        gateway,
+        labels,
+        modify,
+        openings,
+        read,
+        roofs,
+        texts,
+        write,
+    )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")

@@ -11,6 +11,7 @@ from mcp.server.fastmcp import Context, FastMCP
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attributes,
+    classifications,
     edit,
     gateway,
     modify,
@@ -18,6 +19,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 
@@ -235,6 +237,38 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         refused. Preview shows current and new values; apply identical inputs with explicit
         port and single-use token; every value is read back. Never saves."""
         return await write.set_property_values(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_classifications(
+        ctx: Context,
+        system: str | None = None,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """Without system: the project's classification systems. With system (GUID or
+        name): its items as a flat tree (guid, id code, name, parent_guid, depth); query
+        filters id or name. Pages up to 500."""
+        return await classifications.list_classifications(
+            client_of(ctx), system, port, query, offset, limit
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_classifications(
+        ctx: Context,
+        changes: list[classifications.ClassificationChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview classifying up to 100 elements: element_guid, system (GUID or name) and
+        item (GUID, id code or name; null removes the classification in that system).
+        Ambiguous names are refused. Preview shows current and new items; apply identical
+        inputs with explicit port and single-use token; each is read back. Never saves."""
+        return await classifications.set_classifications(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
@@ -488,6 +522,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         tool default. Requires Tapir; apply with explicit port and token. Never saves."""
         return await texts_tool.create_texts(
             client_of(ctx), texts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_labels(
+        ctx: Context,
+        labels: list[labels_tool.LabelCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 text labels. element_guid attaches the label to that element
+        (on its story); a free label needs position (metres) and floor_index. Optional
+        height_mm (paper millimetres); style from the Label tool default. Requires Tapir;
+        apply with explicit port and token. Never saves."""
+        return await labels_tool.create_labels(
+            client_of(ctx), labels, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

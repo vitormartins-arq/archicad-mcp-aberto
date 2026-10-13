@@ -325,3 +325,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   alinhamento vão em `style`. A conferência do lote passou a comparar ângulo no círculo,
   texto com quebra LF e listas item a item. 1079 testes simulados e Ruff passaram (Linux,
   Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 4 na nuvem, 13/10/2026:** branch `lote/classificacoes-etiquetas`,
+  empilhada no lote 3. `tools/classifications.py` (`list_classifications`,
+  `set_classifications`) pela API oficial (`GetAllClassificationSystems`,
+  `GetAllClassificationsInSystem`, `GetClassificationsOfElements`,
+  `SetClassificationsOfElements`, formatos lidos no pacote `archicad` 30.3000). Sistema e
+  item podem ir por GUID ou nome (item também pelo código); nome ambíguo é recusado; `item`
+  nulo tira a classificação. `tools/labels.py` (`create_labels`) pelo `CreateLabels` do
+  Tapir 1.7.0 (lido no código: `parentElementId` põe a etiqueta no pavimento do elemento;
+  sem ele precisa de `begCoordinate`). Fixtures `ac30_classifications_documented.json` e
+  `tapir170_create_labels_documented.json`, não são captura ao vivo. 1141 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

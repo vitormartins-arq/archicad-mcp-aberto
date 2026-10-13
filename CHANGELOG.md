@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add `list_classifications` and `set_classifications` (new `tools/classifications.py`):
+  read the classification systems and one system's item tree, and classify or unclassify
+  up to 100 elements through the official `SetClassificationsOfElements`, with preview,
+  token, receipts and read-back through `GetClassificationsOfElements`. Systems and items
+  can be named; ambiguous names are refused. Add `create_labels` (new `tools/labels.py`,
+  Tapir `CreateLabels`): up to 20 text labels, attached to an element or free. The fake's
+  shapes come from the official package and the Tapir 1.7.0 source, not a live capture.
+  Not yet tested live.
+
 - Add `modify_roofs` (Tapir `ModifyRoofs`, multi-plane roofs only: thickness, level from
   its story, eaves overhang, levels) and `modify_texts` (Tapir `ModifyTexts`: content,
   position on the same story, angle, height in paper millimetres, justification), in

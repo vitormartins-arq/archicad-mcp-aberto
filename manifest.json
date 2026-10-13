@@ -128,6 +128,14 @@
       "description": "Preview or apply property values, read back after. Preview includes story and layer names when available."
     },
     {
+      "name": "list_classifications",
+      "description": "List classification systems, or the items of one system as a flat tree."
+    },
+    {
+      "name": "set_classifications",
+      "description": "Preview or apply element classifications (or remove them), read back after."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },
@@ -146,6 +154,10 @@
     {
       "name": "create_texts",
       "description": "Preview/create up to 20 plain texts on stories, with verification and receipts."
+    },
+    {
+      "name": "create_labels",
+      "description": "Preview/create up to 20 text labels, free or attached to an element, with verification."
     },
     {
       "name": "create_zones",

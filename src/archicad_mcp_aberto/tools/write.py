@@ -291,6 +291,16 @@ OPERATIONS = {
         "change_receipt_id",
         "Each value is written as shown and read back after.",
     ),
+    "set_classifications": (
+        "classification change",
+        "classification_receipt_id",
+        "Each classification is written as shown and read back after.",
+    ),
+    "create_labels": (
+        "label",
+        "label_receipt_id",
+        "New labels take font and style from the Label tool default.",
+    ),
 }
 
 
@@ -306,6 +316,7 @@ CREATE_COMMANDS = {
     "create_objects": ("CreateObjects", "objectsData"),
     "create_roofs": ("CreateRoofs", "roofsData"),
     "create_texts": ("CreateTexts", "textsData"),
+    "create_labels": ("CreateLabels", "labelsData"),
 }
 
 
@@ -1370,6 +1381,7 @@ async def delete_elements(
 NAMED_PREVIEWS = {
     "move_elements",
     "set_property_values",
+    "set_classifications",
     "delete_elements",
     "rotate_elements",
     "set_gdl_parameters",

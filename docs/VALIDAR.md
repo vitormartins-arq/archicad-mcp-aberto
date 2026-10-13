@@ -86,3 +86,21 @@ Use o telhado de várias águas e os textos do lote 2.
   Tapir 1.7.0 só edita telhado de várias águas).
 - [ ] **modify_texts.** "Troque 'Sala' por 'Sala de estar', mova para (3,4), 5 mm,
   alinhado à direita e girado 45°." Esperado: `verified` e o texto no mesmo pavimento.
+
+## Lote 4: classificações e etiquetas
+
+Use a parede, a laje e o pilar do lote 1.
+
+- [ ] **list_classifications.** "Liste os sistemas de classificação e os itens do
+  ARCHICAD Classification." Esperado: os sistemas do projeto e a árvore com código, nome e
+  nível. Conte se o código (`id`) e o nome aparecem como no ArchiCAD.
+- [ ] **set_classifications.** "Classifique a parede como Parede e a laje como Laje no
+  ARCHICAD Classification." Esperado: a prévia mostra o item atual e o novo; aplicar dá
+  `verified`, e em Configurações da parede > Classificação e Propriedades aparece o item.
+- [ ] **Remover a classificação.** "Tire a classificação do pilar no ARCHICAD
+  Classification." Esperado: `verified` e o pilar sem classificação nesse sistema.
+- [ ] **Item que não vale para o tipo.** "Classifique o pilar como Parede." Conte o que o
+  ArchiCAD fez: se recusou (o recibo diz `failed`) ou se aceitou.
+- [ ] **create_labels.** "Ponha uma etiqueta 'Parede de tijolo' na parede, com 2,5 mm, e
+  uma etiqueta solta 'Nota' em (2,3) no térreo." Esperado: `verified`; a etiqueta da parede
+  acompanha a parede quando ela se move. Conte onde o texto ficou em relação à seta.

@@ -82,6 +82,20 @@ MODIFY_COMMANDS = {
 }
 
 
+# Official classification commands, from the archicad 30.3000 package; not live.
+CLASSIFICATIONS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "ac30_classifications_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+# CreateLabels and the Label details, from the Tapir 1.7.0 source; not live.
+LABELS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_create_labels_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
 # CreateRoofs/CreateTexts and their details, from the Tapir 1.7.0 source; not live.
 ROOFS_TEXTS_FIXTURE = json.loads(
     (
@@ -144,8 +158,14 @@ class FakeArchicad:
     lose_modify_response: bool = False
     lose_roof_response: bool = False
     lose_text_response: bool = False
+    lose_label_response: bool = False
     # Archicad stores what it is given unless told otherwise (verification tests).
     text_stored_as: str | None = None
+    # (element guid, system guid) -> item guid; a missing pair is unclassified.
+    classifications: dict[tuple[str, str], str] = field(default_factory=dict)
+    classification_set_errors: dict[int, dict] = field(default_factory=dict)
+    classification_ignored: bool = False
+    lose_classification_response: bool = False
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -247,6 +267,52 @@ class FakeArchicad:
                 else:
                     if not self.property_set_ignored:
                         self.property_values[(g, p)] = deepcopy(entry["propertyValue"])
+                    results.append({"success": True})
+            return ok({"executionResults": results})
+        if command == "API.GetAllClassificationSystems":
+            return ok(deepcopy(CLASSIFICATIONS_FIXTURE["systems"]))
+        if command == "API.GetAllClassificationsInSystem":
+            tree = CLASSIFICATIONS_FIXTURE["items"].get(params["classificationSystemId"]["guid"])
+            if tree is None:
+                return fail(4013, "Classification system not found")
+            return ok(deepcopy(tree))
+        if command == "API.GetClassificationsOfElements":
+            rows = []
+            for e in params["elements"]:
+                g = e["elementId"]["guid"]
+                if g not in self.elements:
+                    rows.append(deepcopy(CLASSIFICATIONS_FIXTURE["element_error"]))
+                    continue
+                ids = []
+                for s in params["classificationSystemIds"]:
+                    system = s["classificationSystemId"]["guid"]
+                    identifier = {"classificationSystemId": {"guid": system}}
+                    if (g, system) in self.classifications:
+                        identifier["classificationItemId"] = {
+                            "guid": self.classifications[(g, system)]
+                        }
+                    ids.append({"classificationId": identifier})
+                rows.append({"classificationIds": ids})
+            return ok({"elementClassifications": rows})
+        if command == "API.SetClassificationsOfElements":
+            results = []
+            for index, entry in enumerate(params["elementClassifications"]):
+                g = entry["elementId"]["guid"]
+                identifier = entry["classificationId"]
+                system = identifier["classificationSystemId"]["guid"]
+                if index in self.classification_set_errors:
+                    results.append(deepcopy(self.classification_set_errors[index]))
+                elif g not in self.elements:
+                    results.append(
+                        {"success": False, **deepcopy(CLASSIFICATIONS_FIXTURE["element_error"])}
+                    )
+                else:
+                    if not self.classification_ignored:
+                        if "classificationItemId" in identifier:
+                            item = identifier["classificationItemId"]["guid"]
+                            self.classifications[(g, system)] = item
+                        else:
+                            self.classifications.pop((g, system), None)
                     results.append({"success": True})
             return ok({"executionResults": results})
         if command == "API.ExecuteAddOnCommand":
@@ -738,6 +804,40 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateLabels":
+            out = []
+            for index, label in enumerate(args["labelsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                parent = label.get("parentElementId", {}).get("guid")
+                if parent is not None and parent not in self.elements:
+                    error = {"code": -2130313112, "message": "Invalid parent element GUID"}
+                    out.append({"error": error})
+                    continue
+                if parent is None and "begCoordinate" not in label:
+                    out.append(deepcopy(LABELS_FIXTURE["missing_coordinate"]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Label"
+                row = deepcopy(LABELS_FIXTURE["label_details"])
+                details = row["details"]
+                if parent is not None:
+                    row["floorIndex"] = self.details.get(parent, {}).get("floorIndex", 0)
+                    details["ownerElementId"] = {"guid": parent.lower()}
+                    details["ownerElementType"] = self.elements[parent]
+                else:
+                    row["floorIndex"] = label.get("floorInd", 0)
+                if "begCoordinate" in label:
+                    details["begCoordinate"] = dict(label["begCoordinate"])
+                details["labelClass"] = label.get("labelClass", "Text")
+                details["text"] = (
+                    self.text_stored_as if self.text_stored_as is not None else label["text"]
+                )
+                details["style"].update(label.get("style", {}))
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateTexts":
             out = []
             for index, text in enumerate(args["textsData"]):
@@ -911,6 +1011,12 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost roof response", request=request)
         if instance.lose_text_response and command == "CreateTexts":
             raise httpx.ReadTimeout("Injected lost text response", request=request)
+        if instance.lose_label_response and command == "CreateLabels":
+            raise httpx.ReadTimeout("Injected lost label response", request=request)
+        if instance.lose_classification_response and (
+            body.get("command") == "API.SetClassificationsOfElements"
+        ):
+            raise httpx.ReadTimeout("Injected lost classification response", request=request)
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request

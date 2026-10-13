@@ -50,6 +50,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `get_gdl_parameters` | Read | Object GDL values/types/flags, up to 100 GUIDs | yes |
 | `run_read_command` | Read | One read-only official or Tapir command from a closed list, raw response | some |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
+| `list_classifications` | Read | Classification systems, or one system's items as a flat tree | no |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
@@ -58,6 +59,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
 | `create_roofs` | Write | Up to 20 single- or multi-plane roofs from simple polygons | yes |
 | `create_texts` | Write | Up to 20 plain texts on stories | yes |
+| `create_labels` | Write | Up to 20 text labels, free or attached to an element | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
 | `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
 | `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
@@ -73,6 +75,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_doors` | Write | Up to 20 doors in existing straight walls | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
+| `set_classifications` | Write | Classify (or unclassify) up to 100 elements, read back after apply | yes |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
 
 ### Reported live validation
@@ -311,6 +314,10 @@ and open to everyone's contributions.
 - `create_texts` previews up to 20 plain texts with `text` (newlines make lines), `position` (metres), `floor_index`, `angle` (radians), optional `height_mm` (Archicad sizes text in paper millimetres) and `justification`. Font and other style come from the Text tool default. Applying checks type, story, position, text, angle (on the circle) and any size or justification you gave. Tapir 1.7.0 `CreateTexts`; never saves. Not yet tested live.
 
 - `modify_roofs` and `modify_texts` follow the same pattern. Roofs: `thickness` (Basic only), `level` from the roof's story, `eavesOverhang` and `levels` (`{height, angle}`, heights non-decreasing); Tapir 1.7.0 `ModifyRoofs` edits only multi-plane roofs, so single-plane roofs are refused in the preview. Texts: `text`, `position` (the text stays on its story), `angle` (radians), `heightMm` (paper millimetres) and `justification`, through `ModifyTexts`; text is compared with LF line endings and angles on the circle. Not yet tested live.
+
+- `list_classifications` without `system` lists the project's classification systems (GUID, name, version). With `system` (GUID or name, case ignored) it returns that system's items as a flat tree: `guid`, `id` (the code you see in Archicad), `name`, `parent_guid` and `depth`; `query` filters by id or name. `set_classifications` previews up to 100 `{element_guid, system, item}` changes; `item` is a GUID, an id code or a name, and `null` removes the element's classification in that system. Names that match several systems or items are refused, so pass the GUID. The preview shows the current and the new item and flags changes that change nothing; locked, hotlinked and missing elements are refused. Official JSON API `SetClassificationsOfElements`, read back with `GetClassificationsOfElements`; same token, port, receipts and timeout; never saves. Not yet tested live.
+
+- `create_labels` previews up to 20 text labels. With `element_guid` the label is attached to that element and sits on its story (`floor_index` is refused); `position` is then optional and moves the leader start. A free label needs `position` (metres) and `floor_index`. Optional `height_mm` (paper millimetres); font and the rest come from the Label tool default. Applying checks type, story, class, text, owner and the position and size you gave. Tapir 1.7.0 `CreateLabels`; never saves. Not yet tested live.
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 
