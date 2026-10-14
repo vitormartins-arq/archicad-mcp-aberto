@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Fix what the live test of 14/10/2026 found (Archicad 30 build 3001 BRA, Tapir 1.7.0;
+  results in `docs/VALIDAR-resultado-2026-10-14.md`):
+  - `modify_objects` sets the height through the `ZZYZX` GDL parameter and reads it
+    back, because Tapir changes only x and y and reads `dimensions.z` as 0. A part
+    without `ZZYZX` is refused in the preview.
+  - Polylines and fills are checked by the coordinates in their details instead of
+    `Get2DBoundingBoxes`, which answers error 7203 for them; a circle that reads back as
+    a full Arc counts as a circle.
+  - `apply_favorites` and `favorite_name` find favorites that start with a space, such
+    as " Parede Genérica - Default".
+  - `create_properties` takes classification items by id or name in `available_for`,
+    not only by GUID.
+  - `set_project_info_fields` refuses `CLIENT_FULLNAME`, which Archicad keeps empty, and
+    points to the given and family name fields.
+
 - Add worksheets, details and layouts (new `tools/documents.py`): `create_worksheets`,
   `create_details` and `create_layouts` through Tapir 1.7.0 `CreateWorksheets`,
   `CreateDetails` and `CreateLayout`. Layouts go on an existing master layout by its

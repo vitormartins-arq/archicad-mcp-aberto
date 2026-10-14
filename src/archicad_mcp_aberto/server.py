@@ -511,7 +511,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         group (name or GUID), type (number, integer, string, boolean, length, area,
         volume, angle, their List forms, singleEnum, multiEnum), optional description,
         editable, default (meters, radians; enum defaults are option names),
-        enum_values for enums, and available_for (classification item GUIDs) or
+        enum_values for enums, and available_for (classification items by GUID, id or name) or
         available_for_system (every item of one system). Names already in the group are
         refused. Apply identical inputs with explicit port and single-use token; each
         property is read back. Requires Tapir. Never saves."""

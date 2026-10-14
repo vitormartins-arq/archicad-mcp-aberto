@@ -96,7 +96,7 @@ async def test_create_properties_of_several_types():
             "type": "length",
             "default": 3,
             "editable": False,
-            "available_for": [WALL_ITEM.lower()],
+            "available_for": ["parede"],  # BRA shows the item text in its id
         },
         {
             "name": "Acabamento",
@@ -155,7 +155,7 @@ async def test_create_properties_of_several_types():
         {"type": "length", "default": True},
         {"type": "stringList", "default": "x"},
         {"type": "text"},
-        {"type": "string", "available_for": ["not-a-guid"]},
+        {"type": "string", "available_for": [" "]},
     ],
 )
 def test_property_input_refusals(prop):
@@ -172,6 +172,10 @@ async def test_property_plan_refusals():
             ({"name": "X", "group": "Nada", "type": "string"}, "does not exist"),
             (
                 {"name": "X", "group": "Projeto", "type": "string", "available_for": [MISSING]},
+                "not found",
+            ),
+            (
+                {"name": "X", "group": "Projeto", "type": "string", "available_for": ["Nada"]},
                 "not found",
             ),
             (
@@ -198,7 +202,7 @@ async def test_property_plan_refusals():
 
 
 async def test_property_failed_mismatch_and_lost():
-    prop = {"name": "X", "group": "Projeto", "type": "string", "available_for": [WALL_ITEM]}
+    prop = {"name": "X", "group": "Projeto", "type": "string", "available_for": [WALL_ITEM.lower()]}
     error = {"error": {"code": -1, "message": "failed to create the property"}}
     fake = FakeArchicad(19723, property_create_errors={0: error})
     async with ArchicadClient(transport=fake_transport(fake)) as c:

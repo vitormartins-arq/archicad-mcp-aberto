@@ -18,7 +18,7 @@ from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
 
-from archicad_mcp_aberto.connection import ArchicadClient
+from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
 from archicad_mcp_aberto.tools import edit, read, roofs, texts, write
 
 MAX_EDITS = 50
@@ -273,7 +273,10 @@ def _object(change, row, target, label, extra):
     if "dimensions" in changes:
         if not isinstance(details.get("dimensions"), dict):
             raise ValueError(f"{label}: cannot read the current dimensions.")
-        parameters["dimensions"] = expected["dimensions"] = changes["dimensions"]
+        parameters["dimensions"] = changes["dimensions"]
+        # Tapir 1.7.0 changes x and y but not the height, and reads dimensions.z as 0
+        # (live, AC30 build 3001 BRA, 14/10/2026): the height is set through ZZYZX.
+        expected["dimensions"] = {k: changes["dimensions"][k] for k in ("x", "y")}
     return changes, parameters, expected
 
 
@@ -369,6 +372,15 @@ async def _plan(client, edits, port, operation):
         if row["type"] not in types or not isinstance(row.get("details"), dict):
             raise ValueError(f"{label}: is a {row['type']}, not a {types[0]} with details.")
         changes, parameters, expected = fields(change, row, target, label, extra)
+        if operation == "modify_objects" and "dimensions" in changes:
+            height = await _height_parameter(client, port, change.guid, label)
+            try:
+                height["value"] = edit._gdl_value(height["before"], changes["dimensions"]["z"])
+            except ValueError as exc:
+                raise ValueError(f"{label}: cannot set the height (ZZYZX): {exc}") from None
+            extra_item = {"height": height}
+        else:
+            extra_item = {}
         items.append(
             {
                 "index": index,
@@ -381,9 +393,83 @@ async def _plan(client, edits, port, operation):
                 "new": changes,
                 "expected": expected,
                 "parameters": {"elementId": {"guid": change.guid}, **parameters},
+                **extra_item,
             }
         )
     return {"operation": operation, "target": target, "items": items}
+
+
+async def _height_parameter(client, port, guid, label) -> dict:
+    rows = await edit._gdl_rows(client, port, [guid])
+    parameters = rows[guid].get("parameters") if isinstance(rows[guid], dict) else None
+    found = [
+        p
+        for p in (parameters if isinstance(parameters, list) else [])
+        if isinstance(p, dict) and str(p.get("name", "")).casefold() == "zzyzx"
+    ]
+    if len(found) != 1 or "value" not in found[0]:
+        raise ValueError(f"{label}: the library part has no ZZYZX height parameter.")
+    return {"name": found[0]["name"], "before": deepcopy(found[0])}
+
+
+async def _set_heights(client, receipt) -> None:
+    """Second step of modify_objects: ZZYZX through Set/GetGDLParametersOfElements."""
+    items = [
+        i
+        for i in receipt["items"]
+        if "height" in i and i["status"] in ("verified", "verification_failed")
+    ]
+    if not items:
+        return
+    port, timeout = receipt["target"]["port"], receipt["write_timeout_seconds"]
+    payload = [
+        {
+            "elementId": {"guid": i["element_guid"]},
+            "gdlParameters": [{"name": i["height"]["name"], "value": i["height"]["value"]}],
+        }
+        for i in items
+    ]
+    try:
+        raw = await client.tapir(
+            port,
+            "SetGDLParametersOfElements",
+            {"elementsWithGDLParameters": payload},
+            timeout=timeout,
+        )
+        rows = raw.get("executionResults")
+        if not isinstance(rows, list) or len(rows) != len(items):
+            raise ValueError("Unexpected height response cardinality.")
+    except (ArchicadError, ValueError) as exc:
+        for item in items:
+            item.update(status="unknown", height_error=str(exc))
+        receipt["warning"] = "Height outcome unknown; inspect Archicad. Never retry this token."
+        return
+    written = []
+    for item, row in zip(items, rows, strict=True):
+        item["height"]["write_response"] = row
+        if isinstance(row, dict) and row.get("success") is True:
+            written.append(item)
+        else:
+            error = row.get("error") if isinstance(row, dict) else None
+            item.update(status="verification_failed", height_error=error or "Height not set.")
+            item["mismatches"] = item.get("mismatches", []) + ["gdl.ZZYZX"]
+    if not written:
+        return
+    try:
+        after = await edit._gdl_rows(client, port, [i["element_guid"] for i in written], timeout)
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+        for item in written:
+            item["status"] = "unverified"
+        return
+    for item in written:
+        row = after[item["element_guid"]]
+        parameters = row.get("parameters", []) if isinstance(row, dict) else []
+        found = [p for p in parameters if p.get("name") == item["height"]["name"]]
+        item["height"]["after"] = found[0] if len(found) == 1 else {}
+        if write._mismatches({"value": item["height"]["value"]}, item["height"]["after"]):
+            item["status"] = "verification_failed"
+            item["mismatches"] = item.get("mismatches", []) + ["gdl.ZZYZX"]
 
 
 def _detail_mismatches(expected, actual):
@@ -448,6 +534,8 @@ async def _verify(client, receipt, items):
 async def _dispatch(client, receipt):
     _, command, key, _ = SPECS[receipt["operation"]]
     await edit._execute(client, receipt, command, key, _verify)
+    if receipt["operation"] == "modify_objects":
+        await _set_heights(client, receipt)
 
 
 async def _modify(client, edits, model, port, dry_run, confirmation_token, operation):
@@ -543,7 +631,7 @@ async def modify_objects(
 ) -> dict:
     """Preview/modify up to 50 objects: origin (x, y), level from its story, dimensions.
 
-    dimensions.z sets the library part's ZZYZX; a part without it fails verification.
+    dimensions.z sets the height through the ZZYZX GDL parameter; a part without it is refused.
     """
     return await _modify(
         client, objects, ObjectModify, port, dry_run, confirmation_token, "modify_objects"

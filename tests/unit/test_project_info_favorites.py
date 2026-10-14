@@ -78,7 +78,18 @@ async def test_project_info_refusals():
     fake.project_info.append(
         {"projectInfoId": "SITE_X", "projectInfoName": "Cidade", "projectInfoValue": ""}
     )
+    fake.project_info.append(
+        {
+            "projectInfoId": "CLIENT_FULLNAME",
+            "projectInfoName": "Nome Completo do Cliente",
+            "projectInfoValue": "",
+        }
+    )
     async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="CLIENT_GIVENNAME"):
+            await project_info.set_project_info_fields(
+                c, [{"field": "Nome Completo do Cliente", "value": "Cliente Teste"}]
+            )
         with pytest.raises(ValueError, match="does not exist"):
             await project_info.set_project_info_fields(c, [{"field": "Arquiteto", "value": "V"}])
         with pytest.raises(ValueError, match="ambiguous"):

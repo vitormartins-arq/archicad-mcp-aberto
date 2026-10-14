@@ -158,7 +158,7 @@ async def test_preview_then_apply_verified(kind):
             "Object",
             {"dimensions": {"x": 2, "y": 1, "z": 0.9}},
             {"dimensions": {"x": 2, "y": 1, "z": 0.9}},
-            None,
+            {"dimensions": {"x": 2, "y": 1, "z": 0}},  # Tapir reads z as 0 (live)
         ),
     ],
 )
@@ -472,3 +472,32 @@ async def test_invalid_text_edits_refused_before_network(change):
         with pytest.raises(ValueError):
             await modify.modify_texts(c, [{"guid": ELEMENT, **change}])
     assert not fake.calls
+
+
+async def test_object_height_is_set_through_zzyzx():
+    edits = [{"guid": ELEMENT, "dimensions": {"x": 2, "y": 1, "z": 0.9}}]
+    fake = model("Object")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await modify.modify_objects(c, edits, 19723)
+        assert preview["items"][0]["height"]["before"]["value"] == 0.5
+        assert "SetGDLParametersOfElements" not in fake.tapir_calls
+        result = await modify.modify_objects(c, edits, 19723, False, preview["confirmation_token"])
+    item = result["items"][0]
+    assert item["status"] == "verified" and item["height"]["after"]["value"] == 0.9
+    request = next(r for r in fake.tapir_requests if r["command"] == "SetGDLParametersOfElements")
+    assert request["parameters"]["elementsWithGDLParameters"] == [
+        {"elementId": {"guid": ELEMENT}, "gdlParameters": [{"name": "ZZYZX", "value": 0.9}]}
+    ]
+    fake = model("Object", gdl_ignored=True)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Object", edits)
+    assert result["items"][0]["mismatches"] == ["gdl.ZZYZX"]
+    fake = model("Object", lose_gdl_response=True)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Object", edits)
+    assert result["items"][0]["status"] == "unknown"
+    fake = model("Object")
+    fake.gdl_parameters[ELEMENT] = [{"name": "A", "type": "Length", "value": 1.0, "flags": []}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="no ZZYZX"):
+            await modify.modify_objects(c, edits, 19723)

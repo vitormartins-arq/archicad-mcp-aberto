@@ -1478,6 +1478,10 @@ class FakeArchicad:
                     details["relativeTopStory"] = 0
                 if name == "ModifyBeams" and "level" in changes:
                     details["zCoordinate"] = story["level"] + changes["level"]
+                if name == "ModifyObjects" and "dimensions" in changes:
+                    # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
+                    # (ZZYZX) does not, and dimensions.z always reads back as 0.
+                    changes["dimensions"] = {**changes["dimensions"], "z": 0}
                 details.update(changes)
             rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["success"]))
         return ok({"addOnCommandResponse": {"executionResults": rows}})

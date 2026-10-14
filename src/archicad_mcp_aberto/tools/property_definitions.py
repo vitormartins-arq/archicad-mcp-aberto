@@ -135,7 +135,7 @@ class PropertyCreate(write.InputModel):
     editable: bool = True
     default: Any = None
     enum_values: Annotated[list[Name], Field(min_length=1, max_length=200)] | None = None
-    available_for: Annotated[list[str], Field(max_length=MAX_AVAILABILITY)] = []
+    available_for: Annotated[list[Name], Field(max_length=MAX_AVAILABILITY)] = []
     available_for_system: Name | None = None
 
     @field_validator("name")
@@ -146,7 +146,16 @@ class PropertyCreate(write.InputModel):
     @field_validator("available_for")
     @classmethod
     def canonical_items(cls, value: list[str]) -> list[str]:
-        return [str(UUID(v)).upper() for v in value]
+        # A classification item GUID, or its id or name as Archicad shows it ("Parede").
+        out = []
+        for v in value:
+            try:
+                out.append(str(UUID(v)).upper())
+            except ValueError:
+                if not v.strip():
+                    raise ValueError("available_for entries must not be blank.") from None
+                out.append(v.strip())
+        return out
 
     @model_validator(mode="after")
     def consistent(self):
@@ -231,11 +240,25 @@ async def _availability(client, port, props) -> dict[int, list[str]]:
         return {}
     systems = await classifications._systems(client, port)
     items = {s["guid"]: await classifications._items(client, port, s["guid"]) for s in systems}
-    known = {row["guid"] for rows in items.values() for row in rows}
+    every = [row for rows in items.values() for row in rows]
+    known = {row["guid"] for row in every}
     out = {}
     for index, prop in enumerate(props):
-        chosen = list(prop.available_for)
-        missing = [g for g in chosen if g not in known]
+        chosen, missing = [], []
+        for wanted in prop.available_for:
+            if wanted in known:
+                chosen.append(wanted)
+                continue
+            try:
+                chosen.append(
+                    classifications._pick(every, wanted, ("id", "name"), "Classification item")[
+                        "guid"
+                    ]
+                )
+            except ValueError as exc:
+                if "ambiguous" in str(exc):
+                    raise ValueError(f"Property {index}: {exc}") from None
+                missing.append(wanted)
         if missing:
             raise ValueError(f"Property {index}: classification items not found: {missing}.")
         if prop.available_for_system:

@@ -16,6 +16,38 @@ lote, quando quiser, no PC dele.
 
 Anote a versão, o build, o idioma do ArchiCAD e a versão do Tapir.
 
+## Rodada ao vivo de 14/10/2026 (lotes 1 a 11)
+
+O Claude rodou os lotes 1, 2 e 4 a 11 e refez os telhados do lote 3 no PC do Vitor:
+ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, código `077fda3`, só no projeto sem nome, sem
+salvar. O resultado item por item está em
+[`VALIDAR-resultado-2026-10-14.md`](VALIDAR-resultado-2026-10-14.md). Quase tudo deu
+`verified` e as recusas funcionaram. As falhas viraram correções na branch
+`lote/correcoes-ao-vivo`, que precisam de uma nova rodada curta:
+
+- [ ] **Altura de objeto.** "Mude o cubo para 2 × 1 × 0,9 m." Esperado: `verified`, com
+  `height` relido 0,9 (o MCP agora grava a altura pelo GDL `ZZYZX`).
+- [ ] **Polilinha, hachura e círculo.** Refazer os três do lote 5. Esperado: `verified`
+  (conferência pelas coordenadas; círculo aceito quando volta como Arc completo). Conferir
+  também se a pena pedida para a polilinha pega.
+- [ ] **Favorito com espaço.** "Aplique o favorito Parede Genérica - Default na parede 2."
+  Esperado: a prévia acha " Parede Genérica - Default" e o apply dá `unverified`.
+- [ ] **Propriedade por nome de classificação.** "Crie a propriedade Teste disponível para
+  Parede." Esperado: `verified`, sem pedir GUID.
+- [ ] **Nome completo do cliente.** Esperado: a prévia recusa e manda usar nome e
+  sobrenome (CLIENT_GIVENNAME e CLIENT_FAMILYNAME).
+
+Ainda em aberto:
+
+- [ ] **modify_beams.** Precisa de uma viga numa camada destravada (no modelo do Vitor,
+  `EST - Viga` fica oculta e travada).
+- [ ] **Etiqueta solta.** Ver no ArchiCAD se a "Nota" em (2,3) tem seta até a origem.
+- [ ] **update_zones com zona automática.** O teste usou zona manual.
+- [ ] **Conferência visual** da lista "Para o Vitor conferir" no arquivo de resultado.
+- **Decisões de projeto:** o MCP deixa criar e mover elementos para camada travada, e o
+  `modify_roofs` recusa nível a partir do pavimento de cima, que o `create_roofs` aceita.
+- **Peça "Mesa":** não cria (-2130313112); parece ser da biblioteca, não do MCP.
+
 ## Confirmação rápida (já testados ao vivo em 11/10/2026)
 
 - [ ] **#32 parâmetros GDL.** (13/10: a Mesa genérica não foi achada na biblioteca; na Mesa de Jantar Retangular o A foi relido 1,8 em vez de 1,5. Refazer com outra peça, ver abaixo.) "Crie um objeto Mesa no projeto sem nome, mostre os

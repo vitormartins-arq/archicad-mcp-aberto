@@ -15,6 +15,9 @@ from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, TapirE
 from archicad_mcp_aberto.tools import write
 
 MAX_CHANGES = 30
+# Fields that SetProjectInfoField accepts but Archicad keeps empty (live, AC30 build 3001
+# BRA, 14/10/2026): the full name seems to be built from the given and family names.
+READ_ONLY = {"CLIENT_FULLNAME": "set CLIENT_GIVENNAME and CLIENT_FAMILYNAME instead"}
 
 
 async def _fields(client, port, timeout=None) -> list[dict]:
@@ -58,6 +61,11 @@ async def _plan(client, changes, port, operation):
             row = _pick(rows, change.field)
         except ValueError as exc:
             raise ValueError(f"Change {index}: {exc}") from None
+        if row["projectInfoId"] in READ_ONLY:
+            raise ValueError(
+                f"Change {index}: Archicad does not keep {row['projectInfoId']} when written; "
+                f"{READ_ONLY[row['projectInfoId']]}."
+            )
         if row["projectInfoId"] in seen:
             raise ValueError(f"Change {index}: field {row['projectInfoId']} appears twice.")
         seen.add(row["projectInfoId"])

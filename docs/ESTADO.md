@@ -416,3 +416,20 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   confirmar ao vivo se o Livro de Pranchas traz a pasta de Modelos e se o `uiId` é o ID
   mandado. Fixture `tapir170_documents_documented.json`, não é captura ao vivo. 1468
   testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / teste ao vivo dos lotes 1 a 11 e correções, 14/10/2026:** o Claude rodou
+  no PC do Vitor (Remote Control) os lotes 1, 2 e 4 a 11 e refez os telhados do lote 3,
+  com ArchiCAD 30 build 3001 BRA, Tapir 1.7.0 e o código `077fda3`, só no projeto sem
+  nome (porta 19723), sem salvar; o CRM 006 (19724) não foi tocado. Resultado em
+  `docs/VALIDAR-resultado-2026-10-14.md`. Achados ao vivo: `ModifyObjects` não muda a
+  altura e `dimensions.z` volta 0; `Get2DBoundingBoxes` dá erro 7203 para PolyLine e
+  Hatch, e os detalhes deles trazem `coordinates`; círculo é relido como `Arc` com
+  begAngle = endAngle = 0; favoritos "- Default" começam com espaço; `CLIENT_FULLNAME`
+  não grava; no sistema BRA o texto do item de classificação vem no `id`; o modelo do
+  Vitor deixa `EST - Viga`, `ANT - Linha & Trama` e `ANT - Rótulo` ocultas e travadas.
+  Branch `lote/correcoes-ao-vivo`, empilhada no lote 11: altura de objeto pelo GDL
+  `ZZYZX` (prévia recusa peça sem ele), conferência de polilinha e hachura pelas
+  coordenadas, círculo aceito como Arc completo, favoritos achados ignorando espaços de
+  fora e maiúsculas, `available_for` por id ou nome, `CLIENT_FULLNAME` recusado com dica.
+  1473 testes simulados e Ruff passaram (Linux, Python 3.13). Falta a rodada curta ao
+  vivo das correções (lista no topo de `docs/VALIDAR.md`) e o `modify_beams`.
