@@ -127,6 +127,12 @@ PROPERTY_DEFINITIONS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_property_definitions_documented.json"
     ).read_text(encoding="utf-8")
 )
+# Navigator trees and new worksheets, details and layouts; not live captured.
+DOCUMENTS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_documents_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
 # Tapir type -> (propertyCollectionType, propertyValueType, propertyMeasureType), as
 # PropertyTypeDictionary in PropertyCommands.cpp sets them.
 PROPERTY_TYPES = {
@@ -240,6 +246,16 @@ class FakeArchicad:
     property_create_errors: dict[int, dict] = field(default_factory=dict)
     property_drops_availability: bool = False  # store without availability (mismatch test)
     lose_property_definition_response: bool = False
+    navigator_trees: dict[str, dict] = field(
+        default_factory=lambda: deepcopy(DOCUMENTS_FIXTURE["trees"])
+    )
+    # navigator item guid -> database guid
+    nav_databases: dict[str, str] = field(
+        default_factory=lambda: dict(DOCUMENTS_FIXTURE["databases"])
+    )
+    document_errors: dict[int, dict] = field(default_factory=dict)
+    document_stored_name: str | None = None  # store this name instead (mismatch test)
+    lose_document_response: bool = False
     lock_refused: bool = False
     lock_ignored: bool = False
     lose_lock_response: bool = False
@@ -439,6 +455,57 @@ class FakeArchicad:
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
 
+    def _nav_items(self, map_id: str) -> list[dict]:
+        out, stack = [], [self.navigator_trees[map_id]]
+        while stack:
+            node = stack.pop()
+            out.append(node)
+            stack += [c["navigatorItem"] for c in reversed(node.get("children", []))]
+        return out  # depth first, in tree order
+
+    def _create_documents(self, name: str, args: dict) -> list[dict]:
+        key, kind, map_id = {
+            "CreateWorksheets": ("worksheetsData", "WorksheetDrawingItem", "ProjectMap"),
+            "CreateDetails": ("detailsData", "DetailDrawingItem", "ProjectMap"),
+            "CreateLayout": ("layoutsData", "LayoutItem", "LayoutBook"),
+        }[name]
+        out = []
+        for position, data in enumerate(args[key]):
+            if position in self.document_errors:
+                out.append(deepcopy(self.document_errors[position]))
+                continue
+            if name == "CreateLayout":
+                # The MCP always names the master by navigator ID, never by name.
+                assert "masterLayoutName" not in data
+                master = data["masterNavigatorItemId"]["guid"]
+                masters = [
+                    n["navigatorItemId"]["guid"]
+                    for n in self._nav_items("LayoutBook")
+                    if n["type"] == "MasterLayoutItem"
+                ]
+                if master not in masters:
+                    out.append(deepcopy(DOCUMENTS_FIXTURE["layout_failed"]))
+                    continue
+            nav, database = str(uuid4()).upper(), str(uuid4()).upper()
+            self.navigator_trees[map_id].setdefault("children", []).append(
+                {
+                    "navigatorItem": {
+                        "navigatorItemId": {"guid": nav},
+                        "type": kind,
+                        "name": self.document_stored_name
+                        or data.get("name", data.get("layoutName")),
+                        "prefix": "",
+                        "uiId": data.get("referenceId", ""),
+                        "customUiId": False,
+                        "customName": False,
+                        "isIndependent": name != "CreateLayout",
+                    }
+                }
+            )
+            self.nav_databases[nav] = database
+            out.append({"databaseId": {"guid": database}})
+        return out
+
     def _create_property(self, definition: dict) -> dict:
         # Like Tapir 1.7.0: the schema requires these keys; a missing group fails the item.
         assert {"name", "description", "type", "isEditable", "availability", "group"} <= set(
@@ -615,6 +682,22 @@ class FakeArchicad:
                 self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name == "GetNavigatorItemTree":
+            tree = self.navigator_trees.get(args["navigatorMapId"])
+            if tree is None:
+                return ok({"addOnCommandResponse": {"error": {"code": -1, "message": "No map."}}})
+            return ok({"addOnCommandResponse": {"navigatorItemTree": deepcopy(tree)}})
+        if name == "GetDatabaseIdFromNavigatorItemId":
+            out = []
+            for row in args["navigatorItemIds"]:
+                database = self.nav_databases.get(row["navigatorItemId"]["guid"])
+                if database is None:
+                    out.append(deepcopy(DOCUMENTS_FIXTURE["no_database"]))
+                else:
+                    out.append({"databaseId": {"guid": database}})
+            return ok({"addOnCommandResponse": {"databases": out}})
+        if name in ("CreateWorksheets", "CreateDetails", "CreateLayout"):
+            return ok({"addOnCommandResponse": {"databases": self._create_documents(name, args)}})
         if name == "GetAllProperties":
             return ok(
                 {
@@ -1445,6 +1528,12 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             "CreatePropertyDefinitions",
         ):
             raise httpx.ReadTimeout("Injected lost property definition response", request=request)
+        if instance.lose_document_response and command in (
+            "CreateWorksheets",
+            "CreateDetails",
+            "CreateLayout",
+        ):
+            raise httpx.ReadTimeout("Injected lost document response", request=request)
         if instance.lose_lock_response and command in ("LockElements", "UnlockElements"):
             raise httpx.ReadTimeout("Injected lost lock response", request=request)
         if instance.lose_zone_update_response and command == "UpdateZones":

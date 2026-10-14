@@ -403,3 +403,16 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   de enum. Falta confirmar ao vivo se o padrão de ângulo é em radianos. Fixture
   `tapir170_property_definitions_documented.json`, não é captura ao vivo. 1433 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 11 na nuvem, 14/10/2026:** branch `lote/documentos`, empilhada no
+  lote 10. `tools/documents.py` com `create_worksheets`, `create_details` e
+  `create_layouts`, pelos comandos do Tapir 1.7.0 lidos no código da tag
+  (`DocumentCreationCommands.cpp`, `NavigatorCommands.cpp`). Achado no código:
+  `CreateLayout` cria sozinho um modelo de prancha quando o nome não existe; o MCP manda
+  sempre o `masterNavigatorItemId` de um modelo que já existe e recusa o resto. A
+  conferência acha cada base nova no Navegador (`GetNavigatorItemTree` e
+  `GetDatabaseIdFromNavigatorItemId`). O ArchiCAD simulado ganhou `GetNavigatorItemTree`
+  (campo `navigator_trees`); quando a T22 do Codex chegar, juntar os dois no fake. Falta
+  confirmar ao vivo se o Livro de Pranchas traz a pasta de Modelos e se o `uiId` é o ID
+  mandado. Fixture `tapir170_documents_documented.json`, não é captura ao vivo. 1468
+  testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

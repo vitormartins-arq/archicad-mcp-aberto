@@ -12,6 +12,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    documents,
     drafting,
     edit,
     favorites,
@@ -516,6 +517,55 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         property is read back. Requires Tapir. Never saves."""
         return await property_definitions.create_properties(
             client_of(ctx), properties, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_worksheets(
+        ctx: Context,
+        worksheets: list[documents.ViewpointCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty independent worksheets to the Project Map:
+        name and reference_id. One with the same name and ID is refused. Apply identical
+        inputs with explicit port and single-use token; each is found back in the
+        Navigator. Requires Tapir. Never saves."""
+        return await documents.create_worksheets(
+            client_of(ctx), worksheets, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_details(
+        ctx: Context,
+        details: list[documents.ViewpointCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty independent details to the Project Map: name
+        and reference_id. One with the same name and ID is refused. Apply identical
+        inputs with explicit port and single-use token; each is found back in the
+        Navigator. Requires Tapir. Never saves."""
+        return await documents.create_details(
+            client_of(ctx), details, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layouts(
+        ctx: Context,
+        layouts: list[documents.LayoutCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 layouts to the Layout Book: name and master (an
+        existing master layout's name; a missing master is refused, never created).
+        Size and margins come from the master. A layout name already in the book is
+        refused. Apply identical inputs with explicit port and single-use token; each
+        is found back in the Navigator. Requires Tapir. Never saves."""
+        return await documents.create_layouts(
+            client_of(ctx), layouts, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

@@ -204,3 +204,17 @@ Faça na planta do térreo, numa área vazia.
   aparecem em Configurações > Classificação e Propriedades com os valores padrão. Conte se
   o padrão de comprimento apareceu como 2,80 m (o MCP manda metros) e, se testar uma
   propriedade de ângulo, se o padrão em radianos virou o ângulo certo.
+
+## Lote 11: folhas de trabalho, detalhes e pranchas
+
+- [ ] **create_worksheets.** "Crie a folha de trabalho 'Rascunho MCP' com ID W99."
+  Esperado: `verified` e a folha no Mapa do Projeto, na pasta de Folhas de Trabalho, com
+  nome e ID certos. Pedir de novo deve ser recusado na prévia.
+- [ ] **create_details.** "Crie o detalhe 'Detalhe MCP' com ID D99." Esperado: `verified`
+  e o detalhe independente no Mapa do Projeto. Conte se o ID que o Navegador mostra é o
+  mesmo que o MCP mandou (o MCP compara o `uiId`).
+- [ ] **create_layouts.** "Crie a prancha 'Prancha MCP' no modelo <nome de um modelo de
+  prancha que existe>." Esperado: `verified` e a prancha no Livro de Pranchas com o
+  tamanho do modelo. Um modelo que não existe deve ser recusado na prévia (o MCP nunca
+  cria modelo). Se a prévia disser que nenhum modelo existe, conte: pode ser que o
+  `GetNavigatorItemTree` do Livro de Pranchas não traga a pasta de Modelos.

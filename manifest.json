@@ -204,6 +204,18 @@
       "description": "Preview or add custom properties with type, default, options and availability; read back."
     },
     {
+      "name": "create_worksheets",
+      "description": "Preview or add empty independent worksheets to the Project Map."
+    },
+    {
+      "name": "create_details",
+      "description": "Preview or add empty independent details to the Project Map."
+    },
+    {
+      "name": "create_layouts",
+      "description": "Preview or add layouts on an existing master layout; never creates a master."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

@@ -364,6 +364,21 @@ OPERATIONS = {
         "property_receipt_id",
         "New custom properties are added; existing properties are never changed.",
     ),
+    "create_worksheets": (
+        "worksheet",
+        "worksheet_receipt_id",
+        "New empty independent worksheets go to the Project Map.",
+    ),
+    "create_details": (
+        "detail",
+        "detail_receipt_id",
+        "New empty independent details go to the Project Map.",
+    ),
+    "create_layouts": (
+        "layout",
+        "layout_receipt_id",
+        "New layouts take size and margins from their existing master layout.",
+    ),
 }
 
 

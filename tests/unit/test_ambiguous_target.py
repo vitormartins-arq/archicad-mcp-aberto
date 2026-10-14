@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    documents,
     drafting,
     edit,
     favorites,
@@ -80,6 +81,9 @@ INPUTS = {
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
     "list_property_groups": {},
+    "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
+    "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
+    "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
     "create_property_groups": {"groups": [{"name": "Obra"}]},
     "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
     "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
@@ -207,6 +211,7 @@ TARGETED = {
     for module in (
         attributes,
         classifications,
+        documents,
         drafting,
         edit,
         favorites,

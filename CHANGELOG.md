@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add worksheets, details and layouts (new `tools/documents.py`): `create_worksheets`,
+  `create_details` and `create_layouts` through Tapir 1.7.0 `CreateWorksheets`,
+  `CreateDetails` and `CreateLayout`. Layouts go on an existing master layout by its
+  Navigator ID, so a missing master is refused instead of being created. Each new
+  database is found back in the Navigator. The fake's shapes come from the Tapir source,
+  not a live capture. Not yet tested live.
+
 - Add custom property groups and properties (new `tools/property_definitions.py`):
   `list_property_groups`, `create_property_groups` and `create_properties` through Tapir
   1.7.0 `GetAllProperties`, `CreatePropertyGroups` and `CreatePropertyDefinitions`.
