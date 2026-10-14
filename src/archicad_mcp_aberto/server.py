@@ -1012,6 +1012,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         commands are refused; see docs/GATEWAY.md. Prefer the dedicated tools when one fits."""
         return await gateway.run_read_command(client_of(ctx), command, parameters, port)
 
+    @mcp.tool(annotations=WRITE)
+    async def modify_labels(
+        ctx: Context,
+        labels: list[modify.LabelModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 Text labels: text and height_mm (paper mm).
+        Tapir 1.7.0 cannot change label position/story here. Symbol labels and unsupported
+        fields are refused. Explicit port and single-use token to apply; never saves.
+        """
+        return await modify.modify_labels(client_of(ctx), labels, port, dry_run, confirmation_token)
+
     return mcp
 
 

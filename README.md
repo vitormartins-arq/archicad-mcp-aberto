@@ -103,6 +103,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `set_classifications` | Write | Classify (or unclassify) up to 100 elements, read back after apply | yes |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
+| `modify_labels` | Write | Text and paper text height of up to 50 Text labels; position changes refused | yes |
 
 ### Reported live validation
 
@@ -364,3 +365,13 @@ and open to everyone's contributions.
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 
 - `create_windows` and `create_doors` preview up to 20 openings, each with `wall_guid`, `center_offset` (metres along the wall's reference line from its start) and optional `sill_height`, `width`, `height` and `favorite_name`. Tapir 1.7.0 `CreateWindows`/`CreateDoors` take no library part name: the Window or Door tool default decides the part, or an existing favorite (checked in the preview with `GetFavoritesByType`). The preview refuses missing, non-wall, curved or polygonal, hotlinked and locked owners and offsets past the wall end. Applying checks type, story, owner wall, offset and any size or sill you gave, and reports the library part Archicad placed (with a favorite, that is the part name, not the favorite name). The exact favorite name wins; otherwise outer spaces and case are ignored, and the exact name is sent. Same token, port, receipts and timeout; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.
+
+
+- `modify_labels` edits existing Text labels with `{guid, text?, height_mm?}`. Text is
+  normalized to LF; `height_mm` is the character size in paper millimetres. Preview and
+  apply use the shared single-use confirmation, explicit port, receipts, editability
+  checks and read-back. Symbol labels and unsupported fields are refused. Tapir 1.7.0
+  `ModifyLabels` does **not** accept coordinates or a story, so this tool preserves the
+  owner and position; use a separate `move_elements` preview for movement. Text/size edits
+  can rebuild rich text as one paragraph and disable word wrap in the native command.
+  Source-derived simulation only; live validation pending.

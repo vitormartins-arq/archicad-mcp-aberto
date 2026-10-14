@@ -220,3 +220,7 @@
 - Add Object GDL parameter reads and safe scalar writes with flag/type checks and read-back verification.
 
 - Add safe limited ModifyWalls edits with shape/editability checks and requested-field verification.
+
+- Add `modify_labels`: safe Text label content and paper font-height edits through Tapir
+  1.7.0 `ModifyLabels`, with read-back and source-derived simulated coverage. Coordinates
+  and story changes are unsupported by that native command and refused. Not tested live.

@@ -386,6 +386,12 @@ OPERATIONS = {
         "Check the list before applying.",
     ),
 }
+OPERATIONS["modify_labels"] = (
+    "label edit",
+    "label_edit_receipt_id",
+    "Text and height_mm only; position is preserved. "
+    "Native edits may flatten rich text and disable word wrap.",
+)
 
 
 # operation -> (Tapir create command, list key in its parameters)

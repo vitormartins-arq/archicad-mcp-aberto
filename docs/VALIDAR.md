@@ -289,3 +289,13 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
   nome novo e as camadas dentro dela no mesmo lugar. Vale também para pastas de
   materiais (`BuildingMaterial`) e superfícies (`Surface`).
 - [ ] **Recusas.** Um nome que já existe e um nome vazio devem ser recusados na prévia.
+
+
+## Lote 7 (Codex) — T20: edição de etiquetas
+
+- [ ] Em projeto de teste autorizado, criar uma etiqueta Text e aplicar modify_labels
+  com texto de duas linhas e height_mm=3.5: prévia, aplicar, recibo verified; conferir
+  visualmente fonte/texto e que o dono, posição e andar continuam iguais.
+- [ ] Aplicar somente height_mm e conferir que o texto continua igual.
+- [ ] Posição/andar, etiqueta Symbol, bloqueada e de hotlink devem ser recusados na prévia.
+  ModifyLabels 1.7.0 não recebe coordenadas; movimento usa outra ferramenta.

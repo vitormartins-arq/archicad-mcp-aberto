@@ -79,6 +79,7 @@ MODIFY_COMMANDS = {
     "ModifyObjects": ("Object", "objectsWithDetails"),
     "ModifyRoofs": ("Roof", "roofsWithDetails"),
     "ModifyTexts": ("Text", "textsWithDetails"),
+    "ModifyLabels": ("Label", "labelsWithDetails"),
 }
 
 
@@ -1584,7 +1585,13 @@ class FakeArchicad:
                 rows.append(deepcopy(self.modify_errors[index]))
                 continue
             if self.elements.get(guid) != kind or guid in self.locked_elements:
-                rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["failures"][name]))
+                rows.append(
+                    deepcopy(
+                        MODIFY_LABELS_FIXTURE["failure"]
+                        if name == "ModifyLabels"
+                        else MODIFY_ELEMENTS_FIXTURE["failures"][name]
+                    )
+                )
                 continue
             if not self.modify_ignored:
                 row = self.details[guid]
@@ -1634,6 +1641,13 @@ class FakeArchicad:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}
+                if name == "ModifyLabels":
+                    if details.get("labelClass") != "Text":
+                        rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))
+                        continue
+                    details.setdefault("style", {}).update(changes.pop("style", {}))
+                    if "text" in changes:
+                        changes["text"] = changes["text"].replace("\r\n", "\n").replace("\r", "\n")
                 details.update(changes)
             rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["success"]))
         return ok({"addOnCommandResponse": {"executionResults": rows}})
@@ -1869,3 +1883,11 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         return httpx.Response(200, json=response)
 
     return httpx.MockTransport(handler)
+
+
+# Source-derived Tapir 1.7.0 ModifyLabels response; not captured live.
+MODIFY_LABELS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_modify_labels_documented.json").read_text(
+        encoding="utf-8"
+    )
+)

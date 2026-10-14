@@ -330,6 +330,10 @@
     {
       "name": "run_read_command",
       "description": "Run one read-only official JSON API or Tapir command from a closed list; raw response."
+    },
+    {
+      "name": "modify_labels",
+      "description": "Edit Text label content and height with preview, single-use confirmation and read-back; no position changes."
     }
   ],
   "compatibility": {

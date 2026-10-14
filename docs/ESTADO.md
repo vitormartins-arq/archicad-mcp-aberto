@@ -476,3 +476,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   (`succeeded: false`) passa a ser `failed`, não `unknown`. Os PRs #37 a #49 entraram na
   main (merge do #49 pelo Vitor); o #41 está incluído no #50 e pode ser fechado depois.
 
+
+
+## 2026-10-14 — Codex / T20 (Quem está com o quê)
+
+- Main remota 8c2d918 já inclui lote/camadas e lotes posteriores; a exceção de base antiga da FILA deixou de ser necessária. T20 em codex/t20-modify-labels, só simulado. ModifyLabels existe na tag oficial 1.7.0 (ElementCreationCommands.cpp), recebe labelsWithDetails e responde executionResults; texto/style.height aceitos, mas não coordenadas/andar. Ferramenta modify_labels até 50 etiquetas Text, texto/height_mm, recusa Symbol e campos não suportados, preserva dono/pontos/andar, prévia/token/porta/recibos e releitura. O comando nativo pode reconstruir parágrafos e desligar quebra automática. Fixture documental, não captura real. Posição fica fora desta entrega por limitação nativa; mover exige ferramenta separada. T21 e T22 seguem empilhadas, sem merge pelo Codex.
+
+- T20: 1526 testes simulados e Ruff passaram, Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.
