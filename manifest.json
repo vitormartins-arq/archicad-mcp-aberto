@@ -217,7 +217,7 @@
     },
     {
       "name": "rename_items",
-      "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes); read back."
+      "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes, layer combinations, folders); read back."
     },
     {
       "name": "find_elements",

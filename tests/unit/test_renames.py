@@ -5,7 +5,13 @@ from pydantic import ValidationError
 
 from archicad_mcp_aberto.connection import ArchicadClient
 from archicad_mcp_aberto.tools import renames
-from tests.unit.fake_archicad import FakeArchicad, fake_transport, layer_guid
+from tests.unit.fake_archicad import (
+    FakeArchicad,
+    combination_guid,
+    fake_transport,
+    folder_guid,
+    layer_guid,
+)
 
 pytestmark = pytest.mark.anyio
 VIEW_MAP = {
@@ -225,3 +231,90 @@ async def test_plan_changed_since_preview():
                 **request,
             )
     assert "CreateLayers" not in fake.tapir_calls
+
+
+async def test_layer_combinations_keep_layer_states():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(c, kind="layer_combinations", find="ETAPA", replace="FASE")
+    assert result["status"] == "verified"
+    assert [c["name"] for c in fake.layer_combinations.values()] == [
+        "0ª FASE | (3D) ARCHICAD",
+        "1ª FASE | CADASTRO",
+    ]
+    assert fake.layer_combinations[2]["layers"] == {1: {"isHidden": True}}
+    sent = next(r for r in fake.tapir_requests if r["command"] == "CreateLayerCombinations")
+    assert sent["parameters"]["layerCombinationDataArray"][0] == {
+        "attributeId": {"guid": combination_guid(1)},
+        "name": "0ª FASE | (3D) ARCHICAD",
+    }
+    assert len({i["layer_states"] for i in preview["items"]}) == 2
+
+
+async def test_layer_combination_with_reset_states_fails_verification():
+    fake = model(combination_reset_on_rename=True)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        _, result = await apply(
+            c, kind="layer_combinations", renames=[{"old": "1ª ETAPA | CADASTRO", "new": "X"}]
+        )
+    (item,) = result["items"]
+    assert item["status"] == "verification_failed" and item["mismatches"] == ["layer_states"]
+
+
+async def test_attribute_folders():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(
+            c,
+            kind="attribute_folders",
+            scope="layer",
+            renames=[
+                {"old": "ANOTAÇÃO", "new": "ANOTAÇÕES"},
+                {"old": "ANT - Antigo", "new": "ANT"},
+            ],
+        )
+        with pytest.raises(ValueError, match="start or end"):
+            await renames.rename_items(
+                c, "attribute_folders", find="ESTRUTURA", replace="ESTRUTURA ", scope="Layer"
+            )
+        with pytest.raises(ValueError, match="Two attribute_folders"):
+            await renames.rename_items(
+                c, "attribute_folders", find="ESTRUTURA", replace="ANOTAÇÕES", scope="Layer"
+            )
+        with pytest.raises(ValueError, match="No attribute_folders named"):
+            await renames.rename_items(  # the root folder is not renamed
+                c, "attribute_folders", renames=[{"old": "Camadas", "new": "X"}], scope="Layer"
+            )
+    assert result["status"] == "verified"
+    assert [i["where"] for i in preview["items"]] == ["", "/ARQUITETURA"]
+    request = next(r for r in fake.command_requests if r["command"] == "API.RenameAttributeFolders")
+    assert request["parameters"]["attributeFolderParametersList"][0] == {
+        "attributeFolderId": {"guid": folder_guid(1)},
+        "newName": "ANOTAÇÕES",
+    }
+    root = fake.attribute_folders["Layer"]
+    assert root["name"] == "Camadas"
+    assert [f["attributeFolder"]["name"] for f in root["subfolders"]] == [
+        "ANOTAÇÕES",
+        "ARQUITETURA",
+        "ESTRUTURA",
+    ]
+    for bad in (
+        {"kind": "attribute_folders", "find": "A", "replace": "B"},
+        {"kind": "attribute_folders", "find": "A", "replace": "B", "scope": "Wall"},
+    ):
+        with pytest.raises(ValidationError):
+            await renames.rename_items(None, **bad)
+
+
+async def test_attribute_folders_failed_and_lost():
+    fake = model(rename_errors={1: {"code": -1, "message": "no"}})
+    request = {"kind": "attribute_folders", "find": "A", "replace": "B", "scope": "Layer"}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        _, result = await apply(c, **request)
+    assert [i["status"] for i in result["items"]] == ["verified", "failed", "verified", "verified"]
+    fake = model(lose_rename_response=True)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        _, result = await apply(c, **request)
+    assert {i["status"] for i in result["items"]} == {"unknown"}
+    assert "Never retry" in result["warning"]

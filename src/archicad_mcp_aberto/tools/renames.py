@@ -3,20 +3,30 @@
 One call renames one kind of item, either by find and replace on the names or by a list
 of exact old -> new names. Kinds: Navigator items (View Map, Project Map, Layout Book),
 favorites, classification systems and items, custom property groups and properties,
-building materials, surfaces and layers. Every item keeps its GUID, so elements that use
-it follow the new name. Renamed View Map items get a custom name, as in Archicad. Model
-View Options and Graphic Overrides have no Tapir 1.7.0 command, so they are not here.
+building materials, surfaces, layers, layer combinations, and attribute folders (the
+folders of the layer, material, surface... dialogs; official JSON API). Every item keeps
+its GUID, so elements that use it follow the new name. A renamed layer combination keeps
+every layer's state, which is read back. Renamed View Map items get a custom name, as in
+Archicad. Model View Options and Graphic Overrides have no Tapir 1.7.0 command, so they
+are not here.
 Uses the shared preview, single-use token and receipts, and reads every name back.
 Never saves.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Annotated, Any, Literal
 
 from pydantic import Field, model_validator
 
-from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, TapirError
+from archicad_mcp_aberto.connection import (
+    ArchicadClient,
+    ArchicadError,
+    CommandFailed,
+    TapirError,
+)
 from archicad_mcp_aberto.tools import classifications, documents, drafting, write
 from archicad_mcp_aberto.tools import favorites as favorites_tool
 from archicad_mcp_aberto.tools import property_definitions as pd
@@ -33,7 +43,19 @@ ATTRIBUTES = {
     ),
     "surfaces": ("Surface", "CreateSurfaces", "surfaceDataArray"),
     "layers": ("Layer", "CreateLayers", "layerDataArray"),
+    # Tapir 1.7.0 seeds an overwritten combination from its own layer table, so a name-only
+    # call keeps every layer's state; _layer_states checks that it did.
+    "layer_combinations": (
+        "LayerCombination",
+        "CreateLayerCombinations",
+        "layerCombinationDataArray",
+    ),
 }
+# Attribute types with folders (official JSON API, AC27+), for kind attribute_folders.
+FOLDER_TYPES = (
+    "Layer", "LayerCombination", "BuildingMaterial", "Surface", "Composite", "Fill", "Line",
+    "PenTable", "Profile", "ZoneCategory", "MEPSystem", "OperationProfile",
+)  # fmt: skip
 # Element types whose favorites are searched (the tools a template keeps favorites for).
 FAVORITE_TYPES = (
     "Wall", "Column", "Beam", "Window", "Door", "Object", "Lamp", "Slab", "Roof", "Mesh",
@@ -53,6 +75,8 @@ Kind = Literal[
     "building_materials",
     "surfaces",
     "layers",
+    "layer_combinations",
+    "attribute_folders",
 ]
 
 
@@ -66,7 +90,8 @@ class RenameRequest(write.InputModel):
     renames: Annotated[list[Rename], Field(min_length=1, max_length=MAX_RENAMES)] | None = None
     find: Text | None = None
     replace: Annotated[str, Field(max_length=255)] | None = None
-    scope: Text | None = None  # classification system, property group or favorite type
+    # classification system, property group, favorite type or folder attribute type
+    scope: Text | None = None
 
     @model_validator(mode="after")
     def one_way(self):
@@ -80,12 +105,26 @@ class RenameRequest(write.InputModel):
                 raise ValueError("Each old name may appear only once.")
         if any(not r.new.strip() for r in self.renames or []):
             raise ValueError("A new name must not be blank.")
-        if self.scope is not None and self.kind not in (
+        if self.kind == "attribute_folders":
+            if self.scope is None:
+                raise ValueError(
+                    f"attribute_folders needs scope, the attribute type: {', '.join(FOLDER_TYPES)}."
+                )
+            folder_type = next(
+                (t for t in FOLDER_TYPES if t.casefold() == self.scope.casefold()), None
+            )
+            if folder_type is None:
+                raise ValueError(f"Unknown folder attribute type {self.scope!r}.")
+            self.scope = folder_type
+        elif self.scope is not None and self.kind not in (
             "classification_items",
             "properties",
             "favorites",
         ):
-            raise ValueError("scope is only for classification_items, properties and favorites.")
+            raise ValueError(
+                "scope is only for classification_items, properties, favorites and "
+                "attribute_folders."
+            )
         return self
 
 
@@ -100,6 +139,56 @@ def _nav_rows(node: Any, depth: int, path: str, out: list[dict]) -> list[dict]:
     for child in children:
         item = child.get("navigatorItem") if isinstance(child, dict) else None
         _nav_rows(item, depth + 1, f"{path}/{name}" if depth > 0 else "", out)
+    return out
+
+
+def _folder_rows(node: Any, depth: int, path: str, out: list[dict]) -> list[dict]:
+    if not isinstance(node, dict):
+        return out
+    guid = documents._guid(node.get("attributeFolderId"))
+    name = node.get("name")
+    if guid and depth > 0 and isinstance(name, str):  # the root folder is not renamed
+        out.append({"key": guid, "fields": {"name": name}, "where": path})
+    subfolders = node.get("subfolders") if isinstance(node.get("subfolders"), list) else []
+    for child in subfolders:
+        folder = child.get("attributeFolder") if isinstance(child, dict) else None
+        _folder_rows(folder, depth + 1, f"{path}/{name}" if depth > 0 else "", out)
+    return out
+
+
+async def _layer_states(client, port, keys: list[str], timeout=None) -> dict[str, str]:
+    """Combination GUID -> digest of its layers' states (hidden, locked, wire, group)."""
+    if not keys:
+        return {}
+    extra = {} if timeout is None else {"timeout": timeout}
+    raw = await client.tapir(
+        port,
+        "GetLayerCombinations",
+        {"attributes": [{"attributeId": {"guid": k}} for k in keys]},
+        **extra,
+    )
+    rows = _rows_of(raw, "layerCombinations", len(keys))
+    out = {}
+    for key, row in zip(keys, rows, strict=True):
+        combination = row.get("layerCombination") if isinstance(row, dict) else None
+        layers = combination.get("layers") if isinstance(combination, dict) else None
+        if not isinstance(layers, list):
+            raise ValueError(f"Could not read the layers of layer combination {key}.")
+        states = sorted(
+            json.dumps(
+                {
+                    "layer": documents._guid(layer.get("attributeId")),
+                    **{
+                        f: layer.get(f)
+                        for f in ("isHidden", "isLocked", "isWireframe", "intersectionGroupNr")
+                    },
+                },
+                sort_keys=True,
+            )
+            for layer in layers
+            if isinstance(layer, dict)
+        )
+        out[key] = hashlib.sha256("\n".join(states).encode()).hexdigest()
     return out
 
 
@@ -160,6 +249,14 @@ async def _catalog(client, port, request: RenameRequest, timeout=None) -> list[d
             for p in props
             if pd._gid(p, "propertyGroupId") in custom and pd._gid(p, "propertyId")
         ]
+    if kind == "attribute_folders":
+        response = await client.command(
+            port, "GetAttributeFolderStructure", {"attributeType": request.scope}, **extra
+        )
+        root = response.get("attributeFolder")
+        if not isinstance(root, dict):
+            raise ValueError(f"Unexpected {request.scope} folder structure response.")
+        return _folder_rows(root, 0, "", [])
     attribute_type = ATTRIBUTES[kind][0]
     rows = await drafting._attributes(client, port, attribute_type)
     return [
@@ -173,8 +270,8 @@ def _unique_scope(kind: str, row: dict) -> str | None:
     """Names must stay unique within this scope (None: duplicates are allowed)."""
     if kind in NAVIGATOR:
         return None
-    if kind in ("classification_items", "properties"):
-        return str(row["where"])
+    if kind in ("classification_items", "properties", "attribute_folders"):
+        return str(row["where"])  # within a system, a group or a parent folder
     return ""
 
 
@@ -191,6 +288,8 @@ def _parameters(kind: str, key: str, new: dict) -> dict:
         return {"propertyGroupId": {"guid": key}, **new}
     if kind == "properties":
         return {"propertyId": {"guid": key}, **new}
+    if kind == "attribute_folders":
+        return {"attributeFolderId": {"guid": key}, "newName": new["name"]}
     return {"attributeId": {"guid": key}, **new}
 
 
@@ -215,6 +314,8 @@ async def _plan(client, requests, port, operation):
             continue
         if any(not v.strip() for v in new.values()):
             raise ValueError(f"{row['fields']} would get a blank name.")
+        if request.kind == "attribute_folders" and new["name"] != new["name"].strip():
+            raise ValueError(f"Folder name {new['name']!r} must not start or end with a space.")
         items.append(
             {
                 "index": len(items),
@@ -246,7 +347,14 @@ async def _plan(client, requests, port, operation):
         if key in seen and seen[key] != row["key"]:
             raise ValueError(f"Two {request.kind} would be named {fields[field]!r}.")
         seen[key] = row["key"]
-    return {"operation": operation, "kind": request.kind, "target": target, "items": items}
+    if request.kind == "layer_combinations":
+        states = await _layer_states(client, port, [i["key"] for i in items])
+        for item in items:
+            item["layer_states"] = states[item["key"]]
+    plan = {"operation": operation, "kind": request.kind, "target": target, "items": items}
+    if request.scope is not None:
+        plan["scope"] = request.scope
+    return plan
 
 
 def _rows_of(raw: Any, key: str, count: int) -> list:
@@ -297,6 +405,28 @@ async def _send(client, receipt, items) -> None:
             item["write_response"] = row
             _outcome(item, row)
         return
+    if kind == "attribute_folders":  # official JSON API: a refused call raises CommandFailed
+        try:
+            raw = await client.command(
+                port,
+                "RenameAttributeFolders",
+                {"attributeFolderParametersList": [i["parameters"] for i in items]},
+                timeout=timeout,
+            )
+            rows = _rows_of(raw, "executionResults", len(items))
+        except CommandFailed as exc:
+            for item in items:
+                item.update(status="failed", error=exc.detail or str(exc))
+            return
+        except (ArchicadError, ValueError) as exc:
+            for item in items:
+                item.update(status="unknown", error=str(exc))
+            receipt["warning"] = "Outcome unknown; inspect Archicad. Never retry this token."
+            return
+        for item, row in zip(items, rows, strict=True):
+            item["write_response"] = row
+            _outcome(item, row)
+        return
     if kind in batch:
         command, list_key, answer_key = batch[kind]
         payload: dict = {list_key: [i["parameters"] for i in items]}
@@ -341,11 +471,14 @@ async def _dispatch(client, receipt):
     sent = [i for i in items if i["status"] == "unverified"]
     if not sent:
         return
-    request = RenameRequest(kind=receipt["kind"], find="-", replace="")  # catalog scope only
+    # catalog scope only; find/replace are placeholders
+    request = RenameRequest(kind=receipt["kind"], find="-", replace="", scope=receipt.get("scope"))
+    port, timeout = receipt["target"]["port"], receipt["write_timeout_seconds"]
     try:
-        rows = await _catalog(
-            client, receipt["target"]["port"], request, receipt["write_timeout_seconds"]
-        )
+        rows = await _catalog(client, port, request, timeout)
+        states = {}
+        if receipt["kind"] == "layer_combinations":
+            states = await _layer_states(client, port, [i["key"] for i in sent], timeout)
     except (ArchicadError, ValueError) as exc:
         receipt["verification_error"] = str(exc)
         return
@@ -360,6 +493,8 @@ async def _dispatch(client, receipt):
                 problems.append(field)
         if receipt["kind"] == "favorites" and item["key"] in by_key:
             problems.append("old_name_still_exists")
+        if "layer_states" in item and states.get(item["key"]) != item["layer_states"]:
+            problems.append("layer_states")
         item["status"] = "verification_failed" if problems else "verified"
         if problems:
             item["mismatches"] = problems

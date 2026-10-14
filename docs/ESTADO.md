@@ -448,3 +448,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   linha ficaram de fora porque o `Create*` deles mexe na definição (attributeDef) e
   poderia apagar o desenho do atributo. 1490 testes simulados e Ruff passaram. Falta o
   teste ao vivo (lote 13 do VALIDAR).
+
+- **Claude / lote 13, complemento de 14/10/2026:** o Vitor mandou um print: "vegetais"
+  é a tela de Camadas no ArchiCAD BRA dele (Definições dos Vegetais, com pastas e
+  Combinação de Vegetais). Camadas já estavam no `rename_items`. Entraram
+  `layer_combinations` (Tapir `CreateLayerCombinations` com `overwriteExisting` e só o
+  nome; o código 1.7.0 semeia a tabela da combinação existente, e o MCP compara um hash
+  dos estados de cada camada antes e depois) e `attribute_folders` (API oficial
+  `GetAttributeFolderStructure` e `RenameAttributeFolders`, AC27+, `scope` = tipo do
+  atributo; a raiz não é renomeada). Formas do fake tiradas do código da tag 1.7.0 e do
+  pacote `archicad` 30.3000, não capturadas ao vivo. 1494 testes simulados e Ruff
+  passaram. O Vitor perguntou sobre fazer um plugin próprio: recomendei levar os comandos
+  que faltam (OVM, Sobreposição Gráfica e regras) ao Tapir upstream, conforme o AGENTS.md.
