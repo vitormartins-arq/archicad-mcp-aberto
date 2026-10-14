@@ -177,3 +177,15 @@ Faça na planta do térreo, numa área vazia.
 - [ ] **apply_favorites.** "Aplique o favorito <nome> à parede de teste." Esperado:
   `unverified` (o MCP não lê o favorito) e a parede com as configurações do favorito sem
   mudar de lugar. Um favorito de laje numa parede deve ser recusado na prévia.
+
+## Lote 9: travar elementos e atualizar zonas
+
+- [ ] **lock_elements.** "Trave a parede de teste." Esperado: `verified`; no ArchiCAD a
+  parede aparece com o cadeado (Editar > Travar) e não deixa mover. Pedir de novo deve
+  ser recusado na prévia.
+- [ ] **unlock_elements.** "Destrave a parede." Esperado: `verified` e a parede volta a
+  mover. Com a camada da parede travada, a prévia deve recusar ("locked layer").
+- [ ] **update_zones.** Mova uma parede que limita a zona de teste e peça "Atualize as
+  zonas." Esperado: `unverified` com a mesma contagem de zonas antes e depois, e a área
+  da zona e o carimbo atualizados na planta. Conte se o carimbo ficou no lugar
+  (`keep_stamp_position` padrão).

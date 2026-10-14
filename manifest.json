@@ -180,6 +180,18 @@
       "description": "Preview or apply favorites by name to editable elements; settings only, never geometry."
     },
     {
+      "name": "lock_elements",
+      "description": "Preview or lock elements (manual lock, not Teamwork); editability read back."
+    },
+    {
+      "name": "unlock_elements",
+      "description": "Preview or unlock locked elements that are not on a locked layer; editability read back."
+    },
+    {
+      "name": "update_zones",
+      "description": "Preview or run Update Zones on every zone of the project; never saves."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

@@ -115,6 +115,13 @@ PROJECT_INFO_FIXTURE = json.loads(
     ).read_text(encoding="utf-8")
 )
 
+# LockElements, UnlockElements and UpdateZones; source-derived, not live captured.
+LOCKS_ZONES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_locks_zones_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
 
 def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
@@ -193,6 +200,15 @@ class FakeArchicad:
     applied_favorites: dict[str, list[str]] = field(default_factory=dict)
     favorite_layers: dict[str, int] = field(default_factory=dict)  # favorite -> layer index
     lose_favorite_response: bool = False
+    # LockElements/UnlockElements: refuse the whole batch, answer success without
+    # changing anything, or lose the answer after acting.
+    lock_refused: bool = False
+    lock_ignored: bool = False
+    lose_lock_response: bool = False
+    # UpdateZones requests received, and how the next one answers.
+    zone_updates: list[dict] = field(default_factory=list)
+    zone_update_refused: bool = False
+    lose_zone_update_response: bool = False
     lose_slab_response: bool = False
     lose_zone_response: bool = False
     lose_beam_response: bool = False
@@ -385,6 +401,10 @@ class FakeArchicad:
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
 
+    def _on_locked_layer(self, guid: str) -> bool:
+        layer = self.details.get(guid, {}).get("layerIndex")
+        return self.layer_flags.get(layer, {}).get("isLocked") is True
+
     def _tapir(self, params: dict) -> dict:
         if self.tapir_version is None:
             return fail(4010, "Add-On command is not registered")
@@ -503,6 +523,23 @@ class FakeArchicad:
                 self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name in ("LockElements", "UnlockElements"):
+            guids = [e["elementId"]["guid"] for e in args["elements"]]
+            if self.lock_refused or any(g not in self.elements for g in guids):
+                key = "lock_failed" if name == "LockElements" else "unlock_failed"
+                return ok({"addOnCommandResponse": deepcopy(LOCKS_ZONES_FIXTURE[key])})
+            if not self.lock_ignored:
+                if name == "LockElements":
+                    self.locked_elements.update(guids)
+                else:
+                    self.locked_elements.difference_update(guids)
+            return ok({"addOnCommandResponse": deepcopy(LOCKS_ZONES_FIXTURE["execution_ok"])})
+        if name == "UpdateZones":
+            if self.zone_update_refused:
+                failed = LOCKS_ZONES_FIXTURE["update_zones_failed"]
+                return ok({"addOnCommandResponse": deepcopy(failed)})
+            self.zone_updates.append(deepcopy(args))
+            return ok({"addOnCommandResponse": deepcopy(LOCKS_ZONES_FIXTURE["execution_ok"])})
         if name == "GetLayers":
             by_guid = {layer_guid(i): i for i, n in self.layers.items() if n is not None}
             out = []
@@ -606,6 +643,7 @@ class FakeArchicad:
                             for e in args["elements"]
                             if e["elementId"]["guid"] in self.elements
                             and e["elementId"]["guid"] not in self.locked_elements
+                            and not self._on_locked_layer(e["elementId"]["guid"])
                         ]
                     }
                 }
@@ -1273,6 +1311,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
         if instance.lose_favorite_response and command == "ApplyFavoritesToElements":
             raise httpx.ReadTimeout("Injected lost favorite response", request=request)
+        if instance.lose_lock_response and command in ("LockElements", "UnlockElements"):
+            raise httpx.ReadTimeout("Injected lost lock response", request=request)
+        if instance.lose_zone_update_response and command == "UpdateZones":
+            raise httpx.ReadTimeout("Injected lost zone update response", request=request)
         if instance.lose_group_response and command == "CreateGroups":
             raise httpx.ReadTimeout("Injected lost group response", request=request)
         if instance.lose_label_response and command == "CreateLabels":

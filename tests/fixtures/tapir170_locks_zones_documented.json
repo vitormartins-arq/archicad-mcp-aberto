@@ -1,0 +1,9 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/ElementCommands.cpp (LockElementsCommand, UnlockElementsCommand, UpdateZonesCommand), compared with the 1.7.0 tag on GitHub",
+ "note": "Shapes read in the source, synthetic values and error codes, not live capture. Each command answers one ExecutionResult for the whole call."},
+ "execution_ok": {"success": true},
+ "lock_failed": {"success": false, "error": {"code": -2130313112, "message": "Failed to lock elements."}},
+ "unlock_failed": {"success": false, "error": {"code": -2130313112, "message": "Failed to unlock elements."}},
+ "update_zones_failed": {"success": false, "error": {"code": -2130313112, "message": "Failed to update zones."}}
+}

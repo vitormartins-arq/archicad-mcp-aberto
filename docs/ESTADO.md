@@ -380,3 +380,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   configurações do favorito), então os itens ficam `unverified`. Fixture
   `tapir170_project_info_favorites_documented.json`, não é captura ao vivo. 1352 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 9 na nuvem, 14/10/2026:** branch `lote/bloqueio-zonas`, empilhada no
+  lote 8. `tools/locks.py` (`lock_elements`, `unlock_elements`) e `tools/zones.py`
+  (`update_zones`), pelos comandos do Tapir 1.7.0 lidos no código e conferidos na tag
+  1.7.0 (`LockElements`, `UnlockElements`, `UpdateZones`). Achados no código: os três
+  respondem um só resultado para o lote inteiro, então o MCP relê a editabilidade de
+  cada elemento (`FilterElements` `IsEditable`); se o Tapir disser que falhou e mesmo
+  assim um elemento mudou, esse item fica `unknown`. `UpdateZones` não escolhe zonas:
+  atualiza todas. O ArchiCAD simulado agora trata elemento em camada travada como não
+  editável. Fixture `tapir170_locks_zones_documented.json`, não é captura ao vivo. 1386
+  testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

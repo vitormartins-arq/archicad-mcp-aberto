@@ -16,6 +16,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     labels,
     layers,
+    locks,
     modify,
     openings,
     project_info,
@@ -24,6 +25,7 @@ from archicad_mcp_aberto.tools import (
     selection,
     texts,
     write,
+    zones,
 )
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
 from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
@@ -73,6 +75,9 @@ INPUTS = {
     "get_element_groups": {"element_guids": [GUID]},
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
+    "lock_elements": {"element_guids": [GUID]},
+    "unlock_elements": {"element_guids": [GUID]},
+    "update_zones": {},
     "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
     "create_lines": {
         "lines": [{"start": {"x": 0, "y": 0}, "end": {"x": 1, "y": 0}, "floor_index": 0}]
@@ -204,6 +209,7 @@ TARGETED = {
         gateway,
         labels,
         layers,
+        locks,
         modify,
         openings,
         project_info,
@@ -212,6 +218,7 @@ TARGETED = {
         selection,
         texts,
         write,
+        zones,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
@@ -302,6 +309,12 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "apply_favorites":
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]
+    if name == "unlock_elements":
+        for instance in (first, second):
+            instance.locked_elements.add(GUID)
+    if name == "update_zones":
+        for instance in (first, second):
+            instance.elements[PROP] = "Zone"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -314,7 +327,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
-    extra = {PROP: "Wall"} if name == "create_groups" else {}
+    extra = {"create_groups": {PROP: "Wall"}, "update_zones": {PROP: "Zone"}}.get(name, {})
     assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 

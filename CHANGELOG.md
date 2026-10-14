@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add locking and Update Zones (new `tools/locks.py` and `tools/zones.py`):
+  `lock_elements`, `unlock_elements` and `update_zones` through Tapir 1.7.0
+  `LockElements`, `UnlockElements` and `UpdateZones`. Lock and unlock read every
+  element's editability back with `FilterElements`; unlock refuses elements on a locked
+  layer. `update_zones` recalculates every zone and stays unverified. The fake's shapes
+  come from the Tapir source, not a live capture, and its `FilterElements` now treats
+  elements on a locked layer as not editable. Not yet tested live.
+
 - Add Project Info and favorites (new `tools/project_info.py` and `tools/favorites.py`):
   `get_project_info_fields`, `set_project_info_fields`, `list_favorites` and
   `apply_favorites` through Tapir 1.7.0 `GetProjectInfoFields`, `SetProjectInfoField`,

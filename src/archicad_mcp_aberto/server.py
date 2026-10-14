@@ -16,6 +16,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    locks,
     modify,
     openings,
     project_info,
@@ -27,6 +28,7 @@ from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
+from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -416,6 +418,62 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Requires Tapir. Never saves."""
         return await favorites.apply_favorites(
             client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def lock_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview locking up to 100 elements (Edit > Locking; manual lock, not Teamwork).
+        Missing, hotlinked or already locked elements are refused. Apply identical inputs
+        with explicit port and single-use token; editability is read back. Requires Tapir.
+        Never saves."""
+        return await locks.lock_elements(
+            client_of(ctx), element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def unlock_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview unlocking up to 100 locked elements (manual lock, not Teamwork).
+        Elements that are already editable or sit on a locked layer are refused. Apply
+        identical inputs with explicit port and single-use token; editability is read
+        back. Requires Tapir. Never saves."""
+        return await locks.unlock_elements(
+            client_of(ctx), element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def update_zones(
+        ctx: Context,
+        port: int | None = None,
+        keep_stamp_position: bool = True,
+        undo_top_trim: bool = False,
+        undo_bottom_trim: bool = False,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview Update Zones: recalculates every zone of the project (geometry, stamps,
+        connected elements); there is no per-zone choice. Apply identical inputs with
+        explicit port and single-use token. Zones are counted before and after; check
+        areas in Archicad. Requires Tapir. Never saves."""
+        return await zones_tool.update_zones(
+            client_of(ctx),
+            port,
+            keep_stamp_position,
+            undo_top_trim,
+            undo_bottom_trim,
+            dry_run,
+            confirmation_token,
         )
 
     @mcp.tool(annotations=READ_ONLY)

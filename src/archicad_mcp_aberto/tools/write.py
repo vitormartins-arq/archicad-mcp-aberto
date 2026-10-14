@@ -339,6 +339,21 @@ OPERATIONS = {
         "label_receipt_id",
         "New labels take font and style from the Label tool default.",
     ),
+    "lock_elements": (
+        "lock",
+        "lock_receipt_id",
+        "Manual lock (Edit > Locking), not Teamwork; each element's editability is read back.",
+    ),
+    "unlock_elements": (
+        "unlock",
+        "unlock_receipt_id",
+        "Manual unlock, not Teamwork; each element's editability is read back.",
+    ),
+    "update_zones": (
+        "zone update",
+        "zone_update_receipt_id",
+        "Recalculates every zone of the project; check areas and stamps in Archicad.",
+    ),
 }
 
 
@@ -1446,6 +1461,8 @@ NAMED_PREVIEWS = {
     "modify_texts",
     "create_windows",
     "create_doors",
+    "lock_elements",
+    "unlock_elements",
 }
 
 
