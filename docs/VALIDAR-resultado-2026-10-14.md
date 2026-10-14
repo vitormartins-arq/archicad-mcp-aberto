@@ -191,4 +191,7 @@ Mesmo ambiente: ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto sem nome na por
   ... path '#/layerCombinationDataArray/0'"; os nomes não mudaram. O schema de
   `CreateLayerCombinations` exige `layers`. Correção: manda `layers: []` e trata a recusa
   da chamada como `failed`. Falta refazer ao vivo.
+- Refeito com `f95398b`: as 4 combinações deram `verified` ("03 Projeto Executivo - ..." →
+  "03 PE - ..."), sem mudança no estado de nenhuma camada e sem outra diferença nos
+  atributos. Renomear superfície agora é recusado com a explicação.
 
