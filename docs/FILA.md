@@ -48,7 +48,7 @@ existe, para o merge ficar simples.
   "Lote 7 (Codex)".
 - **T21 incidências, branch `codex/t21-issues`.** Arquivo novo `tools/issues.py`:
   `list_issues` (leitura, `GetIssues`), `create_issues` (escrita, `CreateIssue`, até 20,
-  nome e texto) e `attach_elements_to_issue` (escrita, `AttachElementsToIssue`, por GUID
+  `name` e `tagText` opcional) e `attach_elements_to_issue` (escrita, `AttachElementsToIssue`, por GUID
   da incidência e dos elementos; recuse elemento inexistente na prévia). Leia
   `IssueCommands.cpp` do Tapir 1.7.0. Escrita no padrão da regra 6, conferindo com
   `GetIssues` e `GetElementsAttachedToIssue`. Nada de BCF, nada de apagar.
