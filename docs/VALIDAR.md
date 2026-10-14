@@ -150,3 +150,16 @@ Faça na planta do térreo, numa área vazia.
 - [ ] **Elemento em camada travada.** Peça para mover um elemento que esteja na camada
   'MCP Travada'. Esperado: recusado na prévia como não editável.
 
+## Lote 7: seleção, destaque e grupos
+
+- [ ] **select_elements.** "Selecione as duas paredes de teste." Esperado: as duas
+  ficam selecionadas na planta e `verified`. Depois "Tire uma da seleção" e "Limpe a
+  seleção". Conte se a seleção apareceu na hora ou só depois de clicar na janela.
+- [ ] **highlight_elements.** "Destaque a laje de teste em azul." Esperado: a laje em
+  azul na planta e no 3D. Depois "Limpe o destaque". Conte se o destaque some sozinho
+  ao mudar de vista.
+- [ ] **create_groups.** "Agrupe as duas paredes de teste." Esperado: `verified`; ao
+  clicar numa parede, as duas vêm juntas. Pedir de novo deve ser recusado na prévia
+  ("Already in a group").
+- [ ] **get_element_groups.** "Em que grupo está a parede?" Esperado: o GUID do grupo e
+  as duas paredes; um elemento sem grupo vem com `null`.

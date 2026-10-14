@@ -102,6 +102,13 @@ LAYERS_FIXTURE = json.loads(
 )
 
 
+SELECTION_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_selection_groups_documented.json"
+    ).read_text(encoding="utf-8")
+)
+
+
 def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
 
@@ -163,6 +170,12 @@ class FakeArchicad:
     layer_move_errors: dict[int, dict] = field(default_factory=dict)
     layer_move_ignored: bool = False
     lose_layer_response: bool = False
+    # group guid -> member element guids; highlight is the last HighlightElements request.
+    groups: dict[str, list[str]] = field(default_factory=dict)
+    group_create_errors: dict[int, dict] = field(default_factory=dict)
+    lose_group_response: bool = False
+    select_refused: set[str] = field(default_factory=set)
+    highlight: dict | None = None
     lose_slab_response: bool = False
     lose_zone_response: bool = False
     lose_beam_response: bool = False
@@ -391,6 +404,59 @@ class FakeArchicad:
                 for index, name in self.layers.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "ChangeSelectionOfElements":
+            added, removed = [], []
+            for row in args.get("addElementsToSelection", []):
+                guid = row["elementId"]["guid"]
+                if guid in self.select_refused or guid not in self.elements:
+                    added.append(deepcopy(SELECTION_FIXTURE["select_failed"]))
+                    continue
+                if guid not in self.selection:
+                    self.selection.append(guid)
+                added.append(deepcopy(SELECTION_FIXTURE["execution_ok"]))
+            for row in args.get("removeElementsFromSelection", []):
+                guid = row["elementId"]["guid"]
+                if guid in self.selection:
+                    self.selection.remove(guid)
+                removed.append(deepcopy(SELECTION_FIXTURE["execution_ok"]))
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "executionResultsOfAddToSelection": added,
+                        "executionResultsOfRemoveFromSelection": removed,
+                    }
+                }
+            )
+        if name == "HighlightElements":
+            self.highlight = deepcopy(args)
+            return ok({"addOnCommandResponse": deepcopy(SELECTION_FIXTURE["execution_ok"])})
+        if name == "GetGroupsOfElements":
+            holder = {m: g for g, members in self.groups.items() for m in members}
+            out = [
+                {"groupId": {"guid": holder[e["elementId"]["guid"]]}}
+                if e["elementId"]["guid"] in holder
+                else deepcopy(SELECTION_FIXTURE["not_in_group"])
+                for e in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name == "GetElementsOfGroups":
+            out = [
+                {"elements": [self._id(m) for m in self.groups[g["groupId"]["guid"]]]}
+                if g["groupId"]["guid"] in self.groups
+                else deepcopy(SELECTION_FIXTURE["group_missing"])
+                for g in args["groups"]
+            ]
+            return ok({"addOnCommandResponse": {"elementsOfGroups": out}})
+        if name == "CreateGroups":
+            out = []
+            for position, group in enumerate(args["elementGroups"]):
+                if position in self.group_create_errors:
+                    out.append(deepcopy(self.group_create_errors[position]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
+                out.append({"groupId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"groupGuids": out}})
         if name == "GetLayers":
             by_guid = {layer_guid(i): i for i, n in self.layers.items() if n is not None}
             out = []
@@ -1157,6 +1223,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost drafting response", request=request)
         if instance.lose_layer_response and command in ("CreateLayers", "SetDetailsOfElements"):
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
+        if instance.lose_group_response and command == "CreateGroups":
+            raise httpx.ReadTimeout("Injected lost group response", request=request)
         if instance.lose_label_response and command == "CreateLabels":
             raise httpx.ReadTimeout("Injected lost label response", request=request)
         if instance.lose_classification_response and (

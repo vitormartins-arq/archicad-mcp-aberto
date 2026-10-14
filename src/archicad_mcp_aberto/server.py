@@ -23,6 +23,7 @@ from archicad_mcp_aberto.tools import (
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 
 INSTRUCTIONS = """\
@@ -43,6 +44,13 @@ Archicad MCP (read tools and safe wall and slab creation).
 """
 
 READ_ONLY = {"readOnlyHint": True, "openWorldHint": False}
+# Changes only what the user sees (selection, highlight), never the model.
+VIEW = {
+    "readOnlyHint": False,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": False,
+}
 WRITE = {
     "readOnlyHint": False,
     "destructiveHint": True,
@@ -310,6 +318,57 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         is read back. Requires Tapir. Never saves."""
         return await layers_tool.set_element_layers(
             client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=VIEW)
+    async def select_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        mode: Literal["replace", "add", "remove"] = "replace",
+    ) -> dict:
+        """Change the selection in Archicad: replace (an empty list clears it), add or
+        remove up to 100 elements. Does not change the model; reports what ended selected.
+        Requires Tapir."""
+        return await selection_tool.select_elements(client_of(ctx), element_guids, port, mode)
+
+    @mcp.tool(annotations=VIEW)
+    async def highlight_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        color: list[int] | None = None,
+        wireframe_3d: bool | None = None,
+    ) -> dict:
+        """Highlight up to 100 elements in one color [r, g, b] or [r, g, b, a] (0-255,
+        default red); an empty list clears the highlight. wireframe_3d shows the rest as
+        wireframe in 3D. Does not change the model. Requires Tapir."""
+        return await selection_tool.highlight_elements(
+            client_of(ctx), element_guids, port, color, wireframe_3d
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_groups(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """For up to 100 elements: the group that directly holds each one (null when
+        ungrouped) and the members of those groups. Requires Tapir."""
+        return await selection_tool.get_element_groups(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_groups(
+        ctx: Context,
+        groups: list[selection_tool.GroupCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview grouping elements: up to 20 groups, each with 2 or more element_guids
+        (100 in all). Elements already in a group, locked or missing are refused. Apply
+        identical inputs with explicit port and single-use token; each group's members
+        are read back. Requires Tapir. Never saves."""
+        return await selection_tool.create_groups(
+            client_of(ctx), groups, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

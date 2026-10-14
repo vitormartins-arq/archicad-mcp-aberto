@@ -1,0 +1,10 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/ElementCommands.cpp (ChangeSelectionOfElementsCommand, HighlightElementsCommand) and ElementGroupingCommands.cpp (CreateGroupsCommand, GetGroupsOfElementsCommand, GetElementsOfGroupsCommand)",
+ "note": "Shapes read in the source, synthetic values and error codes, not live capture."},
+ "execution_ok": {"success": true},
+ "select_failed": {"success": false, "error": {"code": -2130313112, "message": "Failed to add to selection"}},
+ "not_in_group": {"error": {"code": -2130313215, "message": "The element is not part of any group."}},
+ "group_missing": {"error": {"code": -2130313112, "message": "Failed to get the elements of the group."}},
+ "created": {"groupId": {"guid": "55555555-5555-4555-8555-000000000001"}}
+}

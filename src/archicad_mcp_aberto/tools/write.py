@@ -319,6 +319,11 @@ OPERATIONS = {
         "layer_change_receipt_id",
         "Each element moves to its layer and is read back after.",
     ),
+    "create_groups": (
+        "group",
+        "group_receipt_id",
+        "Each new group is read back; ungroup in Archicad to undo.",
+    ),
     "create_labels": (
         "label",
         "label_receipt_id",

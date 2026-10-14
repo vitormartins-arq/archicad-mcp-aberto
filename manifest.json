@@ -148,6 +148,22 @@
       "description": "Preview or move editable elements to existing layers by name, read back after."
     },
     {
+      "name": "select_elements",
+      "description": "Replace, add to or remove from the Archicad selection; the model is not changed."
+    },
+    {
+      "name": "highlight_elements",
+      "description": "Highlight elements in one color, or clear the highlight; the model is not changed."
+    },
+    {
+      "name": "get_element_groups",
+      "description": "The group holding each element and the members of those groups."
+    },
+    {
+      "name": "create_groups",
+      "description": "Preview or group editable, ungrouped elements, read back after."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

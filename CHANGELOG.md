@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add selection, highlight and groups (new `tools/selection.py`): `select_elements`,
+  `highlight_elements`, `get_element_groups` and `create_groups` through Tapir 1.7.0
+  `ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`,
+  `GetElementsOfGroups` and `CreateGroups`. Selection and highlight do not change the
+  model, so they act at once and report what Archicad ended with; `create_groups` uses
+  the preview, token, receipts and read-back. The fake's shapes come from the Tapir
+  source, not a live capture. Not yet tested live.
+
 - Add layers (new `tools/layers.py`): `list_layers`, `create_layers` and
   `set_element_layers` through Tapir 1.7.0 `GetLayers`, `CreateLayers` and
   `SetDetailsOfElements`. New layers never overwrite an existing name; elements move to a

@@ -51,6 +51,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `run_read_command` | Read | One read-only official or Tapir command from a closed list, raw response | some |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `list_classifications` | Read | Classification systems, or one system's items as a flat tree | no |
+| `get_element_groups` | Read | The group holding each element and its members | yes |
 | `list_layers` | Read | Layers with hidden, locked, wireframe and intersection group | yes |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
@@ -66,6 +67,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
+| `select_elements` | View | Replace, add to or remove from the selection | yes |
+| `highlight_elements` | View | Highlight elements in one color, or clear it | yes |
+| `create_groups` | Write | Up to 20 groups of editable, ungrouped elements | yes |
 | `create_layers` | Write | Up to 50 new layers; existing names are refused | yes |
 | `set_element_layers` | Write | Move up to 100 editable elements to existing layers | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
@@ -330,6 +334,8 @@ and open to everyone's contributions.
 - `create_lines`, `create_polylines`, `create_arcs`, `create_circles` and `create_fills` draw 2D elements on a story: up to 50 per call, each with `floor_index` and optional `layer` (the layer name, case ignored) and `pen` (pen-table index 1 to 255). Lines take `start` and `end`; polylines take `points` (2 to 500, straight segments; repeat the first point to close); arcs take `center`, `radius`, `start_angle` and `end_angle` (radians, counter-clockwise); circles take `center` and `radius`; fills take a simple `outline` polygon, optional `fill` (the fill name, such as a hatch pattern) and `contour_pen` (`pen` is the fill pen). Names that match nothing or several attributes are refused. Line type and the rest come from the tool defaults. Applying reads back type, story, layer and the geometry and pens Tapir reports; Tapir 1.7.0 gives no geometry for polylines and fills, so their plan box is compared within 1 mm, and a polyline's pen is not checked. Tapir 1.7.0 `CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles` and `CreateHatches`; never saves. Not yet tested live.
 
 - `list_layers` lists every layer with its GUID, index, name, `isHidden`, `isLocked`, `isWireframe` and `intersectionGroupNr`. `create_layers` previews up to 50 new layers: `name` and optional `hidden`, `locked`, `wireframe` and `intersection_group`. A name the project already has (case ignored) or a name repeated in the call is refused in the preview; nothing is ever overwritten. Applying reads each new layer back. `set_element_layers` previews moving up to 100 editable elements to existing layers: `{element_guid, layer}`, the layer by name (case ignored, ambiguous names refused). The preview shows the current and the new layer and flags moves that change nothing; locked, hotlinked and missing elements are refused. Applying reads back layer, type and story. Tapir 1.7.0 `GetLayers`, `CreateLayers` (with `overwriteExisting: false`) and `SetDetailsOfElements`; never saves. Not yet tested live.
+
+- `select_elements` and `highlight_elements` change only what you see in Archicad, never the model, so they act at once without a preview or token (marked "View" above). `select_elements` takes up to 100 GUIDs and a `mode`: `replace` (the default; an empty list clears the selection), `add` or `remove`; it reads the selection back and lists elements that did not end up selected. `highlight_elements` paints up to 100 elements in one `color` (`[r, g, b]` or `[r, g, b, a]`, 0 to 255, red by default), with optional `wireframe_3d` for the rest in 3D; an empty list clears the highlight. `get_element_groups` returns the group that directly holds each element (`null` when ungrouped) and the members of those groups. `create_groups` previews up to 20 groups of 2 or more elements (100 in all); locked, hotlinked, missing and already grouped elements are refused, and applying reads each group's members back. Tapir 1.7.0 `ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`, `GetElementsOfGroups` and `CreateGroups`; never saves. Not yet tested live.
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 

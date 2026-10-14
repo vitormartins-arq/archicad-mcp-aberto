@@ -359,3 +359,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   O ArchiCAD simulado agora dá a cada camada seu próprio GUID. Fixture
   `tapir170_layers_create_documented.json`, não é captura ao vivo. 1263 testes simulados
   e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 7 na nuvem, 14/10/2026:** branch `lote/selecao-grupos`, empilhada no
+  lote 6. `tools/selection.py` com `select_elements`, `highlight_elements`,
+  `get_element_groups` e `create_groups`, pelos comandos do Tapir 1.7.0 lidos no código
+  (`ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`,
+  `GetElementsOfGroups`, `CreateGroups`). Seleção e destaque não mexem no modelo, então
+  agem direto (anotação nova `VIEW` no servidor: não destrutiva, idempotente). Na fila
+  do Codex (`docs/FILA.md`, branch `lote/camadas`): T20 `modify_labels`, T21 incidências
+  e T22 árvore do Navegador, empilhadas em `lote/camadas`. Fixture
+  `tapir170_selection_groups_documented.json`, não é captura ao vivo. 1308 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

@@ -19,6 +19,7 @@ from archicad_mcp_aberto.tools import (
     openings,
     read,
     roofs,
+    selection,
     texts,
     write,
 )
@@ -61,6 +62,10 @@ INPUTS = {
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
     "list_classifications": {},
     "list_layers": {},
+    "select_elements": {"element_guids": [GUID]},
+    "highlight_elements": {"element_guids": [GUID]},
+    "get_element_groups": {"element_guids": [GUID]},
+    "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
     "create_lines": {
@@ -196,6 +201,7 @@ TARGETED = {
         openings,
         read,
         roofs,
+        selection,
         texts,
         write,
     )
@@ -282,6 +288,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
         for instance in (first, second):
             instance.elements[GUID] = MODIFY_TYPES[name]
             instance.details[GUID] = deepcopy(MODIFY_ROWS[MODIFY_TYPES[name]])
+    if name == "create_groups":
+        for instance in (first, second):
+            instance.elements[PROP] = "Wall"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -294,7 +303,8 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
-    assert selected.elements == untouched.elements == {GUID: expected_type}
+    extra = {PROP: "Wall"} if name == "create_groups" else {}
+    assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 
 
@@ -323,6 +333,8 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     first, second = instances()
     if name in {"create_windows", "create_doors"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
+    if name == "create_groups":
+        second.elements[PROP] = "Wall"
     arguments = deepcopy(INPUTS[name])
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
