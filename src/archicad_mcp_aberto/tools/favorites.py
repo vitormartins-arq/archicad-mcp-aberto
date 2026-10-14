@@ -35,6 +35,20 @@ async def list_favorites(
     return {"port": port, "element_type": element_type, "total": len(names), "favorites": names}
 
 
+def match(known: list[str], wanted: str) -> str | None:
+    """The favorite's exact name, or None when missing; raises when ambiguous.
+
+    Archicad 30 BRA ships favorites such as " Parede Genérica - Default" that start with a
+    space. The exact name wins; otherwise case and outer spaces are ignored.
+    """
+    if wanted in known:
+        return wanted
+    found = [n for n in known if n.strip().casefold() == wanted.strip().casefold()]
+    if len(found) > 1:
+        raise ValueError(f"Favorite {wanted!r} is ambiguous: {', '.join(map(repr, found))}.")
+    return found[0] if found else None
+
+
 class FavoriteApply(write.InputModel):
     element_guid: str
     favorite: Annotated[str, Field(min_length=1, max_length=255)]
@@ -53,13 +67,12 @@ async def _plan(client, changes, port, operation):
         kind = row.get("type")
         if kind not in by_type:
             by_type[kind] = await _names(client, port, kind)
-        found = [n for n in by_type[kind] if n.casefold() == change.favorite.strip().casefold()]
-        exact = [n for n in found if n == change.favorite]
-        if len(exact) == 1:
-            found = exact
-        if len(found) != 1:
-            problem = "is ambiguous" if found else "does not exist"
-            raise ValueError(f"Change {index}: {kind} favorite {change.favorite!r} {problem}.")
+        try:
+            name = match(by_type[kind], change.favorite)
+        except ValueError as exc:
+            raise ValueError(f"Change {index}: {kind} {exc}") from None
+        if name is None:
+            raise ValueError(f"Change {index}: {kind} favorite {change.favorite!r} does not exist.")
         items.append(
             {
                 "index": index,
@@ -68,8 +81,8 @@ async def _plan(client, changes, port, operation):
                 "elementType": kind,
                 "floorIndex": row.get("floorIndex"),
                 "layerIndex": row.get("layerIndex"),
-                "favorite": found[0],
-                "parameters": {"elementId": {"guid": change.element_guid}, "favorite": found[0]},
+                "favorite": name,
+                "parameters": {"elementId": {"guid": change.element_guid}, "favorite": name},
             }
         )
     return {"operation": operation, "target": target, "items": items}

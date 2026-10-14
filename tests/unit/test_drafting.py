@@ -149,13 +149,44 @@ async def test_unknown_layer_and_story_refused():
     assert not set(fake.tapir_calls) & {"CreateLineElements", "CreateCircles"}
 
 
-async def test_box_mismatch_fails_verification():
-    fake = model(drafting_box_shift=0.01)
+@pytest.mark.parametrize(
+    ("tool", "make"), [(drafting.create_polylines, polyline), (drafting.create_fills, fill)]
+)
+async def test_coordinates_checked_without_2d_boxes(tool, make):
+    fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:
-        result = await apply(drafting.create_polylines, c, [polyline()])
+        result = await apply(tool, c, [make()])
+    assert result["items"][0]["status"] == "verified"
+    assert "API.Get2DBoundingBoxes" not in fake.calls
+    fake = model(drafting_coordinate_shift=0.01)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(tool, c, [make()])
     item = result["items"][0]
     assert item["status"] == "verification_failed"
-    assert item["mismatches"] == ["box.xMin", "box.xMax"]
+    assert item["mismatches"] == ["details.coordinates"]
+
+
+async def test_circle_read_back_as_full_arc():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(drafting.create_circles, c, [circle()])
+        assert result["items"][0]["status"] == "verified"
+        for row in fake.details.values():
+            row["details"]["endAngle"] = 1.0
+        preview = await drafting.create_circles(c, [circle()], 19723)
+        original = fake._tapir
+
+        def half(params):
+            response = original(params)
+            for row in fake.details.values():
+                row["details"]["endAngle"] = math.pi
+            return response
+
+        fake._tapir = half
+        result = await drafting.create_circles(
+            c, [circle()], 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["mismatches"] == ["type"]
 
 
 async def test_arc_angle_on_the_circle_and_wrong_geometry():

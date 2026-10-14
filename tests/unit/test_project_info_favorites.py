@@ -213,3 +213,21 @@ async def test_apply_favorites_failed_and_lost():
             )
     assert result["items"][0]["status"] == "unknown"
     assert fake.tapir_calls.count("ApplyFavoritesToElements") == 1
+
+
+async def test_apply_favorite_with_leading_space():
+    # Live AC30 build 3001 BRA (14/10/2026): the "- Default" favorites start with a space.
+    name = " Parede Genérica - Default"
+    fake = model()
+    fake.favorites["Wall"].append(name)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        for typed in (name, "parede genérica - default"):
+            preview = await favorites.apply_favorites(
+                c, [{"element_guid": WALL, "favorite": typed}]
+            )
+            assert preview["items"][0]["favorite"] == name
+        result = await apply(
+            favorites.apply_favorites, c, [{"element_guid": WALL, "favorite": name}]
+        )
+    assert result["items"][0]["status"] == "unverified"
+    assert fake.applied_favorites == {WALL: [name]}

@@ -294,7 +294,7 @@ class FakeArchicad:
     lose_label_response: bool = False
     lose_drafting_response: bool = False
     # Shift every created 2D box by this much in x (verification tests).
-    drafting_box_shift: float = 0.0
+    drafting_coordinate_shift: float = 0.0
     # Archicad stores what it is given unless told otherwise (verification tests).
     text_stored_as: str | None = None
     # (element guid, system guid) -> item guid; a missing pair is unclassified.
@@ -1295,17 +1295,17 @@ class FakeArchicad:
                     "details": details,
                 }
                 if "coordinates" in data:
-                    xs = [q["x"] for q in data["coordinates"]]
-                    ys = [q["y"] for q in data["coordinates"]]
-                    shift = self.drafting_box_shift
-                    self.bounding_boxes_2d[guid] = {
-                        "boundingBox2D": {
-                            "xMin": min(xs) + shift,
-                            "yMin": min(ys),
-                            "xMax": max(xs) + shift,
-                            "yMax": max(ys),
-                        }
-                    }
+                    shift = self.drafting_coordinate_shift
+                    details["coordinates"] = [
+                        {"x": q["x"] + shift, "y": q["y"]} for q in data["coordinates"]
+                    ]
+                    if kind == "Hatch":
+                        # Not captured live: the check accepts a closing repeat or none.
+                        details["coordinates"].append(dict(details["coordinates"][0]))
+                if kind == "Circle":
+                    # Archicad 30 reads a circle back as a full Arc (live, 14/10/2026).
+                    self.elements[guid] = self.details[guid]["type"] = "Arc"
+                    details |= {"begAngle": 0.0, "endAngle": 0.0}
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateLabels":

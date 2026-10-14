@@ -2,8 +2,9 @@
 
 Coordinates in metres, angles in radians. Every element needs its story; layer and fill
 are named as in Archicad, and the pen is a pen-table index. Omitted settings keep the
-tool default. Polylines and fills carry no geometry in their details, so their plan box
-is checked instead. Never saves.
+tool default. Polylines and fills are checked by the coordinates in their details
+(Get2DBoundingBoxes answers error 7203 for them in Archicad 30). Archicad stores a
+circle as a full Arc (begAngle == endAngle), which counts as a circle. Never saves.
 """
 
 from __future__ import annotations
@@ -13,8 +14,8 @@ from typing import Annotated, Any
 
 from pydantic import Field, model_validator
 
-from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
-from archicad_mcp_aberto.tools import read, write
+from archicad_mcp_aberto.connection import ArchicadClient
+from archicad_mcp_aberto.tools import write
 
 MAX_ITEMS = 50
 Pen = Annotated[int, Field(ge=1, le=255)]
@@ -127,11 +128,6 @@ def _payload(operation: str, item: Any) -> dict:
     return p
 
 
-def _box(points: list[dict]) -> dict:
-    xs, ys = [q["x"] for q in points], [q["y"] for q in points]
-    return {"xMin": min(xs), "yMin": min(ys), "xMax": max(xs), "yMax": max(ys)}
-
-
 async def _plan(client, items, port, operation):
     port, target, floors = await write._context(client, port)
     layers = fills = None
@@ -154,8 +150,6 @@ async def _plan(client, items, port, operation):
                 entry["fillName"] = fill["name"]
         except ValueError as exc:
             raise ValueError(f"{label}: {exc}") from None
-        if "coordinates" in payload:
-            entry["expected_box"] = _box(payload["coordinates"])
         entry["parameters"] = payload
         planned.append(entry)
     return {"operation": operation, "target": target, "items": planned}
@@ -170,35 +164,71 @@ def _angle_off(found: Any, wanted: float) -> bool:
     )
 
 
+def _ring(points: Any) -> list[tuple[float, float]] | None:
+    """Points as (x, y), without a closing repeat of the first; None if malformed."""
+    if not isinstance(points, list):
+        return None
+    out = []
+    for q in points:
+        x, y = (q.get("x"), q.get("y")) if isinstance(q, dict) else (None, None)
+        if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (x, y)):
+            return None
+        out.append((float(x), float(y)))
+    if len(out) > 1 and math.dist(out[0], out[-1]) < 1e-6:
+        out.pop()
+    return out
+
+
+def _same_points(found: Any, wanted: list[dict], cyclic: bool) -> bool:
+    actual, expected = _ring(found), _ring(wanted)
+    if actual is None or expected is None or len(actual) != len(expected):
+        return False
+    shifts = range(len(actual)) if cyclic else range(1)
+    return any(
+        all(math.dist(actual[(i + k) % len(actual)], e) <= 0.001 for i, e in enumerate(expected))
+        for k in shifts
+    )
+
+
 def _checker(operation: str):
     kind = KINDS[operation][0]
 
     def check(item: dict, row: Any) -> list[str]:
         p = item["parameters"]
-        expected: dict[str, Any] = {"type": kind, "floorIndex": p["floorInd"]}
+        actual = row.get("details") if isinstance(row, dict) else None
+        actual = actual if isinstance(actual, dict) else {}
+        stored = kind
+        if kind == "Circle" and isinstance(row, dict) and row.get("type") == "Arc":
+            # Archicad 30 reads a circle back as an Arc whose start and end angles match.
+            end = actual.get("endAngle")
+            if isinstance(end, (int, float)) and not _angle_off(actual.get("begAngle"), end):
+                stored = "Arc"
+        expected: dict[str, Any] = {"type": stored, "floorIndex": p["floorInd"]}
         if "layerIndex" in p:
             expected["layerIndex"] = p["layerIndex"]
-        details: dict[str, Any] = {}
-        for key in (
-            "begCoordinate",
-            "endCoordinate",
-            "origin",
-            "radius",
-            "linePenIndex",
-            "fillPenIndex",
-            "contourPenIndex",
-        ):
-            # PolyLine details carry neither geometry nor pen in Tapir 1.7.0.
-            if key in p and kind != "PolyLine":
-                details[key] = p[key]
+        details: dict[str, Any] = {
+            key: p[key]
+            for key in (
+                "begCoordinate",
+                "endCoordinate",
+                "origin",
+                "radius",
+                "linePenIndex",
+                "fillPenIndex",
+                "contourPenIndex",
+            )
+            if key in p
+        }
         if details:
             expected["details"] = details
         differences = write._mismatches(expected, row)
-        actual = row.get("details") if isinstance(row, dict) else None
-        actual = actual if isinstance(actual, dict) else {}
         for key in ("begAngle", "endAngle"):
             if key in p and _angle_off(actual.get(key), p[key]):
                 differences.append(f"details.{key}")
+        if "coordinates" in p and not _same_points(
+            actual.get("coordinates"), p["coordinates"], cyclic=kind == "Hatch"
+        ):
+            differences.append("details.coordinates")
         if "fillId" in p:
             found = actual.get("fillId")
             guid = found.get("guid") if isinstance(found, dict) else None
@@ -207,54 +237,6 @@ def _checker(operation: str):
         return differences
 
     return check
-
-
-async def _check_boxes(client, receipt) -> None:
-    items = [
-        i
-        for i in receipt["items"]
-        if "expected_box" in i and i["status"] in ("verified", "verification_failed")
-    ]
-    if not items:
-        return
-    try:
-        response = await client.command(
-            receipt["target"]["port"],
-            "Get2DBoundingBoxes",
-            {"elements": read.element_ids([i["element_guid"] for i in items])},
-            timeout=receipt["write_timeout_seconds"],
-        )
-        boxes = response.get("boundingBoxes2D")
-        if not isinstance(boxes, list) or len(boxes) != len(items):
-            raise ValueError("Unexpected box verification response.")
-    except (ArchicadError, ValueError) as exc:
-        for item in items:
-            item["status"] = "unverified"
-        receipt["verification_error"] = str(exc)
-        return
-    for item, box in zip(items, boxes, strict=True):
-        item["after_box"] = box
-        actual = box.get("boundingBox2D") if isinstance(box, dict) else None
-        actual = actual if isinstance(actual, dict) else {}
-        off = [
-            f"box.{k}"
-            for k, wanted in item["expected_box"].items()
-            if not isinstance(actual.get(k), (int, float))
-            or isinstance(actual.get(k), bool)
-            or not math.isfinite(actual[k])
-            or abs(actual[k] - wanted) > 0.001
-        ]
-        if off:
-            item["status"] = "verification_failed"
-            item["mismatches"] = item.get("mismatches", []) + off
-
-
-def _dispatcher(operation: str):
-    async def dispatch(client, receipt):
-        await write._dispatch(client, receipt, _checker(operation))
-        await _check_boxes(client, receipt)
-
-    return dispatch
 
 
 async def _create(client, items, port, dry_run, token, operation):
@@ -270,7 +252,9 @@ async def _create(client, items, port, dry_run, token, operation):
         token,
         operation,
         planner_override=_plan,
-        dispatcher_override=_dispatcher(operation),
+        dispatcher_override=lambda client, receipt: write._dispatch(
+            client, receipt, _checker(operation)
+        ),
     )
 
 
