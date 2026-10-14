@@ -35,11 +35,13 @@ Em `write.py`, `server.py`, `manifest.json`, README, CHANGELOG, `docs/ESTADO.md`
 `docs/VALIDAR.md`, no fake e nos testes de registro, só **acrescente** (entradas novas no
 fim das listas).
 
-- **T23 `create_fills`, branch `codex/t23-fills`.** Em `tools/drafting.py`, no padrão de `create_lines`/`create_polylines`: preenchimentos
-  2D por `CreateFills` do Tapir 1.7.0 (confira os campos em `ElementCreationCommands.cpp`),
-  até 50, contorno fechado em metros, pavimento explícito, sem furos nem arcos nesta
-  versão. Recuse contorno aberto ou cruzado na prévia. Conferência relendo o polígono.
-  Item novo em `docs/VALIDAR.md`, seção "Lote 8 (Codex)".
+- **T23 campos de informações do projeto, branch `codex/t23-project-info-fields`.** Em
+  `tools/project_info.py`: `create_project_info_fields` por `CreateProjectInfoFields` do
+  Tapir 1.7.0 (confira os campos no código-fonte), até 20 campos novos com nome e valor.
+  Recuse nome que já existe na prévia. Conferência relendo as informações do projeto.
+  Sem apagar nem renomear campos. (A T23 antiga, `create_fills`, foi tirada: a ferramenta
+  já existe em `tools/drafting.py`, e o `CreateFills` do Tapir cria tipos de hachura, não
+  hachuras desenhadas.)
 - **T24 `add_comment_to_issue`, branch `codex/t24-issue-comments`.** Em
   `tools/issues.py`: comentário de texto em incidência existente por `AddCommentToIssue`
   (confira `IssueCommands.cpp`), até 20 por chamada, com autor opcional. Conferência por
@@ -55,6 +57,21 @@ fim das listas).
   `CreateClassificationItems` (confira `ClassificationCommands.cpp`), até 50, com id, nome
   e descrição. Recuse id repetido no mesmo sistema na prévia. Conferência relendo a árvore
   com `list_classifications`. Sem apagar.
+
+## Tarefas do Claude (Codex: não pegue)
+
+Desde 14/10/2026 (decisão do Vitor: "Claude e Codex") o Claude também programa, na
+nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só com as de
+"A fazer". O Claude junta as suas num PR de lote (branch `lote/claude-cN`).
+
+- **C1 `create_sections`.** Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
+  metros, pavimento, nome e id de referência. Conferência pelo Mapa do Projeto.
+- **C2 favoritos a partir de elementos.** `CreateFavoritesFromElements`: um favorito novo
+  por elemento existente, com nome único. Sem sobrescrever nem apagar favoritos.
+- **C3 propriedades de atributos.** `SetPropertyValuesOfAttributes`: valor de propriedade
+  personalizada em materiais de construção, compostos e perfis, conferindo com a leitura.
+- **C4 `create_interior_elevations`.** `CreateInteriorElevations` a partir de zonas
+  existentes. Conferência pelo Mapa do Projeto.
 
 ## Integrado
 
