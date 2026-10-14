@@ -583,8 +583,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Preview renaming template items of one kind: view_map, project_map or
         layout_book items, favorites, classification_systems, classification_items (id
-        and name), custom property_groups and properties, building_materials, surfaces,
-        layers, layer_combinations (layer states are kept and read back) or
+        and name), custom property_groups and properties, building_materials,
+        layers (surfaces are refused: Tapir changed their texture), layer_combinations
+        (layer states are kept and read back) or
         attribute_folders (scope = attribute type, e.g. Layer). Either find + replace on
         every name (replace "" removes the text) or renames, a list of exact {old, new}
         names. scope narrows classification_items to a system, properties to a group,

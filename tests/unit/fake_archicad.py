@@ -268,6 +268,8 @@ class FakeArchicad:
     rename_errors: dict[int, dict] = field(default_factory=dict)
     rename_ignored: bool = False
     lose_rename_response: bool = False
+    # Archicad refuses the whole rename call (succeeded: false), as for a schema error.
+    rename_call_refused: bool = False
     # index -> {"name", "layers": {layer index: state overrides}}; GetLayerCombinations and
     # CreateLayerCombinations from the Tapir 1.7.0 source, not live captured.
     layer_combinations: dict[int, dict] = field(
@@ -1638,6 +1640,17 @@ class FakeArchicad:
 
     def _rename(self, name: str, args: dict) -> dict:
         failed = {"success": False, "error": {"code": -2130313112, "message": "Failed to rename"}}
+        missing_layers = name == "CreateLayerCombinations" and any(
+            "layers" not in d for d in args["layerCombinationDataArray"]
+        )
+        if self.rename_call_refused or missing_layers:
+            # Live AC30 build 3001 BRA, Tapir 1.7.0 (14/10/2026): a combination without
+            # "layers" is refused by the schema check; the error code here is not captured.
+            return fail(
+                -2130313112,
+                "Validation failed on schema rule 'required' at path "
+                "'#/layerCombinationDataArray/0'",
+            )
         if name == "RenameNavigatorItem":
             guid = args["navigatorItemId"]["guid"]
             nodes = [n for tree in self.navigator_trees.values() for n in self._nav_items_of(tree)]
@@ -1662,7 +1675,7 @@ class FakeArchicad:
                     store = {g: r for g, r in self.building_materials.items() if "error" not in r}
                     found = guid in store
                 elif name == "CreateLayerCombinations":
-                    assert set(data) == {"attributeId", "name"}  # never the layer table
+                    assert data["layers"] == []  # never a layer table, only the name
                     table = self.layer_combinations
                     index = next((i for i in table if combination_guid(i) == guid), None)
                     found = index is not None

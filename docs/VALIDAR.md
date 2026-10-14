@@ -271,13 +271,16 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] **Propriedades.** "Renomeie o grupo 'Teste MCP' para 'MCP Teste' e a propriedade
   'Pé-direito' para 'Pé direito'." Esperado: `verified` e os valores nos elementos
   continuam lá.
-- [ ] **Materiais de construção e superfícies.** "Troque 'Concreto' por 'CONC' nos
+- [x] **Materiais de construção e superfícies.** Testado em 14/10: materiais ok, só o
+  nome mudou. Superfícies: o nome mudou mas a textura também, então o MCP agora recusa
+  renomear superfície. "Troque 'Concreto' por 'CONC' nos
   materiais de construção" e o mesmo nas superfícies. Esperado: `verified`. Abra um
   material e uma superfície renomeados e confira se **nada além do nome mudou**
   (hachura, prioridade, cor, textura): o MCP manda só o nome, mas é o ponto de risco.
 - [ ] **Camadas.** "Renomeie a camada 'MCP Teste' para 'MCP Teste 2'." Esperado:
   `verified`, com a camada ainda visível ou oculta como antes, e os elementos nela.
-- [ ] **Combinações de camadas.** "Troque 'ETAPA' por 'FASE' nas combinações de
+- [ ] **Combinações de camadas (refazer).** Em 14/10 o Tapir recusou todas por faltar o
+  campo `layers`; o MCP agora manda a lista vazia, que mantém o estado de cada camada. "Troque 'ETAPA' por 'FASE' nas combinações de
   camadas." Esperado: `verified`. Abra Definições dos Vegetais e confira, em duas ou três
   combinações, se o olho, o cadeado e o aramado de cada camada **continuam iguais**: o
   MCP compara os estados antes e depois, mas é o ponto de risco.

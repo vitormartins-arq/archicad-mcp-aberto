@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+- `rename_items` after its live test (14/10/2026, Archicad 30 build 3001 BRA, Tapir
+  1.7.0): surfaces are refused, because `CreateSurfaces` with only the name also changed
+  the texture; layer combinations send the empty `layers` list that
+  `CreateLayerCombinations` requires (the schema check refused every rename before); a
+  call Archicad refuses outright is reported as `failed`, not `unknown`.
+
 - Add `rename_items` (new `tools/renames.py`) to clean up a template quickly: rename
   Navigator items (View Map, Project Map, Layout Book), favorites, classification systems
-  and items, custom property groups and properties, building materials, surfaces,
+  and items, custom property groups and properties, building materials,
   layers, layer combinations (each layer's state is read back unchanged) and attribute
   folders (official `API.RenameAttributeFolders`, e.g. the layer folders) by find and replace or by exact old -> new names, with preview, single-use
   token, receipts and a read-back of every name. Items keep their GUID. Clashing and

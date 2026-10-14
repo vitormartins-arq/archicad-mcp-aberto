@@ -119,17 +119,13 @@ async def test_attributes_favorites_and_property_kinds():
     }
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         _, materials = await apply(c, kind="building_materials", find="ANT ", replace="ARQ ")
-        _, surfaces = await apply(c, kind="surfaces", find="Pintura", replace="Tinta")
         _, favorites = await apply(c, kind="favorites", find="ANT ", replace="ARQ ")
         _, groups = await apply(c, kind="property_groups", find="Projeto", replace="Obra")
         _, props = await apply(
             c, kind="properties", renames=[{"old": "Fase", "new": "Etapa"}], scope="obra"
         )
-    assert [r["status"] for r in (materials, surfaces, favorites, groups, props)] == [
-        "verified"
-    ] * 5
+    assert [r["status"] for r in (materials, favorites, groups, props)] == ["verified"] * 4
     assert fake.building_materials[material]["name"] == "ARQ Concreto"
-    assert fake.surfaces[1] == "Tinta Branca"
     assert fake.favorites["Wall"] == [" Parede Genérica - Default", "ARQ Alvenaria 14"]
     assert [g["name"] for g in fake.property_groups] == ["Geral", "Obra"]  # built-in kept
     assert fake.custom_properties[0]["propertyName"] == "Etapa"
@@ -176,6 +172,7 @@ async def test_refusals_before_any_rename():
             {"kind": "layers", "renames": [{"old": "A", "new": "B"}, {"old": "A", "new": "C"}]},
             {"kind": "layers", "find": "A", "replace": "B", "scope": "x"},
             {"kind": "styles", "find": "A", "replace": "B"},
+            {"kind": "surfaces", "find": "Pintura", "replace": "Tinta"},  # texture changed live
         ):
             with pytest.raises(ValidationError):
                 await renames.rename_items(c, **bad)
@@ -247,6 +244,7 @@ async def test_layer_combinations_keep_layer_states():
     assert sent["parameters"]["layerCombinationDataArray"][0] == {
         "attributeId": {"guid": combination_guid(1)},
         "name": "0ª FASE | (3D) ARCHICAD",
+        "layers": [],
     }
     assert len({i["layer_states"] for i in preview["items"]}) == 2
 
@@ -318,3 +316,13 @@ async def test_attribute_folders_failed_and_lost():
         _, result = await apply(c, **request)
     assert {i["status"] for i in result["items"]} == {"unknown"}
     assert "Never retry" in result["warning"]
+
+
+async def test_refused_call_is_failed_not_unknown():
+    for kind in ("layers", "view_map"):
+        fake = model(rename_call_refused=True)
+        async with ArchicadClient(transport=fake_transport(fake)) as c:
+            _, result = await apply(c, kind=kind, find="ANT", replace="ARQ")
+        assert {i["status"] for i in result["items"]} == {"failed"}
+        assert "warning" not in result
+    assert fake.layers[1] == "ANT - Parede"

@@ -3,7 +3,7 @@
 One call renames one kind of item, either by find and replace on the names or by a list
 of exact old -> new names. Kinds: Navigator items (View Map, Project Map, Layout Book),
 favorites, classification systems and items, custom property groups and properties,
-building materials, surfaces, layers, layer combinations, and attribute folders (the
+building materials, layers, layer combinations, and attribute folders (the
 folders of the layer, material, surface... dialogs; official JSON API). Every item keeps
 its GUID, so elements that use it follow the new name. A renamed layer combination keeps
 every layer's state, which is read back. Renamed View Map items get a custom name, as in
@@ -41,10 +41,9 @@ ATTRIBUTES = {
         "CreateBuildingMaterials",
         "buildingMaterialDataArray",
     ),
-    "surfaces": ("Surface", "CreateSurfaces", "surfaceDataArray"),
     "layers": ("Layer", "CreateLayers", "layerDataArray"),
-    # Tapir 1.7.0 seeds an overwritten combination from its own layer table, so a name-only
-    # call keeps every layer's state; _layer_states checks that it did.
+    # Tapir 1.7.0 requires "layers" and seeds an overwritten combination from its own layer
+    # table, so a name plus an empty list keeps every layer's state; _layer_states checks it.
     "layer_combinations": (
         "LayerCombination",
         "CreateLayerCombinations",
@@ -80,6 +79,14 @@ Kind = Literal[
 ]
 
 
+# Live AC30 build 3001 BRA, Tapir 1.7.0 (14/10/2026): CreateSurfaces with overwriteExisting
+# and only the name renamed the surface but also changed its texture, so surfaces are refused.
+SURFACES_REFUSED = (
+    "Renaming surfaces is turned off: in the live test of 14/10/2026 Tapir 1.7.0 also "
+    "changed the texture of every renamed surface. Rename them by hand in Archicad for now."
+)
+
+
 class Rename(write.InputModel):
     old: Text
     new: Text
@@ -95,6 +102,8 @@ class RenameRequest(write.InputModel):
 
     @model_validator(mode="after")
     def one_way(self):
+        if self.kind == "surfaces":
+            raise ValueError(SURFACES_REFUSED)
         if (self.renames is None) == (self.find is None):
             raise ValueError("Pass either renames (old -> new) or find and replace.")
         if self.find is not None and self.replace is None:
@@ -290,6 +299,8 @@ def _parameters(kind: str, key: str, new: dict) -> dict:
         return {"propertyId": {"guid": key}, **new}
     if kind == "attribute_folders":
         return {"attributeFolderId": {"guid": key}, "newName": new["name"]}
+    if kind == "layer_combinations":
+        return {"attributeId": {"guid": key}, **new, "layers": []}
     return {"attributeId": {"guid": key}, **new}
 
 
@@ -389,6 +400,9 @@ async def _send(client, receipt, items) -> None:
                 row = await client.tapir(
                     port, "RenameNavigatorItem", item["parameters"], timeout=timeout
                 )
+            except CommandFailed as exc:  # Archicad refused the call (e.g. schema check)
+                item.update(status="failed", error=exc.detail or str(exc))
+                continue
             except TapirError as exc:
                 if exc.detail:
                     item.update(status="failed", error=exc.detail)
@@ -437,6 +451,10 @@ async def _send(client, receipt, items) -> None:
     try:
         raw = await client.tapir(port, command, payload, timeout=timeout)
         rows = _rows_of(raw, answer_key, len(items))
+    except CommandFailed as exc:  # Archicad refused the call before running it
+        for item in items:
+            item.update(status="failed", error=exc.detail or str(exc))
+        return
     except TapirError as exc:
         for item in items:
             item.update(status="failed" if exc.detail else "unknown", error=exc.detail or str(exc))

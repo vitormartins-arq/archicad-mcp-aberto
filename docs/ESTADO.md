@@ -468,3 +468,11 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - A peça genérica Mesa falhou na criação com código -2130313112. Mesa de Jantar Retangular foi criada com `verified`; nela, `set_gdl_parameters` A=1.5 falhou na conferência (A relido 1.8), e `modify_objects` falhou somente nas dimensões (pedido 2 x 1 x 0.9, retorno 1.8 x 1.8 x 0.85). Posição (3,7) e nível 0.4 conferidos. Causa do comportamento GDL ainda não estabelecida.
 - Três criações de telhado (SinglePlane, MultiPlane e MultiPlane com dois níveis) terminaram `verification_failed` por espessura: pedido 0.25 m, retorno 0.30 m, estrutura Composite herdada. `modify_roofs` com espessura foi recusado na prévia por requerer Basic; não houve apply desse item.
 - Inspeção visual continua com Vitor. A seção visual do projeto de 12/10 foi pulada: este projeto estava vazio e não continha aqueles elementos. Casos adicionais de pilar circular e viga curva não foram executados. Relatório e recibos: `C:\Users\vitor\Documents\Codex\validacao-mcp-lote3-2026-10-13`. Nenhuma correção de código nesta rodada.
+
+- **Claude / lote 13 depois do teste ao vivo, 14/10/2026:** resultado em
+  `docs/VALIDAR-resultado-2026-10-14.md`. Quase tudo `verified`; superfícies mudaram a
+  textura junto com o nome (agora recusadas) e as combinações falharam no schema por faltar
+  `layers` (agora vai `layers: []`; refazer ao vivo). Uma chamada recusada pelo ArchiCAD
+  (`succeeded: false`) passa a ser `failed`, não `unknown`. Os PRs #37 a #49 entraram na
+  main (merge do #49 pelo Vitor); o #41 está incluído no #50 e pode ser fechado depois.
+
