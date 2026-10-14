@@ -614,7 +614,7 @@ def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
         ]
     if isinstance(expected, (float, int)) and not isinstance(expected, bool):
         if isinstance(actual, (float, int)) and not isinstance(actual, bool):
-            if math.isclose(expected, actual, rel_tol=1e-9, abs_tol=1e-7):
+            if math.isclose(expected, actual, rel_tol=0.0, abs_tol=1e-7):
                 return []
         return [path]
     return [] if expected == actual else [path]
@@ -1090,7 +1090,9 @@ def _move_mismatches(item: dict, after: dict) -> list[str]:
             continue
         for key, value in before.items():
             expected = value + shift[key[0]]
-            if not math.isclose(now.get(key, math.nan), expected, abs_tol=MOVE_TOLERANCE):
+            if not math.isclose(
+                now.get(key, math.nan), expected, rel_tol=0.0, abs_tol=MOVE_TOLERANCE
+            ):
                 differences.append(f"{mode}.{key}")
     return differences
 

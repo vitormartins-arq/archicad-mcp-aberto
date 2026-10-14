@@ -512,3 +512,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - SetViewSettings não usa ACAPI_CallUndoableCommand; prévia/recibo avisam para não contar com Undo e retêm valores anteriores para restauração por nova prévia/manual. O protocolo compartilhado respeita revert_note opcional sem mudar notas das outras ferramentas. drawingScale também ativa saveDScale, flag que GetViewSettings não expõe; nota explícita, sem afirmar conferência dessa flag. Fixture documental/sintética, não captura real; nunca salva/publica.
 
 - Vistas: 1748 testes simulados e Ruff passaram em Windows/Python 3.12.10. Registro: 77 ferramentas (24 leitura, 53 escrita/interação). CI da T20 verde; T21/T22 passaram em Windows/Linux, macOS cancelado antes de qualquer etapa (tentativa de reexecução apenas dos jobs afetados). Nenhuma chamada real nesta sessão de desenvolvimento.
+
+
+## 2026-10-14 — Codex / conferência em coordenadas georreferenciadas
+
+- Revisão das novas ferramentas reproduziu no simulado seis falhas antes da correção: em ±6500000 m, um MoveElements ignorado de 5 mm e um vértice de terreno deslocado 5 mm apareciam como verified; contorno aberto válido de 1 mm podia ser confundido com fechado. Causa: math.isclose mantinha tolerância relativa, que aumentava com o valor absoluto das coordenadas. Branch fix/absolute-geometry-tolerance mantém tolerâncias absolutas de conferência (1e-7 nos detalhes/polígonos e 1 mm nas caixas movidas), rel_tol=0; não muda comandos/payloads nem repete gravações. Padrões de criação/confirmacão/recibos intactos. Somente simulado, nenhuma chamada real.
+
+- Regressão georreferenciada: 15 casos passaram após a correção (6 falhavam antes), suíte completa 1763 testes simulados e Ruff passaram, Windows/Python 3.12.10. Nenhuma chamada real.

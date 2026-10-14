@@ -245,3 +245,9 @@
   per-view errors, settings read-back and unchanged combination-state verification. Native
   Navigator changes have no guaranteed Undo; receipts retain old values and say so. Other
   write tools retain their existing note. Source-derived fixtures, simulated only.
+
+- Fix geometry verification at large/georeferenced coordinates: disable relative
+  tolerance in geometric field/polygon matching and moved-box verification. An ignored
+  5 mm move or a wrong vertex could previously read as verified near coordinate 6500000;
+  a valid small unclosed polygon could also be mistaken for closed. Regression cases
+  reproduce the failures at positive/negative origins using only the simulator.

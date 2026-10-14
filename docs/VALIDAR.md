@@ -344,3 +344,10 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] Não contar com Undo para SetViewSettings; guardar before do recibo e restaurar
   com nova prévia/aplicação ou manualmente. A flag nativa de salvar escala é ativada,
   mas não pode ser relida pelo Tapir; conferir na interface.
+
+
+## Conferência geométrica georreferenciada — regressão futura
+
+- [ ] Em cópia de teste autorizada, conferir criação/edição/movimentação perto e longe
+  da origem: a tolerância não deve crescer com as coordenadas. Não deslocar projeto
+  real para este teste. O simulado já cobre falhas ignoradas de 5 mm em ±6500000 m.

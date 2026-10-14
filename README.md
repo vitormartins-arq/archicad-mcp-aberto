@@ -450,3 +450,7 @@ The expanded registry in this stack contains **77 tools: 24 read-only and 53 wri
 interaction tools**. The smaller Phase 1 count near the beginning is historical. New
 Codex tools (labels, issues, Navigator, meshes and view settings) have simulated coverage;
 this does not imply live or visual approval. See docs/VALIDAR.md for the operator checklist.
+
+- Geometry read-back uses fixed absolute numeric tolerance (1e-7), and moved bounding
+  boxes keep a fixed 1 mm tolerance. These do not grow with georeferenced coordinates:
+  moving the model far from the origin must not turn millimetre errors into `verified`.
