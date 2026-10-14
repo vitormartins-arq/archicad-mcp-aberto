@@ -161,6 +161,54 @@ def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
 
 
+def surface_guid(index: int) -> str:
+    return f"45454545-4545-4545-8545-{index:012d}"
+
+
+def combination_guid(index: int) -> str:
+    return f"47474747-4747-4747-8747-{index:012d}"
+
+
+def folder_guid(index: int) -> str:
+    return f"48484848-4848-4848-8848-{index:012d}"
+
+
+# Layer folders as API.GetAttributeFolderStructure returns them (official AC30 schema from
+# the archicad 30.3000 package; not live captured).
+def _folder(index: int, name: str, *subfolders: dict) -> dict:
+    tree: dict = {"attributeFolderId": {"guid": folder_guid(index)}, "name": name}
+    tree["attributes"] = []
+    if subfolders:
+        tree["subfolders"] = [{"attributeFolder": f} for f in subfolders]
+    return tree
+
+
+LAYER_FOLDERS = _folder(
+    0,
+    "Camadas",
+    _folder(1, "ANOTAÇÃO"),
+    _folder(2, "ARQUITETURA", _folder(3, "ANT - Antigo")),
+    _folder(4, "ESTRUTURA"),
+)
+
+
+# Rename commands of rename_items, from the Tapir 1.7.0 source; not live captured.
+RENAME_COMMANDS = {
+    "RenameNavigatorItem",
+    "RenameFavorites",
+    "UpdateClassificationSystems",
+    "UpdateClassificationItems",
+    "UpdatePropertyGroups",
+    "UpdatePropertyDefinitions",
+}
+RENAME_OVERWRITES = (
+    "CreateLayers",
+    "CreateBuildingMaterials",
+    "CreateSurfaces",
+    "CreateLayerCombinations",
+)
+
+
 DRAFTING_COMMANDS = {
     "CreateLineElements": ("Line", "linesData"),
     "CreatePolylines": ("PolyLine", "polylinesData"),
@@ -211,6 +259,30 @@ class FakeArchicad:
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
+    surfaces: dict[int, str] = field(
+        default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
+    )
+    classification_data: dict = field(default_factory=lambda: deepcopy(CLASSIFICATIONS_FIXTURE))
+    # Renames (rename_items): refuse items by position, answer success without renaming,
+    # or lose the answer after renaming.
+    rename_errors: dict[int, dict] = field(default_factory=dict)
+    rename_ignored: bool = False
+    lose_rename_response: bool = False
+    # Archicad refuses the whole rename call (succeeded: false), as for a schema error.
+    rename_call_refused: bool = False
+    # index -> {"name", "layers": {layer index: state overrides}}; GetLayerCombinations and
+    # CreateLayerCombinations from the Tapir 1.7.0 source, not live captured.
+    layer_combinations: dict[int, dict] = field(
+        default_factory=lambda: {
+            1: {"name": "0ª ETAPA | (3D) ARCHICAD", "layers": {}},
+            2: {"name": "1ª ETAPA | CADASTRO", "layers": {1: {"isHidden": True}}},
+        }
+    )
+    # Simulate an Archicad that resets layer states when a combination is renamed.
+    combination_reset_on_rename: bool = False
+    attribute_folders: dict[str, dict] = field(
+        default_factory=lambda: {"Layer": deepcopy(LAYER_FOLDERS)}
+    )
     layers: dict[int, str | None] = field(default_factory=lambda: {1: "Walls"})
     # layer index -> {"isHidden", "isLocked", "isWireframe", "intersectionGroupNr"}
     layer_flags: dict[int, dict] = field(default_factory=dict)
@@ -336,6 +408,30 @@ class FakeArchicad:
             return ok(
                 {"version": self.version, "buildNumber": self.build, "languageCode": self.language}
             )
+        if command == "API.GetAttributeFolderStructure":
+            tree = self.attribute_folders.get(params["attributeType"])
+            if tree is None:
+                return fail(-2130313112, "No folders for this attribute type")
+            return ok({"attributeFolder": deepcopy(tree)})
+        if command == "API.RenameAttributeFolders":
+            results = []
+            for position, row in enumerate(params["attributeFolderParametersList"]):
+                guid = row["attributeFolderId"]["guid"]
+                stack = list(self.attribute_folders.values())
+                folder = None
+                while stack and folder is None:
+                    node = stack.pop()
+                    if node["attributeFolderId"]["guid"] == guid:
+                        folder = node
+                    stack += [c["attributeFolder"] for c in node.get("subfolders", [])]
+                if position in self.rename_errors or folder is None:
+                    error = self.rename_errors.get(position, {"code": -1, "message": "Failed."})
+                    results.append({"success": False, "error": deepcopy(error)})
+                    continue
+                if not self.rename_ignored:
+                    folder["name"] = row["newName"]
+                results.append({"success": True})
+            return ok({"executionResults": results})
         if command in {"API.Get2DBoundingBoxes", "API.Get3DBoundingBoxes"}:
             dimension = "2D" if command == "API.Get2DBoundingBoxes" else "3D"
             configured = self.bounding_boxes_2d if dimension == "2D" else self.bounding_boxes_3d
@@ -406,9 +502,9 @@ class FakeArchicad:
                     results.append({"success": True})
             return ok({"executionResults": results})
         if command == "API.GetAllClassificationSystems":
-            return ok(deepcopy(CLASSIFICATIONS_FIXTURE["systems"]))
+            return ok(deepcopy(self.classification_data["systems"]))
         if command == "API.GetAllClassificationsInSystem":
-            tree = CLASSIFICATIONS_FIXTURE["items"].get(params["classificationSystemId"]["guid"])
+            tree = self.classification_data["items"].get(params["classificationSystemId"]["guid"])
             if tree is None:
                 return fail(4013, "Classification system not found")
             return ok(deepcopy(tree))
@@ -777,6 +873,10 @@ class FakeArchicad:
                     }
                 )
             return ok({"addOnCommandResponse": {"layers": out}})
+        if name in RENAME_COMMANDS or (
+            name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
+        ):
+            return self._rename(name, args)
         if name == "CreateLayers":
             assert args.get("overwriteExisting") is False
             out = []
@@ -805,6 +905,58 @@ class FakeArchicad:
                         current.update(row["details"])
                     out.append(deepcopy(LAYERS_FIXTURE["set_details_ok"]))
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "LayerCombination":
+            rows = [
+                {"attributeId": {"guid": combination_guid(i)}, "index": i, "name": c["name"]}
+                for i, c in self.layer_combinations.items()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetLayerCombinations":
+            out = []
+            for row in args["attributes"]:
+                guid = row["attributeId"]["guid"]
+                index = next(
+                    (i for i in self.layer_combinations if combination_guid(i) == guid), None
+                )
+                if index is None:
+                    out.append(
+                        {
+                            "error": {
+                                "code": -2130313112,
+                                "message": "Failed to retrieve layer combination attribute.",
+                            }
+                        }
+                    )
+                    continue
+                combination = self.layer_combinations[index]
+                layers = [
+                    {
+                        "attributeId": {"guid": layer_guid(layer)},
+                        "isHidden": False,
+                        "isLocked": False,
+                        "isWireframe": False,
+                        "intersectionGroupNr": 1,
+                        **combination["layers"].get(layer, {}),
+                    }
+                    for layer in self.layers
+                ]
+                out.append(
+                    {
+                        "layerCombination": {
+                            "attributeId": {"guid": guid},
+                            "attributeIndex": index,
+                            "name": combination["name"],
+                            "layers": layers,
+                        }
+                    }
+                )
+            return ok({"addOnCommandResponse": {"layerCombinations": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Surface":
+            rows = [
+                {"attributeId": {"guid": surface_guid(i)}, "index": i, "name": n}
+                for i, n in self.surfaces.items()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
         if name == "GetAttributesByType" and args["attributeType"] == "Fill":
             return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":
@@ -1486,6 +1638,127 @@ class FakeArchicad:
             rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["success"]))
         return ok({"addOnCommandResponse": {"executionResults": rows}})
 
+    def _rename(self, name: str, args: dict) -> dict:
+        failed = {"success": False, "error": {"code": -2130313112, "message": "Failed to rename"}}
+        missing_layers = name == "CreateLayerCombinations" and any(
+            "layers" not in d for d in args["layerCombinationDataArray"]
+        )
+        if self.rename_call_refused or missing_layers:
+            # Live AC30 build 3001 BRA, Tapir 1.7.0 (14/10/2026): a combination without
+            # "layers" is refused by the schema check; the error code here is not captured.
+            return fail(
+                -2130313112,
+                "Validation failed on schema rule 'required' at path "
+                "'#/layerCombinationDataArray/0'",
+            )
+        if name == "RenameNavigatorItem":
+            guid = args["navigatorItemId"]["guid"]
+            nodes = [n for tree in self.navigator_trees.values() for n in self._nav_items_of(tree)]
+            node = next((n for n in nodes if n["navigatorItemId"]["guid"] == guid), None)
+            if 0 in self.rename_errors or node is None:
+                self.rename_errors.pop(0, None)
+                return ok({"addOnCommandResponse": deepcopy(failed)})
+            if not self.rename_ignored:
+                node["name"], node["customName"] = args["newName"], True
+            return ok({"addOnCommandResponse": {"success": True}})
+        if name.startswith("Create"):
+            key = {
+                "CreateLayers": "layerDataArray",
+                "CreateBuildingMaterials": "buildingMaterialDataArray",
+                "CreateSurfaces": "surfaceDataArray",
+                "CreateLayerCombinations": "layerCombinationDataArray",
+            }[name]
+            out = []
+            for position, data in enumerate(args[key]):
+                guid = data["attributeId"]["guid"]
+                if name == "CreateBuildingMaterials":
+                    store = {g: r for g, r in self.building_materials.items() if "error" not in r}
+                    found = guid in store
+                elif name == "CreateLayerCombinations":
+                    assert data["layers"] == []  # never a layer table, only the name
+                    table = self.layer_combinations
+                    index = next((i for i in table if combination_guid(i) == guid), None)
+                    found = index is not None
+                else:
+                    table = self.layers if name == "CreateLayers" else self.surfaces
+                    make = layer_guid if name == "CreateLayers" else surface_guid
+                    index = next((i for i in table if make(i) == guid), None)
+                    found = index is not None
+                if position in self.rename_errors or not found:
+                    error = self.rename_errors.get(position)
+                    out.append({"error": deepcopy(error or {"code": -1, "message": "Failed."})})
+                    continue
+                if not self.rename_ignored:
+                    if name == "CreateBuildingMaterials":
+                        self.building_materials[guid]["name"] = data["name"]
+                    elif name == "CreateLayerCombinations":
+                        table[index]["name"] = data["name"]
+                        if self.combination_reset_on_rename:
+                            table[index]["layers"] = {}
+                    else:
+                        table[index] = data["name"]
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        key = {
+            "RenameFavorites": "renames",
+            "UpdateClassificationSystems": "classificationSystems",
+            "UpdateClassificationItems": "classificationItems",
+            "UpdatePropertyGroups": "propertyGroups",
+            "UpdatePropertyDefinitions": "propertyDefinitions",
+        }[name]
+        out = []
+        for position, row in enumerate(args[key]):
+            target = self._rename_target(name, row)
+            if position in self.rename_errors or target is None:
+                out.append(deepcopy(self.rename_errors.get(position, failed)))
+                continue
+            if not self.rename_ignored:
+                if name == "RenameFavorites":
+                    names = target
+                    names[names.index(row["oldName"])] = row["newName"]
+                elif name == "UpdatePropertyDefinitions":
+                    target["propertyName"] = row["name"]
+                else:
+                    target.update({k: v for k, v in row.items() if k in ("id", "name")})
+            out.append({"success": True})
+        return ok({"addOnCommandResponse": {"executionResults": out}})
+
+    def _rename_target(self, name: str, row: dict) -> Any:
+        if name == "RenameFavorites":
+            return next((n for n in self.favorites.values() if row["oldName"] in n), None)
+        if name == "UpdatePropertyGroups":
+            guid = row["propertyGroupId"]["guid"]
+            groups = self.property_groups
+            return next((g for g in groups if g["propertyGroupId"]["guid"] == guid), None)
+        if name == "UpdatePropertyDefinitions":
+            guid = row["propertyId"]["guid"]
+            props = self.custom_properties
+            return next((p for p in props if p["propertyId"]["guid"] == guid), None)
+        if name == "UpdateClassificationSystems":
+            guid = row["classificationSystemId"]["guid"]
+            systems = self.classification_data["systems"]["classificationSystems"]
+            return next((s for s in systems if s["classificationSystemId"]["guid"] == guid), None)
+        guid = row["classificationItemId"]["guid"]
+        stack = [
+            entry["classificationItem"]
+            for tree in self.classification_data["items"].values()
+            for entry in tree["classificationItems"]
+        ]
+        while stack:
+            item = stack.pop()
+            if item["classificationItemId"]["guid"] == guid:
+                return item
+            stack += [c["classificationItem"] for c in item.get("children", [])]
+        return None
+
+    def _nav_items_of(self, tree: dict) -> list[dict]:
+        out, stack = [], [tree]
+        while stack:
+            node = stack.pop()
+            out.append(node)
+            stack += [c["navigatorItem"] for c in node.get("children", [])]
+        return out
+
     @staticmethod
     def _id(guid: str) -> dict:
         return {"elementId": {"guid": guid}}
@@ -1519,6 +1792,15 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost roof response", request=request)
         if instance.lose_text_response and command == "CreateTexts":
             raise httpx.ReadTimeout("Injected lost text response", request=request)
+        if instance.lose_rename_response and (
+            command in RENAME_COMMANDS
+            or body.get("command") == "API.RenameAttributeFolders"
+            or (
+                command in RENAME_OVERWRITES
+                and body["parameters"].get("addOnCommandParameters", {}).get("overwriteExisting")
+            )
+        ):
+            raise httpx.ReadTimeout("Injected lost rename response", request=request)
         if instance.lose_drafting_response and command in DRAFTING_COMMANDS:
             raise httpx.ReadTimeout("Injected lost drafting response", request=request)
         if instance.lose_layer_response and command in ("CreateLayers", "SetDetailsOfElements"):

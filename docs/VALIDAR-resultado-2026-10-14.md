@@ -170,3 +170,28 @@ Mostre todas as camadas antes (vários elementos estão em camadas ocultas).
 7. Etiqueta solta com seta até (0,0): conferir visualmente.
 8. Peça "Mesa" não cria (-2130313112). Parece ser da biblioteca e não do MCP.
 9. modify_beams sem teste: precisa de uma viga em camada destravada.
+
+## Lote 13, rename_items (branch `lote/renomear`, código `1d3985b`)
+
+Mesmo ambiente: ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto sem nome na porta
+19723, sem salvar. Testado pela sessão no PC do Vitor.
+
+- `verified` e conferido relendo: Mapa de Vistas (20 itens "Pavimento" → "Pav."), Mapa
+  do Projeto (4 itens, entre eles a tabela "Mapa de Portas" → "MAPA DE PORTAS": as
+  tabelas aparecem no Mapa do Projeto como ScheduleItem), Livro de Pranchas (6 pastas),
+  favoritos de parede (5), classificação (Parede → Vedação, a parede continua na classe),
+  grupo e propriedade (o valor 2,80 continua na parede), materiais de construção (7, todos
+  os campos iguais antes e depois, só o nome mudou), camada (nenhum estado mudou) e pastas
+  de materiais, superfícies e camadas.
+- Recusas: nome repetido e nome vazio recusados na prévia.
+- Superfícies: os 4 nomes mudaram (`verified`), mas `API.GetSurfaceAttributes` mostrou a
+  `texture` diferente nas 4 (por exemplo `Concrete - 03 -opt`). O valor antigo não ficou
+  guardado. Correção: `surfaces` agora é recusado.
+- Combinações: as 4 voltaram `unknown` com "Validation failed on schema rule 'required'
+  ... path '#/layerCombinationDataArray/0'"; os nomes não mudaram. O schema de
+  `CreateLayerCombinations` exige `layers`. Correção: manda `layers: []` e trata a recusa
+  da chamada como `failed`. Falta refazer ao vivo.
+- Refeito com `f95398b`: as 4 combinações deram `verified` ("03 Projeto Executivo - ..." →
+  "03 PE - ..."), sem mudança no estado de nenhuma camada e sem outra diferença nos
+  atributos. Renomear superfície agora é recusado com a explicação.
+

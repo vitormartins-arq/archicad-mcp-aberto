@@ -250,3 +250,42 @@ Faça na planta do térreo, numa área vazia.
   tamanho do modelo. Um modelo que não existe deve ser recusado na prévia (o MCP nunca
   cria modelo). Se a prévia disser que nenhum modelo existe, conte: pode ser que o
   `GetNavigatorItemTree` do Livro de Pranchas não traga a pasta de Modelos.
+
+## Lote 13: renomear em lote para acertar o template
+
+Rode num projeto sem nome feito a partir do seu template (Arquivo > Novo, com o
+template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
+
+- [ ] **Mapa de Vistas.** "Troque 'ANT - ' por 'ARQ - ' nos nomes do Mapa de Vistas."
+  Esperado: a prévia lista as vistas e pastas, o apply dá `verified` e o Mapa de Vistas
+  mostra os nomes novos. Veja se as vistas continuam abrindo e se as pranchas que usam
+  essas vistas continuam certas.
+- [ ] **Tabelas.** "Mostre os itens do Mapa do Projeto que são tabelas e renomeie um."
+  Conte se as tabelas (Listas Interativas) aparecem no Mapa do Projeto e se o nome muda
+  de verdade no Organizador de Esquemas.
+- [ ] **Favoritos.** "Troque 'ANT' por 'ARQ' nos favoritos de parede." Esperado:
+  `verified` e os favoritos renomeados na paleta.
+- [ ] **Classificações.** "Renomeie o item Parede para Vedação na Classificação
+  Archicad." Esperado: `verified` e os elementos já classificados continuam na mesma
+  classe, agora com o nome novo.
+- [ ] **Propriedades.** "Renomeie o grupo 'Teste MCP' para 'MCP Teste' e a propriedade
+  'Pé-direito' para 'Pé direito'." Esperado: `verified` e os valores nos elementos
+  continuam lá.
+- [x] **Materiais de construção e superfícies.** Testado em 14/10: materiais ok, só o
+  nome mudou. Superfícies: o nome mudou mas a textura também, então o MCP agora recusa
+  renomear superfície. "Troque 'Concreto' por 'CONC' nos
+  materiais de construção" e o mesmo nas superfícies. Esperado: `verified`. Abra um
+  material e uma superfície renomeados e confira se **nada além do nome mudou**
+  (hachura, prioridade, cor, textura): o MCP manda só o nome, mas é o ponto de risco.
+- [ ] **Camadas.** "Renomeie a camada 'MCP Teste' para 'MCP Teste 2'." Esperado:
+  `verified`, com a camada ainda visível ou oculta como antes, e os elementos nela.
+- [x] **Combinações de camadas (refeito em 14/10, `verified`).** Em 14/10 o Tapir recusou todas por faltar o
+  campo `layers`; o MCP agora manda a lista vazia, que mantém o estado de cada camada. "Troque 'ETAPA' por 'FASE' nas combinações de
+  camadas." Esperado: `verified`. Abra Definições dos Vegetais e confira, em duas ou três
+  combinações, se o olho, o cadeado e o aramado de cada camada **continuam iguais**: o
+  MCP compara os estados antes e depois, mas é o ponto de risco.
+- [ ] **Pastas de camadas.** "Renomeie a pasta de camadas 'ANOTAÇÃO' para 'ANOTAÇÕES'."
+  (`kind` `attribute_folders`, `scope` `Layer`). Esperado: `verified`, a pasta com o
+  nome novo e as camadas dentro dela no mesmo lugar. Vale também para pastas de
+  materiais (`BuildingMaterial`) e superfícies (`Surface`).
+- [ ] **Recusas.** Um nome que já existe e um nome vazio devem ser recusados na prévia.
