@@ -527,3 +527,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Camada protegida de índice 1 recusada (a documentação Graphisoft diz que a Archicad Layer não pode ser oculta/travada). Prévia vincula estados/identidade, apply só com porta/token único/recibo, erro por camada e releitura incluindo campos não pedidos. Sem garantia de Undo de atributos; before retido para nova prévia/manual. Não edita tabelas das combinações salvas. Base nativa genérica pode criar se a camada desaparecer entre prévia e comando: teste reproduz esse caso e GUID retornado diferente vira unknown, sem repetir/apagar. Nenhuma chamada real.
 
 - Camadas: 1812 testes simulados e Ruff passaram, Windows/Python 3.12.10. Registro conferido pelo servidor: 79 ferramentas (25 leitura, 54 escrita/interação), 11 novas nesta pilha. Build de wheel/sdist também passou antes desta última adição; nada instalado nem executado no ArchiCAD real.
+
+
+## 2026-10-14 — Claude / teste ao vivo e merge dos PRs #51 a #57
+
+- Os sete PRs do Codex passaram ao vivo no projeto novo sem nome (ArchiCAD 30 build 3001
+  BRA, Tapir 1.7.0, porta 19724, sem salvar); detalhes em
+  `docs/VALIDAR-resultado-2026-10-14.md`. `modify_beams`, pendente desde o lote 1, também
+  passou com a camada da viga destravada. O Vitor fez o merge do #57 (`c6ed73b`).
+- Falta ao vivo: combinação com "ª" em `set_view_settings` e a conferência visual listada
+  no fim de `docs/VALIDAR.md`.
+- Próximas tarefas do Codex em `docs/FILA.md`: T23 `create_fills`, T24 comentários em
+  incidências, T25 pastas e vistas no Mapa de Vistas, T26 itens de classificação.
