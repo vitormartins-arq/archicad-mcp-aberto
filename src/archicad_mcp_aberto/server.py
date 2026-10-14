@@ -27,6 +27,7 @@ from archicad_mcp_aberto.tools import (
 )
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
@@ -566,6 +567,39 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         is found back in the Navigator. Requires Tapir. Never saves."""
         return await documents.create_layouts(
             client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def rename_items(
+        ctx: Context,
+        kind: renames_tool.Kind,
+        renames: list[renames_tool.Rename] | None = None,
+        find: str | None = None,
+        replace: str | None = None,
+        scope: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview renaming template items of one kind: view_map, project_map or
+        layout_book items, favorites, classification_systems, classification_items (id
+        and name), custom property_groups and properties, building_materials, surfaces
+        or layers. Either find + replace on every name (replace "" removes the text) or
+        renames, a list of exact {old, new} names. scope narrows classification_items to
+        a system, properties to a group, favorites to an element type. Items keep their
+        GUID; names that would clash are refused; up to 500 per call. Apply identical
+        inputs with explicit port and single-use token; every name is read back.
+        Requires Tapir. Never saves."""
+        return await renames_tool.rename_items(
+            client_of(ctx),
+            kind,
+            [r.model_dump() for r in renames] if renames is not None else None,
+            find,
+            replace,
+            scope,
+            port,
+            dry_run,
+            confirmation_token,
         )
 
     @mcp.tool(annotations=READ_ONLY)

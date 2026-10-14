@@ -379,6 +379,12 @@ OPERATIONS = {
         "layout_receipt_id",
         "New layouts take size and margins from their existing master layout.",
     ),
+    "rename_items": (
+        "rename",
+        "rename_receipt_id",
+        "Each item keeps its GUID, so elements that use it follow the new name. "
+        "Check the list before applying.",
+    ),
 }
 
 

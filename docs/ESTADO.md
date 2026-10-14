@@ -433,3 +433,18 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   fora e maiúsculas, `available_for` por id ou nome, `CLIENT_FULLNAME` recusado com dica.
   1473 testes simulados e Ruff passaram (Linux, Python 3.13). Falta a rodada curta ao
   vivo das correções (lista no topo de `docs/VALIDAR.md`) e o `modify_beams`.
+
+- **Claude / lote 13 na nuvem, 14/10/2026 (pedido do Vitor: acertar o template rápido):**
+  branch `lote/renomear`, empilhada no lote 12. `tools/renames.py` com `rename_items`,
+  que renomeia por troca de texto ou por lista de/para: itens do Mapa de Vistas, Mapa do
+  Projeto e Livro de Pranchas (`RenameNavigatorItem`, um por chamada, para no primeiro
+  retorno perdido), favoritos (`RenameFavorites`), sistemas e itens de classificação
+  (`UpdateClassificationSystems`/`Items`, id e nome), grupos e propriedades personalizadas
+  (`UpdatePropertyGroups`/`Definitions`), materiais de construção, superfícies e camadas
+  (`CreateBuildingMaterials`/`CreateSurfaces`/`CreateLayers` com `overwriteExisting` e o
+  GUID, só o nome). Comandos lidos no código da tag 1.7.0. OVM e Sobreposição Gráfica
+  não têm comando no Tapir 1.7.0: lacuna para levar ao Tapir upstream. O pedido do Vitor
+  também citou "vegetais"; perguntei o que é. Compostos, perfis, hachuras e tipos de
+  linha ficaram de fora porque o `Create*` deles mexe na definição (attributeDef) e
+  poderia apagar o desenho do atributo. 1490 testes simulados e Ruff passaram. Falta o
+  teste ao vivo (lote 13 do VALIDAR).

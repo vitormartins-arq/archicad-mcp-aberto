@@ -216,6 +216,10 @@
       "description": "Preview or add layouts on an existing master layout; never creates a master."
     },
     {
+      "name": "rename_items",
+      "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes); read back."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

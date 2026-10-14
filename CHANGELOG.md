@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `rename_items` (new `tools/renames.py`) to clean up a template quickly: rename
+  Navigator items (View Map, Project Map, Layout Book), favorites, classification systems
+  and items, custom property groups and properties, building materials, surfaces and
+  layers by find and replace or by exact old -> new names, with preview, single-use
+  token, receipts and a read-back of every name. Items keep their GUID. Clashing and
+  blank names are refused. The fake's shapes come from the Tapir 1.7.0 source, not a
+  live capture. Not yet tested live.
+
 - Fix what the live test of 14/10/2026 found (Archicad 30 build 3001 BRA, Tapir 1.7.0;
   results in `docs/VALIDAR-resultado-2026-10-14.md`):
   - `modify_objects` sets the height through the `ZZYZX` GDL parameter and reads it
