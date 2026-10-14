@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add custom property groups and properties (new `tools/property_definitions.py`):
+  `list_property_groups`, `create_property_groups` and `create_properties` through Tapir
+  1.7.0 `GetAllProperties`, `CreatePropertyGroups` and `CreatePropertyDefinitions`.
+  Every Tapir property type is supported, with defaults, enum options and availability by
+  classification item or whole system; existing names and built-in groups are refused,
+  and each result is read back. The fake's shapes come from the Tapir source, not a live
+  capture. Not yet tested live.
+
 - Add locking and Update Zones (new `tools/locks.py` and `tools/zones.py`):
   `lock_elements`, `unlock_elements` and `update_zones` through Tapir 1.7.0
   `LockElements`, `UnlockElements` and `UpdateZones`. Lock and unlock read every

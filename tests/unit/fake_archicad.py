@@ -121,6 +121,34 @@ LOCKS_ZONES_FIXTURE = json.loads(
         encoding="utf-8"
     )
 )
+# GetAllProperties, CreatePropertyGroups, CreatePropertyDefinitions; not live captured.
+PROPERTY_DEFINITIONS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_property_definitions_documented.json"
+    ).read_text(encoding="utf-8")
+)
+# Tapir type -> (propertyCollectionType, propertyValueType, propertyMeasureType), as
+# PropertyTypeDictionary in PropertyCommands.cpp sets them.
+PROPERTY_TYPES = {
+    "number": ("Single", "Real", "Default"),
+    "integer": ("Single", "Integer", "Default"),
+    "string": ("Single", "String", "Default"),
+    "boolean": ("Single", "Boolean", "Default"),
+    "length": ("Single", "Real", "Length"),
+    "area": ("Single", "Real", "Area"),
+    "volume": ("Single", "Real", "Volume"),
+    "angle": ("Single", "Real", "Angle"),
+    "numberList": ("List", "Real", "Default"),
+    "integerList": ("List", "Integer", "Default"),
+    "stringList": ("List", "String", "Default"),
+    "booleanList": ("List", "Boolean", "Default"),
+    "lengthList": ("List", "Real", "Length"),
+    "areaList": ("List", "Real", "Area"),
+    "volumeList": ("List", "Real", "Volume"),
+    "angleList": ("List", "Real", "Angle"),
+    "singleEnum": ("SingleChoiceEnumeration", "String", "Default"),
+    "multiEnum": ("MultipleChoiceEnumeration", "String", "Default"),
+}
 
 
 def layer_guid(index: int) -> str:
@@ -202,6 +230,16 @@ class FakeArchicad:
     lose_favorite_response: bool = False
     # LockElements/UnlockElements: refuse the whole batch, answer success without
     # changing anything, or lose the answer after acting.
+    property_groups: list[dict] = field(
+        default_factory=lambda: deepcopy(PROPERTY_DEFINITIONS_FIXTURE["propertyGroups"])
+    )
+    custom_properties: list[dict] = field(
+        default_factory=lambda: deepcopy(PROPERTY_DEFINITIONS_FIXTURE["properties"])
+    )
+    property_group_errors: dict[int, dict] = field(default_factory=dict)
+    property_create_errors: dict[int, dict] = field(default_factory=dict)
+    property_drops_availability: bool = False  # store without availability (mismatch test)
+    lose_property_definition_response: bool = False
     lock_refused: bool = False
     lock_ignored: bool = False
     lose_lock_response: bool = False
@@ -401,6 +439,60 @@ class FakeArchicad:
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
 
+    def _create_property(self, definition: dict) -> dict:
+        # Like Tapir 1.7.0: the schema requires these keys; a missing group fails the item.
+        assert {"name", "description", "type", "isEditable", "availability", "group"} <= set(
+            definition
+        )
+        group_guid = definition["group"]["propertyGroupId"]["guid"]
+        group = next(
+            (g for g in self.property_groups if g["propertyGroupId"]["guid"] == group_guid), None
+        )
+        if group is None:
+            return deepcopy(PROPERTY_DEFINITIONS_FIXTURE["property_failed"])
+        collection, value_type, measure = PROPERTY_TYPES[definition["type"]]
+        options = [
+            {
+                "enumValue": {
+                    "displayValue": e["enumValue"]["displayValue"],
+                    "guid": str(uuid4()).upper(),
+                }
+            }
+            for e in definition.get("possibleEnumValues", [])
+        ]
+        guid = str(uuid4()).upper()
+        row = {
+            "propertyId": {"guid": guid},
+            "propertyType": "Custom",
+            "propertyGroupName": group["name"],
+            "propertyName": definition["name"],
+            "propertyCollectionType": collection,
+            "propertyValueType": value_type,
+            "propertyMeasureType": measure,
+            "propertyIsEditable": definition["isEditable"],
+            "isExpressionBased": False,
+            "propertyGroupId": {"guid": group_guid},
+            "propertyDescription": definition["description"],
+            "availability": []
+            if self.property_drops_availability
+            else deepcopy(definition["availability"]),
+        }
+        if options:
+            row["possibleEnumValues"] = options
+        default = definition.get("defaultValue", {}).get("basicDefaultValue")
+        if default:
+            value = default["value"]
+            if definition["type"] in ("singleEnum", "multiEnum"):
+                ids = value if isinstance(value, list) else [{"enumValueId": value}]
+                names = [i["enumValueId"]["displayValue"] for i in ids]
+                chosen = [o for o in options if o["enumValue"]["displayValue"] in names]
+                row["defaultEnumValueIds"] = [{"guid": o["enumValue"]["guid"]} for o in chosen]
+                row["defaultValueDisplay"] = "; ".join(names)
+            else:
+                row["defaultValueDisplay"] = str(value)
+        self.custom_properties.append(row)
+        return {"propertyId": {"guid": guid}}
+
     def _on_locked_layer(self, guid: str) -> bool:
         layer = self.details.get(guid, {}).get("layerIndex")
         return self.layer_flags.get(layer, {}).get("isLocked") is True
@@ -523,6 +615,43 @@ class FakeArchicad:
                 self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name == "GetAllProperties":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "properties": deepcopy(self.custom_properties),
+                        "propertyGroups": deepcopy(self.property_groups),
+                    }
+                }
+            )
+        if name == "CreatePropertyGroups":
+            out = []
+            for position, row in enumerate(args["propertyGroups"]):
+                group = row["propertyGroup"]
+                taken = any(g["name"] == group["name"] for g in self.property_groups)
+                if position in self.property_group_errors or taken:
+                    error = self.property_group_errors.get(position)
+                    out.append(deepcopy(error or PROPERTY_DEFINITIONS_FIXTURE["group_failed"]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.property_groups.append(
+                    {
+                        "propertyGroupId": {"guid": guid},
+                        "name": group["name"],
+                        "description": group.get("description", ""),
+                        "isCustom": True,
+                    }
+                )
+                out.append({"propertyGroupId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"propertyGroupIds": out}})
+        if name == "CreatePropertyDefinitions":
+            out = []
+            for position, row in enumerate(args["propertyDefinitions"]):
+                if position in self.property_create_errors:
+                    out.append(deepcopy(self.property_create_errors[position]))
+                    continue
+                out.append(self._create_property(row["propertyDefinition"]))
+            return ok({"addOnCommandResponse": {"propertyIds": out}})
         if name in ("LockElements", "UnlockElements"):
             guids = [e["elementId"]["guid"] for e in args["elements"]]
             if self.lock_refused or any(g not in self.elements for g in guids):
@@ -1311,6 +1440,11 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
         if instance.lose_favorite_response and command == "ApplyFavoritesToElements":
             raise httpx.ReadTimeout("Injected lost favorite response", request=request)
+        if instance.lose_property_definition_response and command in (
+            "CreatePropertyGroups",
+            "CreatePropertyDefinitions",
+        ):
+            raise httpx.ReadTimeout("Injected lost property definition response", request=request)
         if instance.lose_lock_response and command in ("LockElements", "UnlockElements"):
             raise httpx.ReadTimeout("Injected lost lock response", request=request)
         if instance.lose_zone_update_response and command == "UpdateZones":

@@ -189,3 +189,18 @@ Faça na planta do térreo, numa área vazia.
   zonas." Esperado: `unverified` com a mesma contagem de zonas antes e depois, e a área
   da zona e o carimbo atualizados na planta. Conte se o carimbo ficou no lugar
   (`keep_stamp_position` padrão).
+
+## Lote 10: grupos e propriedades personalizadas
+
+- [ ] **list_property_groups.** "Quais grupos de propriedades existem?" Esperado: os
+  mesmos grupos do Gerenciador de Propriedades, com os personalizados marcados.
+- [ ] **create_property_groups.** "Crie o grupo de propriedades 'Teste MCP'." Esperado:
+  `verified` e o grupo vazio no Gerenciador de Propriedades. Pedir de novo deve ser
+  recusado na prévia.
+- [ ] **create_properties.** "No grupo 'Teste MCP', crie 'Acabamento' (opções Pintura e
+  Cerâmica, padrão Cerâmica) disponível para toda a ARCHICAD Classification, e 'Pé-direito'
+  (comprimento, padrão 2,80 m) disponível só para Parede." Esperado: `verified`; no
+  Gerenciador as opções, o padrão e a disponibilidade certos; numa parede de teste as duas
+  aparecem em Configurações > Classificação e Propriedades com os valores padrão. Conte se
+  o padrão de comprimento apareceu como 2,80 m (o MCP manda metros) e, se testar uma
+  propriedade de ângulo, se o padrão em radianos virou o ângulo certo.

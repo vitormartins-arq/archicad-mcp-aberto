@@ -20,6 +20,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    property_definitions,
     read,
     roofs,
     selection,
@@ -78,6 +79,9 @@ INPUTS = {
     "lock_elements": {"element_guids": [GUID]},
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
+    "list_property_groups": {},
+    "create_property_groups": {"groups": [{"name": "Obra"}]},
+    "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
     "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
     "create_lines": {
         "lines": [{"start": {"x": 0, "y": 0}, "end": {"x": 1, "y": 0}, "floor_index": 0}]
@@ -213,6 +217,7 @@ TARGETED = {
         modify,
         openings,
         project_info,
+        property_definitions,
         read,
         roofs,
         selection,

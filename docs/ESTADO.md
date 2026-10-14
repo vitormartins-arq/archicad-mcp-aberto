@@ -391,3 +391,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   atualiza todas. O ArchiCAD simulado agora trata elemento em camada travada como não
   editável. Fixture `tapir170_locks_zones_documented.json`, não é captura ao vivo. 1386
   testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 10 na nuvem, 14/10/2026:** branch `lote/propriedades`, empilhada no
+  lote 9. `tools/property_definitions.py` com `list_property_groups`,
+  `create_property_groups` e `create_properties`, pelos comandos do Tapir 1.7.0 lidos no
+  código e no `CommonSchemaDefinitions.json` da tag 1.7.0 (`GetAllProperties`,
+  `CreatePropertyGroups`, `CreatePropertyDefinitions`). Achados no código: o esquema exige
+  `description`, `isEditable`, `availability` e `group` em toda propriedade, então o MCP
+  manda sempre os quatro; o padrão de enum vai pelo `displayValue` e o Tapir acha o GUID
+  da opção; `GetAllProperties` devolve `defaultEnumValueIds`, usado para conferir o padrão
+  de enum. Falta confirmar ao vivo se o padrão de ângulo é em radianos. Fixture
+  `tapir170_property_definitions_documented.json`, não é captura ao vivo. 1433 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.

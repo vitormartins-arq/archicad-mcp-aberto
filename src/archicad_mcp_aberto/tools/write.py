@@ -354,6 +354,16 @@ OPERATIONS = {
         "zone_update_receipt_id",
         "Recalculates every zone of the project; check areas and stamps in Archicad.",
     ),
+    "create_property_groups": (
+        "property group",
+        "property_group_receipt_id",
+        "New custom groups are added; an existing group name is never changed.",
+    ),
+    "create_properties": (
+        "property",
+        "property_receipt_id",
+        "New custom properties are added; existing properties are never changed.",
+    ),
 }
 
 

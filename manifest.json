@@ -192,6 +192,18 @@
       "description": "Preview or run Update Zones on every zone of the project; never saves."
     },
     {
+      "name": "list_property_groups",
+      "description": "Property groups with GUID, name, custom flag and property count."
+    },
+    {
+      "name": "create_property_groups",
+      "description": "Preview or add empty custom property groups; existing names refused."
+    },
+    {
+      "name": "create_properties",
+      "description": "Preview or add custom properties with type, default, options and availability; read back."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

@@ -20,6 +20,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    property_definitions,
     read,
     write,
 )
@@ -474,6 +475,47 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             undo_bottom_trim,
             dry_run,
             confirmation_token,
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_property_groups(ctx: Context, port: int | None = None) -> dict:
+        """Property groups (Options > Property Manager): GUID, name, description, whether
+        it is custom and how many properties it holds. Requires Tapir."""
+        return await property_definitions.list_property_groups(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_property_groups(
+        ctx: Context,
+        groups: list[property_definitions.PropertyGroupCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty custom property groups (name, description). An
+        existing group name is refused. Apply identical inputs with explicit port and
+        single-use token; each group is read back. Requires Tapir. Never saves."""
+        return await property_definitions.create_property_groups(
+            client_of(ctx), groups, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_properties(
+        ctx: Context,
+        properties: list[property_definitions.PropertyCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 custom properties to existing custom groups: name,
+        group (name or GUID), type (number, integer, string, boolean, length, area,
+        volume, angle, their List forms, singleEnum, multiEnum), optional description,
+        editable, default (meters, radians; enum defaults are option names),
+        enum_values for enums, and available_for (classification item GUIDs) or
+        available_for_system (every item of one system). Names already in the group are
+        refused. Apply identical inputs with explicit port and single-use token; each
+        property is read back. Requires Tapir. Never saves."""
+        return await property_definitions.create_properties(
+            client_of(ctx), properties, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)
