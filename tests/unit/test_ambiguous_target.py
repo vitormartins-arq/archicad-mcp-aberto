@@ -20,6 +20,7 @@ from archicad_mcp_aberto.tools import (
     layers,
     locks,
     modify,
+    navigator,
     openings,
     project_info,
     property_definitions,
@@ -50,6 +51,7 @@ MODIFY_TYPES = {
     "modify_labels": "Label",
 }
 INPUTS = {
+    "get_navigator_tree": {},
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
     "attach_elements_to_issue": {
@@ -233,6 +235,7 @@ TARGETED = {
         layers,
         locks,
         modify,
+        navigator,
         openings,
         project_info,
         property_definitions,

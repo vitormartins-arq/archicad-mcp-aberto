@@ -409,6 +409,15 @@ class FakeArchicad:
     issue_ignored: set[str] = field(default_factory=set)
     lose_issue_response_at: int | None = None
 
+    publisher_sets: dict[str, dict] = field(
+        default_factory=lambda: deepcopy(NAVIGATOR_FIXTURE["publisher_sets"])
+    )
+
+    def __post_init__(self):
+        # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
+        for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
+            self.navigator_trees.setdefault(map_id, deepcopy(tree))
+
     def handle(self, body: dict) -> dict:
         command = body.get("command", "")
         params = body.get("parameters", {})
@@ -846,6 +855,11 @@ class FakeArchicad:
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
         if name == "GetNavigatorItemTree":
+            if args["navigatorMapId"] == "PublisherSets" and "publisherSetName" in args:
+                tree = self.publisher_sets.get(args["publisherSetName"])
+                if tree is None:
+                    return ok({"addOnCommandResponse": deepcopy(NAVIGATOR_FIXTURE["invalid_set"])})
+                return ok({"addOnCommandResponse": {"navigatorItemTree": deepcopy(tree)}})
             tree = self.navigator_trees.get(args["navigatorMapId"])
             if tree is None:
                 return ok({"addOnCommandResponse": {"error": {"code": -1, "message": "No map."}}})
@@ -1970,6 +1984,14 @@ MODIFY_LABELS_FIXTURE = json.loads(
 # Source-derived command schemas and synthetic values; NOT a live capture.
 ISSUES_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_issues_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# NavigatorCommands.cpp tag 1.7.0 shapes; synthetic values, NOT captured live.
+NAVIGATOR_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_navigator_documented.json").read_text(
         encoding="utf-8"
     )
 )

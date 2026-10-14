@@ -107,6 +107,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_issues` | Read | Issue GUIDs, names, tags and native metadata with filtering/pagination | yes |
 | `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
 | `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
+| `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
 
 ### Reported live validation
 
@@ -391,3 +392,15 @@ and open to everyone's contributions.
   Each native create/association is its **own Undo step**. A lost or malformed response
   stops the remaining writes without retrying, preserves prior results and marks later
   items `failed` with `not_attempted: true`. Source-derived simulation only; live validation pending.
+
+
+- `get_navigator_tree(navigator_map="ProjectMap", port?, query?, offset=0, limit=200,
+  publisher_set_name?)` reads a flattened Navigator tree through Tapir 1.7.0. Maps are
+  `ProjectMap` (project), `PublicViewMap` (views), `LayoutBook` (layouts) and
+  `PublisherSets` (one publisher set). Rows include `guid`, `name`, native `type`,
+  `parent_guid`, `depth`, `prefix` and displayed `uiId`; the root is depth 0. Search
+  matches name/type/uiId case-insensitively before pagination (limit up to 500); parent
+  GUIDs and depth always refer to the original unfiltered tree. Pass an exact
+  `publisher_set_name` with PublisherSets to read that set; omitting it returns **only
+  the first set**, with a note. No publishing, writing or saving. Source-derived
+  simulated coverage; live validation pending.

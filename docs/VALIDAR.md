@@ -310,3 +310,12 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
   recibo verified por parede, vínculos anteriores mantidos e nenhuma geometria excluída.
 - [ ] GUID inexistente de incidência ou elemento deve ser recusado na prévia.
   Sem salvar/BCF/apagar. Cada criação ou associação é um passo nativo separado de Undo.
+
+
+### Lote 7 (Codex) — T22: mapa do projeto
+
+- [ ] get_navigator_tree para ProjectMap, PublicViewMap e LayoutBook: comparar nomes,
+  tipos, pais e profundidades com o Navegador, incluindo pastas/modelos de prancha.
+- [ ] Buscar parte do nome ou uiId e paginar, mantendo parent_guid/depth originais.
+- [ ] PublisherSets sem nome: somente primeiro conjunto, nota explícita; com
+  publisher_set_name exato, conferir outro conjunto. Não publicar nem salvar.

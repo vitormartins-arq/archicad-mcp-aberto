@@ -490,3 +490,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Incidências em tools/issues.py, branch codex/t21-issues empilhada na T20. GetIssues, CreateIssue, AttachElementsToIssue e GetElementsAttachedToIssue conferidos em IssueCommands.cpp da tag oficial 1.7.0; fixture documental/sintética, não captura real. list_issues filtra/pagina; create_issues até 20 com name/tagText; associação por GUID até 100 elementos existentes, somente Highlight. Prévia vincula metadados/incidência/associações além do projeto e elementos; apply com porta/token de uso único, recibo por item, erros isolados e conferência. Resposta perdida ou malformada para os próximos envios, sem repetir; anteriores ainda conferidos. Cada comando nativo é um passo de Undo. Sem BCF, exclusão ou salvamento. Nenhuma chamada real.
 
 - T21: 1588 testes simulados passaram e Ruff passou em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / T22 (Quem está com o quê)
+
+- get_navigator_tree em tools/navigator.py, branch codex/t22-navigator empilhada na T21. GetNavigatorItemTree confirmado em NavigatorCommands.cpp da tag oficial 1.7.0: navigatorMapId aceita ProjectMap/PublicViewMap/LayoutBook/PublisherSets, com publisherSetName opcional no último (sem nome retorna somente o primeiro conjunto). Árvore achatada em pré-ordem com GUID/nome/tipo/parent_guid/depth/prefix/uiId, raiz em profundidade zero, busca e paginação até 500. Pai e profundidade não mudam com o filtro. Leitura exclusiva, resolve_port, respostas malformadas recusadas sem inventar árvore vazia. Fake preserva navigator_trees/documentos e acrescenta mapas/filtros de publicador. Fixture documental, não captura real; nenhuma chamada real. FILA e tools/selection.py intactos; merge pelo Vitor.
+
+- T22: 1627 testes simulados e Ruff passaram, Windows/Python 3.12.10. Pilha T20–T22 registra 73 ferramentas (23 de leitura, 50 de escrita/interação); nenhuma chamada ao ArchiCAD real.

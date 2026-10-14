@@ -28,6 +28,7 @@ from archicad_mcp_aberto.tools import (
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
@@ -1068,6 +1069,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await issues_tool.attach_elements_to_issue(
             client_of(ctx), issue_guid, element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_navigator_tree(
+        ctx: Context,
+        navigator_map: navigator_tool.NavigatorMap = "ProjectMap",
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+        publisher_set_name: str | None = None,
+    ) -> dict:
+        """Read ProjectMap, PublicViewMap, LayoutBook or one PublisherSets tree.
+        Flattened GUID/name/type/parent/depth, root included. Query matches name/type/uiId
+        before pagination. For PublisherSets, pass an exact publisher_set_name or get
+        only the first native set. Never writes, saves or publishes.
+        """
+        return await navigator_tool.get_navigator_tree(
+            client_of(ctx), navigator_map, port, query, offset, limit, publisher_set_name
         )
 
     return mcp

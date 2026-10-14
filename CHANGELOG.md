@@ -229,3 +229,8 @@
   through source-confirmed Tapir 1.7.0 commands. Highlight associations only, missing
   elements refused, shared confirmation/receipts and per-item read-back. Singular native
   commands stop on an unknown outcome; each is a separate Undo step. Simulated only.
+
+- Add read-only `get_navigator_tree`: flattened project/view/layout/publisher tree with
+  GUID, parent and depth, filtering and pagination. Exact native map values; PublisherSets
+  selects a named set or explicitly notes the native first-set default. Source-derived
+  Tapir 1.7.0 fixture, not a live capture; preserves the existing document fake.
