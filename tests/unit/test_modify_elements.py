@@ -10,6 +10,8 @@ from tests.unit.fake_archicad import (
     CREATE_OPENINGS_FIXTURE,
     CREATE_SLABS_FIXTURE,
     CREATE_WALLS_FIXTURE,
+    LABELS_FIXTURE,
+    MESHES_FIXTURE,
     MODIFY_ELEMENTS_FIXTURE,
     ROOFS_TEXTS_FIXTURE,
     FakeArchicad,
@@ -42,6 +44,8 @@ BEAM_DETAILS = {
     },
 }
 ROWS = {
+    "Mesh": MESHES_FIXTURE["mesh_details"],
+    "Label": LABELS_FIXTURE["label_details"],
     "Slab": CREATE_SLABS_FIXTURE["slab_details"],
     "Column": CREATE_COLUMNS_FIXTURE["column_details"],
     "Beam": BEAM_DETAILS,
@@ -55,6 +59,7 @@ ROWS = {
     },
 }
 TOOLS = {
+    "Label": (modify.modify_labels, "ModifyLabels", "labelsWithDetails"),
     "Slab": (modify.modify_slabs, "ModifySlabs", "slabsWithDetails"),
     "Column": (modify.modify_columns, "ModifyColumns", "columnsWithDetails"),
     "Beam": (modify.modify_beams, "ModifyBeams", "beamsWithDetails"),
@@ -65,6 +70,7 @@ TOOLS = {
     "Text": (modify.modify_texts, "ModifyTexts", "textsWithDetails"),
 }
 SAMPLE = {
+    "Label": {"text": "Wall finish"},
     "Slab": {"thickness": 0.25},
     "Column": {"height": 3.5},
     "Beam": {"level": 2.8},

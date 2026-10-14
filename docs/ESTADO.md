@@ -476,3 +476,54 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   (`succeeded: false`) passa a ser `failed`, não `unknown`. Os PRs #37 a #49 entraram na
   main (merge do #49 pelo Vitor); o #41 está incluído no #50 e pode ser fechado depois.
 
+
+
+## 2026-10-14 — Codex / T20 (Quem está com o quê)
+
+- Main remota 8c2d918 já inclui lote/camadas e lotes posteriores; a exceção de base antiga da FILA deixou de ser necessária. T20 em codex/t20-modify-labels, só simulado. ModifyLabels existe na tag oficial 1.7.0 (ElementCreationCommands.cpp), recebe labelsWithDetails e responde executionResults; texto/style.height aceitos, mas não coordenadas/andar. Ferramenta modify_labels até 50 etiquetas Text, texto/height_mm, recusa Symbol e campos não suportados, preserva dono/pontos/andar, prévia/token/porta/recibos e releitura. O comando nativo pode reconstruir parágrafos e desligar quebra automática. Fixture documental, não captura real. Posição fica fora desta entrega por limitação nativa; mover exige ferramenta separada. T21 e T22 seguem empilhadas, sem merge pelo Codex.
+
+- T20: 1526 testes simulados e Ruff passaram, Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / T21 (Quem está com o quê)
+
+- Incidências em tools/issues.py, branch codex/t21-issues empilhada na T20. GetIssues, CreateIssue, AttachElementsToIssue e GetElementsAttachedToIssue conferidos em IssueCommands.cpp da tag oficial 1.7.0; fixture documental/sintética, não captura real. list_issues filtra/pagina; create_issues até 20 com name/tagText; associação por GUID até 100 elementos existentes, somente Highlight. Prévia vincula metadados/incidência/associações além do projeto e elementos; apply com porta/token de uso único, recibo por item, erros isolados e conferência. Resposta perdida ou malformada para os próximos envios, sem repetir; anteriores ainda conferidos. Cada comando nativo é um passo de Undo. Sem BCF, exclusão ou salvamento. Nenhuma chamada real.
+
+- T21: 1588 testes simulados passaram e Ruff passou em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / T22 (Quem está com o quê)
+
+- get_navigator_tree em tools/navigator.py, branch codex/t22-navigator empilhada na T21. GetNavigatorItemTree confirmado em NavigatorCommands.cpp da tag oficial 1.7.0: navigatorMapId aceita ProjectMap/PublicViewMap/LayoutBook/PublisherSets, com publisherSetName opcional no último (sem nome retorna somente o primeiro conjunto). Árvore achatada em pré-ordem com GUID/nome/tipo/parent_guid/depth/prefix/uiId, raiz em profundidade zero, busca e paginação até 500. Pai e profundidade não mudam com o filtro. Leitura exclusiva, resolve_port, respostas malformadas recusadas sem inventar árvore vazia. Fake preserva navigator_trees/documentos e acrescenta mapas/filtros de publicador. Fixture documental, não captura real; nenhuma chamada real. FILA e tools/selection.py intactos; merge pelo Vitor.
+
+- T22: 1627 testes simulados e Ruff passaram, Windows/Python 3.12.10. Pilha T20–T22 registra 73 ferramentas (23 de leitura, 50 de escrita/interação); nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / terrenos 3D (tempo adicional autorizado)
+
+- Branch feat/mesh-tools empilhada na T22, tools/meshes.py: create_meshes e modify_meshes, até 20 por chamada. CreateMeshes/ModifyMeshes e os auxiliares de geometria/leitura conferidos na tag oficial Tapir 1.7.0, que aponta para 02691b5d680b60c73317e8e49b78ab14dfd4c9d8. Contorno simples com 3–200 pontos 3D, alturas públicas absolutas em metros; converte level para deslocamento do andar e z dos vértices para altura relativa ao plano-base (API_MeshType/meshPolyZ). Sem furos/arcos/curvas internas; superfície sem saia por padrão, saia/corpo opcionais abaixo dos vértices. Edição limitada a cota-base/saia/arestas/linhas, preservando topologia/andar; terrenos complexos recusados nesta primeira versão. Mesmo protocolo prévia/token/porta/recibo/timeout/erro por item e conferência 3D. Fixture sintética da fonte, não captura ao vivo. Nenhuma chamada real.
+
+- Terrenos: 1696 testes simulados e Ruff passaram em Windows/Python 3.12.10. Registro total nesta pilha: 75 ferramentas (23 leitura, 52 escrita/interação); teste ao vivo pendente.
+
+
+## 2026-10-14 — Codex / configurações de vistas (tempo adicional autorizado)
+
+- Branch feat/view-settings empilhada em terrenos. tools/views.py: get_view_settings (até 100 GUIDs, erro por vista) e set_view_settings (escala denominador 1:n e combinação existente por nome/GUID). GetViewSettings/SetViewSettings confirmados em NavigatorCommands.cpp, tag 1.7.0/02691b5d. Prévia confere PublicViewMap, lê configurações e resolve combinações uma vez; token vincula estados das combinações e dados das vistas. Apply manda só drawingScale/layerCombination e confere os demais campos legíveis inalterados, incluindo zoom/rotação/canetas/sobreposição, além dos estados das camadas. Nomes duplicados de combinação recusados mesmo por GUID: o comando nativo recebe somente nome.
+- SetViewSettings não usa ACAPI_CallUndoableCommand; prévia/recibo avisam para não contar com Undo e retêm valores anteriores para restauração por nova prévia/manual. O protocolo compartilhado respeita revert_note opcional sem mudar notas das outras ferramentas. drawingScale também ativa saveDScale, flag que GetViewSettings não expõe; nota explícita, sem afirmar conferência dessa flag. Fixture documental/sintética, não captura real; nunca salva/publica.
+
+- Vistas: 1748 testes simulados e Ruff passaram em Windows/Python 3.12.10. Registro: 77 ferramentas (24 leitura, 53 escrita/interação). CI da T20 verde; T21/T22 passaram em Windows/Linux, macOS cancelado antes de qualquer etapa (tentativa de reexecução apenas dos jobs afetados). Nenhuma chamada real nesta sessão de desenvolvimento.
+
+
+## 2026-10-14 — Codex / conferência em coordenadas georreferenciadas
+
+- Revisão das novas ferramentas reproduziu no simulado seis falhas antes da correção: em ±6500000 m, um MoveElements ignorado de 5 mm e um vértice de terreno deslocado 5 mm apareciam como verified; contorno aberto válido de 1 mm podia ser confundido com fechado. Causa: math.isclose mantinha tolerância relativa, que aumentava com o valor absoluto das coordenadas. Branch fix/absolute-geometry-tolerance mantém tolerâncias absolutas de conferência (1e-7 nos detalhes/polígonos e 1 mm nas caixas movidas), rel_tol=0; não muda comandos/payloads nem repete gravações. Padrões de criação/confirmacão/recibos intactos. Somente simulado, nenhuma chamada real.
+
+- Regressão georreferenciada: 15 casos passaram após a correção (6 falhavam antes), suíte completa 1763 testes simulados e Ruff passaram, Windows/Python 3.12.10. Nenhuma chamada real.
+
+
+## 2026-10-14 — Codex / estado de camadas (tempo adicional autorizado)
+
+- Branch feat/layer-settings empilhada na correção geométrica. list_layer_combinations filtra/pagina cabeçalhos e opcionalmente lê estados de cada camada por GetLayerCombinations, em lotes de 100, mantendo erro por combinação. set_layer_settings até 50 camadas existentes por nome/GUID: hidden/locked/wireframe/intersection_group (0–32767), sem renomear; CreateLayers overwriteExisting=true com GUID e nome atual obrigatório mais só flags pedidas. Fonte AttributeCommands.cpp na tag 1.7.0/02691b5d, fixture documental/sintética, não captura real.
+- Camada protegida de índice 1 recusada (a documentação Graphisoft diz que a Archicad Layer não pode ser oculta/travada). Prévia vincula estados/identidade, apply só com porta/token único/recibo, erro por camada e releitura incluindo campos não pedidos. Sem garantia de Undo de atributos; before retido para nova prévia/manual. Não edita tabelas das combinações salvas. Base nativa genérica pode criar se a camada desaparecer entre prévia e comando: teste reproduz esse caso e GUID retornado diferente vira unknown, sem repetir/apagar. Nenhuma chamada real.
+
+- Camadas: 1812 testes simulados e Ruff passaram, Windows/Python 3.12.10. Registro conferido pelo servidor: 79 ferramentas (25 leitura, 54 escrita/interação), 11 novas nesta pilha. Build de wheel/sdist também passou antes desta última adição; nada instalado nem executado no ArchiCAD real.

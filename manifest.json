@@ -330,6 +330,50 @@
     {
       "name": "run_read_command",
       "description": "Run one read-only official JSON API or Tapir command from a closed list; raw response."
+    },
+    {
+      "name": "modify_labels",
+      "description": "Edit Text label content and height with preview, single-use confirmation and read-back; no position changes."
+    },
+    {
+      "name": "list_issues",
+      "description": "List issue GUIDs, names, tags and metadata with filtering and pagination."
+    },
+    {
+      "name": "create_issues",
+      "description": "Safely create up to 20 issues with preview, confirmation, per-issue receipt and read-back."
+    },
+    {
+      "name": "attach_elements_to_issue",
+      "description": "Safely associate existing elements with one issue as Highlight, with confirmation and verification."
+    },
+    {
+      "name": "get_navigator_tree",
+      "description": "Read flattened Project Map, View Map, Layout Book or one named publisher set, with filtering and pagination."
+    },
+    {
+      "name": "create_meshes",
+      "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
+    },
+    {
+      "name": "modify_meshes",
+      "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
+    },
+    {
+      "name": "get_view_settings",
+      "description": "Read settings or native errors per Navigator view, including scale, layer combination and rotation."
+    },
+    {
+      "name": "set_view_settings",
+      "description": "Safely set view scale and existing layer combination, checking all other readable settings unchanged; no guaranteed Undo."
+    },
+    {
+      "name": "list_layer_combinations",
+      "description": "List saved layer combinations, optionally including per-layer flags and intersection groups."
+    },
+    {
+      "name": "set_layer_settings",
+      "description": "Safely change existing layer flags/group with preview, one-use confirmation and read-back; preserve name and identity."
     }
   ],
   "compatibility": {

@@ -15,10 +15,14 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    issues,
     labels,
+    layer_settings,
     layers,
     locks,
+    meshes,
     modify,
+    navigator,
     openings,
     project_info,
     property_definitions,
@@ -27,6 +31,7 @@ from archicad_mcp_aberto.tools import (
     roofs,
     selection,
     texts,
+    views,
     write,
     zones,
 )
@@ -46,8 +51,38 @@ MODIFY_TYPES = {
     "modify_objects": "Object",
     "modify_roofs": "Roof",
     "modify_texts": "Text",
+    "modify_labels": "Label",
+    "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "list_layer_combinations": {},
+    "set_layer_settings": {"changes": [{"layer": "Editable", "locked": False}]},
+    "get_view_settings": {"view_guids": ["77777777-7777-4777-8777-000000000003"]},
+    "set_view_settings": {
+        "changes": [{"guid": "77777777-7777-4777-8777-000000000003", "drawing_scale": 100}]
+    },
+    "create_meshes": {
+        "meshes": [
+            {
+                "outline": [
+                    {"x": 0, "y": 0, "z": 0},
+                    {"x": 4, "y": 0, "z": 1},
+                    {"x": 0, "y": 3, "z": 0},
+                ],
+                "floor_index": 0,
+                "level": 0,
+            }
+        ]
+    },
+    "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
+    "get_navigator_tree": {},
+    "list_issues": {},
+    "create_issues": {"issues": [{"name": "Review"}]},
+    "attach_elements_to_issue": {
+        "issue_guid": "99999999-9999-4999-8999-999999999999",
+        "element_guids": [GUID],
+    },
+    "modify_labels": {"labels": [{"guid": GUID, "text": "Wall finish"}]},
     "run_read_command": {"command": "Tapir.GetStories"},
     "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
@@ -219,10 +254,14 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        issues,
         labels,
+        layer_settings,
         layers,
         locks,
+        meshes,
         modify,
+        navigator,
         openings,
         project_info,
         property_definitions,
@@ -230,6 +269,7 @@ TARGETED = {
         roofs,
         selection,
         texts,
+        views,
         write,
         zones,
     )
@@ -316,6 +356,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
         for instance in (first, second):
             instance.elements[GUID] = MODIFY_TYPES[name]
             instance.details[GUID] = deepcopy(MODIFY_ROWS[MODIFY_TYPES[name]])
+    if name == "set_layer_settings":
+        for instance in (first, second):
+            instance.layers[2] = "Editable"
     if name == "create_groups":
         for instance in (first, second):
             instance.elements[PROP] = "Wall"
@@ -370,6 +413,9 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     first, second = instances()
     if name in {"create_windows", "create_doors"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
+    if name == "set_layer_settings":
+        for instance in (first, second):
+            instance.layers[2] = "Editable"
     if name == "create_groups":
         second.elements[PROP] = "Wall"
     arguments = deepcopy(INPUTS[name])

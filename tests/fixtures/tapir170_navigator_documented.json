@@ -1,0 +1,161 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "source": "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/1.7.0/archicad-addon/Sources/NavigatorCommands.cpp",
+    "source_sha256": "27fef16a4e952bed94979385c5421a4a15fff87cdccede60467b5e12c90e4e4d",
+    "note": "Synthetic tree values copied from NavigatorItemToObjectState/GetNavigatorItemTree. Children use navigatorItem wrappers; GUID is navigatorItemId.guid. ProjectMap/LayoutBook reuse the documents fixture. PublisherSets retrieves one set, optionally selected by exact publisherSetName."
+  },
+  "trees": {
+    "PublicViewMap": {
+      "navigatorItemId": {
+        "guid": "77777777-7777-4777-8777-000000000001"
+      },
+      "name": "Views",
+      "type": "ProjectItem",
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": false,
+      "isIndependent": false,
+      "children": [
+        {
+          "navigatorItem": {
+            "navigatorItemId": {
+              "guid": "77777777-7777-4777-8777-000000000002"
+            },
+            "name": "Architecture",
+            "type": "FolderItem",
+            "prefix": "",
+            "uiId": "",
+            "customUiId": false,
+            "customName": false,
+            "isIndependent": false,
+            "children": [
+              {
+                "navigatorItem": {
+                  "navigatorItemId": {
+                    "guid": "77777777-7777-4777-8777-000000000003"
+                  },
+                  "name": "Ground floor",
+                  "type": "StoryItem",
+                  "prefix": "",
+                  "uiId": "V.01",
+                  "customUiId": false,
+                  "customName": false,
+                  "isIndependent": false
+                }
+              }
+            ]
+          }
+        },
+        {
+          "navigatorItem": {
+            "navigatorItemId": {
+              "guid": "77777777-7777-4777-8777-000000000004"
+            },
+            "name": "Door schedule",
+            "type": "ScheduleItem",
+            "prefix": "",
+            "uiId": "V.02",
+            "customUiId": false,
+            "customName": false,
+            "isIndependent": false
+          }
+        }
+      ]
+    },
+    "PublisherSets": {
+      "navigatorItemId": {
+        "guid": "77777777-7777-4777-8777-000000000010"
+      },
+      "name": "PDF issue",
+      "type": "FolderItem",
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": false,
+      "isIndependent": false,
+      "children": [
+        {
+          "navigatorItem": {
+            "navigatorItemId": {
+              "guid": "77777777-7777-4777-8777-000000000011"
+            },
+            "name": "Floor plan",
+            "type": "DrawingItem",
+            "prefix": "",
+            "uiId": "A.01",
+            "customUiId": false,
+            "customName": false,
+            "isIndependent": false
+          }
+        }
+      ]
+    }
+  },
+  "publisher_sets": {
+    "PDF issue": {
+      "navigatorItemId": {
+        "guid": "77777777-7777-4777-8777-000000000010"
+      },
+      "name": "PDF issue",
+      "type": "FolderItem",
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": false,
+      "isIndependent": false,
+      "children": [
+        {
+          "navigatorItem": {
+            "navigatorItemId": {
+              "guid": "77777777-7777-4777-8777-000000000011"
+            },
+            "name": "Floor plan",
+            "type": "DrawingItem",
+            "prefix": "",
+            "uiId": "A.01",
+            "customUiId": false,
+            "customName": false,
+            "isIndependent": false
+          }
+        }
+      ]
+    },
+    "DWG exchange": {
+      "navigatorItemId": {
+        "guid": "77777777-7777-4777-8777-000000000020"
+      },
+      "name": "DWG exchange",
+      "type": "FolderItem",
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": false,
+      "isIndependent": false,
+      "children": [
+        {
+          "navigatorItem": {
+            "navigatorItemId": {
+              "guid": "77777777-7777-4777-8777-000000000021"
+            },
+            "name": "Ground floor DWG",
+            "type": "DrawingItem",
+            "prefix": "",
+            "uiId": "D.01",
+            "customUiId": false,
+            "customName": false,
+            "isIndependent": false
+          }
+        }
+      ]
+    }
+  },
+  "invalid_set": {
+    "error": {
+      "code": -1,
+      "message": "Not valid publisher set name."
+    }
+  }
+}

@@ -25,12 +25,17 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
+from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import meshes as meshes_tool
+from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
+from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -1011,6 +1016,176 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         e.g. 'Tapir.GetHotlinks'; parameters are sent unchanged. Writes, saves and unlisted
         commands are refused; see docs/GATEWAY.md. Prefer the dedicated tools when one fits."""
         return await gateway.run_read_command(client_of(ctx), command, parameters, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_labels(
+        ctx: Context,
+        labels: list[modify.LabelModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 Text labels: text and height_mm (paper mm).
+        Tapir 1.7.0 cannot change label position/story here. Symbol labels and unsupported
+        fields are refused. Explicit port and single-use token to apply; never saves.
+        """
+        return await modify.modify_labels(client_of(ctx), labels, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_issues(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List issues (GUID, name, tagText and native metadata), filtered and paginated."""
+        return await issues_tool.list_issues(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_issues(
+        ctx: Context,
+        issues: list[issues_tool.IssueCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 issues with name and optional tagText. Single-use
+        confirmation and explicit apply port; receipt and read-back. Never saves or deletes.
+        """
+        return await issues_tool.create_issues(
+            client_of(ctx), issues, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def attach_elements_to_issue(
+        ctx: Context,
+        issue_guid: str,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/attach 1–100 existing elements to an issue as Highlight only.
+        No Creation/Deletion/Modification marking; explicit apply port and single-use
+        confirmation, per-element receipt and read-back. Never saves or deletes.
+        """
+        return await issues_tool.attach_elements_to_issue(
+            client_of(ctx), issue_guid, element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_navigator_tree(
+        ctx: Context,
+        navigator_map: navigator_tool.NavigatorMap = "ProjectMap",
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+        publisher_set_name: str | None = None,
+    ) -> dict:
+        """Read ProjectMap, PublicViewMap, LayoutBook or one PublisherSets tree.
+        Flattened GUID/name/type/parent/depth, root included. Query matches name/type/uiId
+        before pagination. For PublisherSets, pass an exact publisher_set_name or get
+        only the first native set. Never writes, saves or publishes.
+        """
+        return await navigator_tool.get_navigator_tree(
+            client_of(ctx), navigator_map, port, query, offset, limit, publisher_set_name
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_meshes(
+        ctx: Context,
+        meshes: list[meshes_tool.MeshCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 simple 3D terrains. outline x/y/z and base level in
+        absolute project metres; explicit floor_index. No holes/arcs/internal contours.
+        Default surface without skirt. One-use token and explicit apply port; never saves.
+        """
+        return await meshes_tool.create_meshes(
+            client_of(ctx), meshes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_meshes(
+        ctx: Context,
+        meshes: list[meshes_tool.MeshModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 20 terrains: absolute base level, skirt_type/depth, ridges,
+        show_lines. No boundary/topology changes; preserves story. Explicit apply port,
+        one-use token and read-back; never saves.
+        """
+        return await meshes_tool.modify_meshes(
+            client_of(ctx), meshes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_view_settings(
+        ctx: Context,
+        view_guids: list[str],
+        port: int | None = None,
+    ) -> dict:
+        """Read settings/errors per view (1–100 GUIDs). drawingScale is the denominator
+        (100 means 1:100); zoom in metres and rotation in radians. Never writes.
+        """
+        return await views_tool.get_view_settings(client_of(ctx), view_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_view_settings(
+        ctx: Context,
+        changes: list[views_tool.ViewSettingsChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/set drawing_scale denominator and/or existing layer_combination by
+        name/GUID for up to 100 PublicViewMap views. Read-back checks settings unchanged
+        except requested fields. No guaranteed Navigator Undo; previous values retained.
+        Explicit apply port, single-use token and receipt; never saves or publishes.
+        """
+        return await views_tool.set_view_settings(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layer_combinations(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+        include_layers: bool = False,
+    ) -> dict:
+        """List saved layer combinations (GUID/name/index), filter and paginate.
+        include_layers adds each saved layer's visibility/lock/wireframe/intersection
+        group, or a native error per combination. Never changes state or saves.
+        """
+        return await layer_settings_tool.list_layer_combinations(
+            client_of(ctx), port, query, offset, limit, include_layers
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_layer_settings(
+        ctx: Context,
+        changes: list[layer_settings_tool.LayerSettingsChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/set up to 50 existing layer flags: layer name/GUID, hidden, locked,
+        wireframe, intersection_group (0–32767). Unspecified fields/name/GUID preserved.
+        Protected first layer refused; no guaranteed Undo. Requires explicit apply port
+        and one-use token, retains old values and checks read-back. Never saves/deletes.
+        """
+        return await layer_settings_tool.set_layer_settings(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
 
     return mcp
 

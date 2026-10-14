@@ -386,6 +386,46 @@ OPERATIONS = {
         "Check the list before applying.",
     ),
 }
+OPERATIONS["modify_labels"] = (
+    "label edit",
+    "label_edit_receipt_id",
+    "Text and height_mm only; position is preserved. "
+    "Native edits may flatten rich text and disable word wrap.",
+)
+
+OPERATIONS["create_issues"] = (
+    "issue",
+    "issue_receipt_id",
+    "Creates issue metadata only; does not save or export BCF.",
+)
+OPERATIONS["attach_elements_to_issue"] = (
+    "issue attachment",
+    "issue_attachment_receipt_id",
+    "Associates existing elements as Highlight only.",
+)
+
+OPERATIONS["create_meshes"] = (
+    "mesh",
+    "mesh_receipt_id",
+    "Absolute project metres; simple terrain boundary, no holes/contours.",
+)
+OPERATIONS["modify_meshes"] = (
+    "mesh edit",
+    "mesh_edit_receipt_id",
+    "Only level/skirt/display change; topology is preserved.",
+)
+
+OPERATIONS["set_view_settings"] = (
+    "view settings",
+    "view_settings_receipt_id",
+    "No guaranteed Navigator Undo. Previous values are retained; restore by a new preview/apply.",
+)
+
+OPERATIONS["set_layer_settings"] = (
+    "layer settings",
+    "layer_settings_receipt_id",
+    "Existing layer flags only. Current visibility/editability can change; no guaranteed Undo.",
+)
 
 
 # operation -> (Tapir create command, list key in its parameters)
@@ -407,6 +447,7 @@ CREATE_COMMANDS = {
     "create_circles": ("CreateCircles", "circlesData"),
     "create_fills": ("CreateHatches", "hatchesData"),
 }
+CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 
 
 @dataclass
@@ -579,7 +620,7 @@ def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
         ]
     if isinstance(expected, (float, int)) and not isinstance(expected, bool):
         if isinstance(actual, (float, int)) and not isinstance(actual, bool):
-            if math.isclose(expected, actual, rel_tol=1e-9, abs_tol=1e-7):
+            if math.isclose(expected, actual, rel_tol=0.0, abs_tol=1e-7):
                 return []
         return [path]
     return [] if expected == actual else [path]
@@ -758,6 +799,9 @@ async def _write(
         )
         receipt["finished_at"] = datetime.now(UTC).isoformat()
         receipt["note"] = "No project was saved. Use Archicad Undo to revert this batch."
+        if receipt.get("revert_note"):
+            receipt["note"] = "No project was saved. " + receipt["revert_note"]
+
         try:
             receipt["receipt_path"] = _journal(receipt, "result")
         except OSError as exc:
@@ -1052,7 +1096,9 @@ def _move_mismatches(item: dict, after: dict) -> list[str]:
             continue
         for key, value in before.items():
             expected = value + shift[key[0]]
-            if not math.isclose(now.get(key, math.nan), expected, abs_tol=MOVE_TOLERANCE):
+            if not math.isclose(
+                now.get(key, math.nan), expected, rel_tol=0.0, abs_tol=MOVE_TOLERANCE
+            ):
                 differences.append(f"{mode}.{key}")
     return differences
 

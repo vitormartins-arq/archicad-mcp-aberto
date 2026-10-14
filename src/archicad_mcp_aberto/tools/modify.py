@@ -108,6 +108,43 @@ class TextModify(_Edit):
         return value if value is None else texts._lines(value)
 
 
+class LabelModify(_Edit):
+    text: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
+    height_mm: write.Positive | None = None
+
+    @field_validator("text")
+    @classmethod
+    def visible(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("text must not be blank.")
+        return value if value is None else texts._lines(value)
+
+
+def _label(change, row, target, label, extra):
+    details = row["details"]
+    if details.get("labelClass") != "Text":
+        raise ValueError(f"{label}: only Text labels are supported; Symbol labels are refused.")
+    changes = change.model_dump(exclude={"guid"}, exclude_none=True)
+    if not isinstance(details.get("text"), str):
+        raise ValueError(f"{label}: cannot read the current text.")
+    # Positions and associations cannot be changed through ModifyLabels 1.7.0.
+    expected = {"labelClass": "Text", "text": changes.get("text", texts._lines(details["text"]))}
+    for key in ("begCoordinate", "midCoordinate", "endCoordinate", "ownerElementId"):
+        if key in details:
+            expected[key] = deepcopy(details[key])
+    parameters = {}
+    if "text" in changes:
+        parameters["text"] = changes["text"]
+    if "height_mm" in changes:
+        style = details.get("style")
+        if not isinstance(style, dict):
+            raise ValueError(f"{label}: cannot read the current style.")
+        _number(style, "height", label)
+        parameters["style"] = {"height": changes["height_mm"]}
+        expected["style"] = {"height": changes["height_mm"]}
+    return changes, parameters, expected
+
+
 def _number(details, key, label):
     value = details.get(key)
     if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
@@ -357,6 +394,7 @@ SPECS = {
     "modify_objects": (("Object",), "ModifyObjects", "objectsWithDetails", _object),
     "modify_roofs": (("Roof",), "ModifyRoofs", "roofsWithDetails", _roof),
     "modify_texts": (("Text",), "ModifyTexts", "textsWithDetails", _text),
+    "modify_labels": (("Label",), "ModifyLabels", "labelsWithDetails", _label),
 }
 
 
@@ -665,4 +703,22 @@ async def modify_texts(
     """
     return await _modify(
         client, texts, TextModify, port, dry_run, confirmation_token, "modify_texts"
+    )
+
+
+async def modify_labels(
+    client: ArchicadClient,
+    labels: list[dict | LabelModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/edit up to 50 Text labels: text and height_mm in paper millimetres.
+
+    Tapir 1.7.0 ModifyLabels does not accept position or story changes. Symbol labels
+    and unsupported fields are refused. Owner, position and story are preserved;
+    content and size are read back. Never saves.
+    """
+    return await _modify(
+        client, labels, LabelModify, port, dry_run, confirmation_token, "modify_labels"
     )

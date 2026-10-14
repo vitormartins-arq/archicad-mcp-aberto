@@ -103,6 +103,17 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
 | `set_classifications` | Write | Classify (or unclassify) up to 100 elements, read back after apply | yes |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
+| `modify_labels` | Write | Text and paper text height of up to 50 Text labels; position changes refused | yes |
+| `list_issues` | Read | Issue GUIDs, names, tags and native metadata with filtering/pagination | yes |
+| `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
+| `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
+| `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
+| `create_meshes` | Write | Simple 3D terrains from absolute project coordinates, read back per mesh | yes |
+| `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
+| `get_view_settings` | Read | Settings or native error for each of up to 100 views | yes |
+| `set_view_settings` | Write | Scale and existing layer combination of views; preserve other settings | yes |
+| `list_layer_combinations` | Read | Saved combinations, optional per-layer states, filter/page before details | yes |
+| `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 
 ### Reported live validation
 
@@ -364,3 +375,102 @@ and open to everyone's contributions.
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 
 - `create_windows` and `create_doors` preview up to 20 openings, each with `wall_guid`, `center_offset` (metres along the wall's reference line from its start) and optional `sill_height`, `width`, `height` and `favorite_name`. Tapir 1.7.0 `CreateWindows`/`CreateDoors` take no library part name: the Window or Door tool default decides the part, or an existing favorite (checked in the preview with `GetFavoritesByType`). The preview refuses missing, non-wall, curved or polygonal, hotlinked and locked owners and offsets past the wall end. Applying checks type, story, owner wall, offset and any size or sill you gave, and reports the library part Archicad placed (with a favorite, that is the part name, not the favorite name). The exact favorite name wins; otherwise outer spaces and case are ignored, and the exact name is sent. Same token, port, receipts and timeout; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.
+
+
+- `modify_labels` edits existing Text labels with `{guid, text?, height_mm?}`. Text is
+  normalized to LF; `height_mm` is the character size in paper millimetres. Preview and
+  apply use the shared single-use confirmation, explicit port, receipts, editability
+  checks and read-back. Symbol labels and unsupported fields are refused. Tapir 1.7.0
+  `ModifyLabels` does **not** accept coordinates or a story, so this tool preserves the
+  owner and position; use a separate `move_elements` preview for movement. Text/size edits
+  can rebuild rich text as one paragraph and disable word wrap in the native command.
+  Source-derived simulation only; live validation pending.
+
+
+- `list_issues(port?, query?, offset=0, limit=200)` lists issue GUIDs, names, tag text and
+  native metadata through Tapir 1.7.0 `GetIssues`; filtering is case-insensitive on name
+  and tag, before pagination. `create_issues([{name, tagText?}], ...)` creates up to 20
+  incidences, and `attach_elements_to_issue(issue_guid, element_guids, ...)` associates
+  1–100 existing elements with one existing issue. Associations always use **Highlight**,
+  never Creation, Deletion or Modification; existing links are retained. No BCF/export,
+  saving or deletion. Writes preview by default; apply requires the identical inputs,
+  explicit port and single-use token. Names/tags and each association are read back.
+  Each native create/association is its **own Undo step**. A lost or malformed response
+  stops the remaining writes without retrying, preserves prior results and marks later
+  items `failed` with `not_attempted: true`. Source-derived simulation only; live validation pending.
+
+
+- `get_navigator_tree(navigator_map="ProjectMap", port?, query?, offset=0, limit=200,
+  publisher_set_name?)` reads a flattened Navigator tree through Tapir 1.7.0. Maps are
+  `ProjectMap` (project), `PublicViewMap` (views), `LayoutBook` (layouts) and
+  `PublisherSets` (one publisher set). Rows include `guid`, `name`, native `type`,
+  `parent_guid`, `depth`, `prefix` and displayed `uiId`; the root is depth 0. Search
+  matches name/type/uiId case-insensitively before pagination (limit up to 500); parent
+  GUIDs and depth always refer to the original unfiltered tree. Pass an exact
+  `publisher_set_name` with PublisherSets to read that set; omitting it returns **only
+  the first set**, with a note. No publishing, writing or saving. Source-derived
+  simulated coverage; live validation pending.
+
+
+- `create_meshes([{outline, floor_index, level, skirt_type?, skirt_depth?, ridges?,
+  show_lines?}], ...)` creates up to 20 simple terrains with 3–200 boundary vertices.
+  Every `outline` vertex is `{x, y, z}` in **absolute project metres**, and `level` is
+  the absolute base plane. The tool converts to story-relative mesh base and base-plane-
+  relative vertex heights required by Tapir 1.7.0. A repeated closing point is normalized
+  only when its Z also matches. The plan contour must be simple and nonzero, as for slabs.
+  The default `skirt_type` is `SurfaceOnlyWithoutSkirt`; `WithSkirt` and
+  `SolidBodyWithSkirt` use positive `skirt_depth` below the base plane (default 1 m), with
+  the bottom strictly below every boundary vertex. `ridges` is `AllSharp` (default),
+  `AllSmooth` or `UserDefined`; `show_lines` defaults to true. No holes, arcs or internal
+  contours yet. Material/layer inherit Mesh tool defaults. `modify_meshes` takes
+  `{guid, level?, skirt_type?, skirt_depth?, ridges?, show_lines?}` for up to 20 simple
+  existing meshes, preserving the owner story and polygon; level translates the whole
+  terrain vertically, without replacing vertices. Complex meshes are refused in the
+  preview. Both tools use single-use tokens, explicit apply ports, receipts, per-item
+  errors and read-back through `GetDetailsOfElements`; neither saves. Verified only
+  against the source-derived simulator; live testing remains pending.
+
+
+- `get_view_settings(view_guids, port?)` reads settings or an error per Navigator view,
+  up to 100 GUIDs, preserving request order. `drawingScale` is the scale denominator
+  (100 = 1:100); zoom uses model metres and rotation uses radians.
+  `set_view_settings([{guid, drawing_scale?, layer_combination?}], ...)` previews/applies
+  scale and/or an existing layer combination (exact name or GUID) for up to 100 views
+  in PublicViewMap. It sends only requested fields and reads all other exposed settings
+  back unchanged, including pens, graphic overrides, zoom and rotation. Existing layer
+  combination definitions are also checked unchanged. Missing combinations/views,
+  duplicate combination names and unsupported fields are refused. Setting a scale
+  enables native stored-scale saving; Tapir does not expose that flag for verification.
+  Navigator settings have **no guaranteed Undo** through this command; previews and
+  durable receipts retain previous values for restoration manually or by a new
+  preview/apply. Other write tools keep their existing Undo note. Never saves or publishes.
+  Source-confirmed Tapir 1.7.0 GetViewSettings/SetViewSettings; simulated only.
+
+### Registry snapshot — 2026-10-14 development stack
+
+The expanded registry in this stack contains **77 tools: 24 read-only and 53 write or
+interaction tools**. The smaller Phase 1 count near the beginning is historical. New
+Codex tools (labels, issues, Navigator, meshes and view settings) have simulated coverage;
+this does not imply live or visual approval. See docs/VALIDAR.md for the operator checklist.
+
+- Geometry read-back uses fixed absolute numeric tolerance (1e-7), and moved bounding
+  boxes keep a fixed 1 mm tolerance. These do not grow with georeferenced coordinates:
+  moving the model far from the origin must not turn millimetre errors into `verified`.
+
+
+- `list_layer_combinations(port?, query?, offset=0, limit=200, include_layers=false)`
+  lists saved combination GUIDs/names/indices. With `include_layers`, each result adds
+  native per-layer hidden/locked/wireframe/intersection-group states or a per-item error;
+  details are fetched only after filtering/pagination, in batches of 100.
+  `set_layer_settings([{layer, hidden?, locked?, wireframe?, intersection_group?}], ...)`
+  targets up to 50 existing layers by exact name or GUID. It sends unchanged name/GUID
+  plus only requested fields through Tapir 1.7.0 CreateLayers with overwriteExisting,
+  and verifies identity, name, flags and group. The protected first Archicad layer,
+  duplicate aliases and unknown layers are refused. It affects current layer attributes;
+  it is not an editor for the saved combination tables. No guaranteed attribute Undo:
+  keep the receipt's before values to restore manually or with a new preview/apply.
+  The native generic base can create a layer if a target disappears between preflight
+  and dispatch; a different returned GUID is marked `unknown`, never verified or
+  automatically removed/retried. No deletion, renaming or saving. Source-derived tests
+  only; live validation pending. Registry after this addition: **79 tools (25 reads,
+  54 writes/interactions)**.

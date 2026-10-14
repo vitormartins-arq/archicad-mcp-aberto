@@ -79,6 +79,8 @@ MODIFY_COMMANDS = {
     "ModifyObjects": ("Object", "objectsWithDetails"),
     "ModifyRoofs": ("Roof", "roofsWithDetails"),
     "ModifyTexts": ("Text", "textsWithDetails"),
+    "ModifyLabels": ("Label", "labelsWithDetails"),
+    "ModifyMeshes": ("Mesh", "meshesData"),
 }
 
 
@@ -397,6 +399,43 @@ class FakeArchicad:
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
 
+    # IssueCommands.cpp tag 1.7.0; source-derived, not captured live.
+    issues: dict[str, dict] = field(
+        default_factory=lambda: {
+            r["issueId"]["guid"]: deepcopy(r) for r in ISSUES_FIXTURE["get_issues"]["issues"]
+        }
+    )
+    issue_attachments: dict[str, set[str]] = field(default_factory=dict)
+    issue_errors: dict[str, dict[int, dict]] = field(default_factory=dict)
+    issue_ignored: set[str] = field(default_factory=set)
+    lose_issue_response_at: int | None = None
+
+    publisher_sets: dict[str, dict] = field(
+        default_factory=lambda: deepcopy(NAVIGATOR_FIXTURE["publisher_sets"])
+    )
+
+    lose_mesh_response: bool = False
+    mesh_base_shift: float = 0.0
+
+    view_settings: dict[str, dict] = field(
+        default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
+    )
+    view_settings_errors: dict[int, dict] = field(default_factory=dict)
+    view_settings_ignored: bool = False
+    view_settings_reset_pen_set: bool = False
+    view_settings_change_layers: bool = False
+    lose_view_settings_response: bool = False
+
+    layer_settings_errors: dict[int, dict] = field(default_factory=dict)
+    layer_settings_ignored: bool = False
+    lose_layer_settings_response: bool = False
+    layer_combination_read_errors: dict[int, dict] = field(default_factory=dict)
+
+    def __post_init__(self):
+        # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
+        for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
+            self.navigator_trees.setdefault(map_id, deepcopy(tree))
+
     def handle(self, body: dict) -> dict:
         command = body.get("command", "")
         params = body.get("parameters", {})
@@ -660,6 +699,53 @@ class FakeArchicad:
         layer = self.details.get(guid, {}).get("layerIndex")
         return self.layer_flags.get(layer, {}).get("isLocked") is True
 
+    def _issues(self, name: str, args: dict) -> dict:
+        if name == "GetIssues":
+            return ok({"addOnCommandResponse": {"issues": list(deepcopy(self.issues).values())}})
+        guid = args.get("issueId", {}).get("guid")
+        if name == "GetElementsAttachedToIssue":
+            if guid not in self.issues:
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "error": {
+                                "code": -1,
+                                "message": "Failed to retrieve attached elements.",
+                            }
+                        }
+                    }
+                )
+            assert args["type"] == "Highlight"
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "elements": [
+                            self._id(g) for g in sorted(self.issue_attachments.get(guid, set()))
+                        ]
+                    }
+                }
+            )
+        position = self.tapir_calls.count(name) - 1
+        error = self.issue_errors.get(name, {}).get(position)
+        if error is not None:
+            return ok({"addOnCommandResponse": deepcopy(error)})
+        if name == "CreateIssue":
+            new_guid = str(uuid4()).upper()
+            if name not in self.issue_ignored:
+                row = deepcopy(ISSUES_FIXTURE["get_issues"]["issues"][0])
+                row.update(
+                    issueId={"guid": new_guid}, name=args["name"], tagText=args.get("tagText", "")
+                )
+                self.issues[new_guid] = row
+            return ok({"addOnCommandResponse": {"issueId": {"guid": new_guid}}})
+        assert name == "AttachElementsToIssue" and args["type"] == "Highlight"
+        guids = [r["elementId"]["guid"] for r in args["elements"]]
+        if guid not in self.issues or any(g not in self.elements for g in guids):
+            return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_error"])})
+        if name not in self.issue_ignored:
+            self.issue_attachments.setdefault(guid, set()).update(guids)
+        return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_elements"])})
+
     def _tapir(self, params: dict) -> dict:
         if self.tapir_version is None:
             return fail(4010, "Add-On command is not registered")
@@ -667,6 +753,14 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in (
+            "GetIssues",
+            "CreateIssue",
+            "AttachElementsToIssue",
+            "GetElementsAttachedToIssue",
+        ):
+            return self._issues(name, args)
+
         if name == "GetAddOnVersion":
             return ok({"addOnCommandResponse": {"version": self.tapir_version}})
         if name == "GetProjectInfo":
@@ -778,7 +872,49 @@ class FakeArchicad:
                 self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name == "GetViewSettings":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "viewSettings": [
+                            deepcopy(
+                                self.view_settings.get(
+                                    r["navigatorItemId"]["guid"],
+                                    VIEW_SETTINGS_FIXTURE["not_a_view"],
+                                )
+                            )
+                            for r in args["navigatorItemIds"]
+                        ]
+                    }
+                }
+            )
+        if name == "SetViewSettings":
+            out = []
+            for index, entry in enumerate(args["navigatorItemIdsWithViewSettings"]):
+                guid = entry["navigatorItemId"]["guid"]
+                if index in self.view_settings_errors:
+                    out.append(deepcopy(self.view_settings_errors[index]))
+                    continue
+                if guid not in self.view_settings:
+                    out.append(deepcopy(VIEW_SETTINGS_FIXTURE["failed"]))
+                    continue
+                if not self.view_settings_ignored:
+                    self.view_settings[guid].update(deepcopy(entry["viewSettings"]))
+                    if self.view_settings_reset_pen_set:
+                        self.view_settings[guid]["penSetName"] = "Unexpected side effect"
+                    if (
+                        self.view_settings_change_layers
+                        and "layerCombination" in entry["viewSettings"]
+                    ):
+                        self.layer_combinations[2]["layers"].setdefault(1, {})["isHidden"] = False
+                out.append(deepcopy(VIEW_SETTINGS_FIXTURE["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "GetNavigatorItemTree":
+            if args["navigatorMapId"] == "PublisherSets" and "publisherSetName" in args:
+                tree = self.publisher_sets.get(args["publisherSetName"])
+                if tree is None:
+                    return ok({"addOnCommandResponse": deepcopy(NAVIGATOR_FIXTURE["invalid_set"])})
+                return ok({"addOnCommandResponse": {"navigatorItemTree": deepcopy(tree)}})
             tree = self.navigator_trees.get(args["navigatorMapId"])
             if tree is None:
                 return ok({"addOnCommandResponse": {"error": {"code": -1, "message": "No map."}}})
@@ -873,6 +1009,42 @@ class FakeArchicad:
                     }
                 )
             return ok({"addOnCommandResponse": {"layers": out}})
+        if (
+            name == "CreateLayers"
+            and args.get("overwriteExisting") is True
+            and any(
+                any(
+                    key in data
+                    for key in ("isHidden", "isLocked", "isWireframe", "intersectionGroupNr")
+                )
+                for data in args["layerDataArray"]
+            )
+        ):
+            out = []
+            for index, data in enumerate(args["layerDataArray"]):
+                guid = data["attributeId"]["guid"]
+                target = next((i for i in self.layers if layer_guid(i) == guid), None)
+                if index in self.layer_settings_errors:
+                    out.append(deepcopy(self.layer_settings_errors[index]))
+                    continue
+                if target is None:
+                    # The native generic base can CREATE if the selected attribute vanished.
+                    if data["name"] in self.layers.values():
+                        out.append(deepcopy(LAYERS_FIXTURE["already_exists"]))
+                        continue
+                    target = max(self.layers, default=0) + 1
+                    self.layers[target] = data["name"]
+                if not self.layer_settings_ignored:
+                    self.layers[target] = data["name"]
+                    self.layer_flags.setdefault(target, {}).update(
+                        {
+                            k: v
+                            for k, v in data.items()
+                            if k in ("isHidden", "isLocked", "isWireframe", "intersectionGroupNr")
+                        }
+                    )
+                out.append({"attributeId": {"guid": layer_guid(target)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
         ):
@@ -927,6 +1099,9 @@ class FakeArchicad:
                             }
                         }
                     )
+                    continue
+                if index in self.layer_combination_read_errors:
+                    out.append(deepcopy(self.layer_combination_read_errors[index]))
                     continue
                 combination = self.layer_combinations[index]
                 layers = [
@@ -1516,6 +1691,32 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateMeshes":
+            out = []
+            for index, mesh in enumerate(args["meshesData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Mesh"
+                row = deepcopy(MESHES_FIXTURE["mesh_details"])
+                row["floorIndex"] = mesh["floorIndex"]
+                points = deepcopy(mesh["polygonCoordinates"])
+                row["details"].update(
+                    {
+                        k: deepcopy(mesh[k])
+                        for k in ("level", "skirtType", "skirtLevel", "ridges", "showLines")
+                    }
+                )
+                row["details"]["level"] += self.mesh_base_shift
+                row["details"].update(
+                    polygonCoordinates=points + [deepcopy(points[0])],
+                    polygonArcs=deepcopy(mesh.get("polygonArcs", [])),
+                    holes=deepcopy(mesh.get("holes", [])),
+                )
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -1584,13 +1785,23 @@ class FakeArchicad:
                 rows.append(deepcopy(self.modify_errors[index]))
                 continue
             if self.elements.get(guid) != kind or guid in self.locked_elements:
-                rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["failures"][name]))
+                rows.append(
+                    deepcopy(
+                        MESHES_FIXTURE["modify_error"]
+                        if name == "ModifyMeshes"
+                        else MODIFY_LABELS_FIXTURE["failure"]
+                        if name == "ModifyLabels"
+                        else MODIFY_ELEMENTS_FIXTURE["failures"][name]
+                    )
+                )
                 continue
             if not self.modify_ignored:
                 row = self.details[guid]
                 details = row["details"]
                 story = next(s for s in self.stories if s["index"] == row["floorIndex"])
                 changes = {k: deepcopy(v) for k, v in entry.items() if k != "elementId"}
+                if name == "ModifyMeshes":
+                    changes = changes["meshData"]
                 if name == "ModifyRoofs":
                     if details.get("roofClass") != "MultiPlane":
                         rows.append(
@@ -1634,6 +1845,13 @@ class FakeArchicad:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}
+                if name == "ModifyLabels":
+                    if details.get("labelClass") != "Text":
+                        rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))
+                        continue
+                    details.setdefault("style", {}).update(changes.pop("style", {}))
+                    if "text" in changes:
+                        changes["text"] = changes["text"].replace("\r\n", "\n").replace("\r", "\n")
                 details.update(changes)
             rows.append(deepcopy(MODIFY_ELEMENTS_FIXTURE["success"]))
         return ok({"addOnCommandResponse": {"executionResults": rows}})
@@ -1774,6 +1992,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         body = json.loads(request.content)
         response = instance.handle(body)
         command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if instance.lose_mesh_response and command == "CreateMeshes":
+            raise httpx.ReadTimeout(
+                "Injected lost mesh response after model change", request=request
+            )
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
         if instance.lose_slab_response and command == "CreateSlabs":
@@ -1832,6 +2054,22 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             body.get("command") == "API.SetClassificationsOfElements"
         ):
             raise httpx.ReadTimeout("Injected lost classification response", request=request)
+        if command in ("CreateIssue", "AttachElementsToIssue"):
+            issue_write_count = sum(
+                c in ("CreateIssue", "AttachElementsToIssue") for c in instance.tapir_calls
+            )
+            if instance.lose_issue_response_at == issue_write_count:
+                raise httpx.ReadTimeout(
+                    "Injected lost issue response after change", request=request
+                )
+        if instance.lose_view_settings_response and command == "SetViewSettings":
+            raise httpx.ReadTimeout(
+                "Injected lost view settings response after change", request=request
+            )
+        if instance.lose_layer_settings_response and command == "CreateLayers":
+            raise httpx.ReadTimeout(
+                "Injected lost layer-settings response after change", request=request
+            )
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request
@@ -1869,3 +2107,43 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         return httpx.Response(200, json=response)
 
     return httpx.MockTransport(handler)
+
+
+# Source-derived Tapir 1.7.0 ModifyLabels response; not captured live.
+MODIFY_LABELS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_modify_labels_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Source-derived command schemas and synthetic values; NOT a live capture.
+ISSUES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_issues_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# NavigatorCommands.cpp tag 1.7.0 shapes; synthetic values, NOT captured live.
+NAVIGATOR_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_navigator_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Tapir 1.7.0 source-derived Mesh shapes; synthetic values, NOT a live capture.
+MESHES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_meshes_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Source-derived Tapir 1.7.0 ViewSettings schemas; synthetic values, NOT live.
+VIEW_SETTINGS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_view_settings_documented.json").read_text(
+        encoding="utf-8"
+    )
+)

@@ -220,3 +220,40 @@
 - Add Object GDL parameter reads and safe scalar writes with flag/type checks and read-back verification.
 
 - Add safe limited ModifyWalls edits with shape/editability checks and requested-field verification.
+
+- Add `modify_labels`: safe Text label content and paper font-height edits through Tapir
+  1.7.0 `ModifyLabels`, with read-back and source-derived simulated coverage. Coordinates
+  and story changes are unsupported by that native command and refused. Not tested live.
+
+- Add issue management: `list_issues`, `create_issues` and `attach_elements_to_issue`
+  through source-confirmed Tapir 1.7.0 commands. Highlight associations only, missing
+  elements refused, shared confirmation/receipts and per-item read-back. Singular native
+  commands stop on an unknown outcome; each is a separate Undo step. Simulated only.
+
+- Add read-only `get_navigator_tree`: flattened project/view/layout/publisher tree with
+  GUID, parent and depth, filtering and pagination. Exact native map values; PublisherSets
+  selects a named set or explicitly notes the native first-set default. Source-derived
+  Tapir 1.7.0 fixture, not a live capture; preserves the existing document fake.
+
+- Add `create_meshes` and limited `modify_meshes` using Tapir 1.7.0 `CreateMeshes` and
+  `ModifyMeshes`: simple 3D terrain boundaries, absolute public heights, explicit skirts
+  and ridge display, existing write protections and read-back. No holes/arcs/contour edits;
+  complex existing meshes are refused. Source-derived fixtures, simulation only.
+
+- Add `get_view_settings` and limited `set_view_settings`: scale denominator and existing
+  layer combination of up to 100 PublicViewMap views. Shared preview/token/port/receipts,
+  per-view errors, settings read-back and unchanged combination-state verification. Native
+  Navigator changes have no guaranteed Undo; receipts retain old values and say so. Other
+  write tools retain their existing note. Source-derived fixtures, simulated only.
+
+- Fix geometry verification at large/georeferenced coordinates: disable relative
+  tolerance in geometric field/polygon matching and moved-box verification. An ignored
+  5 mm move or a wrong vertex could previously read as verified near coordinate 6500000;
+  a valid small unclosed polygon could also be mistaken for closed. Regression cases
+  reproduce the failures at positive/negative origins using only the simulator.
+
+- Add `list_layer_combinations` (optional saved per-layer states, filtered/paginated
+  before batched reads) and `set_layer_settings` for current flags/group of existing
+  layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
+  name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
+  is unknown, including the native overwrite base creating a vanished target. Simulated only.

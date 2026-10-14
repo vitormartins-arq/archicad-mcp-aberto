@@ -289,3 +289,77 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
   nome novo e as camadas dentro dela no mesmo lugar. Vale também para pastas de
   materiais (`BuildingMaterial`) e superfícies (`Surface`).
 - [ ] **Recusas.** Um nome que já existe e um nome vazio devem ser recusados na prévia.
+
+
+## Lote 7 (Codex) — T20: edição de etiquetas
+
+- [ ] Em projeto de teste autorizado, criar uma etiqueta Text e aplicar modify_labels
+  com texto de duas linhas e height_mm=3.5: prévia, aplicar, recibo verified; conferir
+  visualmente fonte/texto e que o dono, posição e andar continuam iguais.
+- [ ] Aplicar somente height_mm e conferir que o texto continua igual.
+- [ ] Posição/andar, etiqueta Symbol, bloqueada e de hotlink devem ser recusados na prévia.
+  ModifyLabels 1.7.0 não recebe coordenadas; movimento usa outra ferramenta.
+
+
+### Lote 7 (Codex) — T21: incidências
+
+- [ ] list_issues: listar, filtrar nome/tag e paginar em projeto de teste autorizado.
+- [ ] create_issues: prévia e aplicar duas incidências, uma com tagText, ambas verified;
+  conferir nomes/tags na paleta de Incidências.
+- [ ] attach_elements_to_issue: associar duas paredes existentes por GUID como Highlight;
+  recibo verified por parede, vínculos anteriores mantidos e nenhuma geometria excluída.
+- [ ] GUID inexistente de incidência ou elemento deve ser recusado na prévia.
+  Sem salvar/BCF/apagar. Cada criação ou associação é um passo nativo separado de Undo.
+
+
+### Lote 7 (Codex) — T22: mapa do projeto
+
+- [ ] get_navigator_tree para ProjectMap, PublicViewMap e LayoutBook: comparar nomes,
+  tipos, pais e profundidades com o Navegador, incluindo pastas/modelos de prancha.
+- [ ] Buscar parte do nome ou uiId e paginar, mantendo parent_guid/depth originais.
+- [ ] PublisherSets sem nome: somente primeiro conjunto, nota explícita; com
+  publisher_set_name exato, conferir outro conjunto. Não publicar nem salvar.
+
+
+## Terrenos 3D (Codex) — validação futura
+
+- [ ] Em projeto de teste autorizado, create_meshes com quadrilátero 3D inclinado,
+  floor_index explícito e level absoluto: aplicar após prévia, recibo verified; conferir
+  no 3D que as alturas são as absolutas pedidas (também num andar acima do térreo).
+- [ ] Repetir com WithSkirt/SolidBodyWithSkirt e skirt_depth positivo, abaixo de todos
+  os vértices; conferir visualmente saia/base. Material/camada são os padrões da ferramenta.
+- [ ] modify_meshes: aumentar level absoluto em 0.5 e mudar ridges/show_lines; verified,
+  terreno inteiro sobe 0.5 m, contorno e andar mantidos. Sem furos/arcos/curvas internas.
+- [ ] Contorno cruzado, fecho com Z diferente e fundo da saia acima de um vértice
+  recusados. Terreno complexo, bloqueado ou de hotlink recusado na edição. Nunca salvar.
+
+
+## Configurações de vistas (Codex) — validação futura
+
+- [ ] get_view_settings: duas vistas e GUID inexistente no meio, configurações/erro por
+  item. Comparar drawingScale/combinação/rotação/zoom com Definições de Vista.
+- [ ] set_view_settings: escala 1:200 e combinação existente por nome ou GUID; prévia,
+  aplicar, verified por vista. Conferir que canetas, zoom, rotação, sobreposição e
+  configurações de cada camada na combinação continuam iguais. Não publicar nem salvar.
+- [ ] Não contar com Undo para SetViewSettings; guardar before do recibo e restaurar
+  com nova prévia/aplicação ou manualmente. A flag nativa de salvar escala é ativada,
+  mas não pode ser relida pelo Tapir; conferir na interface.
+
+
+## Conferência geométrica georreferenciada — regressão futura
+
+- [ ] Em cópia de teste autorizada, conferir criação/edição/movimentação perto e longe
+  da origem: a tolerância não deve crescer com as coordenadas. Não deslocar projeto
+  real para este teste. O simulado já cobre falhas ignoradas de 5 mm em ±6500000 m.
+
+
+## Estado de camadas (Codex) — validação futura
+
+- [ ] list_layer_combinations: filtrar/paginar e include_layers=true; conferir olho,
+  cadeado, aramado e grupo por camada com a tabela das Combinações de Vegetais.
+- [ ] Em cópia de teste autorizada, set_layer_settings para mostrar/destravar uma camada
+  de teste e alterar grupo de interseção: prévia, aplicar, verified; nome/GUID e flags
+  não pedidos iguais. Não conta como edição da combinação salva.
+- [ ] Camada Archicad protegida, nome inexistente e mesmo alvo por nome+GUID recusados.
+  Não contar com Undo de atributos: guardar before e restaurar por nova prévia/manual.
+  Se aparecer unknown ou GUID diferente, inspecionar; não repetir nem apagar automaticamente.

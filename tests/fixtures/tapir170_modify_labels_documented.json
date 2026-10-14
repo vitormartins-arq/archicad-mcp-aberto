@@ -1,0 +1,36 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "source": "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/1.7.0/archicad-addon/Sources/ElementCreationCommands.cpp",
+    "source_sha256": "abd19a20c301679be6cbe8ff835cf635f0ef9d20bfc44c8877b5e7f41ac10ddb",
+    "note": "Synthetic values copied from ModifyLabels input/output schema and Text label details. ModifyLabels accepts text/runs/style/symbolStyle/leaderLine, NOT position or floorIndex. This tool exposes text and style.height only."
+  },
+  "request": {
+    "labelsWithDetails": [
+      {
+        "elementId": {
+          "guid": "33333333-3333-3333-3333-333333333333"
+        },
+        "text": "Wall finish",
+        "style": {
+          "height": 3.5
+        }
+      }
+    ]
+  },
+  "response": {
+    "executionResults": [
+      {
+        "success": true
+      }
+    ]
+  },
+  "failure": {
+    "success": false,
+    "error": {
+      "code": -2130313112,
+      "message": "Failed to modify the Label."
+    }
+  }
+}
