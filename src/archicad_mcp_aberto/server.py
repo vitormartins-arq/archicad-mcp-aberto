@@ -28,6 +28,7 @@ from archicad_mcp_aberto.tools import (
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
@@ -1088,6 +1089,38 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await navigator_tool.get_navigator_tree(
             client_of(ctx), navigator_map, port, query, offset, limit, publisher_set_name
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_meshes(
+        ctx: Context,
+        meshes: list[meshes_tool.MeshCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 simple 3D terrains. outline x/y/z and base level in
+        absolute project metres; explicit floor_index. No holes/arcs/internal contours.
+        Default surface without skirt. One-use token and explicit apply port; never saves.
+        """
+        return await meshes_tool.create_meshes(
+            client_of(ctx), meshes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_meshes(
+        ctx: Context,
+        meshes: list[meshes_tool.MeshModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 20 terrains: absolute base level, skirt_type/depth, ridges,
+        show_lines. No boundary/topology changes; preserves story. Explicit apply port,
+        one-use token and read-back; never saves.
+        """
+        return await meshes_tool.modify_meshes(
+            client_of(ctx), meshes, port, dry_run, confirmation_token
         )
 
     return mcp

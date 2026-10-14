@@ -404,6 +404,17 @@ OPERATIONS["attach_elements_to_issue"] = (
     "Associates existing elements as Highlight only.",
 )
 
+OPERATIONS["create_meshes"] = (
+    "mesh",
+    "mesh_receipt_id",
+    "Absolute project metres; simple terrain boundary, no holes/contours.",
+)
+OPERATIONS["modify_meshes"] = (
+    "mesh edit",
+    "mesh_edit_receipt_id",
+    "Only level/skirt/display change; topology is preserved.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
@@ -424,6 +435,7 @@ CREATE_COMMANDS = {
     "create_circles": ("CreateCircles", "circlesData"),
     "create_fills": ("CreateHatches", "hatchesData"),
 }
+CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 
 
 @dataclass

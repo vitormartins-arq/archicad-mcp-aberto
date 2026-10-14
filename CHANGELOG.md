@@ -234,3 +234,8 @@
   GUID, parent and depth, filtering and pagination. Exact native map values; PublisherSets
   selects a named set or explicitly notes the native first-set default. Source-derived
   Tapir 1.7.0 fixture, not a live capture; preserves the existing document fake.
+
+- Add `create_meshes` and limited `modify_meshes` using Tapir 1.7.0 `CreateMeshes` and
+  `ModifyMeshes`: simple 3D terrain boundaries, absolute public heights, explicit skirts
+  and ridge display, existing write protections and read-back. No holes/arcs/contour edits;
+  complex existing meshes are refused. Source-derived fixtures, simulation only.

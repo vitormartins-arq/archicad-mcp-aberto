@@ -319,3 +319,16 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] Buscar parte do nome ou uiId e paginar, mantendo parent_guid/depth originais.
 - [ ] PublisherSets sem nome: somente primeiro conjunto, nota explícita; com
   publisher_set_name exato, conferir outro conjunto. Não publicar nem salvar.
+
+
+## Terrenos 3D (Codex) — validação futura
+
+- [ ] Em projeto de teste autorizado, create_meshes com quadrilátero 3D inclinado,
+  floor_index explícito e level absoluto: aplicar após prévia, recibo verified; conferir
+  no 3D que as alturas são as absolutas pedidas (também num andar acima do térreo).
+- [ ] Repetir com WithSkirt/SolidBodyWithSkirt e skirt_depth positivo, abaixo de todos
+  os vértices; conferir visualmente saia/base. Material/camada são os padrões da ferramenta.
+- [ ] modify_meshes: aumentar level absoluto em 0.5 e mudar ridges/show_lines; verified,
+  terreno inteiro sobe 0.5 m, contorno e andar mantidos. Sem furos/arcos/curvas internas.
+- [ ] Contorno cruzado, fecho com Z diferente e fundo da saia acima de um vértice
+  recusados. Terreno complexo, bloqueado ou de hotlink recusado na edição. Nunca salvar.

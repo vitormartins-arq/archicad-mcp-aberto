@@ -497,3 +497,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - get_navigator_tree em tools/navigator.py, branch codex/t22-navigator empilhada na T21. GetNavigatorItemTree confirmado em NavigatorCommands.cpp da tag oficial 1.7.0: navigatorMapId aceita ProjectMap/PublicViewMap/LayoutBook/PublisherSets, com publisherSetName opcional no último (sem nome retorna somente o primeiro conjunto). Árvore achatada em pré-ordem com GUID/nome/tipo/parent_guid/depth/prefix/uiId, raiz em profundidade zero, busca e paginação até 500. Pai e profundidade não mudam com o filtro. Leitura exclusiva, resolve_port, respostas malformadas recusadas sem inventar árvore vazia. Fake preserva navigator_trees/documentos e acrescenta mapas/filtros de publicador. Fixture documental, não captura real; nenhuma chamada real. FILA e tools/selection.py intactos; merge pelo Vitor.
 
 - T22: 1627 testes simulados e Ruff passaram, Windows/Python 3.12.10. Pilha T20–T22 registra 73 ferramentas (23 de leitura, 50 de escrita/interação); nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / terrenos 3D (tempo adicional autorizado)
+
+- Branch feat/mesh-tools empilhada na T22, tools/meshes.py: create_meshes e modify_meshes, até 20 por chamada. CreateMeshes/ModifyMeshes e os auxiliares de geometria/leitura conferidos na tag oficial Tapir 1.7.0, que aponta para 02691b5d680b60c73317e8e49b78ab14dfd4c9d8. Contorno simples com 3–200 pontos 3D, alturas públicas absolutas em metros; converte level para deslocamento do andar e z dos vértices para altura relativa ao plano-base (API_MeshType/meshPolyZ). Sem furos/arcos/curvas internas; superfície sem saia por padrão, saia/corpo opcionais abaixo dos vértices. Edição limitada a cota-base/saia/arestas/linhas, preservando topologia/andar; terrenos complexos recusados nesta primeira versão. Mesmo protocolo prévia/token/porta/recibo/timeout/erro por item e conferência 3D. Fixture sintética da fonte, não captura ao vivo. Nenhuma chamada real.
+
+- Terrenos: 1696 testes simulados e Ruff passaram em Windows/Python 3.12.10. Registro total nesta pilha: 75 ferramentas (23 leitura, 52 escrita/interação); teste ao vivo pendente.

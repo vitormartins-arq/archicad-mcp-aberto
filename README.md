@@ -108,6 +108,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
 | `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
 | `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
+| `create_meshes` | Write | Simple 3D terrains from absolute project coordinates, read back per mesh | yes |
+| `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
 
 ### Reported live validation
 
@@ -404,3 +406,22 @@ and open to everyone's contributions.
   `publisher_set_name` with PublisherSets to read that set; omitting it returns **only
   the first set**, with a note. No publishing, writing or saving. Source-derived
   simulated coverage; live validation pending.
+
+
+- `create_meshes([{outline, floor_index, level, skirt_type?, skirt_depth?, ridges?,
+  show_lines?}], ...)` creates up to 20 simple terrains with 3–200 boundary vertices.
+  Every `outline` vertex is `{x, y, z}` in **absolute project metres**, and `level` is
+  the absolute base plane. The tool converts to story-relative mesh base and base-plane-
+  relative vertex heights required by Tapir 1.7.0. A repeated closing point is normalized
+  only when its Z also matches. The plan contour must be simple and nonzero, as for slabs.
+  The default `skirt_type` is `SurfaceOnlyWithoutSkirt`; `WithSkirt` and
+  `SolidBodyWithSkirt` use positive `skirt_depth` below the base plane (default 1 m), with
+  the bottom strictly below every boundary vertex. `ridges` is `AllSharp` (default),
+  `AllSmooth` or `UserDefined`; `show_lines` defaults to true. No holes, arcs or internal
+  contours yet. Material/layer inherit Mesh tool defaults. `modify_meshes` takes
+  `{guid, level?, skirt_type?, skirt_depth?, ridges?, show_lines?}` for up to 20 simple
+  existing meshes, preserving the owner story and polygon; level translates the whole
+  terrain vertically, without replacing vertices. Complex meshes are refused in the
+  preview. Both tools use single-use tokens, explicit apply ports, receipts, per-item
+  errors and read-back through `GetDetailsOfElements`; neither saves. Verified only
+  against the source-derived simulator; live testing remains pending.

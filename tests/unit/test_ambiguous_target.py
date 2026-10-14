@@ -19,6 +19,7 @@ from archicad_mcp_aberto.tools import (
     labels,
     layers,
     locks,
+    meshes,
     modify,
     navigator,
     openings,
@@ -49,8 +50,23 @@ MODIFY_TYPES = {
     "modify_roofs": "Roof",
     "modify_texts": "Text",
     "modify_labels": "Label",
+    "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "create_meshes": {
+        "meshes": [
+            {
+                "outline": [
+                    {"x": 0, "y": 0, "z": 0},
+                    {"x": 4, "y": 0, "z": 1},
+                    {"x": 0, "y": 3, "z": 0},
+                ],
+                "floor_index": 0,
+                "level": 0,
+            }
+        ]
+    },
+    "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
     "get_navigator_tree": {},
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
@@ -234,6 +250,7 @@ TARGETED = {
         labels,
         layers,
         locks,
+        meshes,
         modify,
         navigator,
         openings,

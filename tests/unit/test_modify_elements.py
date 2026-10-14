@@ -11,6 +11,7 @@ from tests.unit.fake_archicad import (
     CREATE_SLABS_FIXTURE,
     CREATE_WALLS_FIXTURE,
     LABELS_FIXTURE,
+    MESHES_FIXTURE,
     MODIFY_ELEMENTS_FIXTURE,
     ROOFS_TEXTS_FIXTURE,
     FakeArchicad,
@@ -43,6 +44,7 @@ BEAM_DETAILS = {
     },
 }
 ROWS = {
+    "Mesh": MESHES_FIXTURE["mesh_details"],
     "Label": LABELS_FIXTURE["label_details"],
     "Slab": CREATE_SLABS_FIXTURE["slab_details"],
     "Column": CREATE_COLUMNS_FIXTURE["column_details"],

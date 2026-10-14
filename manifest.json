@@ -350,6 +350,14 @@
     {
       "name": "get_navigator_tree",
       "description": "Read flattened Project Map, View Map, Layout Book or one named publisher set, with filtering and pagination."
+    },
+    {
+      "name": "create_meshes",
+      "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
+    },
+    {
+      "name": "modify_meshes",
+      "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
     }
   ],
   "compatibility": {

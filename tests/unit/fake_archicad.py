@@ -80,6 +80,7 @@ MODIFY_COMMANDS = {
     "ModifyRoofs": ("Roof", "roofsWithDetails"),
     "ModifyTexts": ("Text", "textsWithDetails"),
     "ModifyLabels": ("Label", "labelsWithDetails"),
+    "ModifyMeshes": ("Mesh", "meshesData"),
 }
 
 
@@ -412,6 +413,9 @@ class FakeArchicad:
     publisher_sets: dict[str, dict] = field(
         default_factory=lambda: deepcopy(NAVIGATOR_FIXTURE["publisher_sets"])
     )
+
+    lose_mesh_response: bool = False
+    mesh_base_shift: float = 0.0
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1597,6 +1601,32 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateMeshes":
+            out = []
+            for index, mesh in enumerate(args["meshesData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Mesh"
+                row = deepcopy(MESHES_FIXTURE["mesh_details"])
+                row["floorIndex"] = mesh["floorIndex"]
+                points = deepcopy(mesh["polygonCoordinates"])
+                row["details"].update(
+                    {
+                        k: deepcopy(mesh[k])
+                        for k in ("level", "skirtType", "skirtLevel", "ridges", "showLines")
+                    }
+                )
+                row["details"]["level"] += self.mesh_base_shift
+                row["details"].update(
+                    polygonCoordinates=points + [deepcopy(points[0])],
+                    polygonArcs=deepcopy(mesh.get("polygonArcs", [])),
+                    holes=deepcopy(mesh.get("holes", [])),
+                )
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSlabs":
             out = []
             for index, slab in enumerate(args["slabsData"]):
@@ -1667,7 +1697,9 @@ class FakeArchicad:
             if self.elements.get(guid) != kind or guid in self.locked_elements:
                 rows.append(
                     deepcopy(
-                        MODIFY_LABELS_FIXTURE["failure"]
+                        MESHES_FIXTURE["modify_error"]
+                        if name == "ModifyMeshes"
+                        else MODIFY_LABELS_FIXTURE["failure"]
                         if name == "ModifyLabels"
                         else MODIFY_ELEMENTS_FIXTURE["failures"][name]
                     )
@@ -1678,6 +1710,8 @@ class FakeArchicad:
                 details = row["details"]
                 story = next(s for s in self.stories if s["index"] == row["floorIndex"])
                 changes = {k: deepcopy(v) for k, v in entry.items() if k != "elementId"}
+                if name == "ModifyMeshes":
+                    changes = changes["meshData"]
                 if name == "ModifyRoofs":
                     if details.get("roofClass") != "MultiPlane":
                         rows.append(
@@ -1868,6 +1902,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         body = json.loads(request.content)
         response = instance.handle(body)
         command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if instance.lose_mesh_response and command == "CreateMeshes":
+            raise httpx.ReadTimeout(
+                "Injected lost mesh response after model change", request=request
+            )
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
         if instance.lose_slab_response and command == "CreateSlabs":
@@ -1992,6 +2030,14 @@ ISSUES_FIXTURE = json.loads(
 # NavigatorCommands.cpp tag 1.7.0 shapes; synthetic values, NOT captured live.
 NAVIGATOR_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_navigator_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Tapir 1.7.0 source-derived Mesh shapes; synthetic values, NOT a live capture.
+MESHES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_meshes_documented.json").read_text(
         encoding="utf-8"
     )
 )
