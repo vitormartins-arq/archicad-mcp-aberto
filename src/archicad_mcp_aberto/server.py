@@ -14,9 +14,11 @@ from archicad_mcp_aberto.tools import (
     classifications,
     drafting,
     edit,
+    favorites,
     gateway,
     modify,
     openings,
+    project_info,
     read,
     write,
 )
@@ -369,6 +371,51 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         are read back. Requires Tapir. Never saves."""
         return await selection_tool.create_groups(
             client_of(ctx), groups, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_info_fields(ctx: Context, port: int | None = None) -> dict:
+        """Project Info fields (File > Info > Project Info) that title blocks show:
+        id, visible name and value. Requires Tapir."""
+        return await project_info.get_project_info_fields(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_project_info_fields(
+        ctx: Context,
+        changes: list[project_info.ProjectInfoChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview setting up to 30 Project Info values: field (id, or visible name) and
+        value (an empty value clears the field). Preview shows current and new values;
+        apply identical inputs with explicit port and single-use token; every field is
+        read back. Requires Tapir. Never saves."""
+        return await project_info.set_project_info_fields(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_favorites(ctx: Context, element_type: str, port: int | None = None) -> dict:
+        """Favorite names for one element type as Tapir names it (Wall, Slab, Column,
+        Beam, Window, Door, Object, Zone, Roof and so on). Requires Tapir."""
+        return await favorites.list_favorites(client_of(ctx), element_type, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def apply_favorites(
+        ctx: Context,
+        changes: list[favorites.FavoriteApply],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview applying favorites to up to 50 editable elements: element_guid and
+        favorite (a name of that element's type). Applies settings, classifications,
+        categories and properties, never geometry. Apply identical inputs with explicit
+        port and single-use token. Results stay unverified: check them in Archicad.
+        Requires Tapir. Never saves."""
+        return await favorites.apply_favorites(
+            client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

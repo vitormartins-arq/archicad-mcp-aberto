@@ -51,6 +51,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `run_read_command` | Read | One read-only official or Tapir command from a closed list, raw response | some |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `list_classifications` | Read | Classification systems, or one system's items as a flat tree | no |
+| `get_project_info_fields` | Read | Project Info fields (id, name, value) that title blocks show | yes |
+| `list_favorites` | Read | Favorite names for one element type | yes |
 | `get_element_groups` | Read | The group holding each element and its members | yes |
 | `list_layers` | Read | Layers with hidden, locked, wireframe and intersection group | yes |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
@@ -70,6 +72,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `select_elements` | View | Replace, add to or remove from the selection | yes |
 | `highlight_elements` | View | Highlight elements in one color, or clear it | yes |
 | `create_groups` | Write | Up to 20 groups of editable, ungrouped elements | yes |
+| `set_project_info_fields` | Write | Up to 30 Project Info values, read back | yes |
+| `apply_favorites` | Write | Apply favorites by name to up to 50 elements (settings, never geometry) | yes |
 | `create_layers` | Write | Up to 50 new layers; existing names are refused | yes |
 | `set_element_layers` | Write | Move up to 100 editable elements to existing layers | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
@@ -336,6 +340,8 @@ and open to everyone's contributions.
 - `list_layers` lists every layer with its GUID, index, name, `isHidden`, `isLocked`, `isWireframe` and `intersectionGroupNr`. `create_layers` previews up to 50 new layers: `name` and optional `hidden`, `locked`, `wireframe` and `intersection_group`. A name the project already has (case ignored) or a name repeated in the call is refused in the preview; nothing is ever overwritten. Applying reads each new layer back. `set_element_layers` previews moving up to 100 editable elements to existing layers: `{element_guid, layer}`, the layer by name (case ignored, ambiguous names refused). The preview shows the current and the new layer and flags moves that change nothing; locked, hotlinked and missing elements are refused. Applying reads back layer, type and story. Tapir 1.7.0 `GetLayers`, `CreateLayers` (with `overwriteExisting: false`) and `SetDetailsOfElements`; never saves. Not yet tested live.
 
 - `select_elements` and `highlight_elements` change only what you see in Archicad, never the model, so they act at once without a preview or token (marked "View" above). `select_elements` takes up to 100 GUIDs and a `mode`: `replace` (the default; an empty list clears the selection), `add` or `remove`; it reads the selection back and lists elements that did not end up selected. `highlight_elements` paints up to 100 elements in one `color` (`[r, g, b]` or `[r, g, b, a]`, 0 to 255, red by default), with optional `wireframe_3d` for the rest in 3D; an empty list clears the highlight. `get_element_groups` returns the group that directly holds each element (`null` when ungrouped) and the members of those groups. `create_groups` previews up to 20 groups of 2 or more elements (100 in all); locked, hotlinked, missing and already grouped elements are refused, and applying reads each group's members back. Tapir 1.7.0 `ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`, `GetElementsOfGroups` and `CreateGroups`; never saves. Not yet tested live.
+
+- `get_project_info_fields` lists the File > Info > Project Info fields that title blocks show through autotext (`projectInfoId`, the visible `projectInfoName` and `projectInfoValue`). `set_project_info_fields` previews up to 30 `{field, value}` changes; `field` is the id or the visible name (case ignored, ambiguous names refused) and an empty `value` clears it. Applying writes one field at a time, stops at the first lost answer, and reads every field back. `list_favorites` returns the favorite names of one element type (`Wall`, `Slab`, `Window` and so on). `apply_favorites` previews applying a favorite by name to up to 50 editable elements; the name must be a favorite of that element's own type. Archicad applies its settings, classifications, categories and properties, never geometry; Tapir cannot read a favorite's settings, so applied items stay `unverified` and the receipt shows the layer before and after. Tapir 1.7.0 `GetProjectInfoFields`, `SetProjectInfoField`, `GetFavoritesByType` and `ApplyFavoritesToElements`; never saves. Not yet tested live.
 
 - `run_read_command` runs one command from the closed read-only lists in [docs/GATEWAY.md](docs/GATEWAY.md): `API.<Command>` for the official JSON API or `Tapir.<Command>` for Tapir, with its JSON `parameters` sent unchanged and the response returned raw. Unlisted names, writes and saves are refused before anything reaches Archicad. Prefer a dedicated tool when one exists.
 

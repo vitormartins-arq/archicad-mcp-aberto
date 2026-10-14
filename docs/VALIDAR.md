@@ -163,3 +163,17 @@ Faça na planta do térreo, numa área vazia.
   ("Already in a group").
 - [ ] **get_element_groups.** "Em que grupo está a parede?" Esperado: o GUID do grupo e
   as duas paredes; um elemento sem grupo vem com `null`.
+
+## Lote 8: informações do projeto e favoritos
+
+- [ ] **get_project_info_fields.** "Mostre as informações do projeto." Esperado: os
+  mesmos campos de Arquivo > Informações > Informações do Projeto, com os nomes em
+  português.
+- [ ] **set_project_info_fields.** "Ponha 'Casa Teste' como nome do projeto e 'Cliente
+  Teste' como cliente." Esperado: `verified` e os valores na janela de Informações do
+  Projeto (e num carimbo que use esses campos). Depois limpe o cliente com valor vazio.
+- [ ] **list_favorites.** "Quais favoritos de parede existem?" Esperado: os mesmos nomes
+  da paleta de Favoritos.
+- [ ] **apply_favorites.** "Aplique o favorito <nome> à parede de teste." Esperado:
+  `unverified` (o MCP não lê o favorito) e a parede com as configurações do favorito sem
+  mudar de lugar. Um favorito de laje numa parede deve ser recusado na prévia.

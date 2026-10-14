@@ -12,11 +12,13 @@ from archicad_mcp_aberto.tools import (
     classifications,
     drafting,
     edit,
+    favorites,
     gateway,
     labels,
     layers,
     modify,
     openings,
+    project_info,
     read,
     roofs,
     selection,
@@ -62,6 +64,10 @@ INPUTS = {
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
     "list_classifications": {},
     "list_layers": {},
+    "get_project_info_fields": {},
+    "set_project_info_fields": {"changes": [{"field": "PROJECTNAME", "value": "Casa"}]},
+    "list_favorites": {"element_type": "Wall"},
+    "apply_favorites": {"changes": [{"element_guid": GUID, "favorite": "Parede padrão"}]},
     "select_elements": {"element_guids": [GUID]},
     "highlight_elements": {"element_guids": [GUID]},
     "get_element_groups": {"element_guids": [GUID]},
@@ -194,11 +200,13 @@ TARGETED = {
         classifications,
         drafting,
         edit,
+        favorites,
         gateway,
         labels,
         layers,
         modify,
         openings,
+        project_info,
         read,
         roofs,
         selection,
@@ -291,6 +299,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "create_groups":
         for instance in (first, second):
             instance.elements[PROP] = "Wall"
+    if name == "apply_favorites":
+        for instance in (first, second):
+            instance.favorites["Wall"] = ["Parede padrão"]
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""

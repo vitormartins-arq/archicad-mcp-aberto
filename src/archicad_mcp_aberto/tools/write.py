@@ -324,6 +324,16 @@ OPERATIONS = {
         "group_receipt_id",
         "Each new group is read back; ungroup in Archicad to undo.",
     ),
+    "set_project_info_fields": (
+        "project info change",
+        "project_info_receipt_id",
+        "Each field is written as shown and read back after.",
+    ),
+    "apply_favorites": (
+        "favorite application",
+        "favorite_receipt_id",
+        "Favorites change settings, never geometry; check the result in Archicad.",
+    ),
     "create_labels": (
         "label",
         "label_receipt_id",
@@ -1416,6 +1426,7 @@ NAMED_PREVIEWS = {
     "set_property_values",
     "set_classifications",
     "set_element_layers",
+    "apply_favorites",
     "create_lines",
     "create_polylines",
     "create_arcs",

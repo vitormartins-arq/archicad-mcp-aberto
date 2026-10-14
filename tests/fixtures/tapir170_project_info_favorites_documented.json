@@ -1,0 +1,15 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/ProjectCommands.cpp (GetProjectInfoFieldsCommand, SetProjectInfoFieldCommand) and FavoritesCommands.cpp (ApplyFavoritesToElementsCommand)",
+ "note": "Shapes read in the source, synthetic ids, names and error codes, not live capture. The ids follow the PROJECT/CLIENT/SITE prefixes the source filters on."},
+ "fields": [
+  {"projectInfoId": "PROJECTNAME", "projectInfoName": "Nome do Projeto", "projectInfoValue": "Projeto teste"},
+  {"projectInfoId": "PROJECTNUMBER", "projectInfoName": "Número do Projeto", "projectInfoValue": ""},
+  {"projectInfoId": "CLIENT_NAME", "projectInfoName": "Nome do Cliente", "projectInfoValue": ""},
+  {"projectInfoId": "SITE_CITY", "projectInfoName": "Cidade", "projectInfoValue": ""}
+ ],
+ "set_error": {"code": -2130313112, "message": "Failed to set project information field."},
+ "apply_ok": {"success": true},
+ "apply_type_mismatch": {"success": false, "error": {"code": -2130313111, "message": "The Favorite's element type does not match the target element's type."}},
+ "apply_no_favorite": {"success": false, "error": {"code": -2130313112, "message": "Failed to get favorite"}}
+}

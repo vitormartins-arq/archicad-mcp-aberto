@@ -109,6 +109,13 @@ SELECTION_FIXTURE = json.loads(
 )
 
 
+PROJECT_INFO_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_project_info_favorites_documented.json"
+    ).read_text(encoding="utf-8")
+)
+
+
 def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
 
@@ -176,6 +183,16 @@ class FakeArchicad:
     lose_group_response: bool = False
     select_refused: set[str] = field(default_factory=set)
     highlight: dict | None = None
+    project_info: list[dict] = field(
+        default_factory=lambda: deepcopy(PROJECT_INFO_FIXTURE["fields"])
+    )
+    project_info_refused: set[str] = field(default_factory=set)
+    project_info_ignored: bool = False
+    lose_project_info_response: bool = False
+    # element guid -> favorite names applied, in order
+    applied_favorites: dict[str, list[str]] = field(default_factory=dict)
+    favorite_layers: dict[str, int] = field(default_factory=dict)  # favorite -> layer index
+    lose_favorite_response: bool = False
     lose_slab_response: bool = False
     lose_zone_response: bool = False
     lose_beam_response: bool = False
@@ -404,6 +421,35 @@ class FakeArchicad:
                 for index, name in self.layers.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetProjectInfoFields":
+            return ok({"addOnCommandResponse": {"fields": deepcopy(self.project_info)}})
+        if name == "SetProjectInfoField":
+            key = args["projectInfoId"]
+            row = next((r for r in self.project_info if r["projectInfoId"] == key), None)
+            if row is None or key in self.project_info_refused:
+                error = deepcopy(PROJECT_INFO_FIXTURE["set_error"])
+                return ok({"addOnCommandResponse": {"error": error}})
+            if not self.project_info_ignored:
+                row["projectInfoValue"] = args["projectInfoValue"]
+            return ok({"addOnCommandResponse": {}})
+        if name == "ApplyFavoritesToElements":
+            assert set(args) == {"favoritesToApply"}
+            out = []
+            for row in args["favoritesToApply"]:
+                guid, favorite = row["elementId"]["guid"], row["favorite"]
+                kind = self.elements.get(guid)
+                if kind is None:
+                    out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_no_favorite"]))
+                elif favorite not in self.favorites.get(kind, []):
+                    known = any(favorite in names for names in self.favorites.values())
+                    fixture = "apply_type_mismatch" if known else "apply_no_favorite"
+                    out.append(deepcopy(PROJECT_INFO_FIXTURE[fixture]))
+                else:
+                    self.applied_favorites.setdefault(guid, []).append(favorite)
+                    if favorite in self.favorite_layers and guid in self.details:
+                        self.details[guid]["layerIndex"] = self.favorite_layers[favorite]
+                    out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_ok"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "ChangeSelectionOfElements":
             added, removed = [], []
             for row in args.get("addElementsToSelection", []):
@@ -1223,6 +1269,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost drafting response", request=request)
         if instance.lose_layer_response and command in ("CreateLayers", "SetDetailsOfElements"):
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
+        if instance.lose_project_info_response and command == "SetProjectInfoField":
+            raise httpx.ReadTimeout("Injected lost project info response", request=request)
+        if instance.lose_favorite_response and command == "ApplyFavoritesToElements":
+            raise httpx.ReadTimeout("Injected lost favorite response", request=request)
         if instance.lose_group_response and command == "CreateGroups":
             raise httpx.ReadTimeout("Injected lost group response", request=request)
         if instance.lose_label_response and command == "CreateLabels":

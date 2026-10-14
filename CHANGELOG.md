@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add Project Info and favorites (new `tools/project_info.py` and `tools/favorites.py`):
+  `get_project_info_fields`, `set_project_info_fields`, `list_favorites` and
+  `apply_favorites` through Tapir 1.7.0 `GetProjectInfoFields`, `SetProjectInfoField`,
+  `GetFavoritesByType` and `ApplyFavoritesToElements`. Fields go by id or visible name and
+  are read back; applied favorites stay unverified because Tapir cannot read a favorite's
+  settings. The fake's shapes come from the Tapir source, not a live capture. Not yet
+  tested live.
+
 - Add selection, highlight and groups (new `tools/selection.py`): `select_elements`,
   `highlight_elements`, `get_element_groups` and `create_groups` through Tapir 1.7.0
   `ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`,

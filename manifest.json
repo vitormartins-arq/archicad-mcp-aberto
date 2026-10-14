@@ -164,6 +164,22 @@
       "description": "Preview or group editable, ungrouped elements, read back after."
     },
     {
+      "name": "get_project_info_fields",
+      "description": "Project Info fields that title blocks show: id, name and value."
+    },
+    {
+      "name": "set_project_info_fields",
+      "description": "Preview or set Project Info values, read back after."
+    },
+    {
+      "name": "list_favorites",
+      "description": "Favorite names for one element type."
+    },
+    {
+      "name": "apply_favorites",
+      "description": "Preview or apply favorites by name to editable elements; settings only, never geometry."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },

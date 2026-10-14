@@ -370,3 +370,13 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   e T22 árvore do Navegador, empilhadas em `lote/camadas`. Fixture
   `tapir170_selection_groups_documented.json`, não é captura ao vivo. 1308 testes
   simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 8 na nuvem, 14/10/2026:** branch `lote/favoritos-info`, empilhada no
+  lote 7. `tools/project_info.py` (`get_project_info_fields`, `set_project_info_fields`)
+  e `tools/favorites.py` (`list_favorites`, `apply_favorites`), pelos comandos do Tapir
+  1.7.0. Conferido: o código lido é igual ao da tag 1.7.0 do Tapir no GitHub
+  (`AddOnMain.cpp` registra todos os comandos usados nos lotes 5 a 8 e nas tarefas T20 a
+  T22). `ApplyFavoritesToElements` não tem como ser conferido depois (o Tapir não lê as
+  configurações do favorito), então os itens ficam `unverified`. Fixture
+  `tapir170_project_info_favorites_documented.json`, não é captura ao vivo. 1352 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
