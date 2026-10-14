@@ -30,6 +30,7 @@ from archicad_mcp_aberto.tools import (
     roofs,
     selection,
     texts,
+    views,
     write,
     zones,
 )
@@ -53,6 +54,10 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "get_view_settings": {"view_guids": ["77777777-7777-4777-8777-000000000003"]},
+    "set_view_settings": {
+        "changes": [{"guid": "77777777-7777-4777-8777-000000000003", "drawing_scale": 100}]
+    },
     "create_meshes": {
         "meshes": [
             {
@@ -260,6 +265,7 @@ TARGETED = {
         roofs,
         selection,
         texts,
+        views,
         write,
         zones,
     )

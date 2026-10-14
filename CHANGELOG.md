@@ -239,3 +239,9 @@
   `ModifyMeshes`: simple 3D terrain boundaries, absolute public heights, explicit skirts
   and ridge display, existing write protections and read-back. No holes/arcs/contour edits;
   complex existing meshes are refused. Source-derived fixtures, simulation only.
+
+- Add `get_view_settings` and limited `set_view_settings`: scale denominator and existing
+  layer combination of up to 100 PublicViewMap views. Shared preview/token/port/receipts,
+  per-view errors, settings read-back and unchanged combination-state verification. Native
+  Navigator changes have no guaranteed Undo; receipts retain old values and say so. Other
+  write tools retain their existing note. Source-derived fixtures, simulated only.

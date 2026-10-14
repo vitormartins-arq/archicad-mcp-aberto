@@ -417,6 +417,15 @@ class FakeArchicad:
     lose_mesh_response: bool = False
     mesh_base_shift: float = 0.0
 
+    view_settings: dict[str, dict] = field(
+        default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
+    )
+    view_settings_errors: dict[int, dict] = field(default_factory=dict)
+    view_settings_ignored: bool = False
+    view_settings_reset_pen_set: bool = False
+    view_settings_change_layers: bool = False
+    lose_view_settings_response: bool = False
+
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
         for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
@@ -858,6 +867,43 @@ class FakeArchicad:
                 self.groups[guid] = [e["elementId"]["guid"] for e in group["elements"]]
                 out.append({"groupId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"groupGuids": out}})
+        if name == "GetViewSettings":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "viewSettings": [
+                            deepcopy(
+                                self.view_settings.get(
+                                    r["navigatorItemId"]["guid"],
+                                    VIEW_SETTINGS_FIXTURE["not_a_view"],
+                                )
+                            )
+                            for r in args["navigatorItemIds"]
+                        ]
+                    }
+                }
+            )
+        if name == "SetViewSettings":
+            out = []
+            for index, entry in enumerate(args["navigatorItemIdsWithViewSettings"]):
+                guid = entry["navigatorItemId"]["guid"]
+                if index in self.view_settings_errors:
+                    out.append(deepcopy(self.view_settings_errors[index]))
+                    continue
+                if guid not in self.view_settings:
+                    out.append(deepcopy(VIEW_SETTINGS_FIXTURE["failed"]))
+                    continue
+                if not self.view_settings_ignored:
+                    self.view_settings[guid].update(deepcopy(entry["viewSettings"]))
+                    if self.view_settings_reset_pen_set:
+                        self.view_settings[guid]["penSetName"] = "Unexpected side effect"
+                    if (
+                        self.view_settings_change_layers
+                        and "layerCombination" in entry["viewSettings"]
+                    ):
+                        self.layer_combinations[2]["layers"].setdefault(1, {})["isHidden"] = False
+                out.append(deepcopy(VIEW_SETTINGS_FIXTURE["success"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "GetNavigatorItemTree":
             if args["navigatorMapId"] == "PublisherSets" and "publisherSetName" in args:
                 tree = self.publisher_sets.get(args["publisherSetName"])
@@ -1972,6 +2018,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
                 raise httpx.ReadTimeout(
                     "Injected lost issue response after change", request=request
                 )
+        if instance.lose_view_settings_response and command == "SetViewSettings":
+            raise httpx.ReadTimeout(
+                "Injected lost view settings response after change", request=request
+            )
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request
@@ -2038,6 +2088,14 @@ NAVIGATOR_FIXTURE = json.loads(
 # Tapir 1.7.0 source-derived Mesh shapes; synthetic values, NOT a live capture.
 MESHES_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_meshes_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Source-derived Tapir 1.7.0 ViewSettings schemas; synthetic values, NOT live.
+VIEW_SETTINGS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_view_settings_documented.json").read_text(
         encoding="utf-8"
     )
 )

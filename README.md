@@ -110,6 +110,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
 | `create_meshes` | Write | Simple 3D terrains from absolute project coordinates, read back per mesh | yes |
 | `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
+| `get_view_settings` | Read | Settings or native error for each of up to 100 views | yes |
+| `set_view_settings` | Write | Scale and existing layer combination of views; preserve other settings | yes |
 
 ### Reported live validation
 
@@ -425,3 +427,26 @@ and open to everyone's contributions.
   preview. Both tools use single-use tokens, explicit apply ports, receipts, per-item
   errors and read-back through `GetDetailsOfElements`; neither saves. Verified only
   against the source-derived simulator; live testing remains pending.
+
+
+- `get_view_settings(view_guids, port?)` reads settings or an error per Navigator view,
+  up to 100 GUIDs, preserving request order. `drawingScale` is the scale denominator
+  (100 = 1:100); zoom uses model metres and rotation uses radians.
+  `set_view_settings([{guid, drawing_scale?, layer_combination?}], ...)` previews/applies
+  scale and/or an existing layer combination (exact name or GUID) for up to 100 views
+  in PublicViewMap. It sends only requested fields and reads all other exposed settings
+  back unchanged, including pens, graphic overrides, zoom and rotation. Existing layer
+  combination definitions are also checked unchanged. Missing combinations/views,
+  duplicate combination names and unsupported fields are refused. Setting a scale
+  enables native stored-scale saving; Tapir does not expose that flag for verification.
+  Navigator settings have **no guaranteed Undo** through this command; previews and
+  durable receipts retain previous values for restoration manually or by a new
+  preview/apply. Other write tools keep their existing Undo note. Never saves or publishes.
+  Source-confirmed Tapir 1.7.0 GetViewSettings/SetViewSettings; simulated only.
+
+### Registry snapshot — 2026-10-14 development stack
+
+The expanded registry in this stack contains **77 tools: 24 read-only and 53 write or
+interaction tools**. The smaller Phase 1 count near the beginning is historical. New
+Codex tools (labels, issues, Navigator, meshes and view settings) have simulated coverage;
+this does not imply live or visual approval. See docs/VALIDAR.md for the operator checklist.

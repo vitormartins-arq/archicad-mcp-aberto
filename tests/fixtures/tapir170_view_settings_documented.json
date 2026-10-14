@@ -1,0 +1,58 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8",
+    "source": "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/NavigatorCommands.cpp",
+    "source_sha256": "27fef16a4e952bed94979385c5421a4a15fff87cdccede60467b5e12c90e4e4d",
+    "note": "Synthetic values, schemas read from GetViewSettings and SetViewSettings source, NOT captured live. Inputs navigatorItemIds wrappers; output viewSettings rows are direct settings or error. SetViewSettings input navigatorItemIdsWithViewSettings contains navigatorItemId/viewSettings per item and returns executionResults. drawingScale also sets saveDScale=true; this flag is NOT returned. The command has no undoable-command wrapper."
+  },
+  "views": {
+    "77777777-7777-4777-8777-000000000003": {
+      "modelViewOptions": "Documentation",
+      "layerCombination": "0ª ETAPA | (3D) ARCHICAD",
+      "dimensionStyle": "Metric",
+      "penSetName": "Architecture",
+      "graphicOverrideCombination": "None",
+      "drawingScale": 100,
+      "saveZoom": false,
+      "ignoreSavedZoom": false,
+      "rotation": 0.0,
+      "structureDisplay": "EntireStructure",
+      "d3styleName": "White model",
+      "renderingSceneName": "",
+      "usePhotoRendering": false
+    },
+    "77777777-7777-4777-8777-000000000004": {
+      "modelViewOptions": "Documentation",
+      "layerCombination": "0ª ETAPA | (3D) ARCHICAD",
+      "dimensionStyle": "Metric",
+      "penSetName": "Architecture",
+      "graphicOverrideCombination": "None",
+      "drawingScale": 50,
+      "saveZoom": false,
+      "ignoreSavedZoom": false,
+      "rotation": 0.0,
+      "structureDisplay": "EntireStructure",
+      "d3styleName": "White model",
+      "renderingSceneName": "",
+      "usePhotoRendering": false
+    }
+  },
+  "not_a_view": {
+    "error": {
+      "code": -1,
+      "message": "Failed to get view settings from the navigator item, probably it's not a view"
+    }
+  },
+  "failed": {
+    "success": false,
+    "error": {
+      "code": -1,
+      "message": "Failed to set navigator item view settings"
+    }
+  },
+  "success": {
+    "success": true
+  }
+}

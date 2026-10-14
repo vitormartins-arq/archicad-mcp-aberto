@@ -332,3 +332,15 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
   terreno inteiro sobe 0.5 m, contorno e andar mantidos. Sem furos/arcos/curvas internas.
 - [ ] Contorno cruzado, fecho com Z diferente e fundo da saia acima de um vértice
   recusados. Terreno complexo, bloqueado ou de hotlink recusado na edição. Nunca salvar.
+
+
+## Configurações de vistas (Codex) — validação futura
+
+- [ ] get_view_settings: duas vistas e GUID inexistente no meio, configurações/erro por
+  item. Comparar drawingScale/combinação/rotação/zoom com Definições de Vista.
+- [ ] set_view_settings: escala 1:200 e combinação existente por nome ou GUID; prévia,
+  aplicar, verified por vista. Conferir que canetas, zoom, rotação, sobreposição e
+  configurações de cada camada na combinação continuam iguais. Não publicar nem salvar.
+- [ ] Não contar com Undo para SetViewSettings; guardar before do recibo e restaurar
+  com nova prévia/aplicação ou manualmente. A flag nativa de salvar escala é ativada,
+  mas não pode ser relida pelo Tapir; conferir na interface.

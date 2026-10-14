@@ -34,6 +34,7 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
+from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -1121,6 +1122,34 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await meshes_tool.modify_meshes(
             client_of(ctx), meshes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_view_settings(
+        ctx: Context,
+        view_guids: list[str],
+        port: int | None = None,
+    ) -> dict:
+        """Read settings/errors per view (1–100 GUIDs). drawingScale is the denominator
+        (100 means 1:100); zoom in metres and rotation in radians. Never writes.
+        """
+        return await views_tool.get_view_settings(client_of(ctx), view_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_view_settings(
+        ctx: Context,
+        changes: list[views_tool.ViewSettingsChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/set drawing_scale denominator and/or existing layer_combination by
+        name/GUID for up to 100 PublicViewMap views. Read-back checks settings unchanged
+        except requested fields. No guaranteed Navigator Undo; previous values retained.
+        Explicit apply port, single-use token and receipt; never saves or publishes.
+        """
+        return await views_tool.set_view_settings(
+            client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
     return mcp

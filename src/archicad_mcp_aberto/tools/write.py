@@ -415,6 +415,12 @@ OPERATIONS["modify_meshes"] = (
     "Only level/skirt/display change; topology is preserved.",
 )
 
+OPERATIONS["set_view_settings"] = (
+    "view settings",
+    "view_settings_receipt_id",
+    "No guaranteed Navigator Undo. Previous values are retained; restore by a new preview/apply.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
@@ -787,6 +793,9 @@ async def _write(
         )
         receipt["finished_at"] = datetime.now(UTC).isoformat()
         receipt["note"] = "No project was saved. Use Archicad Undo to revert this batch."
+        if receipt.get("revert_note"):
+            receipt["note"] = "No project was saved. " + receipt["revert_note"]
+
         try:
             receipt["receipt_path"] = _journal(receipt, "result")
         except OSError as exc:

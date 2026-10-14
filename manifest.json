@@ -358,6 +358,14 @@
     {
       "name": "modify_meshes",
       "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
+    },
+    {
+      "name": "get_view_settings",
+      "description": "Read settings or native errors per Navigator view, including scale, layer combination and rotation."
+    },
+    {
+      "name": "set_view_settings",
+      "description": "Safely set view scale and existing layer combination, checking all other readable settings unchanged; no guaranteed Undo."
     }
   ],
   "compatibility": {
