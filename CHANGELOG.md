@@ -251,3 +251,9 @@
   5 mm move or a wrong vertex could previously read as verified near coordinate 6500000;
   a valid small unclosed polygon could also be mistaken for closed. Regression cases
   reproduce the failures at positive/negative origins using only the simulator.
+
+- Add `list_layer_combinations` (optional saved per-layer states, filtered/paginated
+  before batched reads) and `set_layer_settings` for current flags/group of existing
+  layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
+  name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
+  is unknown, including the native overwrite base creating a vanished target. Simulated only.

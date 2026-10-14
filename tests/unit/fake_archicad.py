@@ -426,6 +426,11 @@ class FakeArchicad:
     view_settings_change_layers: bool = False
     lose_view_settings_response: bool = False
 
+    layer_settings_errors: dict[int, dict] = field(default_factory=dict)
+    layer_settings_ignored: bool = False
+    lose_layer_settings_response: bool = False
+    layer_combination_read_errors: dict[int, dict] = field(default_factory=dict)
+
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
         for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
@@ -1004,6 +1009,42 @@ class FakeArchicad:
                     }
                 )
             return ok({"addOnCommandResponse": {"layers": out}})
+        if (
+            name == "CreateLayers"
+            and args.get("overwriteExisting") is True
+            and any(
+                any(
+                    key in data
+                    for key in ("isHidden", "isLocked", "isWireframe", "intersectionGroupNr")
+                )
+                for data in args["layerDataArray"]
+            )
+        ):
+            out = []
+            for index, data in enumerate(args["layerDataArray"]):
+                guid = data["attributeId"]["guid"]
+                target = next((i for i in self.layers if layer_guid(i) == guid), None)
+                if index in self.layer_settings_errors:
+                    out.append(deepcopy(self.layer_settings_errors[index]))
+                    continue
+                if target is None:
+                    # The native generic base can CREATE if the selected attribute vanished.
+                    if data["name"] in self.layers.values():
+                        out.append(deepcopy(LAYERS_FIXTURE["already_exists"]))
+                        continue
+                    target = max(self.layers, default=0) + 1
+                    self.layers[target] = data["name"]
+                if not self.layer_settings_ignored:
+                    self.layers[target] = data["name"]
+                    self.layer_flags.setdefault(target, {}).update(
+                        {
+                            k: v
+                            for k, v in data.items()
+                            if k in ("isHidden", "isLocked", "isWireframe", "intersectionGroupNr")
+                        }
+                    )
+                out.append({"attributeId": {"guid": layer_guid(target)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
         ):
@@ -1058,6 +1099,9 @@ class FakeArchicad:
                             }
                         }
                     )
+                    continue
+                if index in self.layer_combination_read_errors:
+                    out.append(deepcopy(self.layer_combination_read_errors[index]))
                     continue
                 combination = self.layer_combinations[index]
                 layers = [
@@ -2021,6 +2065,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
         if instance.lose_view_settings_response and command == "SetViewSettings":
             raise httpx.ReadTimeout(
                 "Injected lost view settings response after change", request=request
+            )
+        if instance.lose_layer_settings_response and command == "CreateLayers":
+            raise httpx.ReadTimeout(
+                "Injected lost layer-settings response after change", request=request
             )
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(

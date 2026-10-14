@@ -17,6 +17,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     issues,
     labels,
+    layer_settings,
     layers,
     locks,
     meshes,
@@ -54,6 +55,8 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "list_layer_combinations": {},
+    "set_layer_settings": {"changes": [{"layer": "Editable", "locked": False}]},
     "get_view_settings": {"view_guids": ["77777777-7777-4777-8777-000000000003"]},
     "set_view_settings": {
         "changes": [{"guid": "77777777-7777-4777-8777-000000000003", "drawing_scale": 100}]
@@ -253,6 +256,7 @@ TARGETED = {
         gateway,
         issues,
         labels,
+        layer_settings,
         layers,
         locks,
         meshes,
@@ -352,6 +356,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
         for instance in (first, second):
             instance.elements[GUID] = MODIFY_TYPES[name]
             instance.details[GUID] = deepcopy(MODIFY_ROWS[MODIFY_TYPES[name]])
+    if name == "set_layer_settings":
+        for instance in (first, second):
+            instance.layers[2] = "Editable"
     if name == "create_groups":
         for instance in (first, second):
             instance.elements[PROP] = "Wall"
@@ -406,6 +413,9 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     first, second = instances()
     if name in {"create_windows", "create_doors"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
+    if name == "set_layer_settings":
+        for instance in (first, second):
+            instance.layers[2] = "Editable"
     if name == "create_groups":
         second.elements[PROP] = "Wall"
     arguments = deepcopy(INPUTS[name])

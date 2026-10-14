@@ -351,3 +351,15 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] Em cópia de teste autorizada, conferir criação/edição/movimentação perto e longe
   da origem: a tolerância não deve crescer com as coordenadas. Não deslocar projeto
   real para este teste. O simulado já cobre falhas ignoradas de 5 mm em ±6500000 m.
+
+
+## Estado de camadas (Codex) — validação futura
+
+- [ ] list_layer_combinations: filtrar/paginar e include_layers=true; conferir olho,
+  cadeado, aramado e grupo por camada com a tabela das Combinações de Vegetais.
+- [ ] Em cópia de teste autorizada, set_layer_settings para mostrar/destravar uma camada
+  de teste e alterar grupo de interseção: prévia, aplicar, verified; nome/GUID e flags
+  não pedidos iguais. Não conta como edição da combinação salva.
+- [ ] Camada Archicad protegida, nome inexistente e mesmo alvo por nome+GUID recusados.
+  Não contar com Undo de atributos: guardar before e restaurar por nova prévia/manual.
+  Se aparecer unknown ou GUID diferente, inspecionar; não repetir nem apagar automaticamente.

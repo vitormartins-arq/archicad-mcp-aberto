@@ -112,6 +112,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
 | `get_view_settings` | Read | Settings or native error for each of up to 100 views | yes |
 | `set_view_settings` | Write | Scale and existing layer combination of views; preserve other settings | yes |
+| `list_layer_combinations` | Read | Saved combinations, optional per-layer states, filter/page before details | yes |
+| `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 
 ### Reported live validation
 
@@ -454,3 +456,21 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
 - Geometry read-back uses fixed absolute numeric tolerance (1e-7), and moved bounding
   boxes keep a fixed 1 mm tolerance. These do not grow with georeferenced coordinates:
   moving the model far from the origin must not turn millimetre errors into `verified`.
+
+
+- `list_layer_combinations(port?, query?, offset=0, limit=200, include_layers=false)`
+  lists saved combination GUIDs/names/indices. With `include_layers`, each result adds
+  native per-layer hidden/locked/wireframe/intersection-group states or a per-item error;
+  details are fetched only after filtering/pagination, in batches of 100.
+  `set_layer_settings([{layer, hidden?, locked?, wireframe?, intersection_group?}], ...)`
+  targets up to 50 existing layers by exact name or GUID. It sends unchanged name/GUID
+  plus only requested fields through Tapir 1.7.0 CreateLayers with overwriteExisting,
+  and verifies identity, name, flags and group. The protected first Archicad layer,
+  duplicate aliases and unknown layers are refused. It affects current layer attributes;
+  it is not an editor for the saved combination tables. No guaranteed attribute Undo:
+  keep the receipt's before values to restore manually or with a new preview/apply.
+  The native generic base can create a layer if a target disappears between preflight
+  and dispatch; a different returned GUID is marked `unknown`, never verified or
+  automatically removed/retried. No deletion, renaming or saving. Source-derived tests
+  only; live validation pending. Registry after this addition: **79 tools (25 reads,
+  54 writes/interactions)**.

@@ -27,6 +27,7 @@ from archicad_mcp_aberto.tools import (
 )
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
+from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
@@ -1149,6 +1150,40 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, single-use token and receipt; never saves or publishes.
         """
         return await views_tool.set_view_settings(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layer_combinations(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+        include_layers: bool = False,
+    ) -> dict:
+        """List saved layer combinations (GUID/name/index), filter and paginate.
+        include_layers adds each saved layer's visibility/lock/wireframe/intersection
+        group, or a native error per combination. Never changes state or saves.
+        """
+        return await layer_settings_tool.list_layer_combinations(
+            client_of(ctx), port, query, offset, limit, include_layers
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_layer_settings(
+        ctx: Context,
+        changes: list[layer_settings_tool.LayerSettingsChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/set up to 50 existing layer flags: layer name/GUID, hidden, locked,
+        wireframe, intersection_group (0–32767). Unspecified fields/name/GUID preserved.
+        Protected first layer refused; no guaranteed Undo. Requires explicit apply port
+        and one-use token, retains old values and checks read-back. Never saves/deletes.
+        """
+        return await layer_settings_tool.set_layer_settings(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 

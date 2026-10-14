@@ -366,6 +366,14 @@
     {
       "name": "set_view_settings",
       "description": "Safely set view scale and existing layer combination, checking all other readable settings unchanged; no guaranteed Undo."
+    },
+    {
+      "name": "list_layer_combinations",
+      "description": "List saved layer combinations, optionally including per-layer flags and intersection groups."
+    },
+    {
+      "name": "set_layer_settings",
+      "description": "Safely change existing layer flags/group with preview, one-use confirmation and read-back; preserve name and identity."
     }
   ],
   "compatibility": {

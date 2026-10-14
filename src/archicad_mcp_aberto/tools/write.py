@@ -421,6 +421,12 @@ OPERATIONS["set_view_settings"] = (
     "No guaranteed Navigator Undo. Previous values are retained; restore by a new preview/apply.",
 )
 
+OPERATIONS["set_layer_settings"] = (
+    "layer settings",
+    "layer_settings_receipt_id",
+    "Existing layer flags only. Current visibility/editability can change; no guaranteed Undo.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
