@@ -39,8 +39,8 @@ salvar. O resultado item por item está em
 
 Ainda em aberto:
 
-- [ ] **modify_beams.** Precisa de uma viga numa camada destravada (no modelo do Vitor,
-  `EST - Viga` fica oculta e travada).
+- [x] **modify_beams.** (14/10, `verified`, com `EST - Viga` destravada pelo
+  `set_layer_settings`.)
 - [ ] **Etiqueta solta.** Ver no ArchiCAD se a "Nota" em (2,3) tem seta até a origem.
 - [ ] **update_zones com zona automática.** O teste usou zona manual.
 - [ ] **Conferência visual** da lista "Para o Vitor conferir" no arquivo de resultado.
@@ -363,3 +363,15 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] Camada Archicad protegida, nome inexistente e mesmo alvo por nome+GUID recusados.
   Não contar com Undo de atributos: guardar before e restaurar por nova prévia/manual.
   Se aparecer unknown ou GUID diferente, inspecionar; não repetir nem apagar automaticamente.
+
+## PRs #51 a #57 do Codex: rodada de 14/10/2026
+
+Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tapir
+1.7.0, sem salvar. Detalhes em `docs/VALIDAR-resultado-2026-10-14.md`. As seções "Lote 7
+(Codex)", "Terrenos 3D", "Configurações de vistas", "Conferência georreferenciada" e
+"Estado de camadas" acima passaram no essencial. Ainda em aberto:
+
+- [ ] **Combinação com "ª" no nome em `set_view_settings`.** O Tapir manda esse campo
+  como texto simples; conferir se o nome chega inteiro.
+- [ ] **Conferência visual:** o terreno em (30,0)-(40,10) desceu 0,2 m e ficou com saia;
+  a etiqueta "Etiqueta alterada" na parede (0,0)-(6,0); a vista "Pavimento Térreo" em 1:75.

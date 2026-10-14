@@ -29,35 +29,32 @@ caso abra o PR dessa tarefa explicando o que falta.
 
 ## A fazer
 
-**Base empilhada (vale até o Vitor fazer merge dos lotes):** a `main` ainda não tem os
-lotes 1 a 6 (PRs #37 a #43). Por isso, em vez da regra 1, a primeira branch sai de
-`origin/lote/camadas` (`git fetch origin lote/camadas && git checkout -b <branch>
-origin/lote/camadas`); as seguintes saem da anterior, e todo PR tem base `main`.
+Base: a `main` atualizada (os lotes 1 a 13 e os PRs #51 a #57 já estão nela). A
+primeira branch sai da `main`; as seguintes saem da anterior, e todo PR tem base `main`.
+Em `write.py`, `server.py`, `manifest.json`, README, CHANGELOG, `docs/ESTADO.md`,
+`docs/VALIDAR.md`, no fake e nos testes de registro, só **acrescente** (entradas novas no
+fim das listas).
 
-Não mexa em `tools/selection.py` nem em `tests/unit/test_selection.py`: é o lote 7 do
-Claude (seleção, destaque e grupos). Em `write.py`, `server.py`, `manifest.json`, README,
-CHANGELOG, `docs/ESTADO.md`, `docs/VALIDAR.md`, no fake e nos testes de registro, só
-**acrescente** (entradas novas no fim das listas), sem reordenar nem reescrever o que já
-existe, para o merge ficar simples.
-
-- **T20 `modify_labels`, branch `codex/t20-modify-labels`.** Em `tools/modify.py`, no
-  mesmo padrão de `modify_texts`: texto, posição (no mesmo pavimento) e `height_mm` de
-  etiquetas existentes, por `ModifyLabels` do Tapir 1.7.0 (confira os campos em
-  `ElementCreationCommands.cpp`). Recuse o que o comando não aceita na prévia. Conferência
-  depois de aplicar como em `create_labels`. Item novo em `docs/VALIDAR.md`, seção
-  "Lote 7 (Codex)".
-- **T21 incidências, branch `codex/t21-issues`.** Arquivo novo `tools/issues.py`:
-  `list_issues` (leitura, `GetIssues`), `create_issues` (escrita, `CreateIssue`, até 20,
-  `name` e `tagText` opcional) e `attach_elements_to_issue` (escrita, `AttachElementsToIssue`, por GUID
-  da incidência e dos elementos; recuse elemento inexistente na prévia). Leia
-  `IssueCommands.cpp` do Tapir 1.7.0. Escrita no padrão da regra 6, conferindo com
-  `GetIssues` e `GetElementsAttachedToIssue`. Nada de BCF, nada de apagar.
-- **T22 mapa do projeto, branch `codex/t22-navigator`.** Arquivo novo
-  `tools/navigator.py` com `get_navigator_tree` (só leitura, `GetNavigatorItemTree` do
-  Tapir 1.7.0, `NavigatorCommands.cpp`): árvore achatada como `list_classifications`
-  (guid, nome, tipo, `parent_guid`, profundidade), com `query`, `offset` e `limit`.
-  Escolha do mapa (projeto, vistas, pranchas, publicador) por parâmetro com os valores
-  que o comando aceita.
+- **T23 `create_fills`, branch `codex/t23-fills`.** Em `tools/drafting.py`, no padrão de `create_lines`/`create_polylines`: preenchimentos
+  2D por `CreateFills` do Tapir 1.7.0 (confira os campos em `ElementCreationCommands.cpp`),
+  até 50, contorno fechado em metros, pavimento explícito, sem furos nem arcos nesta
+  versão. Recuse contorno aberto ou cruzado na prévia. Conferência relendo o polígono.
+  Item novo em `docs/VALIDAR.md`, seção "Lote 8 (Codex)".
+- **T24 `add_comment_to_issue`, branch `codex/t24-issue-comments`.** Em
+  `tools/issues.py`: comentário de texto em incidência existente por `AddCommentToIssue`
+  (confira `IssueCommands.cpp`), até 20 por chamada, com autor opcional. Conferência por
+  `GetCommentsFromIssue`.
+  Nada de apagar nem de destacar elementos.
+- **T25 pastas e vistas no Mapa de Vistas, branch `codex/t25-view-map`.** Arquivo
+  `tools/navigator.py`: `create_view_map_folders` (`CreateViewMapFolder`) e
+  `clone_to_view_map` (`CloneProjectMapItemToViewMap`), ambos por GUID de pai existente
+  vindo de `get_navigator_tree`. Conferência relendo a árvore. Sem mover, apagar nem
+  publicar.
+- **T26 `create_classification_items`, branch `codex/t26-classification-items`.** Em
+  `tools/classifications.py`: itens novos dentro de um sistema e pai existentes, por
+  `CreateClassificationItems` (confira `ClassificationCommands.cpp`), até 50, com id, nome
+  e descrição. Recuse id repetido no mesmo sistema na prévia. Conferência relendo a árvore
+  com `list_classifications`. Sem apagar.
 
 ## Integrado
 
@@ -71,3 +68,6 @@ existe, para o merge ficar simples.
   T15 parâmetros GDL (#32), T16 `modify_walls` (#33). Todos testados ao vivo.
 - T17 janelas e portas (#34), T18 `run_read_command` (#35), T19 ângulos normalizados
   (#36). Feitas pelo Claude; testadas ao vivo.
+- T20 `modify_labels` (#51), T21 incidências (#52), T22 mapa do projeto (#53), terrenos
+  (#54), definições de vista (#55), tolerância absoluta (#56) e estado de camadas (#57).
+  Testados ao vivo em 14/10/2026; merge pelo #57.

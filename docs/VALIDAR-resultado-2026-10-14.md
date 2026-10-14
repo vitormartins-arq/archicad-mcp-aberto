@@ -195,3 +195,27 @@ Mesmo ambiente: ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto sem nome na por
   "03 PE - ..."), sem mudança no estado de nenhuma camada e sem outra diferença nos
   atributos. Renomear superfície agora é recusado com a explicação.
 
+## PRs #51 a #57 do Codex (branch `feat/layer-settings`, código `8424d9c`)
+
+ArchiCAD 30 build 3001 BRA, Tapir 1.7.0, projeto novo sem nome na porta 19724 (aberto
+pelo Vitor com Arquivo > Novo), sem salvar. Testado pela sessão no PC do Vitor.
+
+- **#57 estado de camadas:** `set_layer_settings` destravou e mostrou "ANT - Rótulo" e
+  "EST - Viga", ligou aramado e grupo de interseção em "ARQ - Parede" e voltou ao normal.
+  Tudo `verified`. Recusados: a primeira camada (Archicad) e uma camada inexistente.
+  `list_layer_combinations` trouxe todas as combinações com o estado de cada camada.
+- **modify_beams (pendente do lote 1):** com "EST - Viga" destravada, `verified`.
+- **#51 `modify_labels`:** texto e altura 3,5 mm mudaram, `verified`; a etiqueta continua
+  presa à parede. Mudar posição é recusado na prévia.
+- **#52 incidências:** "Issue MCP 1" e "Issue MCP 2" criadas e listadas; parede ligada à
+  primeira como destaque. Tudo `verified`.
+- **#53 `get_navigator_tree`:** leu Mapa do Projeto, Mapa de Vistas, Livro de Pranchas e
+  Conjuntos de Publicação; a busca por "Térreo" funcionou.
+- **#54 terrenos:** terreno 10 × 10 m com alturas de 0 a 1,5 m criado; base baixada para
+  -0,2 m com saia. Ambos `verified`. Saia acima de um vértice recusada.
+- **#55 definições de vista:** "Pavimento Térreo" do Mapa de Vistas de 1:100 para 1:75 e
+  combinação "00 Modelo 3D", conferido relendo. Combinação inexistente recusada. Sem
+  Ctrl+Z; o recibo guarda os valores antigos. Combinação com "ª" não testada.
+- **#56 tolerância absoluta:** parede criada em x = 6.500.000 m e movida 5 mm, `verified`.
+- CI: Ubuntu e Windows verdes; macOS sem máquina no GitHub. Merge do #57 pelo Vitor
+  (commit `c6ed73b`), que levou do #51 ao #56.
