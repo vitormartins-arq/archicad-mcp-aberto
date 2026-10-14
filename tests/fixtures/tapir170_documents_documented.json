@@ -1,0 +1,28 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/DocumentCreationCommands.cpp (CreateWorksheetsCommand, CreateDetailsCommand, CreateLayoutCommand), NavigatorCommands.cpp (GetNavigatorItemTreeCommand, GetDatabaseIdFromNavigatorItemIdCommand) and RFIX/Images/CommonSchemaDefinitions.json, compared with the 1.7.0 tag on GitHub",
+ "note": "Shapes read in the source; the tree layout, names, GUIDs and error codes are synthetic, not live capture. Where Archicad files a new worksheet or a master layout in the tree must be confirmed live."},
+ "trees": {
+  "ProjectMap": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000001"}, "type": "ProjectItem", "name": "Projeto teste", "prefix": "", "uiId": "", "customUiId": false, "customName": false, "isIndependent": false,
+   "children": [
+    {"navigatorItem": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000002"}, "type": "StoryItem", "name": "Térreo", "prefix": "0", "uiId": "", "customUiId": false, "customName": false, "isIndependent": false}},
+    {"navigatorItem": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000003"}, "type": "WorksheetDrawingItem", "name": "Estudo de fachada", "prefix": "", "uiId": "W1", "customUiId": false, "customName": false, "isIndependent": true}}
+   ]},
+  "LayoutBook": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000010"}, "type": "BookItem", "name": "Projeto teste", "prefix": "", "uiId": "", "customUiId": false, "customName": false, "isIndependent": false,
+   "children": [
+    {"navigatorItem": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000011"}, "type": "MasterFolderItem", "name": "Masters", "prefix": "", "uiId": "", "customUiId": false, "customName": false, "isIndependent": false,
+     "children": [
+      {"navigatorItem": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000012"}, "type": "MasterLayoutItem", "name": "A3 Paisagem", "prefix": "", "uiId": "", "customUiId": false, "customName": false, "isIndependent": false}}
+     ]}},
+    {"navigatorItem": {"navigatorItemId": {"guid": "88888888-8888-4888-8888-000000000013"}, "type": "LayoutItem", "name": "Planta baixa", "prefix": "", "uiId": "A.01", "customUiId": false, "customName": false, "isIndependent": false}}
+   ]}
+ },
+ "databases": {
+  "88888888-8888-4888-8888-000000000003": "99999999-8888-4888-8888-000000000003",
+  "88888888-8888-4888-8888-000000000012": "99999999-8888-4888-8888-000000000012",
+  "88888888-8888-4888-8888-000000000013": "99999999-8888-4888-8888-000000000013"
+ },
+ "no_database": {"error": {"code": -2130313215, "message": "Navigator item {navigatorItem.itemType} has no associated database"}},
+ "worksheet_failed": {"error": {"code": -2130313112, "message": "Failed to create worksheet database."}},
+ "layout_failed": {"error": {"code": -2130313112, "message": "Failed to create layout."}}
+}

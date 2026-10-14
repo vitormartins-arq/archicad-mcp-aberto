@@ -1,0 +1,118 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "archicad_version": "30",
+    "build": 3000,
+    "kind": "documentation",
+    "sources": [
+      "archicad Python package 30.3000, releases/ac30/b3000commands.py (GetAllClassificationSystems, GetAllClassificationsInSystem, GetClassificationsOfElements, SetClassificationsOfElements)",
+      "archicad Python package 30.3000, releases/ac30/b3000types.py (ClassificationSystem, ClassificationItemInTree, ElementClassificationOrError, ClassificationIdOrError, ExecutionResult)"
+    ],
+    "note": "Response keys follow the official JSON API types. GUIDs, names and the item tree are synthetic, not a live capture."
+  },
+  "systems": {
+    "classificationSystems": [
+      {
+        "classificationSystemId": {"guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11"},
+        "name": "ARCHICAD Classification",
+        "description": "Classificação padrão",
+        "source": "",
+        "version": "30",
+        "date": "2026-01-01"
+      },
+      {
+        "classificationSystemId": {"guid": "6A2D8F44-91C3-4B55-8E07-2F6C1B9D4A22"},
+        "name": "Uniclass",
+        "description": "",
+        "source": "https://www.thenbs.com/our-tools/uniclass",
+        "version": "2015",
+        "date": "2015-01-01"
+      }
+    ]
+  },
+  "items": {
+    "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11": {
+      "classificationItems": [
+        {
+          "classificationItem": {
+            "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000001"},
+            "id": "Parede",
+            "name": "Parede",
+            "description": ""
+          }
+        },
+        {
+          "classificationItem": {
+            "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000002"},
+            "id": "Laje",
+            "name": "Laje",
+            "description": ""
+          }
+        },
+        {
+          "classificationItem": {
+            "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000003"},
+            "id": "Estrutura",
+            "name": "Elementos estruturais",
+            "description": "",
+            "children": [
+              {
+                "classificationItem": {
+                  "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000004"},
+                  "id": "Pilar",
+                  "name": "Pilar",
+                  "description": ""
+                }
+              },
+              {
+                "classificationItem": {
+                  "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000005"},
+                  "id": "Viga",
+                  "name": "Viga",
+                  "description": ""
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "6A2D8F44-91C3-4B55-8E07-2F6C1B9D4A22": {
+      "classificationItems": [
+        {
+          "classificationItem": {
+            "classificationItemId": {"guid": "B2000000-0000-4000-8000-000000000001"},
+            "id": "EF_25_10",
+            "name": "Walls",
+            "description": ""
+          }
+        },
+        {
+          "classificationItem": {
+            "classificationItemId": {"guid": "B2000000-0000-4000-8000-000000000002"},
+            "id": "EF_25_10_EXT",
+            "name": "Walls",
+            "description": "Two items share this name on purpose (ambiguity tests)."
+          }
+        }
+      ]
+    }
+  },
+  "element_classification": {
+    "classificationIds": [
+      {
+        "classificationId": {
+          "classificationSystemId": {"guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11"},
+          "classificationItemId": {"guid": "A1000000-0000-4000-8000-000000000001"}
+        }
+      }
+    ]
+  },
+  "unclassified": {
+    "classificationId": {
+      "classificationSystemId": {"guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11"}
+    }
+  },
+  "element_error": {"error": {"code": 4002, "message": "Element not found"}},
+  "set_error": {"success": false, "error": {"code": 4012, "message": "The classification item is not available for this element type."}}
+}

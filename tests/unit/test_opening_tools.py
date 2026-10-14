@@ -238,3 +238,15 @@ async def test_favorite_name_with_leading_space_is_kept_exactly():
     assert result["status"] == "verified"
     request = next(r for r in fake.tapir_requests if r["command"] == "CreateDoors")
     assert request["parameters"]["doorsData"][0]["favoriteName"] == name
+
+
+async def test_favorite_name_without_the_leading_space_is_found():
+    name = " Porta de Abrir em Madeira - Default"
+    fake = model()
+    fake.favorites["Door"].append(name)
+    rows = [{"wall_guid": WALL, "center_offset": 2.0, "favorite_name": name.strip()}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "create_doors", rows)
+    assert result["status"] == "verified"
+    request = next(r for r in fake.tapir_requests if r["command"] == "CreateDoors")
+    assert request["parameters"]["doorsData"][0]["favoriteName"] == name

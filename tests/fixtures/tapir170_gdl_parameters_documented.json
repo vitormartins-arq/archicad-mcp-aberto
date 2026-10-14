@@ -6,7 +6,7 @@
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ElementGDLParameterCommands.cpp",
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json"
     ],
-    "note": "Official Get/SetGDLParametersOfElements schemas, synthetic values, not live capture."
+    "note": "Official Get/SetGDLParametersOfElements schemas, synthetic values, not live capture. ZZYZX (the object height) was read and set live on 14/10/2026 (AC30 build 3001 BRA)."
   },
   "parameters": [
     {
@@ -33,6 +33,15 @@
       "index": 3,
       "type": "Boolean",
       "value": true,
+      "flags": [],
+      "isLocked": false
+    },
+    {
+      "name": "ZZYZX",
+      "displayName": "Height",
+      "index": 4,
+      "type": "Length",
+      "value": 0.5,
       "flags": [],
       "isLocked": false
     }

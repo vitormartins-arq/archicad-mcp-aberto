@@ -1,0 +1,13 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/AttributeCommands.cpp (GetLayersCommand, CreateAttributesCommandBase, CreateLayersCommand) and ElementCommands.cpp (SetDetailsOfElementsCommand)",
+ "note": "Shapes read in the source, synthetic values and error codes, not live capture."},
+ "layer": {"attributeId": {"guid": "44444444-4444-4444-8444-000000000001"}, "index": 1,
+  "name": "Walls", "isHidden": false, "isLocked": false, "isWireframe": false,
+  "intersectionGroupNr": 1},
+ "get_error": {"error": {"code": -2130313112, "message": "Failed to retrieve attribute."}},
+ "created": {"attributeId": {"guid": "44444444-4444-4444-8444-000000000002"}},
+ "already_exists": {"error": {"code": -2130312312, "message": "Already exists."}},
+ "set_details_ok": {"success": true},
+ "set_details_missing": {"success": false, "error": {"code": -2130313112, "message": "Failed to find the element"}}
+}

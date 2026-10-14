@@ -9,7 +9,28 @@ from typing import Any, Literal
 from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
-from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
+from archicad_mcp_aberto.tools import (
+    attributes,
+    classifications,
+    documents,
+    drafting,
+    edit,
+    favorites,
+    gateway,
+    locks,
+    modify,
+    openings,
+    project_info,
+    property_definitions,
+    read,
+    write,
+)
+from archicad_mcp_aberto.tools import labels as labels_tool
+from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import selection as selection_tool
+from archicad_mcp_aberto.tools import texts as texts_tool
+from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -29,6 +50,13 @@ Archicad MCP (read tools and safe wall and slab creation).
 """
 
 READ_ONLY = {"readOnlyHint": True, "openWorldHint": False}
+# Changes only what the user sees (selection, highlight), never the model.
+VIEW = {
+    "readOnlyHint": False,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": False,
+}
 WRITE = {
     "readOnlyHint": False,
     "destructiveHint": True,
@@ -229,6 +257,318 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=READ_ONLY)
+    async def list_classifications(
+        ctx: Context,
+        system: str | None = None,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """Without system: the project's classification systems. With system (GUID or
+        name): its items as a flat tree (guid, id code, name, parent_guid, depth); query
+        filters id or name. Pages up to 500."""
+        return await classifications.list_classifications(
+            client_of(ctx), system, port, query, offset, limit
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_classifications(
+        ctx: Context,
+        changes: list[classifications.ClassificationChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview classifying up to 100 elements: element_guid, system (GUID or name) and
+        item (GUID, id code or name; null removes the classification in that system).
+        Ambiguous names are refused. Preview shows current and new items; apply identical
+        inputs with explicit port and single-use token; each is read back. Never saves."""
+        return await classifications.set_classifications(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layers(ctx: Context, port: int | None = None) -> dict:
+        """List the project's layers: guid, index, name, hidden, locked, wireframe and
+        intersection group. Requires Tapir."""
+        return await layers_tool.list_layers(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layers(
+        ctx: Context,
+        layers: list[layers_tool.LayerCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 layers: name, optional hidden, locked, wireframe and
+        intersection_group. A name the project already has is refused, never overwritten.
+        Apply identical inputs with explicit port and single-use token; each layer is read
+        back. Requires Tapir. Never saves."""
+        return await layers_tool.create_layers(
+            client_of(ctx), layers, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_element_layers(
+        ctx: Context,
+        changes: list[layers_tool.LayerMove],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview moving up to 100 editable elements to existing layers: element_guid and
+        layer (name). Unknown or ambiguous names are refused. Preview shows current and new
+        layer; apply identical inputs with explicit port and single-use token; each element
+        is read back. Requires Tapir. Never saves."""
+        return await layers_tool.set_element_layers(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=VIEW)
+    async def select_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        mode: Literal["replace", "add", "remove"] = "replace",
+    ) -> dict:
+        """Change the selection in Archicad: replace (an empty list clears it), add or
+        remove up to 100 elements. Does not change the model; reports what ended selected.
+        Requires Tapir."""
+        return await selection_tool.select_elements(client_of(ctx), element_guids, port, mode)
+
+    @mcp.tool(annotations=VIEW)
+    async def highlight_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        color: list[int] | None = None,
+        wireframe_3d: bool | None = None,
+    ) -> dict:
+        """Highlight up to 100 elements in one color [r, g, b] or [r, g, b, a] (0-255,
+        default red); an empty list clears the highlight. wireframe_3d shows the rest as
+        wireframe in 3D. Does not change the model. Requires Tapir."""
+        return await selection_tool.highlight_elements(
+            client_of(ctx), element_guids, port, color, wireframe_3d
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_groups(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """For up to 100 elements: the group that directly holds each one (null when
+        ungrouped) and the members of those groups. Requires Tapir."""
+        return await selection_tool.get_element_groups(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_groups(
+        ctx: Context,
+        groups: list[selection_tool.GroupCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview grouping elements: up to 20 groups, each with 2 or more element_guids
+        (100 in all). Elements already in a group, locked or missing are refused. Apply
+        identical inputs with explicit port and single-use token; each group's members
+        are read back. Requires Tapir. Never saves."""
+        return await selection_tool.create_groups(
+            client_of(ctx), groups, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_info_fields(ctx: Context, port: int | None = None) -> dict:
+        """Project Info fields (File > Info > Project Info) that title blocks show:
+        id, visible name and value. Requires Tapir."""
+        return await project_info.get_project_info_fields(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_project_info_fields(
+        ctx: Context,
+        changes: list[project_info.ProjectInfoChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview setting up to 30 Project Info values: field (id, or visible name) and
+        value (an empty value clears the field). Preview shows current and new values;
+        apply identical inputs with explicit port and single-use token; every field is
+        read back. Requires Tapir. Never saves."""
+        return await project_info.set_project_info_fields(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_favorites(ctx: Context, element_type: str, port: int | None = None) -> dict:
+        """Favorite names for one element type as Tapir names it (Wall, Slab, Column,
+        Beam, Window, Door, Object, Zone, Roof and so on). Requires Tapir."""
+        return await favorites.list_favorites(client_of(ctx), element_type, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def apply_favorites(
+        ctx: Context,
+        changes: list[favorites.FavoriteApply],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview applying favorites to up to 50 editable elements: element_guid and
+        favorite (a name of that element's type). Applies settings, classifications,
+        categories and properties, never geometry. Apply identical inputs with explicit
+        port and single-use token. Results stay unverified: check them in Archicad.
+        Requires Tapir. Never saves."""
+        return await favorites.apply_favorites(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def lock_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview locking up to 100 elements (Edit > Locking; manual lock, not Teamwork).
+        Missing, hotlinked or already locked elements are refused. Apply identical inputs
+        with explicit port and single-use token; editability is read back. Requires Tapir.
+        Never saves."""
+        return await locks.lock_elements(
+            client_of(ctx), element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def unlock_elements(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview unlocking up to 100 locked elements (manual lock, not Teamwork).
+        Elements that are already editable or sit on a locked layer are refused. Apply
+        identical inputs with explicit port and single-use token; editability is read
+        back. Requires Tapir. Never saves."""
+        return await locks.unlock_elements(
+            client_of(ctx), element_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def update_zones(
+        ctx: Context,
+        port: int | None = None,
+        keep_stamp_position: bool = True,
+        undo_top_trim: bool = False,
+        undo_bottom_trim: bool = False,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview Update Zones: recalculates every zone of the project (geometry, stamps,
+        connected elements); there is no per-zone choice. Apply identical inputs with
+        explicit port and single-use token. Zones are counted before and after; check
+        areas in Archicad. Requires Tapir. Never saves."""
+        return await zones_tool.update_zones(
+            client_of(ctx),
+            port,
+            keep_stamp_position,
+            undo_top_trim,
+            undo_bottom_trim,
+            dry_run,
+            confirmation_token,
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_property_groups(ctx: Context, port: int | None = None) -> dict:
+        """Property groups (Options > Property Manager): GUID, name, description, whether
+        it is custom and how many properties it holds. Requires Tapir."""
+        return await property_definitions.list_property_groups(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_property_groups(
+        ctx: Context,
+        groups: list[property_definitions.PropertyGroupCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty custom property groups (name, description). An
+        existing group name is refused. Apply identical inputs with explicit port and
+        single-use token; each group is read back. Requires Tapir. Never saves."""
+        return await property_definitions.create_property_groups(
+            client_of(ctx), groups, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_properties(
+        ctx: Context,
+        properties: list[property_definitions.PropertyCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 custom properties to existing custom groups: name,
+        group (name or GUID), type (number, integer, string, boolean, length, area,
+        volume, angle, their List forms, singleEnum, multiEnum), optional description,
+        editable, default (meters, radians; enum defaults are option names),
+        enum_values for enums, and available_for (classification items by GUID, id or name) or
+        available_for_system (every item of one system). Names already in the group are
+        refused. Apply identical inputs with explicit port and single-use token; each
+        property is read back. Requires Tapir. Never saves."""
+        return await property_definitions.create_properties(
+            client_of(ctx), properties, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_worksheets(
+        ctx: Context,
+        worksheets: list[documents.ViewpointCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty independent worksheets to the Project Map:
+        name and reference_id. One with the same name and ID is refused. Apply identical
+        inputs with explicit port and single-use token; each is found back in the
+        Navigator. Requires Tapir. Never saves."""
+        return await documents.create_worksheets(
+            client_of(ctx), worksheets, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_details(
+        ctx: Context,
+        details: list[documents.ViewpointCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 empty independent details to the Project Map: name
+        and reference_id. One with the same name and ID is refused. Apply identical
+        inputs with explicit port and single-use token; each is found back in the
+        Navigator. Requires Tapir. Never saves."""
+        return await documents.create_details(
+            client_of(ctx), details, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layouts(
+        ctx: Context,
+        layouts: list[documents.LayoutCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 layouts to the Layout Book: name and master (an
+        existing master layout's name; a missing master is refused, never created).
+        Size and margins come from the master. A layout name already in the book is
+        refused. Apply identical inputs with explicit port and single-use token; each
+        is found back in the Navigator. Requires Tapir. Never saves."""
+        return await documents.create_layouts(
+            client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
     async def find_elements(
         ctx: Context,
         port: int | None = None,
@@ -358,6 +698,239 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Refuses locked/hotlinked/curved/trapezoidal walls; verifies fields and never saves.
         """
         return await edit.modify_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_slabs(
+        ctx: Context,
+        slabs: list[modify.SlabModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 slabs: thickness (Basic only) and level, metres from the
+        slab's story. Refuses a level that would move it to another story, locked and
+        hotlinked slabs; verifies fields and never saves.
+        """
+        return await modify.modify_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_columns(
+        ctx: Context,
+        columns: list[modify.ColumnModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 columns: origin, bottomOffset, height, width, depth in
+        metres. Height unlinks the top story; round/linked sections take one size.
+        Refuses locked/hotlinked columns; verifies fields and never saves.
+        """
+        return await modify.modify_columns(
+            client_of(ctx), columns, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_beams(
+        ctx: Context,
+        beams: list[modify.BeamModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 straight beams: begCoordinate, endCoordinate, level (from
+        its story), width, height in metres. Refuses curved, zero-length, locked and
+        hotlinked beams; verifies fields and never saves.
+        """
+        return await modify.modify_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_windows(
+        ctx: Context,
+        windows: list[modify.OpeningModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 windows in walls: width, height, sillHeight, centerOffset
+        (along the wall from its start), metres. Refuses offsets past the wall end,
+        locked/hotlinked windows; verifies fields and never saves.
+        """
+        return await modify.modify_windows(
+            client_of(ctx), windows, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_doors(
+        ctx: Context,
+        doors: list[modify.OpeningModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 doors in walls: width, height, sillHeight, centerOffset
+        (along the wall from its start), metres. Refuses offsets past the wall end,
+        locked/hotlinked doors; verifies fields and never saves.
+        """
+        return await modify.modify_doors(client_of(ctx), doors, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_objects(
+        ctx: Context,
+        objects: list[modify.ObjectModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 objects: origin {x, y}, level from its story and
+        dimensions {x, y, z} in metres. Refuses a level that changes story, locked and
+        hotlinked objects; verifies fields and never saves.
+        """
+        return await modify.modify_objects(
+            client_of(ctx), objects, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_roofs(
+        ctx: Context,
+        roofs: list[roofs_tool.RoofCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 roofs from simple polygons; metres, radians, absolute level.
+        pivot_line + angle makes one plane rising on the line's left; without them a
+        multi-plane roof on the polygon (optional levels, eaves_overhang). Requires Tapir;
+        apply identical inputs with explicit port and single-use token. Never saves."""
+        return await roofs_tool.create_roofs(
+            client_of(ctx), roofs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_texts(
+        ctx: Context,
+        texts: list[texts_tool.TextCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 plain texts: position in metres on a story, angle in radians,
+        optional height_mm (paper millimetres) and justification; style from the Text
+        tool default. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await texts_tool.create_texts(
+            client_of(ctx), texts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_lines(
+        ctx: Context,
+        lines: list[drafting.LineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 straight 2D lines: start and end {x, y} in metres, floor_index,
+        optional layer (name) and pen (index). Requires Tapir; apply identical inputs with
+        explicit port and single-use token; each is read back. Never saves."""
+        return await drafting.create_lines(client_of(ctx), lines, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_polylines(
+        ctx: Context,
+        polylines: list[drafting.PolylineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 straight-segment polylines: points (2 to 500, metres; repeat the
+        first point to close), floor_index, optional layer (name) and pen. Requires Tapir;
+        apply with explicit port and token; the plan box is checked. Never saves."""
+        return await drafting.create_polylines(
+            client_of(ctx), polylines, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_arcs(
+        ctx: Context,
+        arcs: list[drafting.ArcCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 circular arcs: center, radius (metres), start_angle and end_angle
+        (radians, counter-clockwise), floor_index, optional layer and pen. Requires Tapir;
+        apply with explicit port and token; each is read back. Never saves."""
+        return await drafting.create_arcs(client_of(ctx), arcs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_circles(
+        ctx: Context,
+        circles: list[drafting.CircleCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 full circles: center and radius in metres, floor_index, optional
+        layer and pen. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await drafting.create_circles(
+            client_of(ctx), circles, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_fills(
+        ctx: Context,
+        fills: list[drafting.FillCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 fills (hatches) on simple polygons: outline (metres), floor_index,
+        optional layer, fill (name, e.g. a hatch pattern), pen (fill) and contour_pen.
+        Requires Tapir; apply with explicit port and token; the plan box is checked."""
+        return await drafting.create_fills(client_of(ctx), fills, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_labels(
+        ctx: Context,
+        labels: list[labels_tool.LabelCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 text labels. element_guid attaches the label to that element
+        (on its story); a free label needs position (metres) and floor_index. Optional
+        height_mm (paper millimetres); style from the Label tool default. Requires Tapir;
+        apply with explicit port and token. Never saves."""
+        return await labels_tool.create_labels(
+            client_of(ctx), labels, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_roofs(
+        ctx: Context,
+        roofs: list[modify.RoofModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 multi-plane roofs: thickness (Basic), level from its
+        story, eavesOverhang, levels {height, angle}; metres, radians. Refuses
+        single-plane, locked and hotlinked roofs; verifies fields and never saves.
+        """
+        return await modify.modify_roofs(client_of(ctx), roofs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_texts(
+        ctx: Context,
+        texts: list[modify.TextModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 texts: text, position (metres, stays on its story),
+        angle (radians), heightMm (paper mm) and justification. Refuses locked and
+        hotlinked texts; verifies fields and never saves.
+        """
+        return await modify.modify_texts(client_of(ctx), texts, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
     async def create_windows(

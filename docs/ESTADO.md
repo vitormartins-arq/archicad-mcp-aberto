@@ -289,3 +289,147 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   SaveProject e SetPropertyValuesOfElements recusados sem nenhuma chamada HTTP. T19 ao vivo:
   Bidê CF75E5C0 girado +π/2 (1,5708, sem normalized_angles) e −π/2 (gravado 2π,
   normalized_angles {"angle": 0.0}), ambos `verified`.
+
+- **Claude / lote 1 na nuvem, 13/10/2026:** novo modo pedido pelo Vitor: o Claude trabalha
+  sozinho com o ArchiCAD simulado e o CI, sem pedir para abrir o ArchiCAD; o que falta
+  conferir ao vivo fica em `docs/VALIDAR.md` (inclui #32 e #33 para confirmação rápida).
+  Branch `lote/edicao-elementos`: `tools/modify.py` com `modify_slabs`, `modify_columns`,
+  `modify_beams`, `modify_windows`, `modify_doors` e `modify_objects`, no padrão do
+  `modify_walls` (reaproveita `edit._editable`, `_unique` e `_execute`). Campos lidos no
+  código do Tapir 1.7.0 (ExtendedElementCommands.cpp e ElementCreationCommands.cpp).
+  Achado no código: `ModifySlabs` e `ModifyObjects` recebem z absoluto e escolhem o
+  pavimento pelo `GetFloorIndexAndOffset`; o MCP recebe o nível relativo ao pavimento e
+  recusa o que mudaria o elemento de pavimento. Abaixo do pavimento mais baixo o Tapir
+  mantém no pavimento 0. Seção ligada ou redonda manda o mesmo valor nos dois lados.
+  Fixture `tapir170_modify_elements_documented.json`, não é captura ao vivo. 977 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 2 na nuvem, 13/10/2026:** branch `lote/telhados-textos`, empilhada no
+  lote 1. `tools/roofs.py` (`create_roofs`) e `tools/texts.py` (`create_texts`), pelo
+  `CreateRoofs` e `CreateTexts` do Tapir 1.7.0 (lidos no código: `roofsData` com
+  `pivotLine`/`angle` para uma água ou `levels`/`eavesOverhang` para várias; `textsData`
+  com `coordinate`, `text`, `height` em mm, `angle`, `justification`, `floorIndex`).
+  Conferência: no telhado de várias águas o contorno do ArchiCAD cresce pelo beiral, então
+  o MCP confere o `pivotPolygonOutline`. `write._same_polygon` saiu de
+  `_slab_mismatches` para ser reaproveitado. O recado do teste ao vivo de 12/10 (conferência
+  visual da parede com janelas e do Bidê) foi para `docs/VALIDAR.md`. Fixture
+  `tapir170_create_roofs_texts_documented.json`, não é captura ao vivo. 1034 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 3 na nuvem, 13/10/2026:** branch `lote/editar-telhados-textos`,
+  empilhada no lote 2. `modify_roofs` e `modify_texts` em `tools/modify.py`. Do código do
+  Tapir 1.7.0: `ModifyRoofs` recusa telhado de uma água ("Only multi-plane roofs are
+  supported") e toma `level` como Z absoluto sem `floorIndex`, então o MCP recusa o que
+  mudaria de pavimento; `ModifyTexts` aceita `floorIndex` junto com `coordinate`, e o MCP
+  manda o pavimento atual para o texto não mudar de pavimento; altura, ângulo e
+  alinhamento vão em `style`. A conferência do lote passou a comparar ângulo no círculo,
+  texto com quebra LF e listas item a item. 1079 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 4 na nuvem, 13/10/2026:** branch `lote/classificacoes-etiquetas`,
+  empilhada no lote 3. `tools/classifications.py` (`list_classifications`,
+  `set_classifications`) pela API oficial (`GetAllClassificationSystems`,
+  `GetAllClassificationsInSystem`, `GetClassificationsOfElements`,
+  `SetClassificationsOfElements`, formatos lidos no pacote `archicad` 30.3000). Sistema e
+  item podem ir por GUID ou nome (item também pelo código); nome ambíguo é recusado; `item`
+  nulo tira a classificação. `tools/labels.py` (`create_labels`) pelo `CreateLabels` do
+  Tapir 1.7.0 (lido no código: `parentElementId` põe a etiqueta no pavimento do elemento;
+  sem ele precisa de `begCoordinate`). Fixtures `ac30_classifications_documented.json` e
+  `tapir170_create_labels_documented.json`, não são captura ao vivo. 1141 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 5 na nuvem, 13/10/2026:** branch `lote/desenho-2d`, empilhada no lote 4.
+  `tools/drafting.py` com `create_lines`, `create_polylines`, `create_arcs`,
+  `create_circles` e `create_fills`, pelos comandos do Tapir 1.7.0 lidos no código
+  (`CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles`,
+  `CreateHatches`). Achado no código: os detalhes de PolyLine trazem só `zCoordinate` e
+  os de Hatch só penas e hachura, então o MCP confere a caixa 2D (`Get2DBoundingBoxes`)
+  dessas duas. Antes, no mesmo dia: o teste ao vivo do Codex (PR #41) mostrou telhado com
+  0,30 m em vez de 0,25 m por estrutura Composta padrão; `create_roofs` agora manda
+  `structureType: Basic` (commit no lote 2, levado aos lotes 3 e 4). Fixture
+  `tapir170_drafting_documented.json`, não é captura ao vivo. 1221 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 6 na nuvem, 13/10/2026:** branch `lote/camadas`, empilhada no lote 5.
+  `tools/layers.py` com `list_layers`, `create_layers` e `set_element_layers`, pelos
+  comandos do Tapir 1.7.0 lidos no código (`GetLayers`, `CreateLayers`,
+  `SetDetailsOfElements`). `CreateLayers` vai sempre com `overwriteExisting: false` e o
+  MCP recusa na prévia um nome que já existe; o Tapir responde "Already exists." se o
+  nome aparecer entre a prévia e a aplicação. `GetLayers` vai sem `fields` (volta tudo).
+  O ArchiCAD simulado agora dá a cada camada seu próprio GUID. Fixture
+  `tapir170_layers_create_documented.json`, não é captura ao vivo. 1263 testes simulados
+  e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 7 na nuvem, 14/10/2026:** branch `lote/selecao-grupos`, empilhada no
+  lote 6. `tools/selection.py` com `select_elements`, `highlight_elements`,
+  `get_element_groups` e `create_groups`, pelos comandos do Tapir 1.7.0 lidos no código
+  (`ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`,
+  `GetElementsOfGroups`, `CreateGroups`). Seleção e destaque não mexem no modelo, então
+  agem direto (anotação nova `VIEW` no servidor: não destrutiva, idempotente). Na fila
+  do Codex (`docs/FILA.md`, branch `lote/camadas`): T20 `modify_labels`, T21 incidências
+  e T22 árvore do Navegador, empilhadas em `lote/camadas`. Fixture
+  `tapir170_selection_groups_documented.json`, não é captura ao vivo. 1308 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 8 na nuvem, 14/10/2026:** branch `lote/favoritos-info`, empilhada no
+  lote 7. `tools/project_info.py` (`get_project_info_fields`, `set_project_info_fields`)
+  e `tools/favorites.py` (`list_favorites`, `apply_favorites`), pelos comandos do Tapir
+  1.7.0. Conferido: o código lido é igual ao da tag 1.7.0 do Tapir no GitHub
+  (`AddOnMain.cpp` registra todos os comandos usados nos lotes 5 a 8 e nas tarefas T20 a
+  T22). `ApplyFavoritesToElements` não tem como ser conferido depois (o Tapir não lê as
+  configurações do favorito), então os itens ficam `unverified`. Fixture
+  `tapir170_project_info_favorites_documented.json`, não é captura ao vivo. 1352 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 9 na nuvem, 14/10/2026:** branch `lote/bloqueio-zonas`, empilhada no
+  lote 8. `tools/locks.py` (`lock_elements`, `unlock_elements`) e `tools/zones.py`
+  (`update_zones`), pelos comandos do Tapir 1.7.0 lidos no código e conferidos na tag
+  1.7.0 (`LockElements`, `UnlockElements`, `UpdateZones`). Achados no código: os três
+  respondem um só resultado para o lote inteiro, então o MCP relê a editabilidade de
+  cada elemento (`FilterElements` `IsEditable`); se o Tapir disser que falhou e mesmo
+  assim um elemento mudou, esse item fica `unknown`. `UpdateZones` não escolhe zonas:
+  atualiza todas. O ArchiCAD simulado agora trata elemento em camada travada como não
+  editável. Fixture `tapir170_locks_zones_documented.json`, não é captura ao vivo. 1386
+  testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 10 na nuvem, 14/10/2026:** branch `lote/propriedades`, empilhada no
+  lote 9. `tools/property_definitions.py` com `list_property_groups`,
+  `create_property_groups` e `create_properties`, pelos comandos do Tapir 1.7.0 lidos no
+  código e no `CommonSchemaDefinitions.json` da tag 1.7.0 (`GetAllProperties`,
+  `CreatePropertyGroups`, `CreatePropertyDefinitions`). Achados no código: o esquema exige
+  `description`, `isEditable`, `availability` e `group` em toda propriedade, então o MCP
+  manda sempre os quatro; o padrão de enum vai pelo `displayValue` e o Tapir acha o GUID
+  da opção; `GetAllProperties` devolve `defaultEnumValueIds`, usado para conferir o padrão
+  de enum. Falta confirmar ao vivo se o padrão de ângulo é em radianos. Fixture
+  `tapir170_property_definitions_documented.json`, não é captura ao vivo. 1433 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / lote 11 na nuvem, 14/10/2026:** branch `lote/documentos`, empilhada no
+  lote 10. `tools/documents.py` com `create_worksheets`, `create_details` e
+  `create_layouts`, pelos comandos do Tapir 1.7.0 lidos no código da tag
+  (`DocumentCreationCommands.cpp`, `NavigatorCommands.cpp`). Achado no código:
+  `CreateLayout` cria sozinho um modelo de prancha quando o nome não existe; o MCP manda
+  sempre o `masterNavigatorItemId` de um modelo que já existe e recusa o resto. A
+  conferência acha cada base nova no Navegador (`GetNavigatorItemTree` e
+  `GetDatabaseIdFromNavigatorItemId`). O ArchiCAD simulado ganhou `GetNavigatorItemTree`
+  (campo `navigator_trees`); quando a T22 do Codex chegar, juntar os dois no fake. Falta
+  confirmar ao vivo se o Livro de Pranchas traz a pasta de Modelos e se o `uiId` é o ID
+  mandado. Fixture `tapir170_documents_documented.json`, não é captura ao vivo. 1468
+  testes simulados e Ruff passaram (Linux, Python 3.13). Falta o teste ao vivo.
+
+- **Claude / teste ao vivo dos lotes 1 a 11 e correções, 14/10/2026:** o Claude rodou
+  no PC do Vitor (Remote Control) os lotes 1, 2 e 4 a 11 e refez os telhados do lote 3,
+  com ArchiCAD 30 build 3001 BRA, Tapir 1.7.0 e o código `077fda3`, só no projeto sem
+  nome (porta 19723), sem salvar; o CRM 006 (19724) não foi tocado. Resultado em
+  `docs/VALIDAR-resultado-2026-10-14.md`. Achados ao vivo: `ModifyObjects` não muda a
+  altura e `dimensions.z` volta 0; `Get2DBoundingBoxes` dá erro 7203 para PolyLine e
+  Hatch, e os detalhes deles trazem `coordinates`; círculo é relido como `Arc` com
+  begAngle = endAngle = 0; favoritos "- Default" começam com espaço; `CLIENT_FULLNAME`
+  não grava; no sistema BRA o texto do item de classificação vem no `id`; o modelo do
+  Vitor deixa `EST - Viga`, `ANT - Linha & Trama` e `ANT - Rótulo` ocultas e travadas.
+  Branch `lote/correcoes-ao-vivo`, empilhada no lote 11: altura de objeto pelo GDL
+  `ZZYZX` (prévia recusa peça sem ele), conferência de polilinha e hachura pelas
+  coordenadas, círculo aceito como Arc completo, favoritos achados ignorando espaços de
+  fora e maiúsculas, `available_for` por id ou nome, `CLIENT_FULLNAME` recusado com dica.
+  1473 testes simulados e Ruff passaram (Linux, Python 3.13). Falta a rodada curta ao
+  vivo das correções (lista no topo de `docs/VALIDAR.md`) e o `modify_beams`.

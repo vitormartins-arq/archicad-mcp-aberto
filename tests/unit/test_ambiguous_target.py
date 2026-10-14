@@ -7,17 +7,117 @@ import pytest
 
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
-from archicad_mcp_aberto.tools import attributes, edit, gateway, openings, read, write
+from archicad_mcp_aberto.tools import (
+    attributes,
+    classifications,
+    documents,
+    drafting,
+    edit,
+    favorites,
+    gateway,
+    labels,
+    layers,
+    locks,
+    modify,
+    openings,
+    project_info,
+    property_definitions,
+    read,
+    roofs,
+    selection,
+    texts,
+    write,
+    zones,
+)
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
+from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
 
 pytestmark = pytest.mark.anyio
 GUID = "11111111-1111-1111-1111-111111111111"
 PROP = "22222222-2222-2222-2222-222222222222"
+# modify_* tool -> element type it edits
+MODIFY_TYPES = {
+    "modify_slabs": "Slab",
+    "modify_columns": "Column",
+    "modify_beams": "Beam",
+    "modify_windows": "Window",
+    "modify_doors": "Door",
+    "modify_objects": "Object",
+    "modify_roofs": "Roof",
+    "modify_texts": "Text",
+}
 INPUTS = {
     "run_read_command": {"command": "Tapir.GetStories"},
     "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "create_doors": {"doors": [{"wall_guid": GUID, "center_offset": 2.0}]},
     "modify_walls": {"walls": [{"guid": GUID, "height": 4.0}]},
+    "modify_slabs": {"slabs": [{"guid": GUID, "thickness": 0.2}]},
+    "modify_roofs": {"roofs": [{"guid": GUID, "thickness": 0.2}]},
+    "modify_texts": {"texts": [{"guid": GUID, "text": "Sala"}]},
+    "create_roofs": {
+        "roofs": [
+            {
+                "outline": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 0, "y": 3}],
+                "floor_index": 0,
+                "level": 3.0,
+                "thickness": 0.2,
+            }
+        ]
+    },
+    "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
+    "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "list_classifications": {},
+    "list_layers": {},
+    "get_project_info_fields": {},
+    "set_project_info_fields": {"changes": [{"field": "PROJECTNAME", "value": "Casa"}]},
+    "list_favorites": {"element_type": "Wall"},
+    "apply_favorites": {"changes": [{"element_guid": GUID, "favorite": "Parede padrão"}]},
+    "select_elements": {"element_guids": [GUID]},
+    "highlight_elements": {"element_guids": [GUID]},
+    "get_element_groups": {"element_guids": [GUID]},
+    "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
+    "create_layers": {"layers": [{"name": "Cotas"}]},
+    "lock_elements": {"element_guids": [GUID]},
+    "unlock_elements": {"element_guids": [GUID]},
+    "update_zones": {},
+    "list_property_groups": {},
+    "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
+    "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
+    "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
+    "create_property_groups": {"groups": [{"name": "Obra"}]},
+    "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
+    "set_element_layers": {"changes": [{"element_guid": GUID, "layer": "Walls"}]},
+    "create_lines": {
+        "lines": [{"start": {"x": 0, "y": 0}, "end": {"x": 1, "y": 0}, "floor_index": 0}]
+    },
+    "create_polylines": {
+        "polylines": [{"points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}], "floor_index": 0}]
+    },
+    "create_arcs": {
+        "arcs": [
+            {
+                "center": {"x": 0, "y": 0},
+                "radius": 1,
+                "start_angle": 0,
+                "end_angle": 1.0,
+                "floor_index": 0,
+            }
+        ]
+    },
+    "create_circles": {"circles": [{"center": {"x": 0, "y": 0}, "radius": 1, "floor_index": 0}]},
+    "create_fills": {
+        "fills": [
+            {"outline": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 0, "y": 3}], "floor_index": 0}
+        ]
+    },
+    "set_classifications": {
+        "changes": [{"element_guid": GUID, "system": "Uniclass", "item": None}]
+    },
+    "modify_columns": {"columns": [{"guid": GUID, "height": 3.0}]},
+    "modify_beams": {"beams": [{"guid": GUID, "level": 3.0}]},
+    "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
+    "modify_doors": {"doors": [{"guid": GUID, "width": 1.0}]},
+    "modify_objects": {"objects": [{"guid": GUID, "origin": {"x": 0, "y": 0}}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
@@ -108,7 +208,28 @@ INPUTS = {
 }
 TARGETED = {
     name: function
-    for module in (attributes, edit, gateway, openings, read, write)
+    for module in (
+        attributes,
+        classifications,
+        documents,
+        drafting,
+        edit,
+        favorites,
+        gateway,
+        labels,
+        layers,
+        locks,
+        modify,
+        openings,
+        project_info,
+        property_definitions,
+        read,
+        roofs,
+        selection,
+        texts,
+        write,
+        zones,
+    )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
     and not name.startswith("_")
@@ -188,6 +309,22 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
         for instance in (first, second):
             instance.elements[GUID] = "Object"
+    if name in MODIFY_TYPES:
+        for instance in (first, second):
+            instance.elements[GUID] = MODIFY_TYPES[name]
+            instance.details[GUID] = deepcopy(MODIFY_ROWS[MODIFY_TYPES[name]])
+    if name == "create_groups":
+        for instance in (first, second):
+            instance.elements[PROP] = "Wall"
+    if name == "apply_favorites":
+        for instance in (first, second):
+            instance.favorites["Wall"] = ["Parede padrão"]
+    if name == "unlock_elements":
+        for instance in (first, second):
+            instance.locked_elements.add(GUID)
+    if name == "update_zones":
+        for instance in (first, second):
+            instance.elements[PROP] = "Zone"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -199,7 +336,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert result_port == port
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
-    assert selected.elements == untouched.elements == {GUID: expected_type}
+    expected_type = MODIFY_TYPES.get(name, expected_type)
+    extra = {"create_groups": {PROP: "Wall"}, "update_zones": {PROP: "Zone"}}.get(name, {})
+    assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 
 
@@ -228,6 +367,8 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     first, second = instances()
     if name in {"create_windows", "create_doors"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
+    if name == "create_groups":
+        second.elements[PROP] = "Wall"
     arguments = deepcopy(INPUTS[name])
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)

@@ -1,0 +1,14 @@
+{
+ "provenance": {"live_capture": false, "tapir_version": "1.7.0",
+ "source": "Tapir 1.7.0 archicad-addon/Sources/PropertyCommands.cpp (GetAllPropertiesCommand, CreatePropertyGroupsCommand, CreatePropertyDefinitionsCommand) and RFIX/Images/CommonSchemaDefinitions.json, compared with the 1.7.0 tag on GitHub",
+ "note": "Shapes read in the source, synthetic names, GUIDs and error codes, not live capture."},
+ "propertyGroups": [
+  {"propertyGroupId": {"guid": "66666666-6666-4666-8666-000000000001"}, "name": "Geral", "description": "", "isCustom": false},
+  {"propertyGroupId": {"guid": "66666666-6666-4666-8666-000000000002"}, "name": "Projeto", "description": "Dados do escritório", "isCustom": true}
+ ],
+ "properties": [
+  {"propertyId": {"guid": "77777777-7777-4777-8777-000000000001"}, "propertyType": "Custom", "propertyGroupName": "Projeto", "propertyName": "Fase", "propertyCollectionType": "Single", "propertyValueType": "String", "propertyMeasureType": "Default", "propertyIsEditable": true, "isExpressionBased": false, "propertyGroupId": {"guid": "66666666-6666-4666-8666-000000000002"}, "propertyDescription": "", "defaultValueDisplay": "Estudo", "availability": []}
+ ],
+ "group_failed": {"error": {"code": -2130313112, "message": "failed to create the property group"}},
+ "property_failed": {"error": {"code": -2130313112, "message": "failed to create the property"}}
+}

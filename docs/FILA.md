@@ -29,8 +29,35 @@ caso abra o PR dessa tarefa explicando o que falta.
 
 ## A fazer
 
-Nada novo para o Codex agora. T17 a T19 foram feitas pelo Claude enquanto o Codex estava
-sem token (PRs #34, #35 e #36, aguardando teste ao vivo e merge); não as refaça.
+**Base empilhada (vale até o Vitor fazer merge dos lotes):** a `main` ainda não tem os
+lotes 1 a 6 (PRs #37 a #43). Por isso, em vez da regra 1, a primeira branch sai de
+`origin/lote/camadas` (`git fetch origin lote/camadas && git checkout -b <branch>
+origin/lote/camadas`); as seguintes saem da anterior, e todo PR tem base `main`.
+
+Não mexa em `tools/selection.py` nem em `tests/unit/test_selection.py`: é o lote 7 do
+Claude (seleção, destaque e grupos). Em `write.py`, `server.py`, `manifest.json`, README,
+CHANGELOG, `docs/ESTADO.md`, `docs/VALIDAR.md`, no fake e nos testes de registro, só
+**acrescente** (entradas novas no fim das listas), sem reordenar nem reescrever o que já
+existe, para o merge ficar simples.
+
+- **T20 `modify_labels`, branch `codex/t20-modify-labels`.** Em `tools/modify.py`, no
+  mesmo padrão de `modify_texts`: texto, posição (no mesmo pavimento) e `height_mm` de
+  etiquetas existentes, por `ModifyLabels` do Tapir 1.7.0 (confira os campos em
+  `ElementCreationCommands.cpp`). Recuse o que o comando não aceita na prévia. Conferência
+  depois de aplicar como em `create_labels`. Item novo em `docs/VALIDAR.md`, seção
+  "Lote 7 (Codex)".
+- **T21 incidências, branch `codex/t21-issues`.** Arquivo novo `tools/issues.py`:
+  `list_issues` (leitura, `GetIssues`), `create_issues` (escrita, `CreateIssue`, até 20,
+  `name` e `tagText` opcional) e `attach_elements_to_issue` (escrita, `AttachElementsToIssue`, por GUID
+  da incidência e dos elementos; recuse elemento inexistente na prévia). Leia
+  `IssueCommands.cpp` do Tapir 1.7.0. Escrita no padrão da regra 6, conferindo com
+  `GetIssues` e `GetElementsAttachedToIssue`. Nada de BCF, nada de apagar.
+- **T22 mapa do projeto, branch `codex/t22-navigator`.** Arquivo novo
+  `tools/navigator.py` com `get_navigator_tree` (só leitura, `GetNavigatorItemTree` do
+  Tapir 1.7.0, `NavigatorCommands.cpp`): árvore achatada como `list_classifications`
+  (guid, nome, tipo, `parent_guid`, profundidade), com `query`, `offset` e `limit`.
+  Escolha do mapa (projeto, vistas, pranchas, publicador) por parâmetro com os valores
+  que o comando aceita.
 
 ## Integrado
 
@@ -42,3 +69,5 @@ sem token (PRs #34, #35 e #36, aguardando teste ao vivo e merge); não as refaç
   T11 `list_library_parts` (#25). Todos testados ao vivo.
 - T12 inventário parcial (#26), T13 README (#30), T14 `rotate_elements` (#31),
   T15 parâmetros GDL (#32), T16 `modify_walls` (#33). Todos testados ao vivo.
+- T17 janelas e portas (#34), T18 `run_read_command` (#35), T19 ângulos normalizados
+  (#36). Feitas pelo Claude; testadas ao vivo.

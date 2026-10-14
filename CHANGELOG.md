@@ -2,6 +2,110 @@
 
 ## Unreleased
 
+- Fix what the live test of 14/10/2026 found (Archicad 30 build 3001 BRA, Tapir 1.7.0;
+  results in `docs/VALIDAR-resultado-2026-10-14.md`):
+  - `modify_objects` sets the height through the `ZZYZX` GDL parameter and reads it
+    back, because Tapir changes only x and y and reads `dimensions.z` as 0. A part
+    without `ZZYZX` is refused in the preview.
+  - Polylines and fills are checked by the coordinates in their details instead of
+    `Get2DBoundingBoxes`, which answers error 7203 for them; a circle that reads back as
+    a full Arc counts as a circle.
+  - `apply_favorites` and `favorite_name` find favorites that start with a space, such
+    as " Parede Genérica - Default".
+  - `create_properties` takes classification items by id or name in `available_for`,
+    not only by GUID.
+  - `set_project_info_fields` refuses `CLIENT_FULLNAME`, which Archicad keeps empty, and
+    points to the given and family name fields.
+
+- Add worksheets, details and layouts (new `tools/documents.py`): `create_worksheets`,
+  `create_details` and `create_layouts` through Tapir 1.7.0 `CreateWorksheets`,
+  `CreateDetails` and `CreateLayout`. Layouts go on an existing master layout by its
+  Navigator ID, so a missing master is refused instead of being created. Each new
+  database is found back in the Navigator. The fake's shapes come from the Tapir source,
+  not a live capture. Not yet tested live.
+
+- Add custom property groups and properties (new `tools/property_definitions.py`):
+  `list_property_groups`, `create_property_groups` and `create_properties` through Tapir
+  1.7.0 `GetAllProperties`, `CreatePropertyGroups` and `CreatePropertyDefinitions`.
+  Every Tapir property type is supported, with defaults, enum options and availability by
+  classification item or whole system; existing names and built-in groups are refused,
+  and each result is read back. The fake's shapes come from the Tapir source, not a live
+  capture. Not yet tested live.
+
+- Add locking and Update Zones (new `tools/locks.py` and `tools/zones.py`):
+  `lock_elements`, `unlock_elements` and `update_zones` through Tapir 1.7.0
+  `LockElements`, `UnlockElements` and `UpdateZones`. Lock and unlock read every
+  element's editability back with `FilterElements`; unlock refuses elements on a locked
+  layer. `update_zones` recalculates every zone and stays unverified. The fake's shapes
+  come from the Tapir source, not a live capture, and its `FilterElements` now treats
+  elements on a locked layer as not editable. Not yet tested live.
+
+- Add Project Info and favorites (new `tools/project_info.py` and `tools/favorites.py`):
+  `get_project_info_fields`, `set_project_info_fields`, `list_favorites` and
+  `apply_favorites` through Tapir 1.7.0 `GetProjectInfoFields`, `SetProjectInfoField`,
+  `GetFavoritesByType` and `ApplyFavoritesToElements`. Fields go by id or visible name and
+  are read back; applied favorites stay unverified because Tapir cannot read a favorite's
+  settings. The fake's shapes come from the Tapir source, not a live capture. Not yet
+  tested live.
+
+- Add selection, highlight and groups (new `tools/selection.py`): `select_elements`,
+  `highlight_elements`, `get_element_groups` and `create_groups` through Tapir 1.7.0
+  `ChangeSelectionOfElements`, `HighlightElements`, `GetGroupsOfElements`,
+  `GetElementsOfGroups` and `CreateGroups`. Selection and highlight do not change the
+  model, so they act at once and report what Archicad ended with; `create_groups` uses
+  the preview, token, receipts and read-back. The fake's shapes come from the Tapir
+  source, not a live capture. Not yet tested live.
+
+- Add layers (new `tools/layers.py`): `list_layers`, `create_layers` and
+  `set_element_layers` through Tapir 1.7.0 `GetLayers`, `CreateLayers` and
+  `SetDetailsOfElements`. New layers never overwrite an existing name; elements move to a
+  layer by name with preview, token, receipts and read-back. The fake now gives each layer
+  its own GUID. Its shapes come from the Tapir source, not a live capture. Not yet tested
+  live.
+
+- Add 2D drafting (new `tools/drafting.py`): `create_lines`, `create_polylines`,
+  `create_arcs`, `create_circles` and `create_fills` through Tapir 1.7.0
+  `CreateLineElements`, `CreatePolylines`, `CreateArcs`, `CreateCircles` and
+  `CreateHatches`. Layer and fill go by name, the pen by index. Polylines and fills are
+  checked by their plan box, because Tapir reports no geometry for them. The fake's shapes
+  come from the Tapir source, not a live capture. Not yet tested live.
+
+- `create_roofs` now sends `structureType: Basic`. Live on 13/10/2026 (Archicad 30 build
+  3001 BRA, Tapir 1.7.0) a Composite Roof tool default kept its own 0.30 m when 0.25 m
+  was asked, so all three roofs ended `verification_failed`.
+
+- Add `list_classifications` and `set_classifications` (new `tools/classifications.py`):
+  read the classification systems and one system's item tree, and classify or unclassify
+  up to 100 elements through the official `SetClassificationsOfElements`, with preview,
+  token, receipts and read-back through `GetClassificationsOfElements`. Systems and items
+  can be named; ambiguous names are refused. Add `create_labels` (new `tools/labels.py`,
+  Tapir `CreateLabels`): up to 20 text labels, attached to an element or free. The fake's
+  shapes come from the official package and the Tapir 1.7.0 source, not a live capture.
+  Not yet tested live.
+
+- Add `modify_roofs` (Tapir `ModifyRoofs`, multi-plane roofs only: thickness, level from
+  its story, eaves overhang, levels) and `modify_texts` (Tapir `ModifyTexts`: content,
+  position on the same story, angle, height in paper millimetres, justification), in
+  `tools/modify.py` with the same preview, token, receipts and read-back. The read-back now
+  compares angles on the circle, text in LF form and lists item by item. Not yet tested
+  live.
+
+- Add `create_roofs` (Tapir `CreateRoofs`): up to 20 single-plane roofs (pivot line and
+  slope) or multi-plane roofs (polygon as pivot polygon, optional levels and eaves
+  overhang), absolute level as in `create_slabs`. Add `create_texts` (Tapir
+  `CreateTexts`): up to 20 plain texts with position, story, angle and optional height in
+  paper millimetres and justification. Both verify what Archicad stored. The fake's
+  shapes come from the Tapir 1.7.0 source, not a live capture. Not yet tested live.
+
+- Add `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors`
+  and `modify_objects` (new `tools/modify.py`), following `modify_walls`: dry run, token,
+  explicit port, per-element receipts and read-back of every requested field. They use
+  Tapir 1.7.0 `ModifySlabs`, `ModifyColumns`, `ModifyBeams`, `ModifyWindows`,
+  `ModifyDoors` and `ModifyObjects`. Levels are offsets from the element's story; a slab
+  or object level that Tapir would place on another story is refused. The fake's Modify*
+  results come from the Tapir source, not a live capture. Not yet tested live; the steps
+  are in `docs/VALIDAR.md`.
+
 - `rotate_elements` receipts add `normalized_angles` when Archicad stores an angle outside
   [0, 2π), as the 2π seen live after rotating an object back. Nothing is written again.
 

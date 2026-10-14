@@ -128,6 +128,94 @@
       "description": "Preview or apply property values, read back after. Preview includes story and layer names when available."
     },
     {
+      "name": "list_classifications",
+      "description": "List classification systems, or the items of one system as a flat tree."
+    },
+    {
+      "name": "set_classifications",
+      "description": "Preview or apply element classifications (or remove them), read back after."
+    },
+    {
+      "name": "list_layers",
+      "description": "List the project's layers with their hidden, locked, wireframe and intersection settings."
+    },
+    {
+      "name": "create_layers",
+      "description": "Preview or add layers by name; existing names are refused, never overwritten. Read back after."
+    },
+    {
+      "name": "set_element_layers",
+      "description": "Preview or move editable elements to existing layers by name, read back after."
+    },
+    {
+      "name": "select_elements",
+      "description": "Replace, add to or remove from the Archicad selection; the model is not changed."
+    },
+    {
+      "name": "highlight_elements",
+      "description": "Highlight elements in one color, or clear the highlight; the model is not changed."
+    },
+    {
+      "name": "get_element_groups",
+      "description": "The group holding each element and the members of those groups."
+    },
+    {
+      "name": "create_groups",
+      "description": "Preview or group editable, ungrouped elements, read back after."
+    },
+    {
+      "name": "get_project_info_fields",
+      "description": "Project Info fields that title blocks show: id, name and value."
+    },
+    {
+      "name": "set_project_info_fields",
+      "description": "Preview or set Project Info values, read back after."
+    },
+    {
+      "name": "list_favorites",
+      "description": "Favorite names for one element type."
+    },
+    {
+      "name": "apply_favorites",
+      "description": "Preview or apply favorites by name to editable elements; settings only, never geometry."
+    },
+    {
+      "name": "lock_elements",
+      "description": "Preview or lock elements (manual lock, not Teamwork); editability read back."
+    },
+    {
+      "name": "unlock_elements",
+      "description": "Preview or unlock locked elements that are not on a locked layer; editability read back."
+    },
+    {
+      "name": "update_zones",
+      "description": "Preview or run Update Zones on every zone of the project; never saves."
+    },
+    {
+      "name": "list_property_groups",
+      "description": "Property groups with GUID, name, custom flag and property count."
+    },
+    {
+      "name": "create_property_groups",
+      "description": "Preview or add empty custom property groups; existing names refused."
+    },
+    {
+      "name": "create_properties",
+      "description": "Preview or add custom properties with type, default, options and availability; read back."
+    },
+    {
+      "name": "create_worksheets",
+      "description": "Preview or add empty independent worksheets to the Project Map."
+    },
+    {
+      "name": "create_details",
+      "description": "Preview or add empty independent details to the Project Map."
+    },
+    {
+      "name": "create_layouts",
+      "description": "Preview or add layouts on an existing master layout; never creates a master."
+    },
+    {
       "name": "find_elements",
       "description": "Filter elements by type, story, layer and scalar property, with pagination."
     },
@@ -138,6 +226,38 @@
     {
       "name": "create_beams",
       "description": "Preview/create up to 20 straight rectangular beams in metres, with per-beam verification."
+    },
+    {
+      "name": "create_roofs",
+      "description": "Preview/create up to 20 single- or multi-plane roofs from simple polygons, with verification and receipts."
+    },
+    {
+      "name": "create_texts",
+      "description": "Preview/create up to 20 plain texts on stories, with verification and receipts."
+    },
+    {
+      "name": "create_lines",
+      "description": "Preview/create up to 50 straight 2D lines on a story, with verification."
+    },
+    {
+      "name": "create_polylines",
+      "description": "Preview/create up to 50 straight-segment 2D polylines, checked by plan box."
+    },
+    {
+      "name": "create_arcs",
+      "description": "Preview/create up to 50 circular 2D arcs, with verification."
+    },
+    {
+      "name": "create_circles",
+      "description": "Preview/create up to 50 full 2D circles, with verification."
+    },
+    {
+      "name": "create_fills",
+      "description": "Preview/create up to 50 fills (hatches) on simple polygons, checked by plan box."
+    },
+    {
+      "name": "create_labels",
+      "description": "Preview/create up to 20 text labels, free or attached to an element, with verification."
     },
     {
       "name": "create_zones",
@@ -162,6 +282,38 @@
     {
       "name": "modify_walls",
       "description": "Preview/edit up to 50 straight walls, with per-wall verification and receipts."
+    },
+    {
+      "name": "modify_slabs",
+      "description": "Preview/edit thickness and level of up to 50 slabs, with read-back verification and receipts."
+    },
+    {
+      "name": "modify_columns",
+      "description": "Preview/edit position, base, height and section of up to 50 columns, with verification and receipts."
+    },
+    {
+      "name": "modify_beams",
+      "description": "Preview/edit endpoints, level and section of up to 50 straight beams, with verification and receipts."
+    },
+    {
+      "name": "modify_windows",
+      "description": "Preview/edit size, sill and position of up to 50 windows in walls, with verification and receipts."
+    },
+    {
+      "name": "modify_doors",
+      "description": "Preview/edit size, sill and position of up to 50 doors in walls, with verification and receipts."
+    },
+    {
+      "name": "modify_objects",
+      "description": "Preview/edit position, level and dimensions of up to 50 objects, with verification and receipts."
+    },
+    {
+      "name": "modify_roofs",
+      "description": "Preview/edit thickness, level, overhang and levels of up to 50 multi-plane roofs, with verification and receipts."
+    },
+    {
+      "name": "modify_texts",
+      "description": "Preview/edit content, position, angle, size and justification of up to 50 texts, with verification and receipts."
     },
     {
       "name": "create_windows",

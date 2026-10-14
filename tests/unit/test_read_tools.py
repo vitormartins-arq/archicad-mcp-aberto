@@ -116,26 +116,58 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 29
+    assert len(tools) == 67
     writes = {
         "create_walls",
         "create_slabs",
         "create_columns",
         "create_beams",
+        "create_roofs",
+        "create_texts",
+        "create_labels",
+        "create_lines",
+        "create_polylines",
+        "create_arcs",
+        "create_circles",
+        "create_fills",
+        "set_classifications",
+        "create_layers",
+        "set_element_layers",
+        "create_groups",
+        "set_project_info_fields",
+        "apply_favorites",
+        "select_elements",
+        "highlight_elements",
         "create_zones",
         "create_objects",
         "move_elements",
         "rotate_elements",
         "modify_walls",
+        "modify_slabs",
+        "modify_columns",
+        "modify_beams",
+        "modify_windows",
+        "modify_doors",
+        "modify_objects",
+        "modify_roofs",
+        "modify_texts",
         "create_windows",
         "create_doors",
         "set_property_values",
         "set_gdl_parameters",
         "delete_elements",
+        "lock_elements",
+        "unlock_elements",
+        "update_zones",
+        "create_property_groups",
+        "create_properties",
+        "create_worksheets",
+        "create_details",
+        "create_layouts",
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 15
+    assert len(reads) == 21
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint
