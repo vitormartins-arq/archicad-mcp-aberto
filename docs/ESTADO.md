@@ -483,3 +483,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Main remota 8c2d918 já inclui lote/camadas e lotes posteriores; a exceção de base antiga da FILA deixou de ser necessária. T20 em codex/t20-modify-labels, só simulado. ModifyLabels existe na tag oficial 1.7.0 (ElementCreationCommands.cpp), recebe labelsWithDetails e responde executionResults; texto/style.height aceitos, mas não coordenadas/andar. Ferramenta modify_labels até 50 etiquetas Text, texto/height_mm, recusa Symbol e campos não suportados, preserva dono/pontos/andar, prévia/token/porta/recibos e releitura. O comando nativo pode reconstruir parágrafos e desligar quebra automática. Fixture documental, não captura real. Posição fica fora desta entrega por limitação nativa; mover exige ferramenta separada. T21 e T22 seguem empilhadas, sem merge pelo Codex.
 
 - T20: 1526 testes simulados e Ruff passaram, Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.
+
+
+## 2026-10-14 — Codex / T21 (Quem está com o quê)
+
+- Incidências em tools/issues.py, branch codex/t21-issues empilhada na T20. GetIssues, CreateIssue, AttachElementsToIssue e GetElementsAttachedToIssue conferidos em IssueCommands.cpp da tag oficial 1.7.0; fixture documental/sintética, não captura real. list_issues filtra/pagina; create_issues até 20 com name/tagText; associação por GUID até 100 elementos existentes, somente Highlight. Prévia vincula metadados/incidência/associações além do projeto e elementos; apply com porta/token de uso único, recibo por item, erros isolados e conferência. Resposta perdida ou malformada para os próximos envios, sem repetir; anteriores ainda conferidos. Cada comando nativo é um passo de Undo. Sem BCF, exclusão ou salvamento. Nenhuma chamada real.
+
+- T21: 1588 testes simulados passaram e Ruff passou em Windows/Python 3.12.10. Nenhuma chamada ao ArchiCAD real.

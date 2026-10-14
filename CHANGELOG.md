@@ -224,3 +224,8 @@
 - Add `modify_labels`: safe Text label content and paper font-height edits through Tapir
   1.7.0 `ModifyLabels`, with read-back and source-derived simulated coverage. Coordinates
   and story changes are unsupported by that native command and refused. Not tested live.
+
+- Add issue management: `list_issues`, `create_issues` and `attach_elements_to_issue`
+  through source-confirmed Tapir 1.7.0 commands. Highlight associations only, missing
+  elements refused, shared confirmation/receipts and per-item read-back. Singular native
+  commands stop on an unknown outcome; each is a separate Undo step. Simulated only.

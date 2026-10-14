@@ -104,6 +104,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_classifications` | Write | Classify (or unclassify) up to 100 elements, read back after apply | yes |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
 | `modify_labels` | Write | Text and paper text height of up to 50 Text labels; position changes refused | yes |
+| `list_issues` | Read | Issue GUIDs, names, tags and native metadata with filtering/pagination | yes |
+| `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
+| `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
 
 ### Reported live validation
 
@@ -375,3 +378,16 @@ and open to everyone's contributions.
   owner and position; use a separate `move_elements` preview for movement. Text/size edits
   can rebuild rich text as one paragraph and disable word wrap in the native command.
   Source-derived simulation only; live validation pending.
+
+
+- `list_issues(port?, query?, offset=0, limit=200)` lists issue GUIDs, names, tag text and
+  native metadata through Tapir 1.7.0 `GetIssues`; filtering is case-insensitive on name
+  and tag, before pagination. `create_issues([{name, tagText?}], ...)` creates up to 20
+  incidences, and `attach_elements_to_issue(issue_guid, element_guids, ...)` associates
+  1–100 existing elements with one existing issue. Associations always use **Highlight**,
+  never Creation, Deletion or Modification; existing links are retained. No BCF/export,
+  saving or deletion. Writes preview by default; apply requires the identical inputs,
+  explicit port and single-use token. Names/tags and each association are read back.
+  Each native create/association is its **own Undo step**. A lost or malformed response
+  stops the remaining writes without retrying, preserves prior results and marks later
+  items `failed` with `not_attempted: true`. Source-derived simulation only; live validation pending.

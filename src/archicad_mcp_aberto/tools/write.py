@@ -393,6 +393,17 @@ OPERATIONS["modify_labels"] = (
     "Native edits may flatten rich text and disable word wrap.",
 )
 
+OPERATIONS["create_issues"] = (
+    "issue",
+    "issue_receipt_id",
+    "Creates issue metadata only; does not save or export BCF.",
+)
+OPERATIONS["attach_elements_to_issue"] = (
+    "issue attachment",
+    "issue_attachment_receipt_id",
+    "Associates existing elements as Highlight only.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {

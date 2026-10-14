@@ -398,6 +398,17 @@ class FakeArchicad:
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
 
+    # IssueCommands.cpp tag 1.7.0; source-derived, not captured live.
+    issues: dict[str, dict] = field(
+        default_factory=lambda: {
+            r["issueId"]["guid"]: deepcopy(r) for r in ISSUES_FIXTURE["get_issues"]["issues"]
+        }
+    )
+    issue_attachments: dict[str, set[str]] = field(default_factory=dict)
+    issue_errors: dict[str, dict[int, dict]] = field(default_factory=dict)
+    issue_ignored: set[str] = field(default_factory=set)
+    lose_issue_response_at: int | None = None
+
     def handle(self, body: dict) -> dict:
         command = body.get("command", "")
         params = body.get("parameters", {})
@@ -661,6 +672,53 @@ class FakeArchicad:
         layer = self.details.get(guid, {}).get("layerIndex")
         return self.layer_flags.get(layer, {}).get("isLocked") is True
 
+    def _issues(self, name: str, args: dict) -> dict:
+        if name == "GetIssues":
+            return ok({"addOnCommandResponse": {"issues": list(deepcopy(self.issues).values())}})
+        guid = args.get("issueId", {}).get("guid")
+        if name == "GetElementsAttachedToIssue":
+            if guid not in self.issues:
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "error": {
+                                "code": -1,
+                                "message": "Failed to retrieve attached elements.",
+                            }
+                        }
+                    }
+                )
+            assert args["type"] == "Highlight"
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "elements": [
+                            self._id(g) for g in sorted(self.issue_attachments.get(guid, set()))
+                        ]
+                    }
+                }
+            )
+        position = self.tapir_calls.count(name) - 1
+        error = self.issue_errors.get(name, {}).get(position)
+        if error is not None:
+            return ok({"addOnCommandResponse": deepcopy(error)})
+        if name == "CreateIssue":
+            new_guid = str(uuid4()).upper()
+            if name not in self.issue_ignored:
+                row = deepcopy(ISSUES_FIXTURE["get_issues"]["issues"][0])
+                row.update(
+                    issueId={"guid": new_guid}, name=args["name"], tagText=args.get("tagText", "")
+                )
+                self.issues[new_guid] = row
+            return ok({"addOnCommandResponse": {"issueId": {"guid": new_guid}}})
+        assert name == "AttachElementsToIssue" and args["type"] == "Highlight"
+        guids = [r["elementId"]["guid"] for r in args["elements"]]
+        if guid not in self.issues or any(g not in self.elements for g in guids):
+            return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_error"])})
+        if name not in self.issue_ignored:
+            self.issue_attachments.setdefault(guid, set()).update(guids)
+        return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_elements"])})
+
     def _tapir(self, params: dict) -> dict:
         if self.tapir_version is None:
             return fail(4010, "Add-On command is not registered")
@@ -668,6 +726,14 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in (
+            "GetIssues",
+            "CreateIssue",
+            "AttachElementsToIssue",
+            "GetElementsAttachedToIssue",
+        ):
+            return self._issues(name, args)
+
         if name == "GetAddOnVersion":
             return ok({"addOnCommandResponse": {"version": self.tapir_version}})
         if name == "GetProjectInfo":
@@ -1846,6 +1912,14 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             body.get("command") == "API.SetClassificationsOfElements"
         ):
             raise httpx.ReadTimeout("Injected lost classification response", request=request)
+        if command in ("CreateIssue", "AttachElementsToIssue"):
+            issue_write_count = sum(
+                c in ("CreateIssue", "AttachElementsToIssue") for c in instance.tapir_calls
+            )
+            if instance.lose_issue_response_at == issue_write_count:
+                raise httpx.ReadTimeout(
+                    "Injected lost issue response after change", request=request
+                )
         if instance.lose_modify_response and command in MODIFY_COMMANDS:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request
@@ -1888,6 +1962,14 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
 # Source-derived Tapir 1.7.0 ModifyLabels response; not captured live.
 MODIFY_LABELS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_modify_labels_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# Source-derived command schemas and synthetic values; NOT a live capture.
+ISSUES_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_issues_documented.json").read_text(
         encoding="utf-8"
     )
 )

@@ -25,6 +25,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
@@ -1025,6 +1026,49 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         fields are refused. Explicit port and single-use token to apply; never saves.
         """
         return await modify.modify_labels(client_of(ctx), labels, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_issues(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List issues (GUID, name, tagText and native metadata), filtered and paginated."""
+        return await issues_tool.list_issues(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_issues(
+        ctx: Context,
+        issues: list[issues_tool.IssueCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 issues with name and optional tagText. Single-use
+        confirmation and explicit apply port; receipt and read-back. Never saves or deletes.
+        """
+        return await issues_tool.create_issues(
+            client_of(ctx), issues, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def attach_elements_to_issue(
+        ctx: Context,
+        issue_guid: str,
+        element_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/attach 1–100 existing elements to an issue as Highlight only.
+        No Creation/Deletion/Modification marking; explicit apply port and single-use
+        confirmation, per-element receipt and read-back. Never saves or deletes.
+        """
+        return await issues_tool.attach_elements_to_issue(
+            client_of(ctx), issue_guid, element_guids, port, dry_run, confirmation_token
+        )
 
     return mcp
 

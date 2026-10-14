@@ -15,6 +15,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    issues,
     labels,
     layers,
     locks,
@@ -49,6 +50,12 @@ MODIFY_TYPES = {
     "modify_labels": "Label",
 }
 INPUTS = {
+    "list_issues": {},
+    "create_issues": {"issues": [{"name": "Review"}]},
+    "attach_elements_to_issue": {
+        "issue_guid": "99999999-9999-4999-8999-999999999999",
+        "element_guids": [GUID],
+    },
     "modify_labels": {"labels": [{"guid": GUID, "text": "Wall finish"}]},
     "run_read_command": {"command": "Tapir.GetStories"},
     "create_windows": {"windows": [{"wall_guid": GUID, "center_offset": 2.0}]},
@@ -221,6 +228,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        issues,
         labels,
         layers,
         locks,

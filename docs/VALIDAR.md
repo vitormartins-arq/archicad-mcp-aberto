@@ -299,3 +299,14 @@ template), para ter os nomes reais. Ctrl+Z desfaz cada lote.
 - [ ] Aplicar somente height_mm e conferir que o texto continua igual.
 - [ ] Posição/andar, etiqueta Symbol, bloqueada e de hotlink devem ser recusados na prévia.
   ModifyLabels 1.7.0 não recebe coordenadas; movimento usa outra ferramenta.
+
+
+### Lote 7 (Codex) — T21: incidências
+
+- [ ] list_issues: listar, filtrar nome/tag e paginar em projeto de teste autorizado.
+- [ ] create_issues: prévia e aplicar duas incidências, uma com tagText, ambas verified;
+  conferir nomes/tags na paleta de Incidências.
+- [ ] attach_elements_to_issue: associar duas paredes existentes por GUID como Highlight;
+  recibo verified por parede, vínculos anteriores mantidos e nenhuma geometria excluída.
+- [ ] GUID inexistente de incidência ou elemento deve ser recusado na prévia.
+  Sem salvar/BCF/apagar. Cada criação ou associação é um passo nativo separado de Undo.

@@ -334,6 +334,18 @@
     {
       "name": "modify_labels",
       "description": "Edit Text label content and height with preview, single-use confirmation and read-back; no position changes."
+    },
+    {
+      "name": "list_issues",
+      "description": "List issue GUIDs, names, tags and metadata with filtering and pagination."
+    },
+    {
+      "name": "create_issues",
+      "description": "Safely create up to 20 issues with preview, confirmation, per-issue receipt and read-back."
+    },
+    {
+      "name": "attach_elements_to_issue",
+      "description": "Safely associate existing elements with one issue as Highlight, with confirmation and verification."
     }
   ],
   "compatibility": {
