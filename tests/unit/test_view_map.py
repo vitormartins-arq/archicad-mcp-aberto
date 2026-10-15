@@ -102,6 +102,37 @@ async def test_project_change_between_view_items_stops_remaining_writes(kind):
 
 
 @pytest.mark.parametrize("kind", ["folders", "clones"])
+async def test_concurrent_tree_change_between_items_stops_remaining_writes(kind):
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+    command = "CreateViewMapFolder" if kind == "folders" else "CloneProjectMapItemToViewMap"
+    writes = 0
+    changed = False
+
+    def handler(request):
+        nonlocal changed, writes
+        body = json.loads(request.content)
+        current = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if current == command:
+            writes += 1
+        response = base.handle_request(request)
+        if current == "GetNavigatorItemTree" and writes == 1 and not changed:
+            _view_map_node(fake.navigator_trees["PublicViewMap"], VIEW)["name"] = "Concurrent"
+            changed = True
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        preview = await tool(kind)(client, entries(kind), 19723)
+        result = await tool(kind)(
+            client, entries(kind), 19723, False, preview["confirmation_token"]
+        )
+
+    assert result["items"][0]["status"] == "verified"
+    assert result["items"][1]["not_attempted"]
+    assert writes == 1
+
+
+@pytest.mark.parametrize("kind", ["folders", "clones"])
 @pytest.mark.parametrize(
     "fault",
     [

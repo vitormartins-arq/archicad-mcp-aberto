@@ -277,6 +277,7 @@
 - Reconfirm the project context between sequential folder/clone commands and stop
   remaining Navigator writes before dispatch after a project switch.
   A tree read-back mismatch also stops the remaining batch before another write.
+  Re-read bound Navigator trees immediately before each later command.
 
 - Reconfirm the bound project context between sequential comment writes, stopping all
   remaining items before dispatch if the selected project changes during the batch.

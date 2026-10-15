@@ -593,6 +593,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Pastas e clones agora também relêem o contexto completo entre comandos do lote.
   Testes com troca para projeto copiado preservando GUIDs param antes do segundo write.
   Divergência na releitura da árvore também interrompe os comandos seguintes.
+  Árvores vinculadas são relidas antes do próximo comando; alteração concorrente
+  simulada entre itens interrompe o lote.
 
 ### Revisão adicional T24
 
