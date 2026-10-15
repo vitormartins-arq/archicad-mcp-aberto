@@ -55,6 +55,15 @@ async def test_preview_apply_duplicate_text_distinct_guids_and_receipt():
     assert parameters[0] == {"issueId": {"guid": ISSUE}, "text": entries[0]["text"]}
 
 
+async def test_maximum_twenty_comment_batch():
+    fake = FakeArchicad(19723)
+    comments = [entry(text=f"Comentário {index}") for index in range(20)]
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        result = await apply(client, comments)
+    assert result["counts"]["verified"] == 20
+    assert fake.tapir_calls.count("AddCommentToIssue") == 20
+
+
 @pytest.mark.parametrize(
     "entries",
     [
