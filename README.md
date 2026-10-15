@@ -56,6 +56,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_property_groups` | Read | Property groups with custom flag and property count | yes |
 | `get_element_groups` | Read | The group holding each element and its members | yes |
 | `list_layers` | Read | Layers with hidden, locked, wireframe and intersection group | yes |
+| `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
+| `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
+| `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |

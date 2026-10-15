@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    design_options,
     documents,
     drafting,
     edit,
@@ -55,6 +56,11 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "list_design_options": {},
+    "get_elements_of_design_options": {
+        "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
+    },
+    "get_design_options_for_elements": {"element_guids": [GUID]},
     "list_layer_combinations": {},
     "set_layer_settings": {"changes": [{"layer": "Editable", "locked": False}]},
     "get_view_settings": {"view_guids": ["77777777-7777-4777-8777-000000000003"]},
@@ -267,6 +273,7 @@ TARGETED = {
     for module in (
         attributes,
         classifications,
+        design_options,
         documents,
         drafting,
         renames,

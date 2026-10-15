@@ -129,6 +129,11 @@ PROPERTY_DEFINITIONS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_property_definitions_documented.json"
     ).read_text(encoding="utf-8")
 )
+DESIGN_OPTIONS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_design_options_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
 # Navigator trees and new worksheets, details and layouts; not live captured.
 DOCUMENTS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_documents_documented.json").read_text(
@@ -755,6 +760,68 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "GetDesignOptionSets":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptionSets": deepcopy(DESIGN_OPTIONS_FIXTURE["sets"])
+                    }
+                }
+            )
+        if name == "GetDesignOptions":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptions": deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
+                    }
+                }
+            )
+        if name == "GetDesignOptionCombinations":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptionCombinations": deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+                    }
+                }
+            )
+        if name == "GetElementsOfDesignOptions":
+            rows = []
+            mapping = DESIGN_OPTIONS_FIXTURE["elements_by_option"]
+            for item in args["designOptions"]:
+                guid = item["designOptionId"]["guid"]
+                if guid not in {
+                    r["designOptionId"]["guid"] for r in DESIGN_OPTIONS_FIXTURE["options"]
+                }:
+                    rows.append({"error": {"code": -2, "message": "Not found design option"}})
+                else:
+                    rows.append(
+                        {
+                            "designOptionId": {"guid": guid},
+                            "elements": [self._id(g) for g in mapping.get(guid, [])],
+                        }
+                    )
+            return ok({"addOnCommandResponse": {"elementsOfDesignOptions": rows}})
+        if name == "GetDesignOptionForElements":
+            linked = DESIGN_OPTIONS_FIXTURE["options"][0]
+            members = set(
+                DESIGN_OPTIONS_FIXTURE["elements_by_option"][linked["designOptionId"]["guid"]]
+            )
+            rows = []
+            for item in args["elements"]:
+                guid = item["elementId"]["guid"]
+                if guid not in self.elements:
+                    rows.append({"elementId": {"guid": guid}, "type": "NotExistingElement"})
+                elif guid in members:
+                    rows.append(
+                        {
+                            "elementId": {"guid": guid},
+                            "type": "LinkedToDesignOption",
+                            "designOption": deepcopy(linked),
+                        }
+                    )
+                else:
+                    rows.append({"elementId": {"guid": guid}, "type": "NotLinkedToAnyDesignOption"})
+            return ok({"addOnCommandResponse": {"designOptionForElements": rows}})
         if name == "CreateClassificationItems":
             results = []
             for entry in args["newClassificationItems"]:
@@ -763,8 +830,10 @@ class FakeArchicad:
                 roots = self.classification_data["items"][system]["classificationItems"]
                 parent = _classification_creation_parent(roots, parent_guid)
                 assert parent is not None
-                row = {"classificationItemId": {"guid": str(uuid4()).upper()},
-                       **deepcopy(entry["classificationItemDetails"])}
+                row = {
+                    "classificationItemId": {"guid": str(uuid4()).upper()},
+                    **deepcopy(entry["classificationItemDetails"]),
+                }
                 parent.setdefault("children", []).append({"classificationItem": row})
                 # Source intentionally appends NO successful result.
             return ok({"addOnCommandResponse": {"executionResults": results}})
@@ -795,9 +864,13 @@ class FakeArchicad:
         if name in ("GetCommentsFromIssue", "AddCommentToIssue"):
             guid = args["issueId"]["guid"]
             if name == "GetCommentsFromIssue":
-                return ok({"addOnCommandResponse": {
-                    "comments": deepcopy(self.issue_comments.get(guid, []))
-                }})
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "comments": deepcopy(self.issue_comments.get(guid, []))
+                        }
+                    }
+                )
             if guid not in self.issues:
                 return ok({"addOnCommandResponse": deepcopy(COMMENTS_FIXTURE["failed"])})
             row = deepcopy(COMMENTS_FIXTURE["comment"])

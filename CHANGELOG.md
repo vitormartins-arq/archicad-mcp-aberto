@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add three read-only Design Options tools from the pinned Tapir 1.7.0 source:
+  `list_design_options` returns sets, options and combinations;
+  `get_elements_of_design_options` resolves option members; and
+  `get_design_options_for_elements` distinguishes linked options, the main model,
+  missing options and nonexistent elements. Inputs are bounded, GUIDs and response
+  identity are validated, and native per-option errors are preserved. These detailed
+  reads require Archicad 29+. The fixture is source-derived and explicitly not live.
+
 - `rename_items` after its live test (14/10/2026, Archicad 30 build 3001 BRA, Tapir
   1.7.0): surfaces are refused, because `CreateSurfaces` with only the name also changed
   the texture; layer combinations send the empty `layers` list that

@@ -606,6 +606,18 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   executou prévia, apply, releitura e recusa de token usado nas quatro ferramentas
   novas contra o fake. Artefatos e fixtures são simulados; nenhuma chamada real.
 
+## 2026-10-15 — Codex / opções de projeto (somente leitura)
+
+- Branch `codex/t27-design-options-read`, empilhada na T26. Três ferramentas somente
+  leitura: inventário de conjuntos/opções/combinações, elementos de cada opção e opção
+  associada a cada elemento. Contratos conferidos diretamente em
+  `DesignOptionCommands.cpp` do Tapir 1.7.0/02691b5d.
+- O servidor valida GUIDs, quantidade, formato, ordem e identidade das respostas; erros
+  nativos por opção são preservados. Conjuntos, opções e associação de elementos exigem
+  Archicad 29+; não é anunciado suporte falso às versões 27/28.
+- Fixture sintético marcado `live_capture: false`; nenhum Archicad real foi aberto.
+  Servidor com 86 ferramentas, sendo 28 de leitura.
+
 ## 2026-10-15 — Codex / revisão adicional T25
 
 - Reproduzidas duas falsas conferências: clone com origem ausente ou GUID de origem

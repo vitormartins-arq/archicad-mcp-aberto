@@ -409,3 +409,14 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   selecionado no Mapa do Projeto, mesmo quando outras vistas têm nomes iguais.
 - [ ] Registrar custom_name/custom_ui_id/is_independent na conferência das vistas
   anteriores. Recusar origem que é grupo/pasta com filhos; não salvar/publicar.
+
+## Opções de Projeto — validação ao vivo pendente
+
+- [ ] Em cópia de teste no Archicad 29 ou mais recente, criar duas opções num conjunto
+  e uma combinação; chamar `list_design_options` e conferir GUID, ID, nome, conjunto e
+  opções ativas. Não salvar.
+- [ ] Colocar um elemento numa opção e deixar outro no Modelo Principal; conferir ambos
+  em `get_design_options_for_elements`, além de um GUID inexistente.
+- [ ] Consultar as duas opções em `get_elements_of_design_options`; conferir membro,
+  opção vazia e erro de um GUID de opção inexistente.
+- [ ] Registrar versão/build/idioma e Tapir. As ferramentas são somente leitura.

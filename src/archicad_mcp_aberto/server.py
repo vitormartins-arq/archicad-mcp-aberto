@@ -12,6 +12,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
+    design_options,
     documents,
     drafting,
     edit,
@@ -1248,6 +1249,42 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await classifications.create_classification_items(
             client_of(ctx), items, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_design_options(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List Design Option sets, options and combinations. Query filters options by
+        id/name/set; pagination applies to options. Requires Archicad 29+ and Tapir 1.7.0.
+        Changes nothing.
+        """
+        return await design_options.list_design_options(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_elements_of_design_options(
+        ctx: Context, design_option_guids: list[str], port: int | None = None
+    ) -> dict:
+        """List elements belonging to 1–500 Design Options, preserving native errors per
+        option. Requires Archicad 29+ and Tapir 1.7.0. Changes nothing.
+        """
+        return await design_options.get_elements_of_design_options(
+            client_of(ctx), design_option_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_design_options_for_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read the Design Option status of 1–500 elements: linked option, main model,
+        missing option or nonexistent element. Archicad 29+ / Tapir 1.7.0. Changes nothing.
+        """
+        return await design_options.get_design_options_for_elements(
+            client_of(ctx), element_guids, port
         )
 
     return mcp
