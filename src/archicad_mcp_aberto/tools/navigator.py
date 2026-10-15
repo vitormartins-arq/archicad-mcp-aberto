@@ -248,6 +248,8 @@ async def _view_dispatch(client, receipt):
     before = {r["guid"]: r for r in receipt["target"]["view_map"]}
     receipt["revert_note"] = "No guaranteed Navigator Undo. Remove unwanted new items manually."
     for index, item in enumerate(receipt["items"]):
+        if not await write._guard_sequential_context(client, receipt, index):
+            break
         try:
             raw = await client.tapir(port, command, item["parameters"], timeout=timeout)
         except (TapirError, CommandFailed) as exc:

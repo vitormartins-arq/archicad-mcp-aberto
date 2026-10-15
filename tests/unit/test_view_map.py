@@ -71,6 +71,37 @@ async def test_preview_apply_tree_receipts_and_token(kind):
 
 
 @pytest.mark.parametrize("kind", ["folders", "clones"])
+async def test_project_change_between_view_items_stops_remaining_writes(kind):
+    """A copied PLN may retain Navigator GUIDs, so the project context must also match."""
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+    command = "CreateViewMapFolder" if kind == "folders" else "CloneProjectMapItemToViewMap"
+    writes = 0
+
+    def handler(request):
+        nonlocal writes
+        body = json.loads(request.content)
+        current = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if current == command:
+            writes += 1
+        response = base.handle_request(request)
+        if current == "GetNavigatorItemTree" and writes == 1:
+            fake.project_name = "Copied project"
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        preview = await tool(kind)(client, entries(kind), 19723)
+        result = await tool(kind)(
+            client, entries(kind), 19723, False, preview["confirmation_token"]
+        )
+
+    assert result["items"][0]["status"] == "verified"
+    assert result["items"][1]["not_attempted"]
+    assert "context changed" in result["context_error"]
+    assert writes == 1
+
+
+@pytest.mark.parametrize("kind", ["folders", "clones"])
 @pytest.mark.parametrize(
     "fault",
     [

@@ -590,3 +590,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Novos testes reproduziram as recusas faltantes; somente simulado.
 - Validação Linux/Python 3.12.14: 1925 testes simulados passaram; Ruff passou.
   Nenhuma chamada ao Archicad real.
+- Pastas e clones agora também relêem o contexto completo entre comandos do lote.
+  Testes com troca para projeto copiado preservando GUIDs param antes do segundo write.
+
+### Revisão adicional T24
+
+- O contexto completo do projeto agora é relido entre comentários de um mesmo lote.
+  Teste com troca para projeto copiado, mantendo os mesmos GUIDs, confirma que somente
+  o primeiro comentário é enviado e todos os seguintes ficam como não tentados.
+  Somente simulado; nenhuma chamada ao Archicad real.

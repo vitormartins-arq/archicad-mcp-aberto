@@ -273,3 +273,9 @@
   inheritance flags; reject Project Map containers instead of previewing them as one
   viewpoint. Refuse embedded NUL and folder names exceeding 255 UTF-16 units.
   Regressions reproduce previously verified clones with missing/wrong source identity.
+
+- Reconfirm the project context between sequential folder/clone commands and stop
+  remaining Navigator writes before dispatch after a project switch.
+
+- Reconfirm the bound project context between sequential comment writes, stopping all
+  remaining items before dispatch if the selected project changes during the batch.
