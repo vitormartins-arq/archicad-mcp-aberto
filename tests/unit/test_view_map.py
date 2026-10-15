@@ -221,3 +221,97 @@ async def test_dispatch_faults_and_readback(kind, fault):
     else:
         assert first["status"] == "verification_failed"
     assert result["status"] == "needs_review"
+
+
+@pytest.mark.parametrize("source_id", [None, "88888888-8888-4888-8888-000000000003"])
+async def test_clone_source_guid_must_match_even_with_identical_name_and_type(source_id):
+    """Name/type/uiId cannot distinguish clones of different Project Map viewpoints."""
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+
+    def handler(request):
+        response = base.handle_request(request)
+        body = json.loads(request.content)
+        cmd = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if cmd == "CloneProjectMapItemToViewMap":
+            parent = _view_map_node(fake.navigator_trees["PublicViewMap"], FOLDER)
+            created = parent["children"][-1]["navigatorItem"]
+            if source_id is None:
+                created.pop("sourceNavigatorItemId")
+            else:
+                created["sourceNavigatorItemId"] = {"guid": source_id}
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as c:
+        data = entries("clones")[:1]
+        preview = await navigator.clone_to_view_map(c, data, 19723)
+        result = await navigator.clone_to_view_map(
+            c, data, 19723, False, preview["confirmation_token"]
+        )
+    assert result["status"] == "needs_review"
+    assert result["items"][0]["status"] == "verification_failed"
+    assert "source_guid" in result["items"][0]["mismatches"]
+
+
+@pytest.mark.parametrize("flag", ["customName", "customUiId", "isIndependent"])
+async def test_changed_view_inheritance_flags_invalidate_preview(flag):
+    fake = FakeArchicad(19723)
+    data = entries("clones")[:1]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await navigator.clone_to_view_map(c, data, 19723)
+        existing = _view_map_node(fake.navigator_trees["PublicViewMap"], VIEW)
+        existing[flag] = not existing[flag]
+        with pytest.raises(ValueError, match="changed"):
+            await navigator.clone_to_view_map(c, data, 19723, False, preview["confirmation_token"])
+    assert "CloneProjectMapItemToViewMap" not in fake.tapir_calls
+
+
+async def test_project_map_container_is_not_previewed_as_one_viewpoint():
+    fake = FakeArchicad(19723)
+    source = _view_map_node(fake.navigator_trees["ProjectMap"], SOURCE)
+    child = deepcopy(source)
+    child["navigatorItemId"] = {"guid": "88888888-8888-4888-8888-000000000099"}
+    source["children"] = [{"navigatorItem": child}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="Source"):
+            await navigator.clone_to_view_map(c, entries("clones")[:1])
+    assert "CloneProjectMapItemToViewMap" not in fake.tapir_calls
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Before\x00After", "😀" * 128, "\ud800"],
+    ids=["embedded-nul", "utf16-overflow", "invalid-unicode"],
+)
+async def test_folder_name_must_fit_native_unicode_buffer_without_embedded_nul(name):
+    fake = FakeArchicad(19723)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError):
+            await navigator.create_view_map_folders(c, [{"parent_guid": ROOT, "name": name}])
+    assert not fake.calls
+
+
+async def test_folder_name_at_utf16_boundary_is_accepted_without_truncation():
+    fake = FakeArchicad(19723)
+    name = "😀" * 127 + "á"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        data = [{"parent_guid": ROOT, "name": name}]
+        preview = await navigator.create_view_map_folders(c, data, 19723)
+        result = await navigator.create_view_map_folders(
+            c, data, 19723, False, preview["confirmation_token"]
+        )
+    assert result["status"] == "verified"
+    assert result["items"][0]["after"]["name"] == name
+
+
+@pytest.mark.parametrize(
+    "bad_source", [None, {}, {"guid": "bad"}, {"guid": "00000000-0000-0000-0000-000000000000"}]
+)
+async def test_malformed_source_identity_is_not_silently_discarded(bad_source):
+    fake = FakeArchicad(19723)
+    existing = _view_map_node(fake.navigator_trees["PublicViewMap"], VIEW)
+    existing["sourceNavigatorItemId"] = bad_source
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="source ID"):
+            await navigator.clone_to_view_map(c, entries("clones")[:1])
+    assert "CloneProjectMapItemToViewMap" not in fake.tapir_calls

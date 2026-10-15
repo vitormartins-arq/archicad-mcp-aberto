@@ -47,6 +47,25 @@ def _flatten(root: object) -> list[dict]:
                 "uiId": node.get("uiId"),
             }
         )
+        # Preserve the identity behind a view and its native inheritance flags.
+        # Identical displayed names/IDs alone cannot prove the intended source.
+        if "sourceNavigatorItemId" in node:
+            try:
+                source_guid = UUID(node["sourceNavigatorItemId"]["guid"])
+                if not source_guid.int:
+                    raise ValueError("Null source GUID.")
+            except (KeyError, TypeError, ValueError, AttributeError):
+                raise ValueError("Unexpected Navigator source ID.") from None
+            out[-1]["source_guid"] = str(source_guid).upper()
+        for native, key in (
+            ("customName", "custom_name"),
+            ("customUiId", "custom_ui_id"),
+            ("isIndependent", "is_independent"),
+        ):
+            if native in node:
+                if type(node[native]) is not bool:
+                    raise ValueError(f"Unexpected Navigator {native} flag.")
+                out[-1][key] = node[native]
         children = node.get("children", [])
         if not isinstance(children, list):
             raise ValueError("Unexpected navigator children.")
@@ -133,6 +152,9 @@ class ViewMapFolder(write.InputModel):
     def visible_name(cls, value):
         if not value.strip() or value != value.strip():
             raise ValueError("Folder name must be visible and have no outer whitespace.")
+        # CreateViewMapFolder copies this to API_NavigatorItem.uName (UTF-16).
+        if "\x00" in value or len(value.encode("utf-16-le")) // 2 > 255:
+            raise ValueError("Folder name must fit 255 UTF-16 units and contain no NUL.")
         return value
 
 
@@ -165,7 +187,12 @@ async def _view_plan(client, entries, port, operation):
     if not folders:
         target["project_map"] = source_rows
     parents = {r["guid"]: r for r in tree if r["depth"] == 0 or r["type"] == "FolderItem"}
-    sources = {r["guid"]: r for r in source_rows if r["depth"] > 0 and r["type"] != "FolderItem"}
+    containers = {r["parent_guid"] for r in source_rows}
+    sources = {
+        r["guid"]: r
+        for r in source_rows
+        if r["depth"] > 0 and r["type"] != "FolderItem" and r["guid"] not in containers
+    }
     items, seen = [], set()
     for index, entry in enumerate(entries):
         if entry.parent_guid not in parents:
@@ -262,6 +289,8 @@ async def _view_dispatch(client, receipt):
                         differences.append(key)
                 if "source" in item and after["uiId"] != item["source"]["uiId"]:
                     differences.append("uiId")
+                if "source" in item and after.get("source_guid") != item["source"]["guid"]:
+                    differences.append("source_guid")
             if any(current.get(g) != r for g, r in before.items()):
                 differences.append("existing_items_changed")
             if set(current) - set(before) != {guid}:

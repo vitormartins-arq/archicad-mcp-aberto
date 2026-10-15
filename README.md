@@ -494,3 +494,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   retain receipts and independently verify GUID/name/type/parent and prior tree rows.
   Native clone settings are inherited. No guaranteed Navigator Undo: remove unwanted
   new items manually. Never moves/deletes/saves/publishes. Source-derived tests only.
+
+- View Map clone verification also checks the native `sourceNavigatorItemId` GUID;
+  identical names/types/IDs cannot stand in for source identity. Navigator reads expose
+  `source_guid` when present plus native inheritance flags (`custom_name`, `custom_ui_id`,
+  `is_independent`), which are bound to previews and checked unchanged for prior items.
+  Only leaf Project Map viewpoints may be cloned. Folder names must fit 255 UTF-16 units
+  without NUL; this accounts for the native Unicode name buffer, including emoji.

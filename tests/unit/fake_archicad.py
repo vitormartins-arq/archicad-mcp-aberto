@@ -770,6 +770,8 @@ class FakeArchicad:
                 assert source is not None
                 node = deepcopy(source)
                 node.pop("children", None)
+                # NavigatorItemToObjectState emits the native sourceGuid when present.
+                node["sourceNavigatorItemId"] = deepcopy(data["navigatorItemId"])
             guid = str(uuid4()).upper()
             node["navigatorItemId"] = {"guid": guid}
             parent.setdefault("children", []).append({"navigatorItem": node})

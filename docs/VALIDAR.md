@@ -393,3 +393,10 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   e configurações herdadas. Verificação visual pelo operador.
 - [ ] Recusar pai que é vista, origem fora do ProjectMap e reaplicação do token.
 - [ ] Não contar com Undo; retirar novos itens manualmente se necessário. Nunca salvar/publicar.
+
+### Complemento T25 — identidade da origem
+
+- [ ] Conferir source_guid do clone na releitura do Mapa de Vistas: deve ser o GUID
+  selecionado no Mapa do Projeto, mesmo quando outras vistas têm nomes iguais.
+- [ ] Registrar custom_name/custom_ui_id/is_independent na conferência das vistas
+  anteriores. Recusar origem que é grupo/pasta com filhos; não salvar/publicar.

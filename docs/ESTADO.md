@@ -576,3 +576,17 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   publicar; fixture documental, não captura real; FILA e tarefas C intactas.
 - Validação Linux/Python 3.12.14: 1911 testes simulados passaram; Ruff passou.
   Nenhuma chamada real. Revisão e merge pelo Claude.
+
+## 2026-10-15 — Codex / revisão adicional T25
+
+- Reproduzidas duas falsas conferências: clone com origem ausente ou GUID de origem
+  diferente, mas mesmo nome/tipo/ID visível, era verified. NavigatorItemToObjectState
+  no Tapir 1.7.0/02691b5d expõe sourceNavigatorItemId; agora o leitor preserva e a
+  conferência exige o GUID de origem aprovado. Flags customName/customUiId/isIndependent
+  também entram na prévia e na preservação dos itens anteriores.
+- Prévia passa a recusar origem com filhos; um grupo não é mostrado como uma vista.
+  Nome de pasta com NUL ou acima de 255 unidades UTF-16 recusado antes da rede,
+  considerando a cópia nativa para uName; limite válido com emoji coberto.
+  Novos testes reproduziram as recusas faltantes; somente simulado.
+- Validação Linux/Python 3.12.14: 1925 testes simulados passaram; Ruff passou.
+  Nenhuma chamada ao Archicad real.
