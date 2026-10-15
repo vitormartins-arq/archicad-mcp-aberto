@@ -10,6 +10,7 @@ from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
+    attribute_properties,
     attributes,
     classifications,
     documents,
@@ -1222,6 +1223,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await favorites.create_favorites_from_elements(
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_attribute_property_values(
+        ctx: Context,
+        changes: list[attribute_properties.AttributePropertyChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/apply up to 100 custom property values on attributes (building
+        materials, composites, profiles and others): attribute_guid, property_guid and
+        value as display text, in the format the preview shows for the current value.
+        Refuses read-only or unavailable properties. Each value is read back as text.
+        Explicit apply port, one-use token and receipt; never saves.
+        """
+        return await attribute_properties.set_attribute_property_values(
+            client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
     return mcp

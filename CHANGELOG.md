@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `set_attribute_property_values` (new `tools/attribute_properties.py`): up to 100
+  custom property values on attributes (building materials, composites, profiles and
+  others) by Tapir 1.7.0 `SetPropertyValuesOfAttributes`. Values travel as display text,
+  as Tapir reads and writes them; the preview shows the current text and refuses
+  read-only, unknown or unavailable properties, and each value is read back as text.
+  Not yet tested live.
+
 - Add `create_favorites_from_elements` (in `tools/favorites.py`): up to 50 new favorites,
   each captured from one existing element by Tapir 1.7.0 `CreateFavoritesFromElements`
   (settings, classifications, editable property values), optionally in a Favorites

@@ -116,6 +116,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 | `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
+| `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 
 ### Reported live validation
 
@@ -495,3 +496,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   existing favorite is never overwritten; locked elements are fine, since they are only
   read. Each new name is read back with GetFavoritesByType. Fixtures come from the Tapir
   source, not a live capture. Registry: **81 tools (25 reads, 56 writes/interactions)**.
+
+- `set_attribute_property_values([{attribute_guid, property_guid, value}], port?,
+  dry_run?, confirmation_token?)` writes up to 100 custom property values on attributes
+  through Tapir 1.7.0 SetPropertyValuesOfAttributes. Tapir handles these values as
+  display text and Archicad converts the text with the project's own formats, so `value`
+  is text, written in the format the preview shows for the current value (for example
+  "120,00" in a Brazilian project). Read-only, unknown and unavailable properties are
+  refused in the preview; each value is read back as text, and a value Archicad stores
+  in another format shows as `verification_failed` with the text it kept. Attribute
+  GUIDs come from `list_building_materials` or the other attribute reads. Fixtures come
+  from the Tapir source, not a live capture. Registry: **82 tools (25 reads, 57
+  writes/interactions)**.

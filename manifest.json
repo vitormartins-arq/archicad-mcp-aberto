@@ -382,6 +382,10 @@
     {
       "name": "create_favorites_from_elements",
       "description": "Preview/create new favorites captured from existing elements; never overwrites, names read back."
+    },
+    {
+      "name": "set_attribute_property_values",
+      "description": "Preview/apply custom property values on attributes as display text, read back after."
     }
   ],
   "compatibility": {

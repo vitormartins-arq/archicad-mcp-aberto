@@ -561,3 +561,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   recusado na prévia; a conferência relê `GetFavoritesByType`. Elemento travado é aceito,
   porque só é lido. Fixture tirada do código-fonte, não captura ao vivo. 1852 testes
   simulados e Ruff passaram (Linux, Python 3.13). Registro: 81 ferramentas. Próximo: C3.
+
+
+## 2026-10-15 — Claude / C3 propriedades de atributos (rodada automática)
+
+- `set_attribute_property_values` em `tools/attribute_properties.py`, branch
+  `lote/claude-2`: até 100 valores de propriedade personalizada em atributos por
+  `SetPropertyValuesOfAttributes` do Tapir 1.7.0 (PropertyCommands.cpp). O Tapir lê e
+  grava esses valores como texto de exibição, então o valor vai como texto e a
+  conferência compara o texto relido. Formato de número (vírgula, unidade) fica para o
+  teste ao vivo. O fake passou a devolver linha de erro para propriedade desconhecida em
+  `GetDetailsOfProperties` (formato suposto, não capturado). 1869 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Registro: 82 ferramentas. Próximo: C4.

@@ -455,6 +455,11 @@ CREATE_COMMANDS = {
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["set_attribute_property_values"] = (
+    "attribute property change",
+    "attribute_property_receipt_id",
+    "Values are display text converted by Archicad; each is read back as text.",
+)
 OPERATIONS["create_favorites_from_elements"] = (
     "favorite",
     "favorite_receipt_id",

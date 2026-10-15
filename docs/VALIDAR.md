@@ -396,3 +396,17 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
 - [ ] **Recusa.** Pedir outro favorito com o mesmo nome deve ser recusado na prévia.
 - [ ] **Nome igual em outro tipo.** Anotar se o ArchiCAD aceita "Parede teste MCP" também
   para uma laje (o MCP deixa, porque a lista de favoritos é por tipo).
+
+## Lote do Claude C3: propriedades de atributos
+
+- [ ] **set_attribute_property_values.** No projeto novo, criar (ou usar) uma propriedade
+  personalizada de texto disponível para materiais de construção. Pedir: "Ponha o valor
+  Concreteira Sul nessa propriedade do material Concreto." Conferir no ArchiCAD, em
+  Opções > Atributos do Elemento > Materiais de construção, que o valor aparece. O recibo
+  deve dar `verified`.
+- [ ] **Número.** Repetir com uma propriedade de número: anotar em que formato a prévia
+  mostra o valor atual (vírgula ou ponto, unidade) e se o mesmo formato volta igual na
+  leitura. Se der `verification_failed` só por formato, anotar o texto que o ArchiCAD
+  guardou.
+- [ ] **Recusa.** Uma propriedade que não está disponível para o material deve ser
+  recusada na prévia.

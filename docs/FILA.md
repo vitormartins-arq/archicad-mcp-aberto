@@ -68,7 +68,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   metros, pavimento, nome e id de referência. Conferência pelo Mapa do Projeto.
 - **C2 favoritos a partir de elementos.** (Feito no lote `lote/claude-2`.) `CreateFavoritesFromElements`: um favorito novo
   por elemento existente, com nome único. Sem sobrescrever nem apagar favoritos.
-- **C3 propriedades de atributos.** `SetPropertyValuesOfAttributes`: valor de propriedade
+- **C3 propriedades de atributos.** (Feito no lote `lote/claude-2`.) `SetPropertyValuesOfAttributes`: valor de propriedade
   personalizada em materiais de construção, compostos e perfis, conferindo com a leitura.
 - **C4 `create_interior_elevations`.** `CreateInteriorElevations` a partir de zonas
   existentes. Conferência pelo Mapa do Projeto.

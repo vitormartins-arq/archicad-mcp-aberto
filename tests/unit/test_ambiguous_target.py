@@ -8,6 +8,7 @@ import pytest
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
+    attribute_properties,
     attributes,
     classifications,
     documents,
@@ -201,6 +202,9 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "set_attribute_property_values": {
+        "changes": [{"attribute_guid": GUID, "property_guid": PROP, "value": "Fornecedor A"}]
+    },
     "create_favorites_from_elements": {
         "favorites": [{"element_guid": GUID, "favorite": "Parede nova"}]
     },
@@ -260,6 +264,7 @@ INPUTS = {
 TARGETED = {
     name: function
     for module in (
+        attribute_properties,
         attributes,
         classifications,
         documents,
@@ -377,6 +382,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "create_groups":
         for instance in (first, second):
             instance.elements[PROP] = "Wall"
+    if name == "set_attribute_property_values":
+        for instance in (first, second):
+            instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
     if name == "apply_favorites":
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]
