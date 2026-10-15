@@ -427,6 +427,12 @@ OPERATIONS["set_layer_settings"] = (
     "Existing layer flags only. Current visibility/editability can change; no guaranteed Undo.",
 )
 
+OPERATIONS["create_sections"] = (
+    "section",
+    "section_receipt_id",
+    "New sections take the Section tool's marker and settings; Archicad numbers the ID.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
@@ -448,6 +454,7 @@ CREATE_COMMANDS = {
     "create_fills": ("CreateHatches", "hatchesData"),
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
+CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
 
 
 @dataclass

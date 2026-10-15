@@ -539,3 +539,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   no fim de `docs/VALIDAR.md`.
 - Próximas tarefas do Codex em `docs/FILA.md`: T23 `create_fills`, T24 comentários em
   incidências, T25 pastas e vistas no Mapa de Vistas, T26 itens de classificação.
+
+
+## 2026-10-15 — Claude / C1 cortes (rodada automática)
+
+- `create_sections` em `tools/sections.py`, branch `lote/claude-2`: até 20 cortes retos
+  por `CreateSections` do Tapir 1.7.0 (ExtendedElementCommands.cpp), no padrão de
+  `create_walls`. O nome tem de ser novo no Mapa do Projeto; a conferência lê o
+  elemento como CutPlane no pavimento e acha o SectionItem com o nome no Mapa do
+  Projeto. O Tapir não devolve detalhes de CutPlane além do cabeçalho, então a linha e a
+  profundidade não são conferidas pela leitura: ficam para o teste ao vivo. Fixture tirada
+  do código-fonte, não captura ao vivo. 1832 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Registro: 80 ferramentas.

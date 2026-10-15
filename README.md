@@ -114,6 +114,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_view_settings` | Write | Scale and existing layer combination of views; preserve other settings | yes |
 | `list_layer_combinations` | Read | Saved combinations, optional per-layer states, filter/page before details | yes |
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
+| `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
 
 ### Reported live validation
 
@@ -474,3 +475,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   automatically removed/retried. No deletion, renaming or saving. Source-derived tests
   only; live validation pending. Registry after this addition: **79 tools (25 reads,
   54 writes/interactions)**.
+
+- `create_sections([{start, end, floor_index, name, depth?}], port?, dry_run?,
+  confirmation_token?)` creates up to 20 straight sections through Tapir 1.7.0
+  CreateSections. Coordinates are metres; the section looks to the left of start->end,
+  as far as `depth` (default 1 m, Tapir's default). The marker and the rest come from
+  the Section tool default, and Archicad numbers the reference ID. The name must be new
+  in the Project Map: each section is read back as a CutPlane on its story and as the
+  one SectionItem of that name, whose reference ID goes into the receipt. Fixtures come
+  from the Tapir source, not a live capture. Registry: **80 tools (25 reads, 55
+  writes/interactions)**.

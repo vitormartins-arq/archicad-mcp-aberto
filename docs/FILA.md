@@ -64,7 +64,7 @@ Desde 14/10/2026 (decisão do Vitor: "Claude e Codex") o Claude também programa
 nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só com as de
 "A fazer". O Claude junta as suas num PR de lote (branch `lote/claude-cN`).
 
-- **C1 `create_sections`.** Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
+- **C1 `create_sections`.** (Feito no lote `lote/claude-2`.) Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
   metros, pavimento, nome e id de referência. Conferência pelo Mapa do Projeto.
 - **C2 favoritos a partir de elementos.** `CreateFavoritesFromElements`: um favorito novo
   por elemento existente, com nome único. Sem sobrescrever nem apagar favoritos.

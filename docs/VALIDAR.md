@@ -375,3 +375,12 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   como texto simples; conferir se o nome chega inteiro.
 - [ ] **Conferência visual:** o terreno em (30,0)-(40,10) desceu 0,2 m e ficou com saia;
   a etiqueta "Etiqueta alterada" na parede (0,0)-(6,0); a vista "Pavimento Térreo" em 1:75.
+
+## Lote do Claude C1: cortes
+
+- [ ] **create_sections.** "Crie um corte chamado Corte AA de (0,2) a (6,2) no térreo,
+  com profundidade de 8 m." Conferir no ArchiCAD: o corte aparece na planta olhando para
+  o lado de cima (esquerda do sentido do traço), alcança 8 m, e está no Mapa do Projeto
+  com o nome Corte AA. Conferir se o recibo deu `verified` e trouxe a referência (por
+  exemplo S-01). Se der `navigator_name`, anotar como o ArchiCAD mostra o nome no Mapa.
+- [ ] **Recusa.** Um segundo corte com o mesmo nome deve ser recusado na prévia.

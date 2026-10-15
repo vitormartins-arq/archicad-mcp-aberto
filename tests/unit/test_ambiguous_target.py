@@ -29,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     read,
     renames,
     roofs,
+    sections,
     selection,
     texts,
     views,
@@ -200,6 +201,16 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "create_sections": {
+        "sections": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 4, "y": 0},
+                "floor_index": 0,
+                "name": "Corte A",
+            }
+        ]
+    },
     "create_columns": {
         "columns": [
             {
@@ -267,6 +278,7 @@ TARGETED = {
         property_definitions,
         read,
         roofs,
+        sections,
         selection,
         texts,
         views,

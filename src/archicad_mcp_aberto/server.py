@@ -33,6 +33,7 @@ from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
@@ -1185,6 +1186,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await layer_settings_tool.set_layer_settings(
             client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_sections(
+        ctx: Context,
+        sections: list[sections_tool.SectionCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 straight sections: start and end {x, y} in metres,
+        floor_index, a name new in the Project Map, and depth (metres, default 1). The
+        section looks to the left of start->end; marker and settings come from the Section
+        tool. Each is read back on its story and in the Project Map. Explicit apply port,
+        one-use token and receipt; never saves.
+        """
+        return await sections_tool.create_sections(
+            client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
     return mcp

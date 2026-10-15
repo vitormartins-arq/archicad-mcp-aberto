@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `create_sections` (new `tools/sections.py`): up to 20 straight sections by
+  Tapir 1.7.0 `CreateSections`, with preview, single-use token, receipts, and a read-back
+  on the story (CutPlane) and in the Project Map (SectionItem by its new name). Not yet
+  tested live.
+
 - `rename_items` after its live test (14/10/2026, Archicad 30 build 3001 BRA, Tapir
   1.7.0): surfaces are refused, because `CreateSurfaces` with only the name also changed
   the texture; layer combinations send the empty `layers` list that

@@ -430,6 +430,9 @@ class FakeArchicad:
     layer_settings_ignored: bool = False
     lose_layer_settings_response: bool = False
     layer_combination_read_errors: dict[int, dict] = field(default_factory=dict)
+    section_stored_name: str | None = None  # Project Map shows this name instead
+    section_wrong_floor: bool = False
+    lose_section_response: bool = False
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1591,6 +1594,35 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateSections":
+            # Shapes from the Tapir 1.7.0 source (CreateSectionsCommand, GetDetailsOfElements
+            # header fields, NavigatorCommands SectionItem); not captured live.
+            out = []
+            for index, data in enumerate(args["sectionsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "CutPlane"
+                floor = data.get("floorIndex", 0) + (1 if self.section_wrong_floor else 0)
+                self.details[guid] = {"type": "CutPlane", "floorIndex": floor, "layerIndex": 1}
+                nav = str(uuid4()).upper()
+                count = sum(n.get("type") == "SectionItem" for n in self._nav_items("ProjectMap"))
+                self.navigator_trees["ProjectMap"].setdefault("children", []).append(
+                    {
+                        "navigatorItem": {
+                            "navigatorItemId": {"guid": nav},
+                            "type": "SectionItem",
+                            "name": self.section_stored_name or data.get("name", ""),
+                            "prefix": "",
+                            "uiId": f"S-{count + 1:02d}",
+                            "customUiId": False,
+                            "customName": True,
+                        }
+                    }
+                )
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name in DRAFTING_COMMANDS:
             kind, key = DRAFTING_COMMANDS[name]
             out = []
@@ -1996,6 +2028,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost mesh response after model change", request=request
             )
+        if instance.lose_section_response and command == "CreateSections":
+            raise httpx.ReadTimeout("Injected lost section response", request=request)
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
         if instance.lose_slab_response and command == "CreateSlabs":
