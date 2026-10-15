@@ -352,6 +352,8 @@ async def _comment_dispatch(client, receipt):
     before = deepcopy(receipt["target"]["issue_comments"])
     receipt["undo_scope"] = "Each comment is one native command and Undo step."
     for index, item in enumerate(receipt["items"]):
+        if not await write._guard_sequential_context(client, receipt, index):
+            break
         try:
             raw = await client.tapir(port, "AddCommentToIssue", item["parameters"], timeout=timeout)
         except (TapirError, CommandFailed) as exc:

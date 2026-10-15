@@ -501,6 +501,25 @@ async def _context(client: ArchicadClient, port: int | None) -> tuple[int, dict,
     return port, target, [s["index"] for s in stories["stories"]]
 
 
+async def _guard_sequential_context(client: ArchicadClient, receipt: dict, index: int) -> bool:
+    """Reconfirm the preview target before a later command in a sequential batch."""
+    if index == 0:
+        return True
+    target = receipt["target"]
+    try:
+        _, current, _ = await _context(client, target["port"])
+        expected = {key: target[key] for key in current}
+        if current == expected:
+            return True
+        error = "Target context changed between batch items; run a new preview."
+    except (ArchicadError, KeyError, TypeError, ValueError) as exc:
+        error = f"Could not re-confirm target context between batch items: {exc}"
+    receipt["context_error"] = error
+    for item in receipt["items"][index:]:
+        item.update(status="failed", not_attempted=True, error=error)
+    return False
+
+
 def _create_payload(wall: WallCreate) -> dict:
     return {
         "begCoordinate": wall.start.model_dump(),
