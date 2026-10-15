@@ -267,3 +267,4 @@
 
 - Reconfirm the bound project context between sequential comment writes, stopping all
   remaining items before dispatch if the selected project changes during the batch.
+  A comment read-back mismatch also stops the remaining batch before another write.

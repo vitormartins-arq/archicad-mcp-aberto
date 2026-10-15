@@ -180,6 +180,7 @@ async def test_dispatch_failures_and_independent_readback(fault):
         assert writes == 1
     else:
         assert first["status"] == "verification_failed"
+        assert second["not_attempted"] and writes == 1
     assert result["status"] == "needs_review"
 
 
