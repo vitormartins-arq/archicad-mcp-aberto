@@ -514,6 +514,15 @@ async def _creation_dispatch(client, receipt):
             item["classification_item_guid"] = added[0]["guid"]
         else:
             item["mismatches"] = ["new_item_or_existing_tree"]
+            for later in receipt["items"][index + 1 :]:
+                later.update(
+                    status="failed",
+                    not_attempted=True,
+                    error=(
+                        "Stopped after a classification verification mismatch; run a new preview."
+                    ),
+                )
+            break
         before[system] = rows
 
 

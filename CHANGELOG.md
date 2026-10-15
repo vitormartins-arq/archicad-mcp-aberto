@@ -276,6 +276,7 @@
 
 - Reconfirm the bound project context between sequential classification creation
   commands and stop remaining items before dispatch after a project switch.
+  A classification tree read-back mismatch also stops the remaining batch.
 
 - Harden T25 clone verification: preserve and verify the native source GUID and
   inheritance flags; reject Project Map containers instead of previewing them as one

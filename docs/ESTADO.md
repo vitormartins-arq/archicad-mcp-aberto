@@ -597,6 +597,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   domínio acrescentado ao rascunho, branches publicadas via Git.
 - Itens de classificação agora relêem o contexto completo entre comandos do lote.
   Teste com troca para projeto copiado preservando GUIDs para antes do segundo write.
+  Divergência na releitura da árvore também interrompe os comandos seguintes.
 
 ## 2026-10-15 — Codex / revisão adicional T25
 
