@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `create_interior_elevations` (new `tools/interior_elevations.py`): up to 20
+  interior elevations by Tapir 1.7.0 `CreateInteriorElevations`, each from a chain of 2
+  to 50 points (one segment per pair, `closed` repeats the first point), with an optional
+  reference ID, read back on the story and in the Project Map. The Project Map check is
+  shared with `create_sections`. Not yet tested live.
+
 - Add `set_attribute_property_values` (new `tools/attribute_properties.py`): up to 100
   custom property values on attributes (building materials, composites, profiles and
   others) by Tapir 1.7.0 `SetPropertyValuesOfAttributes`. Values travel as display text,

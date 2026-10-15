@@ -573,3 +573,17 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   teste ao vivo. O fake passou a devolver linha de erro para propriedade desconhecida em
   `GetDetailsOfProperties` (formato suposto, não capturado). 1869 testes simulados e
   Ruff passaram (Linux, Python 3.13). Registro: 82 ferramentas. Próximo: C4.
+
+
+## 2026-10-15 — Claude / C4 vistas internas e lote 2 pronto (rodada automática)
+
+- `create_interior_elevations` em `tools/interior_elevations.py`, branch `lote/claude-2`:
+  até 20 vistas internas por `CreateInteriorElevations` do Tapir 1.7.0. O Tapir recebe
+  uma cadeia de pontos, não zonas (a FILA dizia zonas): cada par de pontos é um
+  segmento, e `closed` repete o primeiro ponto. A conferência do Mapa do Projeto agora é
+  comum com `create_sections` (`sections._find_in_project_map`); a vista interna aceita
+  um ou mais itens com o nome. Quantos itens o ArchiCAD cria por segmento fica para o
+  teste ao vivo. 1892 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  83 ferramentas.
+- Lote 2 completo (C1 a C4). O PR #61 saiu de rascunho para o merge do Vitor.
+- Fila do Claude reabastecida com C5 a C8 para o lote 3 (`lote/claude-3`).

@@ -1662,6 +1662,40 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateInteriorElevations":
+            # Shapes from the Tapir 1.7.0 source (CreateInteriorElevationsCommand,
+            # NavigatorCommands InteriorElevationItem); not captured live. One Project Map
+            # item per segment is an assumption to confirm live.
+            out = []
+            for index, data in enumerate(args["interiorElevationsData"]):
+                assert set(data) <= {"nodeCoordinates", "depth", "name", "id", "floorIndex"}
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "InteriorElevation"
+                floor = data.get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "InteriorElevation",
+                    "floorIndex": floor,
+                    "layerIndex": 1,
+                }
+                for segment in range(len(data["nodeCoordinates"]) - 1):
+                    self.navigator_trees["ProjectMap"].setdefault("children", []).append(
+                        {
+                            "navigatorItem": {
+                                "navigatorItemId": {"guid": str(uuid4()).upper()},
+                                "type": "InteriorElevationItem",
+                                "name": self.section_stored_name or data.get("name", ""),
+                                "prefix": "",
+                                "uiId": f"{data.get('id', 'IE-01')}/{segment + 1}",
+                                "customUiId": "id" in data,
+                                "customName": True,
+                            }
+                        }
+                    )
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateSections":
             # Shapes from the Tapir 1.7.0 source (CreateSectionsCommand, GetDetailsOfElements
             # header fields, NavigatorCommands SectionItem); not captured live.
@@ -2096,6 +2130,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost mesh response after model change", request=request
             )
+        if instance.lose_section_response and command == "CreateInteriorElevations":
+            raise httpx.ReadTimeout("Injected lost interior elevation response", request=request)
         if instance.lose_section_response and command == "CreateSections":
             raise httpx.ReadTimeout("Injected lost section response", request=request)
         if instance.lose_create_response and command == "CreateWalls":

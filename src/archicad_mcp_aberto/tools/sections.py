@@ -85,6 +85,15 @@ def _check(item: dict, row: Any) -> list[str]:
 
 async def _dispatch(client, receipt):
     await write._dispatch(client, receipt, _check)
+    await _find_in_project_map(client, receipt, NAV_TYPE)
+
+
+async def _find_in_project_map(client, receipt, nav_type: str, segments: bool = False):
+    """Match each verified item by name to its Project Map item(s).
+
+    A section has exactly one item. An interior elevation (segments=True) may list one
+    item per segment under the same name, so one or more is accepted there.
+    """
     verified = [i for i in receipt["items"] if i["status"] == "verified"]
     if not verified:
         return
@@ -98,11 +107,14 @@ async def _dispatch(client, receipt):
         return
     by_name: dict[str, list[dict]] = {}
     for row in tree:
-        if row["type"] == NAV_TYPE:
+        if row["type"] == nav_type:
             by_name.setdefault(str(row["name"]), []).append(row)
     for item in verified:
         found = by_name.get(item["name"], [])
-        if len(found) == 1:
+        if segments and found:
+            item["navigator_guids"] = [r["navigator_guid"] for r in found]
+            item["reference_ids"] = [r["uiId"] for r in found]
+        elif not segments and len(found) == 1:
             item["navigator_guid"] = found[0]["navigator_guid"]
             item["reference_id"] = found[0]["uiId"]
         else:

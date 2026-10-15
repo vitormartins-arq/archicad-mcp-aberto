@@ -117,6 +117,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
+| `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
 
 ### Reported live validation
 
@@ -508,3 +509,14 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   GUIDs come from `list_building_materials` or the other attribute reads. Fixtures come
   from the Tapir source, not a live capture. Registry: **82 tools (25 reads, 57
   writes/interactions)**.
+
+- `create_interior_elevations([{nodes, closed?, floor_index, name, reference_id?,
+  depth?}], port?, dry_run?, confirmation_token?)` creates up to 20 interior elevations
+  through Tapir 1.7.0 CreateInteriorElevations. `nodes` are 2 to 50 points in metres;
+  each consecutive pair is one segment that looks to its left, as far as `depth`
+  (default 1 m). Walking a room's corners anticlockwise with `closed: true` looks at all
+  of its walls from inside. Marker and settings come from the Interior Elevation tool.
+  The name must be new in the Project Map; each one is read back as an
+  InteriorElevation on its story and as the Project Map item(s) of that name, whose
+  reference IDs go into the receipt. Fixtures come from the Tapir source, not a live
+  capture. Registry: **83 tools (25 reads, 58 writes/interactions)**.

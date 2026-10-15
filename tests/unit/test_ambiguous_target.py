@@ -16,6 +16,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    interior_elevations,
     issues,
     labels,
     layer_settings,
@@ -202,6 +203,16 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "create_interior_elevations": {
+        "interior_elevations": [
+            {
+                "nodes": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 4, "y": 3}],
+                "closed": True,
+                "floor_index": 0,
+                "name": "Vista interna Sala",
+            }
+        ]
+    },
     "set_attribute_property_values": {
         "changes": [{"attribute_guid": GUID, "property_guid": PROP, "value": "Fornecedor A"}]
     },
@@ -273,6 +284,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        interior_elevations,
         issues,
         labels,
         layer_settings,

@@ -410,3 +410,13 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   guardou.
 - [ ] **Recusa.** Uma propriedade que não está disponível para o material deve ser
   recusada na prévia.
+
+## Lote do Claude C4: vistas internas
+
+- [ ] **create_interior_elevations.** "Crie uma vista interna chamada Sala nos cantos
+  (0,0), (4,0), (4,3), (0,3), fechada, no térreo, com profundidade de 3,5 m." Conferir
+  no ArchiCAD: as quatro paredes são vistas por dentro, e o Mapa do Projeto mostra a
+  vista interna Sala. Anotar quantos itens aparecem no Mapa (um por segmento ou um só) e
+  como fica o nome de cada segmento, porque o MCP supõe que todos levam o nome Sala. O
+  recibo deve dar `verified`.
+- [ ] **Recusa.** Outra vista interna chamada Sala deve ser recusada na prévia.

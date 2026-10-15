@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
@@ -1241,6 +1242,26 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_interior_elevations(
+        ctx: Context,
+        interior_elevations: list[interior_elevations_tool.InteriorElevationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 interior elevations: nodes (2 to 50 {x, y} points in
+        metres, one segment per consecutive pair), closed (repeat the first point),
+        floor_index, a name new in the Project Map, optional reference_id and depth
+        (metres, default 1). Each segment looks to the left of its direction, so a room's
+        corners in anticlockwise order look at its walls from inside. Read back on the
+        story and in the Project Map. Explicit apply port, one-use token and receipt;
+        never saves.
+        """
+        return await interior_elevations_tool.create_interior_elevations(
+            client_of(ctx), interior_elevations, port, dry_run, confirmation_token
         )
 
     return mcp

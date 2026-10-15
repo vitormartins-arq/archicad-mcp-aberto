@@ -386,6 +386,10 @@
     {
       "name": "set_attribute_property_values",
       "description": "Preview/apply custom property values on attributes as display text, read back after."
+    },
+    {
+      "name": "create_interior_elevations",
+      "description": "Preview/create interior elevations from point chains with a new name, checked on the story and in the Project Map."
     }
   ],
   "compatibility": {

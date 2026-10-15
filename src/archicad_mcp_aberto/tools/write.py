@@ -455,6 +455,15 @@ CREATE_COMMANDS = {
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["create_interior_elevations"] = (
+    "interior elevation",
+    "interior_elevation_receipt_id",
+    "New interior elevations take the Interior Elevation tool's marker and settings.",
+)
+CREATE_COMMANDS["create_interior_elevations"] = (
+    "CreateInteriorElevations",
+    "interiorElevationsData",
+)
 OPERATIONS["set_attribute_property_values"] = (
     "attribute property change",
     "attribute_property_receipt_id",
