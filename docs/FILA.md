@@ -73,7 +73,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C4 `create_interior_elevations`.** (Feito no lote `lote/claude-2`.) O Tapir recebe
   uma cadeia de pontos, não zonas: cada par de pontos vira um segmento. Conferência pelo
   Mapa do Projeto.
-- **C5 notas-chave.** `CreateKeynoteFolders` e `CreateKeynoteItems`: pastas e itens novos
+- **C5 notas-chave.** (Feito no lote `lote/claude-3`.) `CreateKeynoteFolders` e `CreateKeynoteItems`: pastas e itens novos
   de notas-chave, com nome único, sem mudar nem apagar os que já existem. Lote
   `lote/claude-3`.
 - **C6 `create_morphs`.** `CreateMorphs`: morfos simples (caixa por contorno e altura) no

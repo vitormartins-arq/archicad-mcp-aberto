@@ -118,6 +118,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
+| `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
+| `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 
 ### Reported live validation
 
@@ -520,3 +523,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   InteriorElevation on its story and as the Project Map item(s) of that name, whose
   reference IDs go into the receipt. Fixtures come from the Tapir source, not a live
   capture. Registry: **83 tools (25 reads, 58 writes/interactions)**.
+
+- `list_keynotes(port?)`, `create_keynote_folders([{key, title, parent_folder_guid?}])`
+  and `create_keynote_items([{key, title?, description?, reference?,
+  parent_folder_guid?}])` (each write with `port?, dry_run?, confirmation_token?`) work
+  with keynotes through Tapir 1.7.0 on Archicad 28 or newer. The writes only add: a key
+  that already exists anywhere in the keynote tree is refused, so existing keynotes never
+  change. New entries go in the root or in an existing folder from `list_keynotes`; to
+  fill a new folder, create it first and use the GUID in its receipt. Each new entry is
+  read back by GUID. Fixtures come from the Tapir source, not a live capture. Registry:
+  **86 tools (26 reads, 60 writes/interactions)**.

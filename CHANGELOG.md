@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add keynotes (new `tools/keynotes.py`, Archicad 28 or newer): `list_keynotes` reads the
+  tree (Tapir 1.7.0 `GetKeynoteTree`) as folders and items with GUIDs and key paths;
+  `create_keynote_folders` and `create_keynote_items` only add (`CreateKeynoteFolders`,
+  `CreateKeynoteItems`), refuse a key that already exists anywhere in the tree, and read
+  each new entry back by GUID. Not yet tested live.
+
 - Add `create_interior_elevations` (new `tools/interior_elevations.py`): up to 20
   interior elevations by Tapir 1.7.0 `CreateInteriorElevations`, each from a chain of 2
   to 50 points (one segment per pair, `closed` repeats the first point), with an optional

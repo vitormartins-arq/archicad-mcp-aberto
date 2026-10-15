@@ -18,6 +18,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     interior_elevations,
     issues,
+    keynotes,
     labels,
     layer_settings,
     layers,
@@ -203,6 +204,9 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "list_keynotes": {},
+    "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
+    "create_keynote_items": {"items": [{"key": "01.01", "title": "Alvenaria"}]},
     "create_interior_elevations": {
         "interior_elevations": [
             {
@@ -286,6 +290,7 @@ TARGETED = {
         gateway,
         interior_elevations,
         issues,
+        keynotes,
         labels,
         layer_settings,
         layers,

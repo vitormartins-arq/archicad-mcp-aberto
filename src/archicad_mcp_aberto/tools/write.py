@@ -455,6 +455,16 @@ CREATE_COMMANDS = {
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["create_keynote_folders"] = (
+    "keynote folder",
+    "keynote_receipt_id",
+    "New keynote folders only; existing keys are never changed.",
+)
+OPERATIONS["create_keynote_items"] = (
+    "keynote item",
+    "keynote_receipt_id",
+    "New keynote items only; existing keys are never changed.",
+)
 OPERATIONS["create_interior_elevations"] = (
     "interior elevation",
     "interior_elevation_receipt_id",

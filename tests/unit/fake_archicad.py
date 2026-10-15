@@ -443,6 +443,10 @@ class FakeArchicad:
     attribute_property_refused: set[str] = field(default_factory=set)  # values refused
     attribute_property_stored: str | None = None  # Archicad keeps this text instead
     lose_attribute_property_response: bool = False
+    # Keynote tree in GetKeynoteTree shape (Tapir 1.7.0 source; not live captured).
+    keynotes: dict = field(default_factory=lambda: {"foldersInRoot": [], "itemsInRoot": []})
+    keynote_stored_title: str | None = None  # Archicad keeps this title instead
+    lose_keynote_response: bool = False
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -606,6 +610,18 @@ class FakeArchicad:
         if command == "API.ExecuteAddOnCommand":
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
+
+    def _keynote_folder(self, guid: str | None) -> dict | None:
+        """The folder row with this GUID, the root for None, or None when missing."""
+        if guid is None:
+            return self.keynotes
+        stack = list(self.keynotes["foldersInRoot"])
+        while stack:
+            row = stack.pop()
+            if row["keynoteFolderId"]["guid"] == guid:
+                return row
+            stack.extend(row["subFolders"])
+        return None
 
     def _nav_items(self, map_id: str) -> list[dict]:
         out, stack = [], [self.navigator_trees[map_id]]
@@ -836,6 +852,43 @@ class FakeArchicad:
                         self.details[guid]["layerIndex"] = self.favorite_layers[favorite]
                     out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_ok"]))
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "GetKeynoteTree":
+            # Shapes from the Tapir 1.7.0 source (KeynoteCommands.cpp); not live captured.
+            return ok({"addOnCommandResponse": deepcopy(self.keynotes)})
+        if name in ("CreateKeynoteFolders", "CreateKeynoteItems"):
+            folder = name == "CreateKeynoteFolders"
+            key, answer = (
+                ("foldersData", "keynoteFolderIdsOrErrors")
+                if folder
+                else (
+                    "itemsData",
+                    "keynoteItemIdsOrErrors",
+                )
+            )
+            assert set(args) == {key}
+            out = []
+            for index, data in enumerate(args[key]):
+                allowed = {"parentFolderId", "key", "title"}
+                assert set(data) <= (allowed if folder else allowed | {"description", "reference"})
+                parent = self._keynote_folder(data.get("parentFolderId", {}).get("guid"))
+                if index in self.create_errors or parent is None:
+                    message = "Failed to find the parent folder."
+                    error = {"code": -2130313112, "message": message}
+                    out.append(deepcopy(self.create_errors.get(index, {"error": error})))
+                    continue
+                guid = str(uuid4()).upper()
+                title = self.keynote_stored_title or data.get("title", "")
+                row = {"key": data["key"], "title": title, "reference": data.get("reference", "")}
+                row["uiText"] = f"{data['key']} {title}".strip()
+                if folder:
+                    row = {"keynoteFolderId": {"guid": guid}, **row, "subFolders": [], "items": []}
+                    parent["subFolders" if "subFolders" in parent else "foldersInRoot"].append(row)
+                else:
+                    row = {"keynoteItemId": {"guid": guid}, **row}
+                    row["description"] = data.get("description", "")
+                    parent["items" if "items" in parent else "itemsInRoot"].append(row)
+                out.append({"keynoteFolderId" if folder else "keynoteItemId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {answer: out}})
         if name == "GetPropertyValuesOfAttributes":
             # Shapes from the Tapir 1.7.0 source (PropertyCommands.cpp); not live captured.
             assert set(args) == {"attributeIds", "properties"}
@@ -2167,6 +2220,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
         if instance.lose_project_info_response and command == "SetProjectInfoField":
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
+        if instance.lose_keynote_response and str(command).startswith("CreateKeynote"):
+            raise httpx.ReadTimeout("Injected lost keynote response", request=request)
         if instance.lose_attribute_property_response and command == "SetPropertyValuesOfAttributes":
             raise httpx.ReadTimeout("Injected lost attribute property response", request=request)
         if instance.lose_favorite_create_response and command == "CreateFavoritesFromElements":

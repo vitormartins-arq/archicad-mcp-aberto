@@ -587,3 +587,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   83 ferramentas.
 - Lote 2 completo (C1 a C4). O PR #61 saiu de rascunho para o merge do Vitor.
 - Fila do Claude reabastecida com C5 a C8 para o lote 3 (`lote/claude-3`).
+
+
+## 2026-10-15 — Claude / C5 notas-chave (rodada automática, lote 3)
+
+- Branch `lote/claude-3`, empilhada sobre `lote/claude-2` (PR #61 ainda espera o merge do
+  Vitor; o PR do lote 3 abre depois dele). `tools/keynotes.py`: `list_keynotes` e as
+  escritas `create_keynote_folders` e `create_keynote_items` por `CreateKeynoteFolders` e
+  `CreateKeynoteItems` do Tapir 1.7.0 (KeynoteCommands.cpp, ArchiCAD 28 ou mais novo).
+  Só acrescentam; chave que já existe em qualquer lugar da árvore é recusada. A
+  conferência relê a árvore pelo GUID. 1930 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Registro: 86 ferramentas. Próximo: C6 `create_morphs`.

@@ -420,3 +420,13 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   como fica o nome de cada segmento, porque o MCP supõe que todos levam o nome Sala. O
   recibo deve dar `verified`.
 - [ ] **Recusa.** Outra vista interna chamada Sala deve ser recusada na prévia.
+
+## Lote do Claude C5: notas-chave
+
+- [ ] **list_keynotes.** Ler as notas-chave do projeto novo e anotar se a lista vem
+  vazia ou com as de fábrica do ArchiCAD.
+- [ ] **create_keynote_folders e create_keynote_items.** "Crie a pasta de notas-chave 90
+  Teste MCP e, dentro dela, o item 90.01 Alvenaria de vedação, com a referência Memorial
+  3.2." Conferir no ArchiCAD, em Documento > Notas-chave, que a pasta e o item aparecem
+  com esses textos. O recibo deve dar `verified`.
+- [ ] **Recusa.** Pedir de novo a chave 90.01 deve ser recusado na prévia.

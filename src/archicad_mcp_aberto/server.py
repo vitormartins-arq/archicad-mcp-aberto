@@ -18,6 +18,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    keynotes,
     locks,
     modify,
     openings,
@@ -1262,6 +1263,44 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await interior_elevations_tool.create_interior_elevations(
             client_of(ctx), interior_elevations, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_keynotes(ctx: Context, port: int | None = None) -> dict:
+        """Keynote folders and items (Archicad 28+): GUID, parent folder GUID, key path,
+        key, title, description and reference. Requires Tapir."""
+        return await keynotes.list_keynotes(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_folders(
+        ctx: Context,
+        folders: list[keynotes.KeynoteFolderCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 keynote folders: key (new in the whole keynote tree),
+        title and optional parent_folder_guid from list_keynotes (root otherwise). Only
+        adds. Read back by GUID. Explicit apply port, one-use token and receipt; never
+        saves."""
+        return await keynotes.create_keynote_folders(
+            client_of(ctx), folders, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_items(
+        ctx: Context,
+        items: list[keynotes.KeynoteItemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 100 keynote items: key (new in the whole keynote tree),
+        optional title, description, reference and parent_folder_guid from list_keynotes
+        (root otherwise). Only adds. Read back by GUID. Explicit apply port, one-use token
+        and receipt; never saves."""
+        return await keynotes.create_keynote_items(
+            client_of(ctx), items, port, dry_run, confirmation_token
         )
 
     return mcp
