@@ -474,3 +474,8 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   automatically removed/retried. No deletion, renaming or saving. Source-derived tests
   only; live validation pending. Registry after this addition: **79 tools (25 reads,
   54 writes/interactions)**.
+
+- T23 custom Project Info field creation is blocked by native Tapir 1.7.0 limitations:
+  AC30 explicitly rejects creation, and the reader filters generated custom field IDs.
+  See [source investigation](docs/T23-PROJECT-INFO-FIELDS.md). No creation tool is exposed
+  until complete preflight and independent read-back are possible.

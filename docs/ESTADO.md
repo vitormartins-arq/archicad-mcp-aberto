@@ -539,3 +539,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   no fim de `docs/VALIDAR.md`.
 - Próximas tarefas do Codex em `docs/FILA.md`: T23 `create_fills`, T24 comentários em
   incidências, T25 pastas e vistas no Mapa de Vistas, T26 itens de classificação.
+
+## 2026-10-15 — Codex / T23: lacuna nativa confirmada
+
+- Branch `codex/t23-project-info-fields`. A tarefa atual é criação de campos de
+  informações, conforme FILA; a referência histórica a `create_fills` acima é antiga.
+- Conferido Tapir tag 1.7.0, commit `02691b5d680b60c73317e8e49b78ab14dfd4c9d8`:
+  CreateProjectInfoFields existe, mas retorna erro de não suportado no AC30.
+  GetProjectInfoFields filtra os IDs autotext-GUID criados nas versões anteriores,
+  impedindo recusa confiável de nomes existentes e conferência de nome/valor.
+- Investigação e próximos passos em `docs/T23-PROJECT-INFO-FIELDS.md`. Nenhum comando
+  de criação foi acrescentado nem sucesso inventado no fake. Nenhuma chamada real.
+  A correção deve chegar pelo Tapir upstream; T24–T26 continuam em sequência.

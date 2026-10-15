@@ -257,3 +257,6 @@
   layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
   name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
   is unknown, including the native overwrite base creating a vanished target. Simulated only.
+- 2026-10-15, T23 investigation: native Tapir 1.7.0 does not support custom Project
+  Info field creation on AC30 and filters generated IDs from its field reader.
+  Documented the upstream prerequisite; no unverified creation tool added.
