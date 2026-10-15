@@ -563,3 +563,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   captura ao vivo. Sem associações, exclusão ou salvamento. FILA intacta.
 - Validação Linux/Python 3.12.14: 1847 testes simulados passaram; Ruff passou.
   Nenhuma chamada ao Archicad real. Revisão e merge pelo Claude.
+
+### Revisão adicional T24
+
+- O contexto completo do projeto agora é relido entre comentários de um mesmo lote.
+  Teste com troca para projeto copiado, mantendo os mesmos GUIDs, confirma que somente
+  o primeiro comentário é enviado e todos os seguintes ficam como não tentados.
+  Somente simulado; nenhuma chamada ao Archicad real.

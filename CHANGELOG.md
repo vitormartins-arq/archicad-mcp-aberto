@@ -264,3 +264,6 @@
 - Add `add_comment_to_issue`: 1–20 comments on existing issues with optional author,
   shared preview/token/port/receipts, comment GUID/read-back and preserved prior comments.
   Stops remaining writes after an unknown outcome; source-derived simulation only.
+
+- Reconfirm the bound project context between sequential comment writes, stopping all
+  remaining items before dispatch if the selected project changes during the batch.
