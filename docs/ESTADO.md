@@ -613,10 +613,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Nenhuma chamada ao Archicad real.
 - Pastas e clones agora também relêem o contexto completo entre comandos do lote.
   Testes com troca para projeto copiado preservando GUIDs param antes do segundo write.
+  Divergência na releitura da árvore também interrompe os comandos seguintes.
 
 ### Revisão adicional T24
 
 - O contexto completo do projeto agora é relido entre comentários de um mesmo lote.
   Teste com troca para projeto copiado, mantendo os mesmos GUIDs, confirma que somente
   o primeiro comentário é enviado e todos os seguintes ficam como não tentados.
+  Divergência na releitura do comentário também interrompe os comandos seguintes.
   Somente simulado; nenhuma chamada ao Archicad real.

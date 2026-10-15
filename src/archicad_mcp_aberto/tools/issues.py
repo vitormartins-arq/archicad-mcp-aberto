@@ -397,6 +397,13 @@ async def _comment_dispatch(client, receipt):
             item["comment_guid"] = added[0]["guid"]
         else:
             item["mismatches"] = ["new_comment_or_existing_comments"]
+            for later in receipt["items"][index + 1 :]:
+                later.update(
+                    status="failed",
+                    not_attempted=True,
+                    error="Stopped after a comment verification mismatch; run a new preview.",
+                )
+            break
         before[item["issue_guid"]] = rows
 
 

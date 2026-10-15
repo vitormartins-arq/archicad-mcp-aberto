@@ -313,6 +313,13 @@ async def _view_dispatch(client, receipt):
         item["status"] = "verification_failed" if differences else "verified"
         if differences:
             item["mismatches"] = differences
+            for later in receipt["items"][index + 1 :]:
+                later.update(
+                    status="failed",
+                    not_attempted=True,
+                    error="Stopped after a Navigator verification mismatch; run a new preview.",
+                )
+            break
         before = current
 
 

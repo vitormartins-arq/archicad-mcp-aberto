@@ -251,6 +251,7 @@ async def test_dispatch_faults_and_readback(kind, fault):
         assert all(i["status"] == "failed" for i in result["items"])
     else:
         assert first["status"] == "verification_failed"
+        assert second["not_attempted"] and writes == 1
     assert result["status"] == "needs_review"
 
 
