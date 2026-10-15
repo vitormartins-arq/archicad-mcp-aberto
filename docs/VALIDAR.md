@@ -383,3 +383,13 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
 - [ ] Aplicar com porta/token: conferir texto, autor e GUID novo por item, estado verified.
 - [ ] Reaplicar token deve recusar; conferir os comentários visualmente e Undo por comentário.
 - [ ] Não anexar/destacar elementos, apagar nem salvar. Informar AC/build/idioma/Tapir.
+
+## T25 — Mapa de Vistas (validação ao vivo pendente)
+
+- [ ] Projeto de teste autorizado: obter GUID da raiz/pasta no PublicViewMap e de um
+  pavimento no ProjectMap com get_navigator_tree.
+- [ ] Prévia/aplicação de pasta nomeada sob pai explícito; conferir GUID/nome/pai.
+- [ ] Nova prévia para clonar o pavimento na pasta criada; conferir árvore/ID exibido
+  e configurações herdadas. Verificação visual pelo operador.
+- [ ] Recusar pai que é vista, origem fora do ProjectMap e reaplicação do token.
+- [ ] Não contar com Undo; retirar novos itens manualmente se necessário. Nunca salvar/publicar.

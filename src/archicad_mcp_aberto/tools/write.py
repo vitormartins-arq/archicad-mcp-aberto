@@ -1719,3 +1719,14 @@ async def create_zones(
 OPERATIONS["add_comment_to_issue"] = (
     "issue comment", "comment_receipt_id", "Adds comments only; each comment is one Undo step."
 )
+
+OPERATIONS.update({
+    "create_view_map_folders": (
+        "View Map folder", "folder_receipt_id",
+        "No guaranteed Navigator Undo; remove new folders manually."
+    ),
+    "clone_to_view_map": (
+        "View Map clone", "view_receipt_id",
+        "No guaranteed Navigator Undo; native settings are inherited."
+    ),
+})

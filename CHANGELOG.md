@@ -264,3 +264,7 @@
 - Add `add_comment_to_issue`: 1–20 comments on existing issues with optional author,
   shared preview/token/port/receipts, comment GUID/read-back and preserved prior comments.
   Stops remaining writes after an unknown outcome; source-derived simulation only.
+
+- Add `create_view_map_folders` and `clone_to_view_map`, with existing parent/source
+  GUID preflight, bound trees, per-item native commands and independent tree verification.
+  No guaranteed Navigator Undo; never moves, deletes, saves or publishes. Simulated only.

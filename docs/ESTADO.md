@@ -563,3 +563,16 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   captura ao vivo. Sem associações, exclusão ou salvamento. FILA intacta.
 - Validação Linux/Python 3.12.14: 1847 testes simulados passaram; Ruff passou.
   Nenhuma chamada ao Archicad real. Revisão e merge pelo Claude.
+
+## 2026-10-15 — Codex / T25 Mapa de Vistas
+
+- Branch `codex/t25-view-map`, empilhada na T24. CreateViewMapFolder e
+  CloneProjectMapItemToViewMap conferidos em NavigatorCommands.cpp, Tapir
+  1.7.0/02691b5d. Até 20 pastas/clones por ferramenta, pai por GUID existente
+  no PublicViewMap, origem por GUID no ProjectMap. Recusa nomes repetidos por pai/tipo.
+  Prévia vincula árvores; porta/token/recibos e releitura conferem GUID novo, nome,
+  tipo, pai e preservação dos anteriores. Sem garantia de Undo nativo, remoção manual
+  dos novos itens. Configurações do clone herdadas. Sem mover, excluir, salvar ou
+  publicar; fixture documental, não captura real; FILA e tarefas C intactas.
+- Validação Linux/Python 3.12.14: 1911 testes simulados passaram; Ruff passou.
+  Nenhuma chamada real. Revisão e merge pelo Claude.

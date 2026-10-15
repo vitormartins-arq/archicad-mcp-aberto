@@ -755,6 +755,28 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in ("CreateViewMapFolder", "CloneProjectMapItemToViewMap"):
+            view_root = self.navigator_trees["PublicViewMap"]
+            data = args if name == "CreateViewMapFolder" else args["viewsData"][0]
+            parent = _view_map_node(view_root, data["parentNavigatorItemId"]["guid"])
+            assert parent is not None
+            if name == "CreateViewMapFolder":
+                node = deepcopy(VIEW_MAP_FIXTURE["folder"])
+                node["name"] = args["folderName"]
+            else:
+                source = _view_map_node(
+                    self.navigator_trees["ProjectMap"], data["navigatorItemId"]["guid"]
+                )
+                assert source is not None
+                node = deepcopy(source)
+                node.pop("children", None)
+            guid = str(uuid4()).upper()
+            node["navigatorItemId"] = {"guid": guid}
+            parent.setdefault("children", []).append({"navigatorItem": node})
+            result = {"navigatorItemId": {"guid": guid}}
+            if name == "CloneProjectMapItemToViewMap":
+                result = {"navigatorItems": [result]}
+            return ok({"addOnCommandResponse": result})
         if name in ("GetCommentsFromIssue", "AddCommentToIssue"):
             guid = args["issueId"]["guid"]
             if name == "GetCommentsFromIssue":
@@ -2171,3 +2193,21 @@ COMMENTS_FIXTURE = json.loads(
         encoding="utf-8"
     )
 )
+
+
+# NavigatorCommands.cpp 1.7.0: synthetic values, NOT a live capture.
+VIEW_MAP_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_view_map_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+def _view_map_node(root, guid):
+    if root["navigatorItemId"]["guid"] == guid:
+        return root
+    for child in root.get("children", []):
+        found = _view_map_node(child["navigatorItem"], guid)
+        if found is not None:
+            return found
+    return None

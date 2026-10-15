@@ -378,6 +378,14 @@
     {
       "name": "add_comment_to_issue",
       "description": "Safely add issue comments with optional author, single-use confirmation and independent comment read-back."
+    },
+    {
+      "name": "create_view_map_folders",
+      "description": "Safely create View Map folders under existing parent GUIDs with preview and tree read-back; no guaranteed Undo."
+    },
+    {
+      "name": "clone_to_view_map",
+      "description": "Safely clone Project Map viewpoints under existing View Map parent GUIDs with preview and tree verification."
     }
   ],
   "compatibility": {

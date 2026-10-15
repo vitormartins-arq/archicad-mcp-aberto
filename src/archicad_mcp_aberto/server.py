@@ -1203,6 +1203,37 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), comments, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def create_view_map_folders(
+        ctx: Context,
+        folders: list[navigator_tool.ViewMapFolder],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 View Map folders with name and existing parent_guid.
+        Explicit apply port/token, receipt and tree verification. No guaranteed Undo; never saves.
+        """
+        return await navigator_tool.create_view_map_folders(
+            client_of(ctx), folders, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def clone_to_view_map(
+        ctx: Context,
+        views: list[navigator_tool.ViewMapClone],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/clone up to 20 Project Map source_guid items into existing parent_guid
+        View Map folders. Native settings inherited; no guaranteed Undo. Port/token/receipts,
+        tree read-back; never moves, deletes, saves or publishes.
+        """
+        return await navigator_tool.clone_to_view_map(
+            client_of(ctx), views, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

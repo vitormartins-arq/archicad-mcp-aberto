@@ -245,6 +245,15 @@ INPUTS = {
     "add_comment_to_issue": {
         "comments": [{"issue_guid": "99999999-9999-4999-8999-999999999999", "text": "Review"}]
     },
+    "create_view_map_folders": {
+        "folders": [{"parent_guid": "77777777-7777-4777-8777-000000000001", "name": "New"}]
+    },
+    "clone_to_view_map": {
+        "views": [{
+            "parent_guid": "77777777-7777-4777-8777-000000000002",
+            "source_guid": "88888888-8888-4888-8888-000000000002"
+        }]
+    },
 }
 TARGETED = {
     name: function
