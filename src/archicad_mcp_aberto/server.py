@@ -1206,6 +1206,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def create_favorites_from_elements(
+        ctx: Context,
+        new_favorites: list[favorites.FavoriteFromElement],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 new favorites, each from one existing element:
+        element_guid, favorite (a name new for that element's type) and optional folder
+        (list of folder names in the Favorites palette). Captures settings,
+        classifications, editable property values. Never overwrites a favorite. Each new
+        name is read back. Explicit apply port, one-use token and receipt; never saves.
+        """
+        return await favorites.create_favorites_from_elements(
+            client_of(ctx), new_favorites, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

@@ -201,6 +201,9 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "create_favorites_from_elements": {
+        "favorites": [{"element_guid": GUID, "favorite": "Parede nova"}]
+    },
     "create_sections": {
         "sections": [
             {

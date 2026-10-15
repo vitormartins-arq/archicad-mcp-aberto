@@ -66,7 +66,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 
 - **C1 `create_sections`.** (Feito no lote `lote/claude-2`.) Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
   metros, pavimento, nome e id de referência. Conferência pelo Mapa do Projeto.
-- **C2 favoritos a partir de elementos.** `CreateFavoritesFromElements`: um favorito novo
+- **C2 favoritos a partir de elementos.** (Feito no lote `lote/claude-2`.) `CreateFavoritesFromElements`: um favorito novo
   por elemento existente, com nome único. Sem sobrescrever nem apagar favoritos.
 - **C3 propriedades de atributos.** `SetPropertyValuesOfAttributes`: valor de propriedade
   personalizada em materiais de construção, compostos e perfis, conferindo com a leitura.

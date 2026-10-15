@@ -455,6 +455,11 @@ CREATE_COMMANDS = {
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["create_favorites_from_elements"] = (
+    "favorite",
+    "favorite_receipt_id",
+    "Each new favorite copies its element's settings; existing favorites are never changed.",
+)
 
 
 @dataclass

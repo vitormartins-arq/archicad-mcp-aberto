@@ -378,6 +378,10 @@
     {
       "name": "create_sections",
       "description": "Preview/create up to 20 straight sections with a new name, checked on the story and in the Project Map."
+    },
+    {
+      "name": "create_favorites_from_elements",
+      "description": "Preview/create new favorites captured from existing elements; never overwrites, names read back."
     }
   ],
   "compatibility": {

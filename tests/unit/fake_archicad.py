@@ -433,6 +433,11 @@ class FakeArchicad:
     section_stored_name: str | None = None  # Project Map shows this name instead
     section_wrong_floor: bool = False
     lose_section_response: bool = False
+    # CreateFavoritesFromElements: names Archicad refuses, and a name listed back instead.
+    favorite_create_refused: set[str] = field(default_factory=set)
+    favorite_stored_name: str | None = None
+    created_favorites: list[dict] = field(default_factory=list)
+    lose_favorite_create_response: bool = False
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -821,6 +826,25 @@ class FakeArchicad:
                     if favorite in self.favorite_layers and guid in self.details:
                         self.details[guid]["layerIndex"] = self.favorite_layers[favorite]
                     out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_ok"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "CreateFavoritesFromElements":
+            # Shapes from the Tapir 1.7.0 source (FavoritesCommands.cpp); not live captured.
+            assert set(args) == {"favoritesFromElements"}
+            out = []
+            for row in args["favoritesFromElements"]:
+                assert set(row) <= {"elementId", "favorite", "folder"}
+                kind = self.elements.get(row["elementId"]["guid"])
+                if kind is None:
+                    error = {"code": -2130313112, "message": "Failed to find element"}
+                    out.append({"success": False, "error": error})
+                elif row["favorite"] in self.favorite_create_refused:
+                    error = {"code": -2130313112, "message": "Failed to create the favorite"}
+                    out.append({"success": False, "error": error})
+                else:
+                    stored = self.favorite_stored_name or row["favorite"]
+                    self.favorites.setdefault(kind, []).append(stored)
+                    self.created_favorites.append(deepcopy(row))
+                    out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "ChangeSelectionOfElements":
             added, removed = [], []
@@ -2063,6 +2087,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
         if instance.lose_project_info_response and command == "SetProjectInfoField":
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
+        if instance.lose_favorite_create_response and command == "CreateFavoritesFromElements":
+            raise httpx.ReadTimeout("Injected lost favorite response", request=request)
         if instance.lose_favorite_response and command == "ApplyFavoritesToElements":
             raise httpx.ReadTimeout("Injected lost favorite response", request=request)
         if instance.lose_property_definition_response and command in (

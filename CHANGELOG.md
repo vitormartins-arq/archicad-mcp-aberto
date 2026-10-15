@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `create_favorites_from_elements` (in `tools/favorites.py`): up to 50 new favorites,
+  each captured from one existing element by Tapir 1.7.0 `CreateFavoritesFromElements`
+  (settings, classifications, editable property values), optionally in a Favorites
+  palette folder. A name that already exists for that element type is refused, so no
+  favorite is ever overwritten; each new name is read back with `GetFavoritesByType`.
+  Not yet tested live.
+
 - Add `create_sections` (new `tools/sections.py`): up to 20 straight sections by
   Tapir 1.7.0 `CreateSections`, with preview, single-use token, receipts, and a read-back
   on the story (CutPlane) and in the Project Map (SectionItem by its new name). Not yet

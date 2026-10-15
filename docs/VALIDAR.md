@@ -384,3 +384,15 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   com o nome Corte AA. Conferir se o recibo deu `verified` e trouxe a referência (por
   exemplo S-01). Se der `navigator_name`, anotar como o ArchiCAD mostra o nome no Mapa.
 - [ ] **Recusa.** Um segundo corte com o mesmo nome deve ser recusado na prévia.
+
+## Lote do Claude C2: favoritos a partir de elementos
+
+- [ ] **create_favorites_from_elements.** Selecionar uma parede do projeto novo e pedir:
+  "Crie um favorito chamado Parede teste MCP a partir desta parede, na pasta Teste MCP."
+  Conferir no ArchiCAD: o favorito aparece na paleta Favoritos, dentro da pasta Teste MCP,
+  com a espessura, o material e a camada da parede. O recibo deve dar `verified`.
+- [ ] **Janela.** Repetir com uma janela comum: o favorito tem de ir para a seção
+  Janela, não para Janela de canto.
+- [ ] **Recusa.** Pedir outro favorito com o mesmo nome deve ser recusado na prévia.
+- [ ] **Nome igual em outro tipo.** Anotar se o ArchiCAD aceita "Parede teste MCP" também
+  para uma laje (o MCP deixa, porque a lista de favoritos é por tipo).

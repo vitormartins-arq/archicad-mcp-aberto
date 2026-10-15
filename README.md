@@ -115,6 +115,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_layer_combinations` | Read | Saved combinations, optional per-layer states, filter/page before details | yes |
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 | `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
+| `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
 
 ### Reported live validation
 
@@ -485,3 +486,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   one SectionItem of that name, whose reference ID goes into the receipt. Fixtures come
   from the Tapir source, not a live capture. Registry: **80 tools (25 reads, 55
   writes/interactions)**.
+
+- `create_favorites_from_elements([{element_guid, favorite, folder?}], port?, dry_run?,
+  confirmation_token?)` saves up to 50 new favorites through Tapir 1.7.0
+  CreateFavoritesFromElements. Each one copies an existing element's settings,
+  classifications and editable property values; `folder` is an optional list of folder
+  names in the Favorites palette. The name must be new for that element type, so an
+  existing favorite is never overwritten; locked elements are fine, since they are only
+  read. Each new name is read back with GetFavoritesByType. Fixtures come from the Tapir
+  source, not a live capture. Registry: **81 tools (25 reads, 56 writes/interactions)**.

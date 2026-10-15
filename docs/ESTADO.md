@@ -551,3 +551,13 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   profundidade não são conferidas pela leitura: ficam para o teste ao vivo. Fixture tirada
   do código-fonte, não captura ao vivo. 1832 testes simulados e Ruff passaram (Linux,
   Python 3.13). Registro: 80 ferramentas.
+
+
+## 2026-10-15 — Claude / C2 favoritos a partir de elementos (rodada automática)
+
+- `create_favorites_from_elements` em `tools/favorites.py`, branch `lote/claude-2`: até 50
+  favoritos novos por `CreateFavoritesFromElements` do Tapir 1.7.0 (FavoritesCommands.cpp),
+  um por elemento, com pasta opcional. Nome já existente para o tipo do elemento é
+  recusado na prévia; a conferência relê `GetFavoritesByType`. Elemento travado é aceito,
+  porque só é lido. Fixture tirada do código-fonte, não captura ao vivo. 1852 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Registro: 81 ferramentas. Próximo: C3.
