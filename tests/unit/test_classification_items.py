@@ -102,6 +102,36 @@ async def test_project_change_between_classification_items_stops_remaining_write
     assert writes == 1
 
 
+async def test_concurrent_tree_change_between_items_stops_remaining_writes():
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+    writes = 0
+    changed = False
+
+    def handler(request):
+        nonlocal changed, writes
+        body = json.loads(request.content)
+        command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if command == "CreateClassificationItems":
+            writes += 1
+        response = base.handle_request(request)
+        if (
+            body.get("command") == "API.GetAllClassificationsInSystem"
+            and writes == 1
+            and not changed
+        ):
+            roots(fake)[0]["classificationItem"]["name"] = "Concurrent"
+            changed = True
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        result = await apply(client, [entry(), entry(id="LAB-02")])
+
+    assert result["items"][0]["status"] == "verified"
+    assert result["items"][1]["not_attempted"]
+    assert writes == 1
+
+
 @pytest.mark.parametrize(
     "entries",
     [

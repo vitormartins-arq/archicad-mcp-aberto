@@ -598,6 +598,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Itens de classificação agora relêem o contexto completo entre comandos do lote.
   Teste com troca para projeto copiado preservando GUIDs para antes do segundo write.
   Divergência na releitura da árvore também interrompe os comandos seguintes.
+  Sistema e árvore vinculados são relidos antes do próximo comando; alteração
+  concorrente simulada entre itens interrompe o lote.
 - Validação final da pilha: 1975 testes passaram em Linux/Python 3.11.17, 3.12.14
   e 3.13.5; Ruff passou. Wheel, sdist e MCPB 0.1.0.dev0 foram construídos; o MCPB
   passou no schema, iniciou descompactado e expôs 83 ferramentas. Cliente MCP/stdio

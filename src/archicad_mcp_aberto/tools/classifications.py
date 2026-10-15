@@ -464,6 +464,20 @@ async def _creation_dispatch(client, receipt):
     for index, item in enumerate(receipt["items"]):
         if not await write._guard_sequential_context(client, receipt, index):
             break
+        if index:
+            system = item["system"]["guid"]
+            try:
+                systems = {row["guid"]: row for row in await _systems(client, port)}
+                tree = await _creation_tree(client, port, system, timeout)
+                unchanged = systems.get(system) == item["system"] and tree == before[system]
+            except (ArchicadError, ValueError) as exc:
+                unchanged = False
+                receipt["inventory_error"] = str(exc)
+            if not unchanged:
+                error = "Classification tree changed between batch items; run a new preview."
+                for later in receipt["items"][index:]:
+                    later.update(status="failed", not_attempted=True, error=error)
+                break
         try:
             raw = await client.tapir(
                 port, "CreateClassificationItems", item["parameters"], timeout=timeout
