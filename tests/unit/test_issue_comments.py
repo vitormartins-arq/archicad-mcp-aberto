@@ -218,3 +218,29 @@ async def test_project_change_between_comments_stops_remaining_writes():
     assert result["items"][1]["not_attempted"]
     assert "context changed" in result["context_error"]
     assert writes == 1
+
+
+async def test_concurrent_comment_between_items_stops_remaining_writes():
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+    writes = 0
+    inserted = False
+
+    def handler(request):
+        nonlocal inserted, writes
+        body = json.loads(request.content)
+        command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if command == "AddCommentToIssue":
+            writes += 1
+        response = base.handle_request(request)
+        if command == "GetCommentsFromIssue" and writes == 1 and not inserted:
+            fake.issue_comments[ISSUE].append(deepcopy(COMMENTS_FIXTURE["comment"]))
+            inserted = True
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        result = await apply(client, [entry(), entry(text="Segundo comentário")])
+
+    assert result["items"][0]["status"] == "verified"
+    assert result["items"][1]["not_attempted"]
+    assert writes == 1
