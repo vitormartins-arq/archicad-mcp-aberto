@@ -393,3 +393,12 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   e configurações herdadas. Verificação visual pelo operador.
 - [ ] Recusar pai que é vista, origem fora do ProjectMap e reaplicação do token.
 - [ ] Não contar com Undo; retirar novos itens manualmente se necessário. Nunca salvar/publicar.
+
+## T26 — itens de classificação (validação ao vivo pendente)
+
+- [ ] Projeto de teste autorizado: listar sistemas e itens, escolher sistema/pai existentes por GUID.
+- [ ] Prévia de dois IDs novos, aplicar com porta/token e conferir novos GUIDs, id, nome,
+  descrição e pai em list_classifications e visualmente no Archicad.
+- [ ] Conferir raw executionResults: [] conforme fonte 1.7.0 e status verified só após releitura.
+- [ ] Recusar ID existente em outro pai do mesmo sistema, pai de outro sistema e token usado.
+- [ ] Conferir Undo por item; não excluir/salvar. Registrar AC/build/idioma/Tapir.

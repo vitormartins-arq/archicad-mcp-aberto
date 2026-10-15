@@ -1730,3 +1730,8 @@ OPERATIONS.update({
         "No guaranteed Navigator Undo; native settings are inherited."
     ),
 })
+
+OPERATIONS["create_classification_items"] = (
+    "classification item", "classification_item_receipt_id",
+    "Creates only under existing parents; each item is one native Undo step."
+)

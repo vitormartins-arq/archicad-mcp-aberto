@@ -576,3 +576,22 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   publicar; fixture documental, não captura real; FILA e tarefas C intactas.
 - Validação Linux/Python 3.12.14: 1911 testes simulados passaram; Ruff passou.
   Nenhuma chamada real. Revisão e merge pelo Claude.
+
+## 2026-10-15 — Codex / T26 itens de classificação
+
+- Branch `codex/t26-classification-items`, empilhada na T25. CreateClassificationItems
+  conferido em ClassificationCommands.cpp e CommonSchemaDefinitions.json,
+  Tapir 1.7.0/02691b5d. Até 50 itens com sistema/pai existentes por GUID, id, nome
+  e descrição; recusa ID repetido no sistema ou lote. Sem sistemas novos/filhos recursivos.
+- O nativo não acrescenta resultado de sucesso: executionResults vazio é o retorno
+  real do código-fonte, não erro de cardinalidade. Uma entrada por chamada permite
+  atribuir erro ao item; só a releitura oficial da árvore prova GUID novo, id/nome/
+  descrição/pai e preservação dos anteriores. Prévia vincula árvore, porta/token/
+  recibos compartilhados; resposta perdida interrompe próximos sem repetir. Um Undo
+  por item. Fixture documental, não captura real; sem excluir/salvar. FILA intacta.
+- Validação Linux/Python 3.12.14: 1957 testes simulados passaram; Ruff passou.
+  Servidor com 83 ferramentas. Teste adicional via cliente MCP/stdio contra fake:
+  as quatro ferramentas novas passaram prévia, apply, releitura e recusa do token usado.
+  Nenhuma chamada ao Archicad real; roteiro ao vivo acrescentado em docs/VALIDAR.md.
+  Nenhum merge. Abertura dos PRs depende de liberar api.github.com no proxy do ambiente;
+  domínio acrescentado ao rascunho, branches publicadas via Git.

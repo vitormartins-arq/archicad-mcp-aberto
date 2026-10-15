@@ -7,13 +7,21 @@ and receipts; item None removes the element's classification in that system. Nev
 
 from __future__ import annotations
 
-from typing import Any
+from copy import deepcopy
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
-from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, resolve_port
+from archicad_mcp_aberto.connection import (
+    ArchicadClient,
+    ArchicadError,
+    CommandFailed,
+    TapirError,
+    resolve_port,
+)
 from archicad_mcp_aberto.tools import edit, read, write
+from archicad_mcp_aberto.tools.issues import _unknown
 
 MAX_CHANGES = 100
 
@@ -342,4 +350,197 @@ async def set_classifications(
         "set_classifications",
         planner_override=_plan,
         dispatcher_override=_dispatch,
+    )
+
+
+class ClassificationItemCreate(write.InputModel):
+    system_guid: str
+    parent_guid: str
+    id: Annotated[str, Field(min_length=1, max_length=255)]
+    name: Annotated[str, Field(min_length=1, max_length=255)]
+    description: Annotated[str, Field(max_length=10000)] = ""
+
+    @field_validator("system_guid", "parent_guid")
+    @classmethod
+    def valid_guid(cls, value):
+        guid = UUID(value)
+        if not guid.int:
+            raise ValueError("System and parent GUIDs must not be null.")
+        return str(guid).upper()
+
+    @field_validator("id", "name")
+    @classmethod
+    def visible(cls, value):
+        if not value.strip() or value != value.strip():
+            raise ValueError("ID and name must be visible and have no outer whitespace.")
+        return value
+
+
+async def _creation_tree(client, port, system_guid, timeout=None):
+    raw = await client.command(
+        port,
+        "GetAllClassificationsInSystem",
+        {"classificationSystemId": {"guid": system_guid}},
+        timeout=timeout,
+    )
+    roots = raw.get("classificationItems")
+    if not isinstance(roots, list):
+        raise ValueError("Unexpected classification tree.")
+    rows, seen = [], set()
+    stack = [(r, None, 0) for r in reversed(roots)]
+    while stack:
+        wrapper, parent, depth = stack.pop()
+        row = wrapper.get("classificationItem") if isinstance(wrapper, dict) else None
+        identifier = row.get("classificationItemId") if isinstance(row, dict) else None
+        guid = _guid(identifier.get("guid")) if isinstance(identifier, dict) else None
+        if (
+            not guid
+            or not UUID(guid).int
+            or guid in seen
+            or any(not isinstance(row.get(k), str) for k in ("id", "name", "description"))
+            or not isinstance(row.get("children", []), list)
+        ):
+            raise ValueError("Malformed classification item or duplicate GUID.")
+        seen.add(guid)
+        rows.append(
+            {
+                "guid": guid,
+                "parent_guid": parent,
+                "depth": depth,
+                **{k: row[k] for k in ("id", "name", "description")},
+            }
+        )
+        stack.extend((child, guid, depth + 1) for child in reversed(row.get("children", [])))
+    return rows
+
+
+async def _creation_plan(client, entries, port, operation):
+    port, target, _ = await write._context(client, port)
+    systems = await _systems(client, port)
+    available = {s["guid"]: s for s in systems}
+    trees, items, seen = {}, [], set()
+    for index, entry in enumerate(entries):
+        if entry.system_guid not in available:
+            raise ValueError("Classification system does not exist; pass its GUID.")
+        if entry.system_guid not in trees:
+            trees[entry.system_guid] = await _creation_tree(client, port, entry.system_guid)
+        tree = trees[entry.system_guid]
+        parent = next((r for r in tree if r["guid"] == entry.parent_guid), None)
+        if parent is None:
+            raise ValueError("Parent classification item does not exist in that system.")
+        key = (entry.system_guid, entry.id.casefold())
+        if key in seen or any(r["id"].casefold() == key[1] for r in tree):
+            raise ValueError("Classification ID already exists in this system or batch.")
+        seen.add(key)
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "system": available[entry.system_guid],
+                "parent": parent,
+                "parameters": {
+                    "newClassificationItems": [
+                        {
+                            "classificationSystemId": {"guid": entry.system_guid},
+                            "parentClassificationItemId": {"guid": entry.parent_guid},
+                            "classificationItemDetails": {
+                                "id": entry.id,
+                                "name": entry.name,
+                                "description": entry.description,
+                            },
+                        }
+                    ]
+                },
+            }
+        )
+    target["classification_trees"] = trees
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _creation_dispatch(client, receipt):
+    port, timeout = receipt["target"]["port"], receipt["write_timeout_seconds"]
+    before = deepcopy(receipt["target"]["classification_trees"])
+    receipt["undo_scope"] = "Each item is one native command and Undo step."
+    for index, item in enumerate(receipt["items"]):
+        try:
+            raw = await client.tapir(
+                port, "CreateClassificationItems", item["parameters"], timeout=timeout
+            )
+        except (TapirError, CommandFailed) as exc:
+            if isinstance(exc.detail, dict) and {"code", "message"} <= exc.detail.keys():
+                item.update(status="failed", error=exc.detail)
+                continue
+            _unknown(receipt, index, exc)
+            break
+        except ArchicadError as exc:
+            _unknown(receipt, index, exc)
+            break
+        item["write_response"] = raw
+        results = raw.get("executionResults")
+        # In this pinned source successful creation appends no execution result.
+        # Send ONE entry per native call so a returned error belongs to this item.
+        if isinstance(results, list) and len(results) == 1 and isinstance(results[0], dict):
+            row = results[0]
+            if row.get("success") is False and isinstance(row.get("error"), dict):
+                item.update(status="failed", error=row["error"])
+                continue
+        if results != []:
+            _unknown(receipt, index, "Unexpected native classification creation response.")
+            break
+        item["status"] = "unverified"
+        system = item["system"]["guid"]
+        previous = {r["guid"]: r for r in before[system]}
+        try:
+            rows = await _creation_tree(client, port, system, timeout)
+        except (ArchicadError, ValueError) as exc:
+            receipt["verification_error"] = str(exc)
+            for later in receipt["items"][index + 1 :]:
+                later.update(
+                    status="failed", not_attempted=True, error="Classification read-back failed."
+                )
+            break
+        current = {r["guid"]: r for r in rows}
+        added = [r for g, r in current.items() if g not in previous]
+        expected = item["parameters"]["newClassificationItems"][0]["classificationItemDetails"]
+        matches = len(added) == 1 and all(added[0][k] == v for k, v in expected.items())
+        matches = matches and added[0]["parent_guid"] == item["parent"]["guid"]
+        unchanged = all(current.get(g) == r for g, r in previous.items())
+        item["after"] = added
+        ok = matches and unchanged
+        item["status"] = "verified" if ok else "verification_failed"
+        if ok:
+            item["classification_item_guid"] = added[0]["guid"]
+        else:
+            item["mismatches"] = ["new_item_or_existing_tree"]
+        before[system] = rows
+
+
+async def create_classification_items(
+    client: ArchicadClient,
+    items: list[dict | ClassificationItemCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/create 1–50 items under existing system and parent GUIDs.
+
+    ID/name/description only, no recursive children or new systems. Shared token,
+    explicit apply port and durable receipts; independently reads back new GUID,
+    ID/name/description/parent and preserved prior tree. Never deletes or saves.
+    """
+    if not 1 <= len(items) <= 50:
+        raise ValueError("Pass between 1 and 50 classification items.")
+    entries = [
+        i if isinstance(i, ClassificationItemCreate) else ClassificationItemCreate.model_validate(i)
+        for i in items
+    ]
+    return await write._write(
+        client,
+        entries,
+        port,
+        dry_run,
+        confirmation_token,
+        "create_classification_items",
+        planner_override=_creation_plan,
+        dispatcher_override=_creation_dispatch,
     )

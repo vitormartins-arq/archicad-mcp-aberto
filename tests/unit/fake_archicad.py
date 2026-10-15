@@ -755,6 +755,19 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "CreateClassificationItems":
+            results = []
+            for entry in args["newClassificationItems"]:
+                system = entry["classificationSystemId"]["guid"]
+                parent_guid = entry["parentClassificationItemId"]["guid"]
+                roots = self.classification_data["items"][system]["classificationItems"]
+                parent = _classification_creation_parent(roots, parent_guid)
+                assert parent is not None
+                row = {"classificationItemId": {"guid": str(uuid4()).upper()},
+                       **deepcopy(entry["classificationItemDetails"])}
+                parent.setdefault("children", []).append({"classificationItem": row})
+                # Source intentionally appends NO successful result.
+            return ok({"addOnCommandResponse": {"executionResults": results}})
         if name in ("CreateViewMapFolder", "CloneProjectMapItemToViewMap"):
             view_root = self.navigator_trees["PublicViewMap"]
             data = args if name == "CreateViewMapFolder" else args["viewsData"][0]
@@ -2208,6 +2221,17 @@ def _view_map_node(root, guid):
         return root
     for child in root.get("children", []):
         found = _view_map_node(child["navigatorItem"], guid)
+        if found is not None:
+            return found
+    return None
+
+
+def _classification_creation_parent(roots, guid):
+    for wrapper in roots:
+        row = wrapper["classificationItem"]
+        if row["classificationItemId"]["guid"] == guid:
+            return row
+        found = _classification_creation_parent(row.get("children", []), guid)
         if found is not None:
             return found
     return None

@@ -386,6 +386,10 @@
     {
       "name": "clone_to_view_map",
       "description": "Safely clone Project Map viewpoints under existing View Map parent GUIDs with preview and tree verification."
+    },
+    {
+      "name": "create_classification_items",
+      "description": "Safely create classification items under existing system/parent GUIDs, refusing duplicate IDs and verifying full tree read-back."
     }
   ],
   "compatibility": {

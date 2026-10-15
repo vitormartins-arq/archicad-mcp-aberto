@@ -494,3 +494,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   retain receipts and independently verify GUID/name/type/parent and prior tree rows.
   Native clone settings are inherited. No guaranteed Navigator Undo: remove unwanted
   new items manually. Never moves/deletes/saves/publishes. Source-derived tests only.
+
+- `create_classification_items(items, ...)` adds 1–50 `{system_guid, parent_guid,
+  id, name, description?}` items under existing classification parents. IDs must be
+  new across the entire selected system (case-insensitive); no recursive children or
+  new systems. Preview binds the tree; explicit apply port, one-use token and receipts.
+  The pinned Tapir command omits success rows (`executionResults: []`); one native call
+  per item and independent official tree read-back verify the new GUID/ID/name/description/parent
+  and unchanged prior items. Each item is a separate Undo step. Never deletes/saves.
+  Tapir 1.7.0 source-derived simulation only; live/operator validation pending.

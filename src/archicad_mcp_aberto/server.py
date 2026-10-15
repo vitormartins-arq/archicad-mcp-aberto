@@ -1234,6 +1234,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), views, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def create_classification_items(
+        ctx: Context,
+        items: list[classifications.ClassificationItemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 classification items: system_guid, parent_guid, id,
+        name and optional description. Existing system/parent only; duplicate IDs refused.
+        Explicit apply port/token, receipts and full item/tree read-back. Never deletes/saves.
+        """
+        return await classifications.create_classification_items(
+            client_of(ctx), items, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

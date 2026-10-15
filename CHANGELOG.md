@@ -268,3 +268,8 @@
 - Add `create_view_map_folders` and `clone_to_view_map`, with existing parent/source
   GUID preflight, bound trees, per-item native commands and independent tree verification.
   No guaranteed Navigator Undo; never moves, deletes, saves or publishes. Simulated only.
+
+- Add `create_classification_items` with existing-system/parent GUID checks, duplicate
+  ID refusal and independent item/tree read-back. Handles native empty success result
+  arrays by sending one item per call; no success is inferred without read-back.
+  Shared preview/token/port/receipts, no deletion or saving. Simulated only.
