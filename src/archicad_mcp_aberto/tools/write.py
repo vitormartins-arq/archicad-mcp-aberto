@@ -490,6 +490,15 @@ OPERATIONS["create_morphs"] = (
     "Axis-aligned boxes in absolute project metres; Morph tool defaults for the rest.",
 )
 CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
+OPERATIONS["create_wall_thickness_dimensions"] = (
+    "wall thickness dimension",
+    "dimension_receipt_id",
+    "Associative dimension of both wall faces; Dimension tool defaults for display.",
+)
+CREATE_COMMANDS["create_wall_thickness_dimensions"] = (
+    "CreateWallThicknessDimensions",
+    "dimensionsData",
+)
 
 
 @dataclass

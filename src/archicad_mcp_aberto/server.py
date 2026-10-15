@@ -41,6 +41,7 @@ from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
+from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -1318,6 +1319,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         one-use token and receipt; never saves."""
         return await morphs_tool.create_morphs(
             client_of(ctx), morphs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_wall_thickness_dimensions(
+        ctx: Context,
+        dimensions: list[wall_dimensions_tool.WallThicknessDimension],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 associative thickness dimensions on existing editable
+        walls (wall_guid), one per wall, on the wall's story. Optional reference_point and
+        direction in plan metres; default crosses the wall's middle. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await wall_dimensions_tool.create_wall_thickness_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 
     return mcp

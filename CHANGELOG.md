@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `create_wall_thickness_dimensions` (new `tools/wall_dimensions.py`): up to 50
+  associative dimensions of both faces of existing editable walls by Tapir 1.7.0
+  `CreateWallThicknessDimensions`, one per wall, on the wall's story. By default the
+  dimension line crosses the middle of a straight wall, perpendicular to it; a reference
+  point and direction can be given, and a curved wall needs the direction. Read back as a
+  Dimension on the wall's story. Not yet tested live.
+
 - Add `create_morphs` (new `tools/morphs.py`): up to 50 axis-aligned box morphs by
   Tapir 1.7.0 `CreateMorphs`, each from a base corner in absolute project metres, a
   positive size and an explicit story. Material and display take the Morph defaults. The

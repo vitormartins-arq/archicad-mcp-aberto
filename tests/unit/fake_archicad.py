@@ -417,6 +417,7 @@ class FakeArchicad:
     lose_mesh_response: bool = False
     mesh_base_shift: float = 0.0
     morph_box_shift: float = 0.0
+    dimension_floor_shift: int = 0
 
     view_settings: dict[str, dict] = field(
         default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
@@ -1877,6 +1878,35 @@ class FakeArchicad:
                         details[key] = text[key]
                 details["paragraphCount"] = details["text"].count("\n") + 1
                 self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateWallThicknessDimensions":
+            # Shapes from Tapir 1.7.0 source (ExtendedElementCommands.cpp); not live.
+            out = []
+            for index, data in enumerate(args["dimensionsData"]):
+                wall = data["wallId"]["guid"]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if self.elements.get(wall) != "Wall":
+                    out.append(
+                        {
+                            "error": {
+                                "code": -2130313100,
+                                "message": "Failed to load wall for associative dimension.",
+                            }
+                        }
+                    )
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Dimension"
+                floor = self.details.get(wall, {}).get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "Dimension",
+                    "floorIndex": floor + self.dimension_floor_shift,
+                    "layerIndex": 1,
+                    "details": {},
+                }
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateMorphs":

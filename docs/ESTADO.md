@@ -608,3 +608,13 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   origem e eixos do `tranmat`) e `Get3DBoundingBoxes` (caixa com tolerância de 1 mm).
   1945 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 87 ferramentas.
   Próximo: C7 cotas de espessura de parede.
+
+## 2026-10-15 — Claude / C7 cotas de espessura de parede (rodada automática, lote 3)
+
+- `tools/wall_dimensions.py`: `create_wall_thickness_dimensions` por
+  `CreateWallThicknessDimensions` do Tapir 1.7.0 (ExtendedElementCommands.cpp). Só paredes
+  existentes e editáveis, uma cota por parede. Sem ponto e direção, a linha cruza o meio
+  da parede reta, perpendicular a ela; parede curva exige direção. O Tapir não devolve
+  detalhes próprios da cota, então a conferência é tipo Dimension no pavimento da parede.
+  1960 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 88 ferramentas.
+  Próximo: C8 `create_openings`.

@@ -122,6 +122,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
+| `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 
 ### Reported live validation
 
@@ -542,4 +543,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   display settings come from the Morph tool defaults. Each morph is read back for type,
   story, origin and axes, and its 3D bounding box must match within 1 mm. Fixtures come
   from the Tapir source, not a live capture. Registry: **87 tools (26 reads, 61
+  writes/interactions)**.
+
+- `create_wall_thickness_dimensions([{wall_guid, reference_point?: {x, y}, direction?:
+  {x, y}}], port?, dry_run?, confirmation_token?)` adds up to 50 associative dimensions of
+  both faces of existing editable walls through Tapir 1.7.0
+  `CreateWallThicknessDimensions`, one per wall. The dimension goes on the wall's story
+  and stays linked to the wall. By default its line crosses the middle of the wall's
+  reference line, perpendicular to it; a curved wall needs an explicit direction. Display
+  settings come from the Dimension tool defaults. Tapir returns no dimension-specific
+  details, so the read-back checks the new element's type and story. Fixtures come from
+  the Tapir source, not a live capture. Registry: **88 tools (26 reads, 62
   writes/interactions)**.

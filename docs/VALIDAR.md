@@ -438,3 +438,12 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   no lugar e com esse tamanho, e que o recibo dá `verified`.
 - [ ] **Pavimento.** Repetir com z 3 e floor_index 1 e ver se o morfo fica no pavimento 1
   na planta.
+
+## Lote do Claude C7: cotas de espessura de parede
+
+- [ ] **create_wall_thickness_dimensions.** No projeto novo sem nome, com uma parede reta
+  criada antes: "Cote a espessura dessa parede." Conferir na planta que a cota aparece no
+  meio da parede, atravessando-a, e mede a espessura certa. O recibo deve dar `verified`.
+- [ ] **Associativa.** Mudar a espessura da parede e ver se a cota acompanha.
+- [ ] **Janela ativa.** Com um corte aberto como janela ativa, o Tapir avisa que a cota não
+  foi criada. Anotar a mensagem que aparece no recibo.

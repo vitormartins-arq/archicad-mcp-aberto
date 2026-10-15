@@ -79,7 +79,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C6 `create_morphs`.** (Feito no lote `lote/claude-3`.) `CreateMorphs`: morfos simples (caixa por contorno e altura) no
   padrão de `create_slabs`, conferidos pela leitura de tipo, pavimento e caixa
   envolvente.
-- **C7 cotas de espessura de parede.** `CreateWallThicknessDimensions` em paredes
+- **C7 cotas de espessura de parede.** (Feito no lote `lote/claude-3`.) `CreateWallThicknessDimensions` em paredes
   existentes e editáveis, conferindo que a cota nova aparece na leitura dos elementos.
 - **C8 `create_openings`.** `CreateOpenings`: aberturas da ferramenta Abertura em paredes
   ou lajes existentes, no padrão de `create_windows`.
