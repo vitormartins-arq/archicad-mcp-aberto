@@ -76,7 +76,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C5 notas-chave.** (Feito no lote `lote/claude-3`.) `CreateKeynoteFolders` e `CreateKeynoteItems`: pastas e itens novos
   de notas-chave, com nome único, sem mudar nem apagar os que já existem. Lote
   `lote/claude-3`.
-- **C6 `create_morphs`.** `CreateMorphs`: morfos simples (caixa por contorno e altura) no
+- **C6 `create_morphs`.** (Feito no lote `lote/claude-3`.) `CreateMorphs`: morfos simples (caixa por contorno e altura) no
   padrão de `create_slabs`, conferidos pela leitura de tipo, pavimento e caixa
   envolvente.
 - **C7 cotas de espessura de parede.** `CreateWallThicknessDimensions` em paredes

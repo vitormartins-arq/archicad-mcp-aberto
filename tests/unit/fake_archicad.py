@@ -416,6 +416,7 @@ class FakeArchicad:
 
     lose_mesh_response: bool = False
     mesh_base_shift: float = 0.0
+    morph_box_shift: float = 0.0
 
     view_settings: dict[str, dict] = field(
         default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
@@ -1876,6 +1877,43 @@ class FakeArchicad:
                         details[key] = text[key]
                 details["paragraphCount"] = details["text"].count("\n") + 1
                 self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateMorphs":
+            # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
+            out = []
+            for index, morph in enumerate(args["morphsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Morph"
+                base, size = morph["basePoint"], morph["size"]
+                self.details[guid] = {
+                    "type": "Morph",
+                    "floorIndex": morph["floorIndex"],
+                    "layerIndex": 1,
+                    "details": {
+                        "origin": deepcopy(base),
+                        "xAxis": {"x": 1.0, "y": 0.0, "z": 0.0},
+                        "yAxis": {"x": 0.0, "y": 1.0, "z": 0.0},
+                        "zAxis": {"x": 0.0, "y": 0.0, "z": 1.0},
+                        "castShadow": True,
+                        "receiveShadow": True,
+                        "isAutoOnStoryVisibility": True,
+                    },
+                }
+                shift = self.morph_box_shift
+                self.bounding_boxes_3d[guid] = {
+                    "boundingBox3D": {
+                        "xMin": base["x"] + shift,
+                        "yMin": base["y"],
+                        "zMin": base["z"],
+                        "xMax": base["x"] + size["x"] + shift,
+                        "yMax": base["y"] + size["y"],
+                        "zMax": base["z"] + size["z"],
+                    }
+                }
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateMeshes":

@@ -598,3 +598,13 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Só acrescentam; chave que já existe em qualquer lugar da árvore é recusada. A
   conferência relê a árvore pelo GUID. 1930 testes simulados e Ruff passaram (Linux,
   Python 3.13). Registro: 86 ferramentas. Próximo: C6 `create_morphs`.
+
+
+## 2026-10-15 — Claude / C6 morfos (rodada automática, lote 3)
+
+- `tools/morphs.py`: `create_morphs` por `CreateMorphs` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp), só a caixa simples (`basePoint` + `size`), com pavimento
+  explícito. Conferência em duas leituras: `GetDetailsOfElements` (tipo, pavimento,
+  origem e eixos do `tranmat`) e `Get3DBoundingBoxes` (caixa com tolerância de 1 mm).
+  1945 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 87 ferramentas.
+  Próximo: C7 cotas de espessura de parede.

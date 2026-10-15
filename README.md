@@ -121,6 +121,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
+| `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 
 ### Reported live validation
 
@@ -533,3 +534,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   fill a new folder, create it first and use the GUID in its receipt. Each new entry is
   read back by GUID. Fixtures come from the Tapir source, not a live capture. Registry:
   **86 tools (26 reads, 60 writes/interactions)**.
+
+- `create_morphs([{base_point: {x, y, z}, size_x, size_y, size_z, floor_index}], port?,
+  dry_run?, confirmation_token?)` creates up to 50 box morphs through Tapir 1.7.0
+  `CreateMorphs`. The base point is the box's lowest corner in absolute project metres;
+  sizes are positive metres along the project axes. Building material, surface and
+  display settings come from the Morph tool defaults. Each morph is read back for type,
+  story, origin and axes, and its 3D bounding box must match within 1 mm. Fixtures come
+  from the Tapir source, not a live capture. Registry: **87 tools (26 reads, 61
+  writes/interactions)**.

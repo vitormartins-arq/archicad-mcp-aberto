@@ -25,6 +25,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     meshes,
     modify,
+    morphs,
     navigator,
     openings,
     project_info,
@@ -207,6 +208,17 @@ INPUTS = {
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
     "create_keynote_items": {"items": [{"key": "01.01", "title": "Alvenaria"}]},
+    "create_morphs": {
+        "morphs": [
+            {
+                "base_point": {"x": 0, "y": 0, "z": 0},
+                "size_x": 1,
+                "size_y": 2,
+                "size_z": 3,
+                "floor_index": 0,
+            }
+        ]
+    },
     "create_interior_elevations": {
         "interior_elevations": [
             {
@@ -297,6 +309,7 @@ TARGETED = {
         locks,
         meshes,
         modify,
+        morphs,
         navigator,
         openings,
         project_info,

@@ -356,6 +356,10 @@
       "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
     },
     {
+      "name": "create_morphs",
+      "description": "Safely create box morphs from absolute project coordinates, with preview and 3D box read-back."
+    },
+    {
       "name": "modify_meshes",
       "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
     },

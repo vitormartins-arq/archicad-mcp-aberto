@@ -33,6 +33,7 @@ from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
+from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
@@ -1301,6 +1302,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         and receipt; never saves."""
         return await keynotes.create_keynote_items(
             client_of(ctx), items, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_morphs(
+        ctx: Context,
+        morphs: list[morphs_tool.MorphCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 box morphs: base corner x/y/z in absolute project metres,
+        positive size_x/size_y/size_z and explicit floor_index. Material and display take
+        the Morph defaults. Reads back story, origin, axes and 3D box. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await morphs_tool.create_morphs(
+            client_of(ctx), morphs, port, dry_run, confirmation_token
         )
 
     return mcp

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `create_morphs` (new `tools/morphs.py`): up to 50 axis-aligned box morphs by
+  Tapir 1.7.0 `CreateMorphs`, each from a base corner in absolute project metres, a
+  positive size and an explicit story. Material and display take the Morph defaults. The
+  read-back checks type, story, origin and axes, then the 3D bounding box. Not yet tested
+  live.
+
 - Add keynotes (new `tools/keynotes.py`, Archicad 28 or newer): `list_keynotes` reads the
   tree (Tapir 1.7.0 `GetKeynoteTree`) as folders and items with GUIDs and key paths;
   `create_keynote_folders` and `create_keynote_items` only add (`CreateKeynoteFolders`,

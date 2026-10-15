@@ -430,3 +430,11 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   3.2." Conferir no ArchiCAD, em Documento > Notas-chave, que a pasta e o item aparecem
   com esses textos. O recibo deve dar `verified`.
 - [ ] **Recusa.** Pedir de novo a chave 90.01 deve ser recusado na prévia.
+
+## Lote do Claude C6: morfos
+
+- [ ] **create_morphs.** No projeto novo sem nome: "Crie um morfo caixa com canto em
+  x 1, y 2, z 0, de 0,60 por 0,40 por 0,90 m, no térreo." Conferir no 3D que a caixa está
+  no lugar e com esse tamanho, e que o recibo dá `verified`.
+- [ ] **Pavimento.** Repetir com z 3 e floor_index 1 e ver se o morfo fica no pavimento 1
+  na planta.

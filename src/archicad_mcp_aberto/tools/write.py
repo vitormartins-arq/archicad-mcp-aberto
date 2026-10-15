@@ -484,6 +484,12 @@ OPERATIONS["create_favorites_from_elements"] = (
     "favorite_receipt_id",
     "Each new favorite copies its element's settings; existing favorites are never changed.",
 )
+OPERATIONS["create_morphs"] = (
+    "morph",
+    "morph_receipt_id",
+    "Axis-aligned boxes in absolute project metres; Morph tool defaults for the rest.",
+)
+CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
 
 
 @dataclass
