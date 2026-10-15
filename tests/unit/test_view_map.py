@@ -70,6 +70,44 @@ async def test_preview_apply_tree_receipts_and_token(kind):
         }
 
 
+async def test_maximum_twenty_folder_batch():
+    fake = FakeArchicad(19723)
+    folders = [{"parent_guid": ROOT, "name": f"Pasta {index}"} for index in range(20)]
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        preview = await navigator.create_view_map_folders(client, folders, 19723)
+        result = await navigator.create_view_map_folders(
+            client, folders, 19723, False, preview["confirmation_token"]
+        )
+    assert result["counts"]["verified"] == 20
+    assert fake.tapir_calls.count("CreateViewMapFolder") == 20
+
+
+async def test_maximum_twenty_clone_batch():
+    fake = FakeArchicad(19723)
+    project_root = fake.navigator_trees["ProjectMap"]
+    template = deepcopy(project_root["children"][0])
+    for index in range(4, 22):
+        child = deepcopy(template)
+        node = child["navigatorItem"]
+        node["navigatorItemId"]["guid"] = f"88888888-8888-4888-8888-{index:012d}"
+        node["name"] = f"Pavimento {index}"
+        project_root["children"].append(child)
+    views = [
+        {
+            "parent_guid": ROOT,
+            "source_guid": child["navigatorItem"]["navigatorItemId"]["guid"],
+        }
+        for child in project_root["children"][:20]
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        preview = await navigator.clone_to_view_map(client, views, 19723)
+        result = await navigator.clone_to_view_map(
+            client, views, 19723, False, preview["confirmation_token"]
+        )
+    assert result["counts"]["verified"] == 20
+    assert fake.tapir_calls.count("CloneProjectMapItemToViewMap") == 20
+
+
 @pytest.mark.parametrize("kind", ["folders", "clones"])
 async def test_project_change_between_view_items_stops_remaining_writes(kind):
     """A copied PLN may retain Navigator GUIDs, so the project context must also match."""
