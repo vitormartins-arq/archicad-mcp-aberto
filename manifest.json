@@ -374,6 +374,10 @@
     {
       "name": "set_layer_settings",
       "description": "Safely change existing layer flags/group with preview, one-use confirmation and read-back; preserve name and identity."
+    },
+    {
+      "name": "add_comment_to_issue",
+      "description": "Safely add issue comments with optional author, single-use confirmation and independent comment read-back."
     }
   ],
   "compatibility": {

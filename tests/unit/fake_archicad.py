@@ -431,6 +431,8 @@ class FakeArchicad:
     lose_layer_settings_response: bool = False
     layer_combination_read_errors: dict[int, dict] = field(default_factory=dict)
 
+    issue_comments: dict[str, list[dict]] = field(default_factory=dict)
+
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
         for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
@@ -753,6 +755,20 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in ("GetCommentsFromIssue", "AddCommentToIssue"):
+            guid = args["issueId"]["guid"]
+            if name == "GetCommentsFromIssue":
+                return ok({"addOnCommandResponse": {
+                    "comments": deepcopy(self.issue_comments.get(guid, []))
+                }})
+            if guid not in self.issues:
+                return ok({"addOnCommandResponse": deepcopy(COMMENTS_FIXTURE["failed"])})
+            row = deepcopy(COMMENTS_FIXTURE["comment"])
+            row.update(
+                guid=str(uuid4()).upper(), text=args["text"], author=args.get("author", "API")
+            )
+            self.issue_comments.setdefault(guid, []).append(row)
+            return ok({"addOnCommandResponse": deepcopy(COMMENTS_FIXTURE["success"])})
         if name in (
             "GetIssues",
             "CreateIssue",
@@ -2144,6 +2160,14 @@ MESHES_FIXTURE = json.loads(
 # Source-derived Tapir 1.7.0 ViewSettings schemas; synthetic values, NOT live.
 VIEW_SETTINGS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_view_settings_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# IssueCommands.cpp 1.7.0: source-derived shapes, NOT a live capture.
+COMMENTS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_issue_comments_documented.json").read_text(
         encoding="utf-8"
     )
 )

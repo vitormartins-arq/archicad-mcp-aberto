@@ -1187,6 +1187,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def add_comment_to_issue(
+        ctx: Context,
+        comments: list[issues_tool.IssueComment],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/add up to 20 issue comments (issue_guid, text, optional author).
+        Explicit apply port, one-use token, per-comment receipt and read-back.
+        Never attaches, deletes or saves.
+        """
+        return await issues_tool.add_comment_to_issue(
+            client_of(ctx), comments, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 

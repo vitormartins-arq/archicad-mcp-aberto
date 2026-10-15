@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 79
+    assert len(tools) == 80
     writes = {
         "create_walls",
         "create_slabs",
@@ -172,6 +172,7 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "set_layer_settings",
         "create_issues",
         "attach_elements_to_issue",
+        "add_comment_to_issue",
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")

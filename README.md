@@ -479,3 +479,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   AC30 explicitly rejects creation, and the reader filters generated custom field IDs.
   See [source investigation](docs/T23-PROJECT-INFO-FIELDS.md). No creation tool is exposed
   until complete preflight and independent read-back are possible.
+
+- `add_comment_to_issue(comments, port?, dry_run=true, confirmation_token?)` adds 1–20
+  comments: each item has `issue_guid`, `text`, optional `author` (default API).
+  Preview binds existing issue metadata and comments; apply needs explicit port and a
+  single-use token. New comment GUID/text/author/status and unchanged old comments are
+  checked via GetCommentsFromIssue. Each comment is a separate Undo step; no attachments,
+  deletion or saving. Tapir 1.7.0 source-derived simulated coverage; live test pending.

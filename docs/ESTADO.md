@@ -551,3 +551,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Investigação e próximos passos em `docs/T23-PROJECT-INFO-FIELDS.md`. Nenhum comando
   de criação foi acrescentado nem sucesso inventado no fake. Nenhuma chamada real.
   A correção deve chegar pelo Tapir upstream; T24–T26 continuam em sequência.
+
+## 2026-10-15 — Codex / T24 comentários
+
+- Branch `codex/t24-issue-comments`, empilhada na investigação T23.
+  AddCommentToIssue/GetCommentsFromIssue conferidos em IssueCommands.cpp, tag Tapir
+  1.7.0/02691b5d. Autor opcional (API); estado padrão Unknown. Até 20 comentários,
+  prévia vincula incidência e comentários, apply exige porta/token/recibos e confere
+  novo GUID/texto/autor/estado sem alterar os anteriores. Cada comentário é um Undo.
+  Resposta perdida interrompe os próximos, sem repetição. Fixture documental, não
+  captura ao vivo. Sem associações, exclusão ou salvamento. FILA intacta.
+- Validação Linux/Python 3.12.14: 1847 testes simulados passaram; Ruff passou.
+  Nenhuma chamada ao Archicad real. Revisão e merge pelo Claude.

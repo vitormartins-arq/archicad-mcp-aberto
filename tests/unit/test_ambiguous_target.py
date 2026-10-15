@@ -242,6 +242,9 @@ INPUTS = {
             }
         ]
     },
+    "add_comment_to_issue": {
+        "comments": [{"issue_guid": "99999999-9999-4999-8999-999999999999", "text": "Review"}]
+    },
 }
 TARGETED = {
     name: function

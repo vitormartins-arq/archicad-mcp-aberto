@@ -276,6 +276,157 @@ async def create_issues(
     )
 
 
+class IssueComment(write.InputModel):
+    issue_guid: str
+    text: Annotated[str, Field(min_length=1, max_length=10000)]
+    author: Annotated[str, Field(min_length=1, max_length=255)] | None = None
+
+    @field_validator("issue_guid")
+    @classmethod
+    def valid_guid(cls, value):
+        guid = UUID(value)
+        if guid.int == 0:
+            raise ValueError("Issue GUID must not be null.")
+        return str(guid).upper()
+
+    @field_validator("text", "author")
+    @classmethod
+    def visible(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("Comment text and author must not be blank.")
+        return value
+
+
+async def _comments(client, port, issue_guid, timeout=None):
+    raw = await client.tapir(
+        port, "GetCommentsFromIssue", {"issueId": {"guid": issue_guid}}, timeout=timeout
+    )
+    rows = raw.get("comments")
+    if not isinstance(rows, list):
+        raise ValueError("Unexpected comments response.")
+    seen = set()
+    for row in rows:
+        guid = _guid(row.get("guid")) if isinstance(row, dict) else None
+        if (
+            not guid
+            or UUID(guid).int == 0
+            or guid in seen
+            or not isinstance(row.get("text"), str)
+            or not isinstance(row.get("author"), str)
+            or row.get("status") not in ("Unknown", "Error", "Warning", "Info")
+            or type(row.get("creaTime")) is not int
+        ):
+            raise ValueError("Unexpected comment metadata or duplicate GUID.")
+        seen.add(guid)
+        row["guid"] = guid
+    return sorted(rows, key=lambda r: r["guid"])
+
+
+async def _comment_plan(client, entries, port, operation):
+    port, target, _ = await write._context(client, port)
+    available = {r["guid"]: r for r in await _rows(client, port)}
+    before, items = {}, []
+    for index, entry in enumerate(entries):
+        if entry.issue_guid not in available:
+            raise ValueError(f"Issue {entry.issue_guid} does not exist.")
+        if entry.issue_guid not in before:
+            before[entry.issue_guid] = await _comments(client, port, entry.issue_guid)
+        parameters = {"issueId": {"guid": entry.issue_guid}, "text": entry.text}
+        if entry.author is not None:
+            parameters["author"] = entry.author
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "issue_guid": entry.issue_guid,
+                "issue": available[entry.issue_guid],
+                "parameters": parameters,
+            }
+        )
+    target["issue_comments"] = before
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _comment_dispatch(client, receipt):
+    port, timeout = receipt["target"]["port"], receipt["write_timeout_seconds"]
+    before = deepcopy(receipt["target"]["issue_comments"])
+    receipt["undo_scope"] = "Each comment is one native command and Undo step."
+    for index, item in enumerate(receipt["items"]):
+        try:
+            raw = await client.tapir(port, "AddCommentToIssue", item["parameters"], timeout=timeout)
+        except (TapirError, CommandFailed) as exc:
+            if isinstance(exc.detail, dict) and {"code", "message"} <= exc.detail.keys():
+                item.update(status="failed", error=exc.detail)
+                continue
+            _unknown(receipt, index, exc)
+            break
+        except ArchicadError as exc:
+            _unknown(receipt, index, exc)
+            break
+        item["write_response"] = raw
+        if raw.get("success") is False and isinstance(raw.get("error"), dict):
+            item.update(status="failed", error=raw["error"])
+            continue
+        if raw.get("success") is not True:
+            _unknown(receipt, index, "Unexpected comment execution result.")
+            break
+        item["status"] = "unverified"
+        try:
+            rows = await _comments(client, port, item["issue_guid"], timeout)
+        except (ArchicadError, ValueError) as exc:
+            receipt["verification_error"] = str(exc)
+            for later in receipt["items"][index + 1 :]:
+                later.update(status="failed", not_attempted=True, error="Comment read-back failed.")
+            break
+        previous = {r["guid"]: r for r in before[item["issue_guid"]]}
+        current = {r["guid"]: r for r in rows}
+        added = [r for g, r in current.items() if g not in previous]
+        item["after"] = added
+        unchanged = all(current.get(g) == r for g, r in previous.items())
+        expected = {
+            "text": item["parameters"]["text"],
+            "author": item["parameters"].get("author", "API"),
+            "status": "Unknown",
+        }
+        matches = len(added) == 1 and all(added[0][k] == v for k, v in expected.items())
+        ok = unchanged and matches
+        item["status"] = "verified" if ok else "verification_failed"
+        if ok:
+            item["comment_guid"] = added[0]["guid"]
+        else:
+            item["mismatches"] = ["new_comment_or_existing_comments"]
+        before[item["issue_guid"]] = rows
+
+
+async def add_comment_to_issue(
+    client: ArchicadClient,
+    comments: list[dict | IssueComment],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/add 1–20 comments to existing issues; optional author defaults to API.
+
+    Verifies a new GUID, text, author, Unknown status and unchanged prior comments.
+    No deletions, attachments or project saving. Lost responses are never retried.
+    """
+    if not 1 <= len(comments) <= 20:
+        raise ValueError("Pass between 1 and 20 comments.")
+    entries = [
+        c if isinstance(c, IssueComment) else IssueComment.model_validate(c) for c in comments
+    ]
+    return await write._write(
+        client,
+        entries,
+        port,
+        dry_run,
+        confirmation_token,
+        "add_comment_to_issue",
+        planner_override=_comment_plan,
+        dispatcher_override=_comment_dispatch,
+    )
+
+
 async def attach_elements_to_issue(
     client: ArchicadClient,
     issue_guid: str,

@@ -260,3 +260,7 @@
 - 2026-10-15, T23 investigation: native Tapir 1.7.0 does not support custom Project
   Info field creation on AC30 and filters generated IDs from its field reader.
   Documented the upstream prerequisite; no unverified creation tool added.
+
+- Add `add_comment_to_issue`: 1–20 comments on existing issues with optional author,
+  shared preview/token/port/receipts, comment GUID/read-back and preserved prior comments.
+  Stops remaining writes after an unknown outcome; source-derived simulation only.

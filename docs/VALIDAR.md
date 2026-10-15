@@ -375,3 +375,11 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   como texto simples; conferir se o nome chega inteiro.
 - [ ] **Conferência visual:** o terreno em (30,0)-(40,10) desceu 0,2 m e ficou com saia;
   a etiqueta "Etiqueta alterada" na parede (0,0)-(6,0); a vista "Pavimento Térreo" em 1:75.
+
+## T24 — comentários em incidências (validação ao vivo pendente)
+
+- [ ] Em projeto de teste autorizado, listar incidências e escolher GUID existente.
+- [ ] Criar prévia de dois comentários, um com autor Vitor e outro sem autor.
+- [ ] Aplicar com porta/token: conferir texto, autor e GUID novo por item, estado verified.
+- [ ] Reaplicar token deve recusar; conferir os comentários visualmente e Undo por comentário.
+- [ ] Não anexar/destacar elementos, apagar nem salvar. Informar AC/build/idioma/Tapir.

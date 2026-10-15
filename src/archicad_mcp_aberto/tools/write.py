@@ -1714,3 +1714,8 @@ async def create_zones(
         raise ValueError("Pass between 1 and 20 zones.")
     validated = [z if isinstance(z, ZoneCreate) else ZoneCreate.model_validate(z) for z in zones]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_zones")
+
+
+OPERATIONS["add_comment_to_issue"] = (
+    "issue comment", "comment_receipt_id", "Adds comments only; each comment is one Undo step."
+)
