@@ -273,3 +273,8 @@
   ID refusal and independent item/tree read-back. Handles native empty success result
   arrays by sending one item per call; no success is inferred without read-back.
   Shared preview/token/port/receipts, no deletion or saving. Simulated only.
+
+- Harden T25 clone verification: preserve and verify the native source GUID and
+  inheritance flags; reject Project Map containers instead of previewing them as one
+  viewpoint. Refuse embedded NUL and folder names exceeding 255 UTF-16 units.
+  Regressions reproduce previously verified clones with missing/wrong source identity.

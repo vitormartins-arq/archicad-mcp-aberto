@@ -402,3 +402,10 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
 - [ ] Conferir raw executionResults: [] conforme fonte 1.7.0 e status verified só após releitura.
 - [ ] Recusar ID existente em outro pai do mesmo sistema, pai de outro sistema e token usado.
 - [ ] Conferir Undo por item; não excluir/salvar. Registrar AC/build/idioma/Tapir.
+
+### Complemento T25 — identidade da origem
+
+- [ ] Conferir source_guid do clone na releitura do Mapa de Vistas: deve ser o GUID
+  selecionado no Mapa do Projeto, mesmo quando outras vistas têm nomes iguais.
+- [ ] Registrar custom_name/custom_ui_id/is_independent na conferência das vistas
+  anteriores. Recusar origem que é grupo/pasta com filhos; não salvar/publicar.

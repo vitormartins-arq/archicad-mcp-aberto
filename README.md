@@ -503,3 +503,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   per item and independent official tree read-back verify the new GUID/ID/name/description/parent
   and unchanged prior items. Each item is a separate Undo step. Never deletes/saves.
   Tapir 1.7.0 source-derived simulation only; live/operator validation pending.
+
+- View Map clone verification also checks the native `sourceNavigatorItemId` GUID;
+  identical names/types/IDs cannot stand in for source identity. Navigator reads expose
+  `source_guid` when present plus native inheritance flags (`custom_name`, `custom_ui_id`,
+  `is_independent`), which are bound to previews and checked unchanged for prior items.
+  Only leaf Project Map viewpoints may be cloned. Folder names must fit 255 UTF-16 units
+  without NUL; this accounts for the native Unicode name buffer, including emoji.
