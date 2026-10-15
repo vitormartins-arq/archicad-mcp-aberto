@@ -462,6 +462,8 @@ async def _creation_dispatch(client, receipt):
     before = deepcopy(receipt["target"]["classification_trees"])
     receipt["undo_scope"] = "Each item is one native command and Undo step."
     for index, item in enumerate(receipt["items"]):
+        if not await write._guard_sequential_context(client, receipt, index):
+            break
         try:
             raw = await client.tapir(
                 port, "CreateClassificationItems", item["parameters"], timeout=timeout

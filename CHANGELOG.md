@@ -274,6 +274,9 @@
   arrays by sending one item per call; no success is inferred without read-back.
   Shared preview/token/port/receipts, no deletion or saving. Simulated only.
 
+- Reconfirm the bound project context between sequential classification creation
+  commands and stop remaining items before dispatch after a project switch.
+
 - Harden T25 clone verification: preserve and verify the native source GUID and
   inheritance flags; reject Project Map containers instead of previewing them as one
   viewpoint. Refuse embedded NUL and folder names exceeding 255 UTF-16 units.

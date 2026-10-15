@@ -595,6 +595,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Nenhuma chamada ao Archicad real; roteiro ao vivo acrescentado em docs/VALIDAR.md.
   Nenhum merge. Abertura dos PRs depende de liberar api.github.com no proxy do ambiente;
   domínio acrescentado ao rascunho, branches publicadas via Git.
+- Itens de classificação agora relêem o contexto completo entre comandos do lote.
+  Teste com troca para projeto copiado preservando GUIDs para antes do segundo write.
 
 ## 2026-10-15 — Codex / revisão adicional T25
 

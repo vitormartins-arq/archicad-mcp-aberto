@@ -76,6 +76,32 @@ async def test_preview_apply_native_empty_results_readback_and_receipts():
     )
 
 
+async def test_project_change_between_classification_items_stops_remaining_writes():
+    """A copied PLN may retain classification GUIDs, so the project must still match."""
+    fake = FakeArchicad(19723)
+    base = fake_transport(fake)
+    writes = 0
+
+    def handler(request):
+        nonlocal writes
+        body = json.loads(request.content)
+        command = body.get("parameters", {}).get("addOnCommandId", {}).get("commandName")
+        if command == "CreateClassificationItems":
+            writes += 1
+        response = base.handle_request(request)
+        if body.get("command") == "API.GetAllClassificationsInSystem" and writes == 1:
+            fake.project_name = "Copied project"
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        result = await apply(client, [entry(), entry(id="LAB-02")])
+
+    assert result["items"][0]["status"] == "verified"
+    assert result["items"][1]["not_attempted"]
+    assert "context changed" in result["context_error"]
+    assert writes == 1
+
+
 @pytest.mark.parametrize(
     "entries",
     [
