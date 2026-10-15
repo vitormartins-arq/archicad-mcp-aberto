@@ -250,6 +250,26 @@ async def _view_dispatch(client, receipt):
     for index, item in enumerate(receipt["items"]):
         if not await write._guard_sequential_context(client, receipt, index):
             break
+        if index:
+            try:
+                current_tree = {
+                    row["guid"]: row
+                    for row in await _view_tree(client, port, "PublicViewMap", timeout)
+                }
+                unchanged = current_tree == before
+                if "project_map" in receipt["target"]:
+                    unchanged = unchanged and (
+                        await _view_tree(client, port, "ProjectMap", timeout)
+                        == receipt["target"]["project_map"]
+                    )
+            except (ArchicadError, ValueError) as exc:
+                unchanged = False
+                receipt["inventory_error"] = str(exc)
+            if not unchanged:
+                error = "Navigator tree changed between batch items; run a new preview."
+                for later in receipt["items"][index:]:
+                    later.update(status="failed", not_attempted=True, error=error)
+                break
         try:
             raw = await client.tapir(port, command, item["parameters"], timeout=timeout)
         except (TapirError, CommandFailed) as exc:
