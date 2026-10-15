@@ -593,7 +593,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Servidor com 83 ferramentas. Teste adicional via cliente MCP/stdio contra fake:
   as quatro ferramentas novas passaram prévia, apply, releitura e recusa do token usado.
   Nenhuma chamada ao Archicad real; roteiro ao vivo acrescentado em docs/VALIDAR.md.
-  Nenhum merge. Abertura dos PRs depende de liberar api.github.com no proxy do ambiente;
+  Nenhum merge em `main`. Abertura dos PRs depende de liberar api.github.com no proxy;
   domínio acrescentado ao rascunho, branches publicadas via Git.
 - Itens de classificação agora relêem o contexto completo entre comandos do lote.
   Teste com troca para projeto copiado preservando GUIDs para antes do segundo write.
