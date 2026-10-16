@@ -420,3 +420,13 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
 - [ ] Consultar as duas opções em `get_elements_of_design_options`; conferir membro,
   opção vazia e erro de um GUID de opção inexistente.
 - [ ] Registrar versão/build/idioma e Tapir. As ferramentas são somente leitura.
+
+## Resultado complementar de 15/10/2026 — PR #62
+- [x] Dois comentários em incidência (com/sem autor): verified.
+- [x] Dois itens de classificação: verified; token reutilizado recusado.
+- [x] Pasta sob Sem Nome e clone do Pavimento Cobertura: verified, source_guid correto.
+- [x] Raiz artificial ??? recusada na prévia após correção; pasta real aceita e verified.
+- [x] Opções de Projeto: conjunto com duas opções, combinação ativa, parede associada,
+  opção vazia, Modelo Principal e GUIDs inexistentes conferidos pelas três leituras.
+- [ ] Vitor: conferir comentários, classificação e Navegador visualmente.
+AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.

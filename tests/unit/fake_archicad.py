@@ -842,6 +842,12 @@ class FakeArchicad:
             data = args if name == "CreateViewMapFolder" else args["viewsData"][0]
             parent = _view_map_node(view_root, data["parentNavigatorItemId"]["guid"])
             assert parent is not None
+            # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
+            # the synthetic PublicViewMap root is not an insertion parent.
+            if parent is view_root and name == "CreateViewMapFolder":
+                return ok({"addOnCommandResponse": deepcopy(
+                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                )})
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -2310,3 +2316,10 @@ def _classification_creation_parent(roots, guid):
         if found is not None:
             return found
     return None
+
+
+# Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
+VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
+    .read_text(encoding="utf-8")
+)

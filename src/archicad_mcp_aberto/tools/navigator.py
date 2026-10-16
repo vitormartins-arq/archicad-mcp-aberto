@@ -186,7 +186,7 @@ async def _view_plan(client, entries, port, operation):
     source_rows = [] if folders else await _view_tree(client, port, "ProjectMap")
     if not folders:
         target["project_map"] = source_rows
-    parents = {r["guid"]: r for r in tree if r["depth"] == 0 or r["type"] == "FolderItem"}
+    parents = {r["guid"]: r for r in tree if r["depth"] > 0 and r["type"] == "FolderItem"}
     containers = {r["parent_guid"] for r in source_rows}
     sources = {
         r["guid"]: r
@@ -196,7 +196,10 @@ async def _view_plan(client, entries, port, operation):
     items, seen = [], set()
     for index, entry in enumerate(entries):
         if entry.parent_guid not in parents:
-            raise ValueError("Parent must be an existing PublicViewMap root or folder GUID.")
+            raise ValueError(
+                "Parent must be an existing PublicViewMap project folder or subfolder GUID; "
+                "the synthetic map root cannot be used."
+            )
         if folders:
             name, item_type = entry.name, "FolderItem"
             parameters = {"folderName": name, "parentNavigatorItemId": {"guid": entry.parent_guid}}

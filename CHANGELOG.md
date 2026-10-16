@@ -301,3 +301,8 @@
   remaining items before dispatch if the selected project changes during the batch.
   A comment read-back mismatch also stops the remaining batch before another write.
   Re-read the next issue and its comments immediately before dispatch to catch concurrent edits.
+
+### Live corrections — 2026-10-15
+- Refuse the synthetic PublicViewMap root as a folder/clone insertion parent during preview.
+  Use the actual project folder or a subfolder. Add AC30 build 3001 BRA live headers/error
+  and regressions, preserving explicit-port and per-item receipt checks.

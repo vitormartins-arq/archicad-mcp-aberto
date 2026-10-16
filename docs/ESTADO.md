@@ -646,3 +646,23 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Incidência e comentários do próximo item são relidos antes do comando; alteração
   concorrente simulada entre itens interrompe o lote.
   Somente simulado; nenhuma chamada ao Archicad real.
+
+## 2026-10-15 — Codex / correção e validação do PR #62
+- Sem Nome/19724, Windows/AC30 build 3001 BRA/Tapir 1.7.0; sem salvar/excluir/Undo.
+  Teste das funções Python da branch; preparo das Opções de Projeto pelo MCP privado.
+- create_view_map_folders na raiz artificial ??? falhou -2130313112. Correção recusa depth=0
+  na prévia, inclusive para clones; usar pasta real Sem Nome ou subpasta. Fake e testes
+  distinguem mapa/pasta de projeto. Cabeçalhos/erro capturados ao vivo em fixture.
+- Pasta sob Sem Nome e clone do Pavimento Cobertura verified, com source_guid conferido.
+  Nova pasta após a correção verified; raiz artificial recusada antes de gravar.
+- Dois comentários (autor Vitor e padrão) e dois itens de classificação verified; tokens
+  reutilizados recusados nas aplicações executadas. T23 create_project_info_fields não
+  está nesta branch e não foi executada.
+- list_design_options conferiu conjunto com duas opções e combinação com uma ativa.
+  get_elements_of_design_options conferiu opção com a parede, opção vazia e erro de GUID
+  inexistente. get_design_options_for_elements distinguiu parede associada, corte no Modelo
+  Principal e GUID inexistente. Nenhuma escrita adicionada às três ferramentas de leitura.
+- Inspeção visual continua com Vitor; não executados todos os subcasos manuais de Undo
+  e herança visual. Nenhum merge pelo Codex.
+
+- Validação simulada final: 2020 testes passaram; uv run ruff check . passou, Windows/Python 3.12.10.

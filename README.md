@@ -492,7 +492,8 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
 
 - `create_view_map_folders(folders, ...)` adds 1–20 `{name, parent_guid}` folders.
   `clone_to_view_map(views, ...)` adds 1–20 `{source_guid, parent_guid}` clones from
-  ProjectMap. Parents must already exist in PublicViewMap (root/folder); get GUIDs with
+  ProjectMap. Parents must be existing project folders or subfolders in PublicViewMap; the synthetic
+  map root (depth 0) is refused. Get GUIDs with
   `get_navigator_tree`. Both require preview, one-use token and explicit apply port,
   retain receipts and independently verify GUID/name/type/parent and prior tree rows.
   Native clone settings are inherited. No guaranteed Navigator Undo: remove unwanted

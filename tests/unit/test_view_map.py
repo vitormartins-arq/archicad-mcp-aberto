@@ -19,6 +19,21 @@ SOURCE = "88888888-8888-4888-8888-000000000002"
 PROJECT_ROOT = "88888888-8888-4888-8888-000000000001"
 
 
+MAP_ROOT = "77777777-7777-4777-8777-000000000099"
+
+
+def model(*args, **kwargs):
+    fake = FakeArchicad(*args, **kwargs)
+    # The live PublicViewMap contains a synthetic map root above the project folder.
+    project_folder = fake.navigator_trees["PublicViewMap"]
+    project_folder["type"] = "FolderItem"
+    fake.navigator_trees["PublicViewMap"] = {
+        "navigatorItemId": {"guid": MAP_ROOT}, "name": "???", "type": "FolderItem",
+        "children": [{"navigatorItem": project_folder}],
+    }
+    return fake
+
+
 @pytest.fixture(autouse=True)
 def receipts(tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path))
@@ -42,7 +57,7 @@ def tool(kind):
 
 @pytest.mark.parametrize("kind", ["folders", "clones"])
 async def test_preview_apply_tree_receipts_and_token(kind):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     before_project = deepcopy(fake.navigator_trees["ProjectMap"])
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         preview = await tool(kind)(c, entries(kind))
@@ -71,7 +86,7 @@ async def test_preview_apply_tree_receipts_and_token(kind):
 
 
 async def test_maximum_twenty_folder_batch():
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     folders = [{"parent_guid": ROOT, "name": f"Pasta {index}"} for index in range(20)]
     async with ArchicadClient(transport=fake_transport(fake)) as client:
         preview = await navigator.create_view_map_folders(client, folders, 19723)
@@ -83,7 +98,7 @@ async def test_maximum_twenty_folder_batch():
 
 
 async def test_maximum_twenty_clone_batch():
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     project_root = fake.navigator_trees["ProjectMap"]
     template = deepcopy(project_root["children"][0])
     for index in range(4, 22):
@@ -111,7 +126,7 @@ async def test_maximum_twenty_clone_batch():
 @pytest.mark.parametrize("kind", ["folders", "clones"])
 async def test_project_change_between_view_items_stops_remaining_writes(kind):
     """A copied PLN may retain Navigator GUIDs, so the project context must also match."""
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     base = fake_transport(fake)
     command = "CreateViewMapFolder" if kind == "folders" else "CloneProjectMapItemToViewMap"
     writes = 0
@@ -141,7 +156,7 @@ async def test_project_change_between_view_items_stops_remaining_writes(kind):
 
 @pytest.mark.parametrize("kind", ["folders", "clones"])
 async def test_concurrent_tree_change_between_items_stops_remaining_writes(kind):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     base = fake_transport(fake)
     command = "CreateViewMapFolder" if kind == "folders" else "CloneProjectMapItemToViewMap"
     writes = 0
@@ -203,7 +218,7 @@ async def test_preflight_refusals(kind, fault):
             "view_parent": VIEW,
             "project_parent": PROJECT_ROOT,
         }[fault]
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError):
             await tool(kind)(c, data)
@@ -212,7 +227,7 @@ async def test_preflight_refusals(kind, fault):
 
 @pytest.mark.parametrize("bad", ["", " ", " Folder "])
 async def test_blank_folder_names(bad):
-    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as c:
+    async with ArchicadClient(transport=fake_transport(model(19723))) as c:
         with pytest.raises(ValueError):
             await navigator.create_view_map_folders(c, [{"parent_guid": ROOT, "name": bad}])
 
@@ -221,14 +236,14 @@ async def test_blank_folder_names(bad):
     "bad", [ROOT, PROJECT_ROOT, FOLDER, "11111111-1111-4111-8111-111111111111"]
 )
 async def test_invalid_clone_sources(bad):
-    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as c:
+    async with ArchicadClient(transport=fake_transport(model(19723))) as c:
         with pytest.raises(ValueError, match="Source"):
             await navigator.clone_to_view_map(c, [{"parent_guid": FOLDER, "source_guid": bad}])
 
 
 @pytest.mark.parametrize("kind", ["folders", "clones"])
 async def test_port_stale_preview_and_existing_name(kind):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     data = entries(kind)[:1]
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         preview = await tool(kind)(c, data, 19723)
@@ -258,7 +273,7 @@ async def test_port_stale_preview_and_existing_name(kind):
     ],
 )
 async def test_dispatch_faults_and_readback(kind, fault):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     base = fake_transport(fake)
     command = "CreateViewMapFolder" if kind == "folders" else "CloneProjectMapItemToViewMap"
     writes = 0
@@ -327,7 +342,7 @@ async def test_dispatch_faults_and_readback(kind, fault):
 @pytest.mark.parametrize("source_id", [None, "88888888-8888-4888-8888-000000000003"])
 async def test_clone_source_guid_must_match_even_with_identical_name_and_type(source_id):
     """Name/type/uiId cannot distinguish clones of different Project Map viewpoints."""
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     base = fake_transport(fake)
 
     def handler(request):
@@ -356,7 +371,7 @@ async def test_clone_source_guid_must_match_even_with_identical_name_and_type(so
 
 @pytest.mark.parametrize("flag", ["customName", "customUiId", "isIndependent"])
 async def test_changed_view_inheritance_flags_invalidate_preview(flag):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     data = entries("clones")[:1]
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         preview = await navigator.clone_to_view_map(c, data, 19723)
@@ -368,7 +383,7 @@ async def test_changed_view_inheritance_flags_invalidate_preview(flag):
 
 
 async def test_project_map_container_is_not_previewed_as_one_viewpoint():
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     source = _view_map_node(fake.navigator_trees["ProjectMap"], SOURCE)
     child = deepcopy(source)
     child["navigatorItemId"] = {"guid": "88888888-8888-4888-8888-000000000099"}
@@ -385,7 +400,7 @@ async def test_project_map_container_is_not_previewed_as_one_viewpoint():
     ids=["embedded-nul", "utf16-overflow", "invalid-unicode"],
 )
 async def test_folder_name_must_fit_native_unicode_buffer_without_embedded_nul(name):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError):
             await navigator.create_view_map_folders(c, [{"parent_guid": ROOT, "name": name}])
@@ -393,7 +408,7 @@ async def test_folder_name_must_fit_native_unicode_buffer_without_embedded_nul(n
 
 
 async def test_folder_name_at_utf16_boundary_is_accepted_without_truncation():
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     name = "😀" * 127 + "á"
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         data = [{"parent_guid": ROOT, "name": name}]
@@ -409,10 +424,46 @@ async def test_folder_name_at_utf16_boundary_is_accepted_without_truncation():
     "bad_source", [None, {}, {"guid": "bad"}, {"guid": "00000000-0000-0000-0000-000000000000"}]
 )
 async def test_malformed_source_identity_is_not_silently_discarded(bad_source):
-    fake = FakeArchicad(19723)
+    fake = model(19723)
     existing = _view_map_node(fake.navigator_trees["PublicViewMap"], VIEW)
     existing["sourceNavigatorItemId"] = bad_source
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError, match="source ID"):
             await navigator.clone_to_view_map(c, entries("clones")[:1])
     assert "CloneProjectMapItemToViewMap" not in fake.tapir_calls
+
+
+@pytest.mark.parametrize("kind", ["folders", "clones"])
+async def test_synthetic_map_root_refused_before_any_write(kind):
+    fake = model(19723)
+    data = entries(kind)[:1]
+    data[0]["parent_guid"] = MAP_ROOT
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        with pytest.raises(ValueError, match="synthetic map root"):
+            await tool(kind)(client, data, 19723)
+    assert "CreateViewMapFolder" not in fake.tapir_calls
+    assert "CloneProjectMapItemToViewMap" not in fake.tapir_calls
+
+
+async def test_live_root_header_is_refused_even_though_it_is_a_folder():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
+        .read_text(encoding="utf-8")
+    )
+    fake = FakeArchicad(19723)
+    root = deepcopy(fixture["headers"]["root"])
+    project = deepcopy(fixture["headers"]["project_folder"])
+    root["children"] = [{"navigatorItem": project}]
+    fake.navigator_trees["PublicViewMap"] = root
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        with pytest.raises(ValueError, match="synthetic map root"):
+            await navigator.create_view_map_folders(
+                client, [{"parent_guid": root["navigatorItemId"]["guid"], "name": "Refused"}],
+                19723,
+            )
+        preview = await navigator.create_view_map_folders(
+            client, [{"parent_guid": project["navigatorItemId"]["guid"], "name": "Allowed"}],
+            19723,
+        )
+    assert preview["items"][0]["status"] == "ready"
+    assert "CreateViewMapFolder" not in fake.tapir_calls
