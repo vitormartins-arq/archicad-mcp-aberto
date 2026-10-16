@@ -137,3 +137,19 @@ async def test_limits_partial_error_lost_response_and_port():
     assert result["items"][0]["status"] == "unknown"
     assert "do not retry" in result["warning"]
     assert fake.tapir_calls.count("CreateSections") == 1
+
+
+async def test_badid_preserves_native_failure_and_explains_marker_recovery():
+    error = {"error": {"code": -2130313115, "message": "Failed to create section."}}
+    fake = model(create_errors={0: error})
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        preview = await sections.create_sections(client, [section()], 19723)
+        assert "defaults" in preview["warning"]
+        result = await sections.create_sections(
+            client, [section()], 19723, False, preview["confirmation_token"]
+        )
+    item = result["items"][0]
+    assert item["status"] == "failed" and item["error"] == error["error"]
+    assert "Section favorite" in item["recovery_hint"]
+    assert fake.tapir_calls.count("CreateSections") == 1
+    assert "ApplyFavoritesToElementDefaults" not in fake.tapir_calls

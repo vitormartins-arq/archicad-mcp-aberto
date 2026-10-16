@@ -282,3 +282,8 @@
   layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
   name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
   is unknown, including the native overwrite base creating a vanished target. Simulated only.
+
+### Live corrections — 2026-10-15
+- Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
+- Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
+  and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.

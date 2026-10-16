@@ -520,3 +520,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   InteriorElevation on its story and as the Project Map item(s) of that name, whose
   reference IDs go into the receipt. Fixtures come from the Tapir source, not a live
   capture. Registry: **83 tools (25 reads, 58 writes/interactions)**.
+
+### Live validation notes: sections and attribute values
+Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,
+an uninitialized/invalid marker returned APIERR_BADID. Explicitly applying an existing
+Section favorite in the test project allowed creation to verify. The tool provides
+recovery guidance and never changes defaults or retries automatically.
+Attribute properties of type number/integer accept equivalent unitless ASCII decimal
+read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
+numeric values remain strict. Receipt text preserves the actual Archicad response.

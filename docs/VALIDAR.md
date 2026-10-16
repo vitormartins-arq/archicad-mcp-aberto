@@ -420,3 +420,13 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   como fica o nome de cada segmento, porque o MCP supõe que todos levam o nome Sala. O
   recibo deve dar `verified`.
 - [ ] **Recusa.** Outra vista interna chamada Sala deve ser recusada na prévia.
+
+## Resultado complementar de 15/10/2026 — PR #61
+- [x] Corte com o padrão preparado pelo favorito Corte Técnico Marcador Simples: verified.
+  Com o padrão inicial falhou APIERR_BADID; a ferramenta não troca o padrão automaticamente.
+- [x] Vista interna fechada: verified, quatro vistas no Navegador; nome duplicado recusado.
+- [x] Favorito da parede de teste: verified; duplicata recusada.
+- [x] Propriedade textual e Densidade: verified após correção de formatação numérica;
+  1235 foi relido 1235.000. Propriedade indisponível recusada.
+- [ ] Vitor: conferir desenho, marcador/profundidade do corte, favorito e vistas internas.
+AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.

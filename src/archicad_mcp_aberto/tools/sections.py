@@ -75,7 +75,13 @@ async def _plan(client, items, port, operation):
                 },
             }
         )
-    return {"operation": operation, "target": target, "items": planned}
+    return {
+        "operation": operation, "target": target, "items": planned,
+        "warning": "Section markers inherit the Section tool defaults. If creation returns "
+        "APIERR_BADID, initialize a valid Section marker in this test project or explicitly "
+        "apply a Section favorite, then prepare a new preview. "
+        "Defaults are never changed automatically.",
+    }
 
 
 def _check(item: dict, row: Any) -> list[str]:
@@ -85,6 +91,13 @@ def _check(item: dict, row: Any) -> list[str]:
 
 async def _dispatch(client, receipt):
     await write._dispatch(client, receipt, _check)
+    for item in receipt["items"]:
+        if item.get("status") == "failed" and item.get("error", {}).get("code") == -2130313115:
+            item["recovery_hint"] = (
+                "Archicad returned APIERR_BADID. Check the Section tool marker/defaults and "
+                "loaded library. Initialize a valid Section marker or explicitly apply an "
+                "existing Section favorite, then prepare a new preview. No automatic retry."
+            )
     await _find_in_project_map(client, receipt, NAV_TYPE)
 
 

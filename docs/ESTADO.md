@@ -587,3 +587,23 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   83 ferramentas.
 - Lote 2 completo (C1 a C4). O PR #61 saiu de rascunho para o merge do Vitor.
 - Fila do Claude reabastecida com C5 a C8 para o lote 3 (`lote/claude-3`).
+
+## 2026-10-15 — Codex / correções e validação do PR #61
+- No Sem Nome, porta 19724, Windows/AC30 build 3001 BRA/Tapir 1.7.0, sem salvar/excluir/Undo.
+  Template da porta 19723 não alterado. Código do PR testado pelas funções Python; preparação
+  do padrão e consultas independentes pelo MCP privado, sem substituir a ferramenta sob teste.
+- Corte: APIERR_BADID com o padrão inicial; após aplicar explicitamente o favorito
+  Corte Técnico Marcador Simples à ferramenta Corte, nova prévia/aplicação verified.
+  Não identifica qual referência interna era inválida. Acrescentado aviso/hint; sem mudança
+  automática de favorito/padrão ou tentativa repetida.
+- Vista interna fechada: verified, quatro itens no Navegador. Parede de apoio e favorito
+  MCP Parede 20261015: verified. Nomes duplicados de vista interna/favorito recusados.
+- Propriedade textual Descrição do Bloco de Concreto - Estrutural verified. Densidade
+  1234 retornou 1234.000 e reproduziu falso verification_failed. Corrigida comparação
+  Decimal exata somente para number/integer sem unidade e formato ASCII inequívoco;
+  1235 retornou 1235.000 e verified. Texto, unidades, separadores ambíguos e diferenças
+  reais continuam estritos. Captura nova marcada ao vivo. Propriedade indisponível recusada.
+- Aprovação visual permanece com Vitor. Nenhum merge. Demais subcasos opcionais (favorito
+  de janela, mesmo nome entre tipos e profundidade visual) não foram executados.
+
+- Validação simulada final: 1905 testes passaram; uv run ruff check . passou, Windows/Python 3.12.10.
