@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 83
+    assert len(tools) == 90
     writes = {
         "create_walls",
         "create_slabs",
@@ -172,6 +172,10 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "set_layer_settings",
         "create_issues",
         "attach_elements_to_issue",
+        "add_comment_to_issue",
+        "create_view_map_folders",
+        "clone_to_view_map",
+        "create_classification_items",
         "create_sections",
         "create_favorites_from_elements",
         "set_attribute_property_values",
@@ -179,7 +183,7 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 25
+    assert len(reads) == 28
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

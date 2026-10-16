@@ -376,6 +376,61 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
 - [ ] **Conferência visual:** o terreno em (30,0)-(40,10) desceu 0,2 m e ficou com saia;
   a etiqueta "Etiqueta alterada" na parede (0,0)-(6,0); a vista "Pavimento Térreo" em 1:75.
 
+## T24 — comentários em incidências (validação ao vivo pendente)
+
+- [ ] Em projeto de teste autorizado, listar incidências e escolher GUID existente.
+- [ ] Criar prévia de dois comentários, um com autor Vitor e outro sem autor.
+- [ ] Aplicar com porta/token: conferir texto, autor e GUID novo por item, estado verified.
+- [ ] Reaplicar token deve recusar; conferir os comentários visualmente e Undo por comentário.
+- [ ] Não anexar/destacar elementos, apagar nem salvar. Informar AC/build/idioma/Tapir.
+
+## T25 — Mapa de Vistas (validação ao vivo pendente)
+
+- [ ] Projeto de teste autorizado: obter GUID da raiz/pasta no PublicViewMap e de um
+  pavimento no ProjectMap com get_navigator_tree.
+- [ ] Prévia/aplicação de pasta nomeada sob pai explícito; conferir GUID/nome/pai.
+- [ ] Nova prévia para clonar o pavimento na pasta criada; conferir árvore/ID exibido
+  e configurações herdadas. Verificação visual pelo operador.
+- [ ] Recusar pai que é vista, origem fora do ProjectMap e reaplicação do token.
+- [ ] Não contar com Undo; retirar novos itens manualmente se necessário. Nunca salvar/publicar.
+
+## T26 — itens de classificação (validação ao vivo pendente)
+
+- [ ] Projeto de teste autorizado: listar sistemas e itens, escolher sistema/pai existentes por GUID.
+- [ ] Prévia de dois IDs novos, aplicar com porta/token e conferir novos GUIDs, id, nome,
+  descrição e pai em list_classifications e visualmente no Archicad.
+- [ ] Conferir raw executionResults: [] conforme fonte 1.7.0 e status verified só após releitura.
+- [ ] Recusar ID existente em outro pai do mesmo sistema, pai de outro sistema e token usado.
+- [ ] Conferir Undo por item; não excluir/salvar. Registrar AC/build/idioma/Tapir.
+
+### Complemento T25 — identidade da origem
+
+- [ ] Conferir source_guid do clone na releitura do Mapa de Vistas: deve ser o GUID
+  selecionado no Mapa do Projeto, mesmo quando outras vistas têm nomes iguais.
+- [ ] Registrar custom_name/custom_ui_id/is_independent na conferência das vistas
+  anteriores. Recusar origem que é grupo/pasta com filhos; não salvar/publicar.
+
+## Opções de Projeto — validação ao vivo pendente
+
+- [ ] Em cópia de teste no Archicad 29 ou mais recente, criar duas opções num conjunto
+  e uma combinação; chamar `list_design_options` e conferir GUID, ID, nome, conjunto e
+  opções ativas. Não salvar.
+- [ ] Colocar um elemento numa opção e deixar outro no Modelo Principal; conferir ambos
+  em `get_design_options_for_elements`, além de um GUID inexistente.
+- [ ] Consultar as duas opções em `get_elements_of_design_options`; conferir membro,
+  opção vazia e erro de um GUID de opção inexistente.
+- [ ] Registrar versão/build/idioma e Tapir. As ferramentas são somente leitura.
+
+## Resultado complementar de 15/10/2026 — PR #62
+- [x] Dois comentários em incidência (com/sem autor): verified.
+- [x] Dois itens de classificação: verified; token reutilizado recusado.
+- [x] Pasta sob Sem Nome e clone do Pavimento Cobertura: verified, source_guid correto.
+- [x] Raiz artificial ??? recusada na prévia após correção; pasta real aceita e verified.
+- [x] Opções de Projeto: conjunto com duas opções, combinação ativa, parede associada,
+  opção vazia, Modelo Principal e GUIDs inexistentes conferidos pelas três leituras.
+- [ ] Vitor: conferir comentários, classificação e Navegador visualmente.
+AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.
+
 ## Lote do Claude C1: cortes
 
 - [ ] **create_sections.** "Crie um corte chamado Corte AA de (0,2) a (6,2) no térreo,

@@ -56,6 +56,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_property_groups` | Read | Property groups with custom flag and property count | yes |
 | `get_element_groups` | Read | The group holding each element and its members | yes |
 | `list_layers` | Read | Layers with hidden, locked, wireframe and intersection group | yes |
+| `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
+| `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
+| `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
@@ -478,6 +481,43 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   automatically removed/retried. No deletion, renaming or saving. Source-derived tests
   only; live validation pending. Registry after this addition: **79 tools (25 reads,
   54 writes/interactions)**.
+
+- T23 custom Project Info field creation is blocked by native Tapir 1.7.0 limitations:
+  AC30 explicitly rejects creation, and the reader filters generated custom field IDs.
+  See [source investigation](docs/T23-PROJECT-INFO-FIELDS.md). No creation tool is exposed
+  until complete preflight and independent read-back are possible.
+
+- `add_comment_to_issue(comments, port?, dry_run=true, confirmation_token?)` adds 1–20
+  comments: each item has `issue_guid`, `text`, optional `author` (default API).
+  Preview binds existing issue metadata and comments; apply needs explicit port and a
+  single-use token. New comment GUID/text/author/status and unchanged old comments are
+  checked via GetCommentsFromIssue. Each comment is a separate Undo step; no attachments,
+  deletion or saving. Tapir 1.7.0 source-derived simulated coverage; live test pending.
+
+- `create_view_map_folders(folders, ...)` adds 1–20 `{name, parent_guid}` folders.
+  `clone_to_view_map(views, ...)` adds 1–20 `{source_guid, parent_guid}` clones from
+  ProjectMap. Parents must be existing project folders or subfolders in PublicViewMap; the synthetic
+  map root (depth 0) is refused. Get GUIDs with
+  `get_navigator_tree`. Both require preview, one-use token and explicit apply port,
+  retain receipts and independently verify GUID/name/type/parent and prior tree rows.
+  Native clone settings are inherited. No guaranteed Navigator Undo: remove unwanted
+  new items manually. Never moves/deletes/saves/publishes. Source-derived tests only.
+
+- `create_classification_items(items, ...)` adds 1–50 `{system_guid, parent_guid,
+  id, name, description?}` items under existing classification parents. IDs must be
+  new across the entire selected system (case-insensitive); no recursive children or
+  new systems. Preview binds the tree; explicit apply port, one-use token and receipts.
+  The pinned Tapir command omits success rows (`executionResults: []`); one native call
+  per item and independent official tree read-back verify the new GUID/ID/name/description/parent
+  and unchanged prior items. Each item is a separate Undo step. Never deletes/saves.
+  Tapir 1.7.0 source-derived simulation only; live/operator validation pending.
+
+- View Map clone verification also checks the native `sourceNavigatorItemId` GUID;
+  identical names/types/IDs cannot stand in for source identity. Navigator reads expose
+  `source_guid` when present plus native inheritance flags (`custom_name`, `custom_ui_id`,
+  `is_independent`), which are bound to previews and checked unchanged for prior items.
+  Only leaf Project Map viewpoints may be cloned. Folder names must fit 255 UTF-16 units
+  without NUL; this accounts for the native Unicode name buffer, including emoji.
 
 - `create_sections([{start, end, floor_index, name, depth?}], port?, dry_run?,
   confirmation_token?)` creates up to 20 straight sections through Tapir 1.7.0
