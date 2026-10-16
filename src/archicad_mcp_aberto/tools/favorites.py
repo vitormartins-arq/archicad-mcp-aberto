@@ -138,3 +138,122 @@ async def apply_favorites(
         planner_override=_plan,
         dispatcher_override=_dispatch,
     )
+
+
+# CreateFavoritesFromElements captures an element's settings, classifications, editable
+# property values and memo as a NEW favorite of that element's type. Nothing is overwritten:
+# a name that already exists for that type is refused. Locked and hotlinked elements are
+# fine, since the element is only read.
+MAX_CREATE = 50
+FolderPart = Annotated[str, Field(min_length=1, max_length=255)]
+
+
+class FavoriteFromElement(write.InputModel):
+    element_guid: str
+    favorite: Annotated[str, Field(min_length=1, max_length=255)]
+    folder: Annotated[list[FolderPart], Field(max_length=10)] = []
+
+    @field_validator("element_guid")
+    @classmethod
+    def canonical_guid(cls, value: str) -> str:
+        return str(UUID(value)).upper()
+
+    @field_validator("favorite")
+    @classmethod
+    def trimmed(cls, value: str) -> str:
+        if value != value.strip():
+            raise ValueError("must not start or end with spaces.")
+        return value
+
+
+async def _source_rows(client, guids, port):
+    port, target, _ = await write._context(client, port)
+    result = await client.tapir(
+        port,
+        "GetDetailsOfElements",
+        {"elements": read.element_ids(guids), "fields": write.DETAIL_FIELDS},
+    )
+    rows = result.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected element details response.")
+    for guid, row in zip(guids, rows, strict=True):
+        if not isinstance(row, dict) or "error" in row or row.get("type") in (None, "Unknown"):
+            raise ValueError(f"Element {guid} does not exist or cannot be read.")
+    return port, target, rows
+
+
+async def _plan_create(client, items, port, operation):
+    port, target, rows = await _source_rows(client, [i.element_guid for i in items], port)
+    by_type: dict[str, list[str]] = {}
+    seen: set[tuple[str, str]] = set()
+    planned = []
+    for index, (item, row) in enumerate(zip(items, rows, strict=True)):
+        kind = row["type"]
+        if kind not in by_type:
+            by_type[kind] = await _names(client, port, kind)
+        key = item.favorite.casefold()
+        if any(n.strip().casefold() == key for n in by_type[kind]):
+            raise ValueError(f"Favorite {index}: {kind} favorite {item.favorite!r} already exists.")
+        if (kind, key) in seen:
+            raise ValueError(f"Favorite {index}: {item.favorite!r} appears twice for {kind}.")
+        seen.add((kind, key))
+        parameters = {"elementId": {"guid": item.element_guid}, "favorite": item.favorite}
+        if item.folder:
+            parameters["folder"] = list(item.folder)
+        planned.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": item.element_guid,
+                "elementType": kind,
+                "favorite": item.favorite,
+                "folder": list(item.folder),
+                "parameters": parameters,
+            }
+        )
+    return {"operation": operation, "target": target, "items": planned}
+
+
+async def _verify_create(client, receipt, items):
+    port = receipt["target"]["port"]
+    names: dict[str, list[str]] = {}
+    for item in items:
+        kind = item["elementType"]
+        if kind not in names:
+            names[kind] = await _names(client, port, kind)
+        if item["favorite"] in names[kind]:
+            item["status"] = "verified"
+        else:
+            item.update(status="verification_failed", mismatches=["favorite_name"])
+
+
+async def _dispatch_create(client, receipt):
+    await edit._execute(
+        client, receipt, "CreateFavoritesFromElements", "favoritesFromElements", _verify_create
+    )
+
+
+async def create_favorites_from_elements(
+    client: ArchicadClient,
+    favorites: list[dict | FavoriteFromElement],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/create up to 50 new favorites, each captured from one existing element."""
+    if not 1 <= len(favorites) <= MAX_CREATE:
+        raise ValueError(f"Pass between 1 and {MAX_CREATE} favorites.")
+    validated = [
+        f if isinstance(f, FavoriteFromElement) else FavoriteFromElement.model_validate(f)
+        for f in favorites
+    ]
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "create_favorites_from_elements",
+        planner_override=_plan_create,
+        dispatcher_override=_dispatch_create,
+    )

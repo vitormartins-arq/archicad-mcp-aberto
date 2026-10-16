@@ -375,3 +375,58 @@ Testados no projeto novo sem nome (porta 19724), ArchiCAD 30 build 3001 BRA, Tap
   como texto simples; conferir se o nome chega inteiro.
 - [ ] **Conferência visual:** o terreno em (30,0)-(40,10) desceu 0,2 m e ficou com saia;
   a etiqueta "Etiqueta alterada" na parede (0,0)-(6,0); a vista "Pavimento Térreo" em 1:75.
+
+## Lote do Claude C1: cortes
+
+- [ ] **create_sections.** "Crie um corte chamado Corte AA de (0,2) a (6,2) no térreo,
+  com profundidade de 8 m." Conferir no ArchiCAD: o corte aparece na planta olhando para
+  o lado de cima (esquerda do sentido do traço), alcança 8 m, e está no Mapa do Projeto
+  com o nome Corte AA. Conferir se o recibo deu `verified` e trouxe a referência (por
+  exemplo S-01). Se der `navigator_name`, anotar como o ArchiCAD mostra o nome no Mapa.
+- [ ] **Recusa.** Um segundo corte com o mesmo nome deve ser recusado na prévia.
+
+## Lote do Claude C2: favoritos a partir de elementos
+
+- [ ] **create_favorites_from_elements.** Selecionar uma parede do projeto novo e pedir:
+  "Crie um favorito chamado Parede teste MCP a partir desta parede, na pasta Teste MCP."
+  Conferir no ArchiCAD: o favorito aparece na paleta Favoritos, dentro da pasta Teste MCP,
+  com a espessura, o material e a camada da parede. O recibo deve dar `verified`.
+- [ ] **Janela.** Repetir com uma janela comum: o favorito tem de ir para a seção
+  Janela, não para Janela de canto.
+- [ ] **Recusa.** Pedir outro favorito com o mesmo nome deve ser recusado na prévia.
+- [ ] **Nome igual em outro tipo.** Anotar se o ArchiCAD aceita "Parede teste MCP" também
+  para uma laje (o MCP deixa, porque a lista de favoritos é por tipo).
+
+## Lote do Claude C3: propriedades de atributos
+
+- [ ] **set_attribute_property_values.** No projeto novo, criar (ou usar) uma propriedade
+  personalizada de texto disponível para materiais de construção. Pedir: "Ponha o valor
+  Concreteira Sul nessa propriedade do material Concreto." Conferir no ArchiCAD, em
+  Opções > Atributos do Elemento > Materiais de construção, que o valor aparece. O recibo
+  deve dar `verified`.
+- [ ] **Número.** Repetir com uma propriedade de número: anotar em que formato a prévia
+  mostra o valor atual (vírgula ou ponto, unidade) e se o mesmo formato volta igual na
+  leitura. Se der `verification_failed` só por formato, anotar o texto que o ArchiCAD
+  guardou.
+- [ ] **Recusa.** Uma propriedade que não está disponível para o material deve ser
+  recusada na prévia.
+
+## Lote do Claude C4: vistas internas
+
+- [ ] **create_interior_elevations.** "Crie uma vista interna chamada Sala nos cantos
+  (0,0), (4,0), (4,3), (0,3), fechada, no térreo, com profundidade de 3,5 m." Conferir
+  no ArchiCAD: as quatro paredes são vistas por dentro, e o Mapa do Projeto mostra a
+  vista interna Sala. Anotar quantos itens aparecem no Mapa (um por segmento ou um só) e
+  como fica o nome de cada segmento, porque o MCP supõe que todos levam o nome Sala. O
+  recibo deve dar `verified`.
+- [ ] **Recusa.** Outra vista interna chamada Sala deve ser recusada na prévia.
+
+## Resultado complementar de 15/10/2026 — PR #61
+- [x] Corte com o padrão preparado pelo favorito Corte Técnico Marcador Simples: verified.
+  Com o padrão inicial falhou APIERR_BADID; a ferramenta não troca o padrão automaticamente.
+- [x] Vista interna fechada: verified, quatro vistas no Navegador; nome duplicado recusado.
+- [x] Favorito da parede de teste: verified; duplicata recusada.
+- [x] Propriedade textual e Densidade: verified após correção de formatação numérica;
+  1235 foi relido 1235.000. Propriedade indisponível recusada.
+- [ ] Vitor: conferir desenho, marcador/profundidade do corte, favorito e vistas internas.
+AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.

@@ -8,6 +8,7 @@ import pytest
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
+    attribute_properties,
     attributes,
     classifications,
     documents,
@@ -15,6 +16,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    interior_elevations,
     issues,
     labels,
     layer_settings,
@@ -29,6 +31,7 @@ from archicad_mcp_aberto.tools import (
     read,
     renames,
     roofs,
+    sections,
     selection,
     texts,
     views,
@@ -200,6 +203,32 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "create_interior_elevations": {
+        "interior_elevations": [
+            {
+                "nodes": [{"x": 0, "y": 0}, {"x": 4, "y": 0}, {"x": 4, "y": 3}],
+                "closed": True,
+                "floor_index": 0,
+                "name": "Vista interna Sala",
+            }
+        ]
+    },
+    "set_attribute_property_values": {
+        "changes": [{"attribute_guid": GUID, "property_guid": PROP, "value": "Fornecedor A"}]
+    },
+    "create_favorites_from_elements": {
+        "favorites": [{"element_guid": GUID, "favorite": "Parede nova"}]
+    },
+    "create_sections": {
+        "sections": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 4, "y": 0},
+                "floor_index": 0,
+                "name": "Corte A",
+            }
+        ]
+    },
     "create_columns": {
         "columns": [
             {
@@ -246,6 +275,7 @@ INPUTS = {
 TARGETED = {
     name: function
     for module in (
+        attribute_properties,
         attributes,
         classifications,
         documents,
@@ -254,6 +284,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        interior_elevations,
         issues,
         labels,
         layer_settings,
@@ -267,6 +298,7 @@ TARGETED = {
         property_definitions,
         read,
         roofs,
+        sections,
         selection,
         texts,
         views,
@@ -362,6 +394,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "create_groups":
         for instance in (first, second):
             instance.elements[PROP] = "Wall"
+    if name == "set_attribute_property_values":
+        for instance in (first, second):
+            instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
     if name == "apply_favorites":
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]

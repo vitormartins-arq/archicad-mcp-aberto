@@ -539,3 +539,71 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   no fim de `docs/VALIDAR.md`.
 - Próximas tarefas do Codex em `docs/FILA.md`: T23 `create_fills`, T24 comentários em
   incidências, T25 pastas e vistas no Mapa de Vistas, T26 itens de classificação.
+
+
+## 2026-10-15 — Claude / C1 cortes (rodada automática)
+
+- `create_sections` em `tools/sections.py`, branch `lote/claude-2`: até 20 cortes retos
+  por `CreateSections` do Tapir 1.7.0 (ExtendedElementCommands.cpp), no padrão de
+  `create_walls`. O nome tem de ser novo no Mapa do Projeto; a conferência lê o
+  elemento como CutPlane no pavimento e acha o SectionItem com o nome no Mapa do
+  Projeto. O Tapir não devolve detalhes de CutPlane além do cabeçalho, então a linha e a
+  profundidade não são conferidas pela leitura: ficam para o teste ao vivo. Fixture tirada
+  do código-fonte, não captura ao vivo. 1832 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Registro: 80 ferramentas.
+
+
+## 2026-10-15 — Claude / C2 favoritos a partir de elementos (rodada automática)
+
+- `create_favorites_from_elements` em `tools/favorites.py`, branch `lote/claude-2`: até 50
+  favoritos novos por `CreateFavoritesFromElements` do Tapir 1.7.0 (FavoritesCommands.cpp),
+  um por elemento, com pasta opcional. Nome já existente para o tipo do elemento é
+  recusado na prévia; a conferência relê `GetFavoritesByType`. Elemento travado é aceito,
+  porque só é lido. Fixture tirada do código-fonte, não captura ao vivo. 1852 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Registro: 81 ferramentas. Próximo: C3.
+
+
+## 2026-10-15 — Claude / C3 propriedades de atributos (rodada automática)
+
+- `set_attribute_property_values` em `tools/attribute_properties.py`, branch
+  `lote/claude-2`: até 100 valores de propriedade personalizada em atributos por
+  `SetPropertyValuesOfAttributes` do Tapir 1.7.0 (PropertyCommands.cpp). O Tapir lê e
+  grava esses valores como texto de exibição, então o valor vai como texto e a
+  conferência compara o texto relido. Formato de número (vírgula, unidade) fica para o
+  teste ao vivo. O fake passou a devolver linha de erro para propriedade desconhecida em
+  `GetDetailsOfProperties` (formato suposto, não capturado). 1869 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Registro: 82 ferramentas. Próximo: C4.
+
+
+## 2026-10-15 — Claude / C4 vistas internas e lote 2 pronto (rodada automática)
+
+- `create_interior_elevations` em `tools/interior_elevations.py`, branch `lote/claude-2`:
+  até 20 vistas internas por `CreateInteriorElevations` do Tapir 1.7.0. O Tapir recebe
+  uma cadeia de pontos, não zonas (a FILA dizia zonas): cada par de pontos é um
+  segmento, e `closed` repete o primeiro ponto. A conferência do Mapa do Projeto agora é
+  comum com `create_sections` (`sections._find_in_project_map`); a vista interna aceita
+  um ou mais itens com o nome. Quantos itens o ArchiCAD cria por segmento fica para o
+  teste ao vivo. 1892 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  83 ferramentas.
+- Lote 2 completo (C1 a C4). O PR #61 saiu de rascunho para o merge do Vitor.
+- Fila do Claude reabastecida com C5 a C8 para o lote 3 (`lote/claude-3`).
+
+## 2026-10-15 — Codex / correções e validação do PR #61
+- No Sem Nome, porta 19724, Windows/AC30 build 3001 BRA/Tapir 1.7.0, sem salvar/excluir/Undo.
+  Template da porta 19723 não alterado. Código do PR testado pelas funções Python; preparação
+  do padrão e consultas independentes pelo MCP privado, sem substituir a ferramenta sob teste.
+- Corte: APIERR_BADID com o padrão inicial; após aplicar explicitamente o favorito
+  Corte Técnico Marcador Simples à ferramenta Corte, nova prévia/aplicação verified.
+  Não identifica qual referência interna era inválida. Acrescentado aviso/hint; sem mudança
+  automática de favorito/padrão ou tentativa repetida.
+- Vista interna fechada: verified, quatro itens no Navegador. Parede de apoio e favorito
+  MCP Parede 20261015: verified. Nomes duplicados de vista interna/favorito recusados.
+- Propriedade textual Descrição do Bloco de Concreto - Estrutural verified. Densidade
+  1234 retornou 1234.000 e reproduziu falso verification_failed. Corrigida comparação
+  Decimal exata somente para number/integer sem unidade e formato ASCII inequívoco;
+  1235 retornou 1235.000 e verified. Texto, unidades, separadores ambíguos e diferenças
+  reais continuam estritos. Captura nova marcada ao vivo. Propriedade indisponível recusada.
+- Aprovação visual permanece com Vitor. Nenhum merge. Demais subcasos opcionais (favorito
+  de janela, mesmo nome entre tipos e profundidade visual) não foram executados.
+
+- Validação simulada final: 1905 testes passaram; uv run ruff check . passou, Windows/Python 3.12.10.

@@ -1,0 +1,54 @@
+{
+  "provenance": {
+    "live_capture": true,
+    "date": "2026-10-15",
+    "archicad_version": 30,
+    "build": 3001,
+    "language": "BRA",
+    "tapir_version": "1.7.0",
+    "os": "Windows",
+    "port": 19724,
+    "project": "Untitled test project; never saved"
+  },
+  "number_definition": {
+    "propertyDefinitions": [
+      {
+        "propertyDefinition": {
+          "propertyId": {
+            "guid": "6B83DBA0-C811-E84D-8754-2CDEF7E44D0C"
+          },
+          "group": {
+            "propertyGroupId": {
+              "guid": "21CD44E6-9A47-7145-9CEF-AB240B5D077B"
+            },
+            "name": "COMUM (Materiais)"
+          },
+          "name": "Densidade",
+          "description": "Densidade da massa kg/m3.",
+          "isEditable": true,
+          "type": "number",
+          "defaultValue": {
+            "basicDefaultValue": {
+              "type": "number",
+              "status": "userUndefined"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "number_readback": {
+    "propertyValuesForAttributes": [
+      {
+        "propertyValues": [
+          {
+            "propertyValue": {
+              "value": "1235.000"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "requested_value": "1235"
+}

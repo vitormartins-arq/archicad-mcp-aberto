@@ -430,6 +430,19 @@ class FakeArchicad:
     layer_settings_ignored: bool = False
     lose_layer_settings_response: bool = False
     layer_combination_read_errors: dict[int, dict] = field(default_factory=dict)
+    section_stored_name: str | None = None  # Project Map shows this name instead
+    section_wrong_floor: bool = False
+    lose_section_response: bool = False
+    # CreateFavoritesFromElements: names Archicad refuses, and a name listed back instead.
+    favorite_create_refused: set[str] = field(default_factory=set)
+    favorite_stored_name: str | None = None
+    created_favorites: list[dict] = field(default_factory=list)
+    lose_favorite_create_response: bool = False
+    # Attribute property values as display text, keyed by (attribute guid, property guid).
+    attribute_property_values: dict[tuple[str, str], str] = field(default_factory=dict)
+    attribute_property_refused: set[str] = field(default_factory=set)  # values refused
+    attribute_property_stored: str | None = None  # Archicad keeps this text instead
+    lose_attribute_property_response: bool = False
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -496,6 +509,10 @@ class FakeArchicad:
             out = []
             for p in params["properties"]:
                 g = p["propertyId"]["guid"]
+                if g not in self.properties:
+                    # Error row shape assumed from the JSON API docs; not live captured.
+                    out.append({"error": {"code": 4006, "message": "Property not found"}})
+                    continue
                 # Key layout seen live on AC30 build 3001 (propertyId.guid, not "guid").
                 definition = {"propertyId": {"guid": g}, "name": self.properties[g]}
                 if g in self.read_only_properties:
@@ -818,6 +835,60 @@ class FakeArchicad:
                     if favorite in self.favorite_layers and guid in self.details:
                         self.details[guid]["layerIndex"] = self.favorite_layers[favorite]
                     out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_ok"]))
+            return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "GetPropertyValuesOfAttributes":
+            # Shapes from the Tapir 1.7.0 source (PropertyCommands.cpp); not live captured.
+            assert set(args) == {"attributeIds", "properties"}
+            out = []
+            for attribute in args["attributeIds"]:
+                values = []
+                for prop in args["properties"]:
+                    key = (attribute["attributeId"]["guid"], prop["propertyId"]["guid"])
+                    if key in self.attribute_property_values:
+                        text = self.attribute_property_values[key]
+                        values.append({"propertyValue": {"value": text}})
+                    else:
+                        message = "Not available or not evaluated property"
+                        values.append({"error": {"code": -2130312312, "message": message}})
+                out.append({"propertyValues": values})
+            return ok({"addOnCommandResponse": {"propertyValuesForAttributes": out}})
+        if name == "SetPropertyValuesOfAttributes":
+            # Shapes from the Tapir 1.7.0 source (PropertyCommands.cpp); not live captured.
+            assert set(args) == {"attributePropertyValues"}
+            out = []
+            for row in args["attributePropertyValues"]:
+                assert set(row) == {"attributeId", "propertyId", "propertyValue"}
+                key = (row["attributeId"]["guid"], row["propertyId"]["guid"])
+                text = row["propertyValue"]["value"]
+                if key not in self.attribute_property_values or text in (
+                    self.attribute_property_refused
+                ):
+                    message = "Failed to set property value for attribute"
+                    out.append(
+                        {"success": False, "error": {"code": -2130313112, "message": message}}
+                    )
+                else:
+                    self.attribute_property_values[key] = self.attribute_property_stored or text
+                    out.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "CreateFavoritesFromElements":
+            # Shapes from the Tapir 1.7.0 source (FavoritesCommands.cpp); not live captured.
+            assert set(args) == {"favoritesFromElements"}
+            out = []
+            for row in args["favoritesFromElements"]:
+                assert set(row) <= {"elementId", "favorite", "folder"}
+                kind = self.elements.get(row["elementId"]["guid"])
+                if kind is None:
+                    error = {"code": -2130313112, "message": "Failed to find element"}
+                    out.append({"success": False, "error": error})
+                elif row["favorite"] in self.favorite_create_refused:
+                    error = {"code": -2130313112, "message": "Failed to create the favorite"}
+                    out.append({"success": False, "error": error})
+                else:
+                    stored = self.favorite_stored_name or row["favorite"]
+                    self.favorites.setdefault(kind, []).append(stored)
+                    self.created_favorites.append(deepcopy(row))
+                    out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "ChangeSelectionOfElements":
             added, removed = [], []
@@ -1591,6 +1662,69 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateInteriorElevations":
+            # Shapes from the Tapir 1.7.0 source (CreateInteriorElevationsCommand,
+            # NavigatorCommands InteriorElevationItem); not captured live. One Project Map
+            # item per segment is an assumption to confirm live.
+            out = []
+            for index, data in enumerate(args["interiorElevationsData"]):
+                assert set(data) <= {"nodeCoordinates", "depth", "name", "id", "floorIndex"}
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "InteriorElevation"
+                floor = data.get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "InteriorElevation",
+                    "floorIndex": floor,
+                    "layerIndex": 1,
+                }
+                for segment in range(len(data["nodeCoordinates"]) - 1):
+                    self.navigator_trees["ProjectMap"].setdefault("children", []).append(
+                        {
+                            "navigatorItem": {
+                                "navigatorItemId": {"guid": str(uuid4()).upper()},
+                                "type": "InteriorElevationItem",
+                                "name": self.section_stored_name or data.get("name", ""),
+                                "prefix": "",
+                                "uiId": f"{data.get('id', 'IE-01')}/{segment + 1}",
+                                "customUiId": "id" in data,
+                                "customName": True,
+                            }
+                        }
+                    )
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateSections":
+            # Shapes from the Tapir 1.7.0 source (CreateSectionsCommand, GetDetailsOfElements
+            # header fields, NavigatorCommands SectionItem); not captured live.
+            out = []
+            for index, data in enumerate(args["sectionsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "CutPlane"
+                floor = data.get("floorIndex", 0) + (1 if self.section_wrong_floor else 0)
+                self.details[guid] = {"type": "CutPlane", "floorIndex": floor, "layerIndex": 1}
+                nav = str(uuid4()).upper()
+                count = sum(n.get("type") == "SectionItem" for n in self._nav_items("ProjectMap"))
+                self.navigator_trees["ProjectMap"].setdefault("children", []).append(
+                    {
+                        "navigatorItem": {
+                            "navigatorItemId": {"guid": nav},
+                            "type": "SectionItem",
+                            "name": self.section_stored_name or data.get("name", ""),
+                            "prefix": "",
+                            "uiId": f"S-{count + 1:02d}",
+                            "customUiId": False,
+                            "customName": True,
+                        }
+                    }
+                )
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name in DRAFTING_COMMANDS:
             kind, key = DRAFTING_COMMANDS[name]
             out = []
@@ -1996,6 +2130,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost mesh response after model change", request=request
             )
+        if instance.lose_section_response and command == "CreateInteriorElevations":
+            raise httpx.ReadTimeout("Injected lost interior elevation response", request=request)
+        if instance.lose_section_response and command == "CreateSections":
+            raise httpx.ReadTimeout("Injected lost section response", request=request)
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
         if instance.lose_slab_response and command == "CreateSlabs":
@@ -2029,6 +2167,10 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
         if instance.lose_project_info_response and command == "SetProjectInfoField":
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
+        if instance.lose_attribute_property_response and command == "SetPropertyValuesOfAttributes":
+            raise httpx.ReadTimeout("Injected lost attribute property response", request=request)
+        if instance.lose_favorite_create_response and command == "CreateFavoritesFromElements":
+            raise httpx.ReadTimeout("Injected lost favorite response", request=request)
         if instance.lose_favorite_response and command == "ApplyFavoritesToElements":
             raise httpx.ReadTimeout("Injected lost favorite response", request=request)
         if instance.lose_property_definition_response and command in (

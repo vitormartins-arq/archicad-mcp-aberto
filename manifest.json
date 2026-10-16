@@ -374,6 +374,22 @@
     {
       "name": "set_layer_settings",
       "description": "Safely change existing layer flags/group with preview, one-use confirmation and read-back; preserve name and identity."
+    },
+    {
+      "name": "create_sections",
+      "description": "Preview/create up to 20 straight sections with a new name, checked on the story and in the Project Map."
+    },
+    {
+      "name": "create_favorites_from_elements",
+      "description": "Preview/create new favorites captured from existing elements; never overwrites, names read back."
+    },
+    {
+      "name": "set_attribute_property_values",
+      "description": "Preview/apply custom property values on attributes as display text, read back after."
+    },
+    {
+      "name": "create_interior_elevations",
+      "description": "Preview/create interior elevations from point chains with a new name, checked on the story and in the Project Map."
     }
   ],
   "compatibility": {

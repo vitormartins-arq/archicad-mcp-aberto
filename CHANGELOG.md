@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- Add `create_interior_elevations` (new `tools/interior_elevations.py`): up to 20
+  interior elevations by Tapir 1.7.0 `CreateInteriorElevations`, each from a chain of 2
+  to 50 points (one segment per pair, `closed` repeats the first point), with an optional
+  reference ID, read back on the story and in the Project Map. The Project Map check is
+  shared with `create_sections`. Not yet tested live.
+
+- Add `set_attribute_property_values` (new `tools/attribute_properties.py`): up to 100
+  custom property values on attributes (building materials, composites, profiles and
+  others) by Tapir 1.7.0 `SetPropertyValuesOfAttributes`. Values travel as display text,
+  as Tapir reads and writes them; the preview shows the current text and refuses
+  read-only, unknown or unavailable properties, and each value is read back as text.
+  Not yet tested live.
+
+- Add `create_favorites_from_elements` (in `tools/favorites.py`): up to 50 new favorites,
+  each captured from one existing element by Tapir 1.7.0 `CreateFavoritesFromElements`
+  (settings, classifications, editable property values), optionally in a Favorites
+  palette folder. A name that already exists for that element type is refused, so no
+  favorite is ever overwritten; each new name is read back with `GetFavoritesByType`.
+  Not yet tested live.
+
+- Add `create_sections` (new `tools/sections.py`): up to 20 straight sections by
+  Tapir 1.7.0 `CreateSections`, with preview, single-use token, receipts, and a read-back
+  on the story (CutPlane) and in the Project Map (SectionItem by its new name). Not yet
+  tested live.
+
 - `rename_items` after its live test (14/10/2026, Archicad 30 build 3001 BRA, Tapir
   1.7.0): surfaces are refused, because `CreateSurfaces` with only the name also changed
   the texture; layer combinations send the empty `layers` list that
@@ -257,3 +282,8 @@
   layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
   name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
   is unknown, including the native overwrite base creating a vanished target. Simulated only.
+
+### Live corrections — 2026-10-15
+- Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
+- Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
+  and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.

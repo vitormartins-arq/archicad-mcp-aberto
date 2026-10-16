@@ -114,6 +114,10 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_view_settings` | Write | Scale and existing layer combination of views; preserve other settings | yes |
 | `list_layer_combinations` | Read | Saved combinations, optional per-layer states, filter/page before details | yes |
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
+| `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
+| `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
+| `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
+| `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
 
 ### Reported live validation
 
@@ -474,3 +478,54 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   automatically removed/retried. No deletion, renaming or saving. Source-derived tests
   only; live validation pending. Registry after this addition: **79 tools (25 reads,
   54 writes/interactions)**.
+
+- `create_sections([{start, end, floor_index, name, depth?}], port?, dry_run?,
+  confirmation_token?)` creates up to 20 straight sections through Tapir 1.7.0
+  CreateSections. Coordinates are metres; the section looks to the left of start->end,
+  as far as `depth` (default 1 m, Tapir's default). The marker and the rest come from
+  the Section tool default, and Archicad numbers the reference ID. The name must be new
+  in the Project Map: each section is read back as a CutPlane on its story and as the
+  one SectionItem of that name, whose reference ID goes into the receipt. Fixtures come
+  from the Tapir source, not a live capture. Registry: **80 tools (25 reads, 55
+  writes/interactions)**.
+
+- `create_favorites_from_elements([{element_guid, favorite, folder?}], port?, dry_run?,
+  confirmation_token?)` saves up to 50 new favorites through Tapir 1.7.0
+  CreateFavoritesFromElements. Each one copies an existing element's settings,
+  classifications and editable property values; `folder` is an optional list of folder
+  names in the Favorites palette. The name must be new for that element type, so an
+  existing favorite is never overwritten; locked elements are fine, since they are only
+  read. Each new name is read back with GetFavoritesByType. Fixtures come from the Tapir
+  source, not a live capture. Registry: **81 tools (25 reads, 56 writes/interactions)**.
+
+- `set_attribute_property_values([{attribute_guid, property_guid, value}], port?,
+  dry_run?, confirmation_token?)` writes up to 100 custom property values on attributes
+  through Tapir 1.7.0 SetPropertyValuesOfAttributes. Tapir handles these values as
+  display text and Archicad converts the text with the project's own formats, so `value`
+  is text, written in the format the preview shows for the current value (for example
+  "120,00" in a Brazilian project). Read-only, unknown and unavailable properties are
+  refused in the preview; each value is read back as text, and a value Archicad stores
+  in another format shows as `verification_failed` with the text it kept. Attribute
+  GUIDs come from `list_building_materials` or the other attribute reads. Fixtures come
+  from the Tapir source, not a live capture. Registry: **82 tools (25 reads, 57
+  writes/interactions)**.
+
+- `create_interior_elevations([{nodes, closed?, floor_index, name, reference_id?,
+  depth?}], port?, dry_run?, confirmation_token?)` creates up to 20 interior elevations
+  through Tapir 1.7.0 CreateInteriorElevations. `nodes` are 2 to 50 points in metres;
+  each consecutive pair is one segment that looks to its left, as far as `depth`
+  (default 1 m). Walking a room's corners anticlockwise with `closed: true` looks at all
+  of its walls from inside. Marker and settings come from the Interior Elevation tool.
+  The name must be new in the Project Map; each one is read back as an
+  InteriorElevation on its story and as the Project Map item(s) of that name, whose
+  reference IDs go into the receipt. Fixtures come from the Tapir source, not a live
+  capture. Registry: **83 tools (25 reads, 58 writes/interactions)**.
+
+### Live validation notes: sections and attribute values
+Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,
+an uninitialized/invalid marker returned APIERR_BADID. Explicitly applying an existing
+Section favorite in the test project allowed creation to verify. The tool provides
+recovery guidance and never changes defaults or retries automatically.
+Attribute properties of type number/integer accept equivalent unitless ASCII decimal
+read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
+numeric values remain strict. Receipt text preserves the actual Archicad response.
