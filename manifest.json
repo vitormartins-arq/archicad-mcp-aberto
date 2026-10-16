@@ -418,6 +418,10 @@
     {
       "name": "create_interior_elevations",
       "description": "Preview/create interior elevations from point chains with a new name, checked on the story and in the Project Map."
+    },
+    {
+      "name": "list_hotlinks",
+      "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
     }
   ],
   "compatibility": {

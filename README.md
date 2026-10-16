@@ -121,6 +121,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_hotlinks` | Read | Linked Module and XRef nodes with GUID, source path and hierarchy | yes |
 
 ### Reported live validation
 

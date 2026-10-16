@@ -485,3 +485,13 @@ AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Und
   1235 foi relido 1235.000. Propriedade indisponível recusada.
 - [ ] Vitor: conferir desenho, marcador/profundidade do corte, favorito e vistas internas.
 AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.
+
+## Módulos vinculados e XRefs — validação ao vivo pendente
+
+- [ ] Em projeto de teste com pelo menos um módulo vinculado, chamar `list_hotlinks` e
+  conferir GUID, nome, tipo `Module`, caminho e hierarquia com o Gestor de Módulos
+  Vinculados. Se houver módulo aninhado, conferir `parent_guid` e `depth`.
+- [ ] Se houver XRef de teste, conferir que aparece como `XRef`; testar busca por parte
+  do nome e do caminho e paginação com `limit=1`.
+- [ ] Registrar Archicad/build/idioma/Tapir. A ferramenta é somente leitura; não
+  atualizar, relincar, incorporar, excluir nem salvar.

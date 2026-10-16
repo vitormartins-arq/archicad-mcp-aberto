@@ -237,6 +237,11 @@ ROOFS_TEXTS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
     ).read_text(encoding="utf-8")
 )
+HOTLINKS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_hotlinks_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 def ok(result: Any) -> dict:
@@ -777,6 +782,8 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "GetHotlinks":
+            return ok({"addOnCommandResponse": deepcopy(HOTLINKS_FIXTURE["response"])})
         if name == "GetDesignOptionSets":
             return ok(
                 {

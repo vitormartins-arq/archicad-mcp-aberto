@@ -17,6 +17,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    hotlinks,
     interior_elevations,
     issues,
     labels,
@@ -59,6 +60,7 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "list_hotlinks": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -310,6 +312,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        hotlinks,
         interior_elevations,
         issues,
         labels,
