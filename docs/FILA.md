@@ -64,14 +64,25 @@ Desde 14/10/2026 (decisão do Vitor: "Claude e Codex") o Claude também programa
 nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só com as de
 "A fazer". O Claude junta as suas num PR de lote (branch `lote/claude-cN`).
 
-- **C1 `create_sections`.** Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
+- **C1 `create_sections`.** (Feito no lote `lote/claude-2`.) Cortes por `CreateSections` do Tapir 1.7.0: linha de corte em
   metros, pavimento, nome e id de referência. Conferência pelo Mapa do Projeto.
-- **C2 favoritos a partir de elementos.** `CreateFavoritesFromElements`: um favorito novo
+- **C2 favoritos a partir de elementos.** (Feito no lote `lote/claude-2`.) `CreateFavoritesFromElements`: um favorito novo
   por elemento existente, com nome único. Sem sobrescrever nem apagar favoritos.
-- **C3 propriedades de atributos.** `SetPropertyValuesOfAttributes`: valor de propriedade
+- **C3 propriedades de atributos.** (Feito no lote `lote/claude-2`.) `SetPropertyValuesOfAttributes`: valor de propriedade
   personalizada em materiais de construção, compostos e perfis, conferindo com a leitura.
-- **C4 `create_interior_elevations`.** `CreateInteriorElevations` a partir de zonas
-  existentes. Conferência pelo Mapa do Projeto.
+- **C4 `create_interior_elevations`.** (Feito no lote `lote/claude-2`.) O Tapir recebe
+  uma cadeia de pontos, não zonas: cada par de pontos vira um segmento. Conferência pelo
+  Mapa do Projeto.
+- **C5 notas-chave.** `CreateKeynoteFolders` e `CreateKeynoteItems`: pastas e itens novos
+  de notas-chave, com nome único, sem mudar nem apagar os que já existem. Lote
+  `lote/claude-3`.
+- **C6 `create_morphs`.** `CreateMorphs`: morfos simples (caixa por contorno e altura) no
+  padrão de `create_slabs`, conferidos pela leitura de tipo, pavimento e caixa
+  envolvente.
+- **C7 cotas de espessura de parede.** `CreateWallThicknessDimensions` em paredes
+  existentes e editáveis, conferindo que a cota nova aparece na leitura dos elementos.
+- **C8 `create_openings`.** `CreateOpenings`: aberturas da ferramenta Abertura em paredes
+  ou lajes existentes, no padrão de `create_windows`.
 
 ## Integrado
 

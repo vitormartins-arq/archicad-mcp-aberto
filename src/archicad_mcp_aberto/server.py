@@ -10,6 +10,7 @@ from mcp.server.fastmcp import Context, FastMCP
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
+    attribute_properties,
     attributes,
     classifications,
     design_options,
@@ -26,6 +27,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
@@ -34,6 +36,7 @@ from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
@@ -1286,6 +1289,84 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await design_options.get_design_options_for_elements(
             client_of(ctx), element_guids, port
         )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_sections(
+        ctx: Context,
+        sections: list[sections_tool.SectionCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 straight sections: start and end {x, y} in metres,
+        floor_index, a name new in the Project Map, and depth (metres, default 1). The
+        section looks to the left of start->end; marker and settings come from the Section
+        tool. Each is read back on its story and in the Project Map. Explicit apply port,
+        one-use token and receipt; never saves.
+        """
+        return await sections_tool.create_sections(
+            client_of(ctx), sections, port, dry_run, confirmation_token
+        )
+
+
+    @mcp.tool(annotations=WRITE)
+    async def create_favorites_from_elements(
+        ctx: Context,
+        new_favorites: list[favorites.FavoriteFromElement],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 new favorites, each from one existing element:
+        element_guid, favorite (a name new for that element's type) and optional folder
+        (list of folder names in the Favorites palette). Captures settings,
+        classifications, editable property values. Never overwrites a favorite. Each new
+        name is read back. Explicit apply port, one-use token and receipt; never saves.
+        """
+        return await favorites.create_favorites_from_elements(
+            client_of(ctx), new_favorites, port, dry_run, confirmation_token
+        )
+
+
+    @mcp.tool(annotations=WRITE)
+    async def set_attribute_property_values(
+        ctx: Context,
+        changes: list[attribute_properties.AttributePropertyChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/apply up to 100 custom property values on attributes (building
+        materials, composites, profiles and others): attribute_guid, property_guid and
+        value as display text, in the format the preview shows for the current value.
+        Refuses read-only or unavailable properties. Each value is read back as text.
+        Explicit apply port, one-use token and receipt; never saves.
+        """
+        return await attribute_properties.set_attribute_property_values(
+            client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+
+    @mcp.tool(annotations=WRITE)
+    async def create_interior_elevations(
+        ctx: Context,
+        interior_elevations: list[interior_elevations_tool.InteriorElevationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 interior elevations: nodes (2 to 50 {x, y} points in
+        metres, one segment per consecutive pair), closed (repeat the first point),
+        floor_index, a name new in the Project Map, optional reference_id and depth
+        (metres, default 1). Each segment looks to the left of its direction, so a room's
+        corners in anticlockwise order look at its walls from inside. Read back on the
+        story and in the Project Map. Explicit apply port, one-use token and receipt;
+        never saves.
+        """
+        return await interior_elevations_tool.create_interior_elevations(
+            client_of(ctx), interior_elevations, port, dry_run, confirmation_token
+        )
+
 
     return mcp
 

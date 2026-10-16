@@ -427,6 +427,12 @@ OPERATIONS["set_layer_settings"] = (
     "Existing layer flags only. Current visibility/editability can change; no guaranteed Undo.",
 )
 
+OPERATIONS["create_sections"] = (
+    "section",
+    "section_receipt_id",
+    "New sections take the Section tool's marker and settings; Archicad numbers the ID.",
+)
+
 
 # operation -> (Tapir create command, list key in its parameters)
 CREATE_COMMANDS = {
@@ -448,6 +454,26 @@ CREATE_COMMANDS = {
     "create_fills": ("CreateHatches", "hatchesData"),
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
+CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["create_interior_elevations"] = (
+    "interior elevation",
+    "interior_elevation_receipt_id",
+    "New interior elevations take the Interior Elevation tool's marker and settings.",
+)
+CREATE_COMMANDS["create_interior_elevations"] = (
+    "CreateInteriorElevations",
+    "interiorElevationsData",
+)
+OPERATIONS["set_attribute_property_values"] = (
+    "attribute property change",
+    "attribute_property_receipt_id",
+    "Values are display text converted by Archicad; each is read back as text.",
+)
+OPERATIONS["create_favorites_from_elements"] = (
+    "favorite",
+    "favorite_receipt_id",
+    "Each new favorite copies its element's settings; existing favorites are never changed.",
+)
 
 
 @dataclass
