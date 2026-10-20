@@ -22,7 +22,7 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
 1. `docs/ESTADO.md`: where the work stopped and what comes next. Update it before you
    finish a session, so the next agent (Codex or Claude) can continue.
 2. The lessons log on Vitor's Google Drive, when you can reach it:
-   `<Drive>\02 - Empresarial\Projetos - Lab\Archicad\Archicad API\MCP Comunidade\Licoes-aprendidas.md`
+   `<Drive>\02 - Empresarial\Projetos - Lab\Archicad\Archicad MCP\MCP Comunidade\Licoes-aprendidas.md`
    (`<Drive>` is `H:\Meu Drive` on one PC and may be `G:\Meu Drive` on the other).
    Add new lessons (LA-xxx) and open items (P-xxx) at the end; never renumber; re-read
    the file right before saving, because other agents edit it too.
