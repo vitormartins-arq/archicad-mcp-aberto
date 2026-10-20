@@ -739,3 +739,62 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 
 - origin/main c491e2c integrada por merge, sem rebase. Conflitos resolvidos preservando as ferramentas e correções do PR #61 e as do #62, mais ambas as documentações e registros de validação. Manifesto e teste de registro combinados: 90 ferramentas. Nenhuma chamada ao Archicad real nesta integração; nenhum merge de PR pelo Codex.
 - Validação após resolver os conflitos: 2113 testes simulados passaram e uv run ruff check . passou (Windows/Python 3.12.10).
+
+
+## 2026-10-15 — Claude / C5 notas-chave (rodada automática, lote 3)
+
+- Branch `lote/claude-3`, empilhada sobre `lote/claude-2` (PR #61 ainda espera o merge do
+  Vitor; o PR do lote 3 abre depois dele). `tools/keynotes.py`: `list_keynotes` e as
+  escritas `create_keynote_folders` e `create_keynote_items` por `CreateKeynoteFolders` e
+  `CreateKeynoteItems` do Tapir 1.7.0 (KeynoteCommands.cpp, ArchiCAD 28 ou mais novo).
+  Só acrescentam; chave que já existe em qualquer lugar da árvore é recusada. A
+  conferência relê a árvore pelo GUID. 1930 testes simulados e Ruff passaram (Linux,
+  Python 3.13). Registro: 86 ferramentas. Próximo: C6 `create_morphs`.
+
+
+## 2026-10-15 — Claude / C6 morfos (rodada automática, lote 3)
+
+- `tools/morphs.py`: `create_morphs` por `CreateMorphs` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp), só a caixa simples (`basePoint` + `size`), com pavimento
+  explícito. Conferência em duas leituras: `GetDetailsOfElements` (tipo, pavimento,
+  origem e eixos do `tranmat`) e `Get3DBoundingBoxes` (caixa com tolerância de 1 mm).
+  1945 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 87 ferramentas.
+  Próximo: C7 cotas de espessura de parede.
+
+## 2026-10-15 — Claude / C7 cotas de espessura de parede (rodada automática, lote 3)
+
+- `tools/wall_dimensions.py`: `create_wall_thickness_dimensions` por
+  `CreateWallThicknessDimensions` do Tapir 1.7.0 (ExtendedElementCommands.cpp). Só paredes
+  existentes e editáveis, uma cota por parede. Sem ponto e direção, a linha cruza o meio
+  da parede reta, perpendicular a ela; parede curva exige direção. O Tapir não devolve
+  detalhes próprios da cota, então a conferência é tipo Dimension no pavimento da parede.
+  1960 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 88 ferramentas.
+  Próximo: C8 `create_openings`.
+
+## 2026-10-20 — Claude / C8 aberturas e PR do lote 3 (rodada automática)
+
+- PRs #61 (lote 2) e #62 (Codex, T27 opções de design) entraram na main. A main foi
+  integrada por merge na `lote/claude-3` (conflitos só de acréscimo, mantidos os dois
+  lados) e o PR #63 do lote 3 foi aberto para o Vitor fazer o merge.
+- `tools/voids.py`: `create_openings` por `CreateOpenings` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp). Dono parede ou laje existente e editável; ponto base em
+  metros absolutos (z é a borda de baixo, desde a correção #533 do Tapir), largura e
+  altura positivas. Conferência: tipo Opening e o vão listado em `GetConnectedElements`
+  do dono com tipo Opening. Laje e parede inclinada ficam para o teste ao vivo
+  (docs/VALIDAR.md). 2197 testes simulados e Ruff passaram (Linux, Python 3.13).
+  Registro: 96 ferramentas.
+- Seção do Claude na FILA reabastecida: C9 `create_splines`, C10 `create_hotspots`, C11
+  `create_keynote_labels`, C12 `modify_morphs`, C13 cotas associativas. Próximo: C9.
+
+## 2026-10-20 — Claude / teste ao vivo do lote 3 e correção do morfo
+
+- Teste ao vivo do PR #63 no PC do Vitor (AC30 build 3001 BRA, Tapir 1.7.0, porta 19724,
+  "Sem Nome"): notas-chave, cota de espessura e as três aberturas deram verified.
+- O `size` do `CreateMorphs` do Tapir criou caixas abertas (5 faces, Surface,
+  isClosed false). `create_morphs` agora manda um `body` fechado (8 vértices, 6 faces
+  com normais para fora, bodyType Solid) e a conferência exige Solid fechado com 6 faces.
+  Vale levar ao Tapir upstream: o `BuildCuboidMorphMemo` dá às faces de baixo e de cima a
+  mesma orientação e não define o bodyType.
+- Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
+  API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.

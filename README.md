@@ -121,6 +121,12 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
+| `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
+| `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
+| `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
+| `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
+| `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 
 ### Reported live validation
 
@@ -560,6 +566,50 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   InteriorElevation on its story and as the Project Map item(s) of that name, whose
   reference IDs go into the receipt. Fixtures come from the Tapir source, not a live
   capture. Registry: **83 tools (25 reads, 58 writes/interactions)**.
+
+- `list_keynotes(port?)`, `create_keynote_folders([{key, title, parent_folder_guid?}])`
+  and `create_keynote_items([{key, title?, description?, reference?,
+  parent_folder_guid?}])` (each write with `port?, dry_run?, confirmation_token?`) work
+  with keynotes through Tapir 1.7.0 on Archicad 28 or newer. The writes only add: a key
+  that already exists anywhere in the keynote tree is refused, so existing keynotes never
+  change. New entries go in the root or in an existing folder from `list_keynotes`; to
+  fill a new folder, create it first and use the GUID in its receipt. Each new entry is
+  read back by GUID. Fixtures come from the Tapir source, not a live capture.
+
+- `create_morphs([{base_point: {x, y, z}, size_x, size_y, size_z, floor_index}], port?,
+  dry_run?, confirmation_token?)` creates up to 50 box morphs through Tapir 1.7.0
+  `CreateMorphs`. The base point is the box's lowest corner in absolute project metres;
+  sizes are positive metres along the project axes. Building material, surface and
+  display settings come from the Morph tool defaults. The box is sent as an explicit
+  closed solid body, because Tapir's own `size` box came out open (five faces, Surface)
+  in a live test. Each morph is read back for type, story, origin, axes and a closed
+  six-face Solid body, and its 3D bounding box must match within 1 mm. A morph on a
+  story that Archicad is not showing makes Archicad open a dialog that blocks the API
+  until someone clicks it, so show that story first. Fixtures come from the Tapir
+  source, not a live capture.
+
+- `create_wall_thickness_dimensions([{wall_guid, reference_point?: {x, y}, direction?:
+  {x, y}}], port?, dry_run?, confirmation_token?)` adds up to 50 associative dimensions of
+  both faces of existing editable walls through Tapir 1.7.0
+  `CreateWallThicknessDimensions`, one per wall. The dimension goes on the wall's story
+  and stays linked to the wall. By default its line crosses the middle of the wall's
+  reference line, perpendicular to it; a curved wall needs an explicit direction. Display
+  settings come from the Dimension tool defaults. Tapir returns no dimension-specific
+  details, so the read-back checks the new element's type and story. Fixtures come from
+  the Tapir source, not a live capture.
+
+- `create_openings([{owner_guid, base_point: {x, y, z}, width, height}], port?, dry_run?,
+  confirmation_token?)` cuts up to 50 rectangular openings of the Opening tool (Archicad
+  26 or newer) into existing editable walls or slabs through Tapir 1.7.0
+  `CreateOpenings`. The base point is in absolute project metres and its z is the
+  opening's bottom edge; width and height are positive metres. Tested live, the width is
+  centred on the base point and follows the wall's direction; in a slab the opening lies
+  flat, its height running towards -y from the point. Tapir sets the opening's frame
+  itself, and the shape, extrusion and display come from the Opening tool defaults.
+  Tapir returns no opening-specific details, so the read-back checks the new element's
+  type and that the host lists it among its connected openings (`GetConnectedElements`).
+  Fixtures come from the Tapir source, not a live capture. Registry: **96 tools (29
+  reads, 67 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

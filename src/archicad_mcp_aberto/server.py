@@ -19,6 +19,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    keynotes,
     locks,
     modify,
     openings,
@@ -33,6 +34,7 @@ from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
+from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
@@ -40,6 +42,8 @@ from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
+from archicad_mcp_aberto.tools import voids as voids_tool
+from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -1367,6 +1371,92 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), interior_elevations, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_keynotes(ctx: Context, port: int | None = None) -> dict:
+        """Keynote folders and items (Archicad 28+): GUID, parent folder GUID, key path,
+        key, title, description and reference. Requires Tapir."""
+        return await keynotes.list_keynotes(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_folders(
+        ctx: Context,
+        folders: list[keynotes.KeynoteFolderCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 keynote folders: key (new in the whole keynote tree),
+        title and optional parent_folder_guid from list_keynotes (root otherwise). Only
+        adds. Read back by GUID. Explicit apply port, one-use token and receipt; never
+        saves."""
+        return await keynotes.create_keynote_folders(
+            client_of(ctx), folders, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_items(
+        ctx: Context,
+        items: list[keynotes.KeynoteItemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 100 keynote items: key (new in the whole keynote tree),
+        optional title, description, reference and parent_folder_guid from list_keynotes
+        (root otherwise). Only adds. Read back by GUID. Explicit apply port, one-use token
+        and receipt; never saves."""
+        return await keynotes.create_keynote_items(
+            client_of(ctx), items, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_morphs(
+        ctx: Context,
+        morphs: list[morphs_tool.MorphCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 box morphs: base corner x/y/z in absolute project metres,
+        positive size_x/size_y/size_z and explicit floor_index. Material and display take
+        the Morph defaults. Reads back story, origin, axes and 3D box. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await morphs_tool.create_morphs(
+            client_of(ctx), morphs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_wall_thickness_dimensions(
+        ctx: Context,
+        dimensions: list[wall_dimensions_tool.WallThicknessDimension],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 associative thickness dimensions on existing editable
+        walls (wall_guid), one per wall, on the wall's story. Optional reference_point and
+        direction in plan metres; default crosses the wall's middle. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await wall_dimensions_tool.create_wall_thickness_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_openings(
+        ctx: Context,
+        openings: list[voids_tool.OpeningVoid],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 rectangular Opening-tool openings (Archicad 26+) in
+        existing editable walls or slabs (owner_guid): base_point x/y/z in absolute project
+        metres, z being the bottom edge, plus positive width and height. Other settings take
+        the Opening tool defaults. Reads back the type and the host's connected openings.
+        Explicit apply port, one-use token and receipt; never saves."""
+        return await voids_tool.create_openings(
+            client_of(ctx), openings, port, dry_run, confirmation_token
+        )
 
     return mcp
 

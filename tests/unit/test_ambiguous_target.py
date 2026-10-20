@@ -19,12 +19,14 @@ from archicad_mcp_aberto.tools import (
     gateway,
     interior_elevations,
     issues,
+    keynotes,
     labels,
     layer_settings,
     layers,
     locks,
     meshes,
     modify,
+    morphs,
     navigator,
     openings,
     project_info,
@@ -36,6 +38,8 @@ from archicad_mcp_aberto.tools import (
     selection,
     texts,
     views,
+    voids,
+    wall_dimensions,
     write,
     zones,
 )
@@ -209,6 +213,34 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "list_keynotes": {},
+    "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
+    "create_keynote_items": {"items": [{"key": "01.01", "title": "Alvenaria"}]},
+    "create_openings": {
+        "openings": [
+            {"owner_guid": GUID, "base_point": {"x": 1, "y": 0, "z": 0.5}, "width": 1, "height": 1}
+        ]
+    },
+    "create_wall_thickness_dimensions": {
+        "dimensions": [
+            {
+                "wall_guid": GUID,
+                "reference_point": {"x": 0, "y": 0},
+                "direction": {"x": 0, "y": 1},
+            }
+        ]
+    },
+    "create_morphs": {
+        "morphs": [
+            {
+                "base_point": {"x": 0, "y": 0, "z": 0},
+                "size_x": 1,
+                "size_y": 2,
+                "size_z": 3,
+                "floor_index": 0,
+            }
+        ]
+    },
     "create_interior_elevations": {
         "interior_elevations": [
             {
@@ -312,12 +344,14 @@ TARGETED = {
         gateway,
         interior_elevations,
         issues,
+        keynotes,
         labels,
         layer_settings,
         layers,
         locks,
         meshes,
         modify,
+        morphs,
         navigator,
         openings,
         project_info,
@@ -328,6 +362,8 @@ TARGETED = {
         selection,
         texts,
         views,
+        voids,
+        wall_dimensions,
         write,
         zones,
     )
