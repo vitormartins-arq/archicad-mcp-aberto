@@ -540,6 +540,133 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Próximas tarefas do Codex em `docs/FILA.md`: T23 `create_fills`, T24 comentários em
   incidências, T25 pastas e vistas no Mapa de Vistas, T26 itens de classificação.
 
+## 2026-10-15 — Codex / T23: lacuna nativa confirmada
+
+- Branch `codex/t23-project-info-fields`. A tarefa atual é criação de campos de
+  informações, conforme FILA; a referência histórica a `create_fills` acima é antiga.
+- Conferido Tapir tag 1.7.0, commit `02691b5d680b60c73317e8e49b78ab14dfd4c9d8`:
+  CreateProjectInfoFields existe, mas retorna erro de não suportado no AC30.
+  GetProjectInfoFields filtra os IDs autotext-GUID criados nas versões anteriores,
+  impedindo recusa confiável de nomes existentes e conferência de nome/valor.
+- Investigação e próximos passos em `docs/T23-PROJECT-INFO-FIELDS.md`. Nenhum comando
+  de criação foi acrescentado nem sucesso inventado no fake. Nenhuma chamada real.
+  A correção deve chegar pelo Tapir upstream; T24–T26 continuam em sequência.
+
+## 2026-10-15 — Codex / T24 comentários
+
+- Branch `codex/t24-issue-comments`, empilhada na investigação T23.
+  AddCommentToIssue/GetCommentsFromIssue conferidos em IssueCommands.cpp, tag Tapir
+  1.7.0/02691b5d. Autor opcional (API); estado padrão Unknown. Até 20 comentários,
+  prévia vincula incidência e comentários, apply exige porta/token/recibos e confere
+  novo GUID/texto/autor/estado sem alterar os anteriores. Cada comentário é um Undo.
+  Resposta perdida interrompe os próximos, sem repetição. Fixture documental, não
+  captura ao vivo. Sem associações, exclusão ou salvamento. FILA intacta.
+- Validação Linux/Python 3.12.14: 1847 testes simulados passaram; Ruff passou.
+  Nenhuma chamada ao Archicad real. Revisão e merge pelo Claude.
+
+## 2026-10-15 — Codex / T25 Mapa de Vistas
+
+- Branch `codex/t25-view-map`, empilhada na T24. CreateViewMapFolder e
+  CloneProjectMapItemToViewMap conferidos em NavigatorCommands.cpp, Tapir
+  1.7.0/02691b5d. Até 20 pastas/clones por ferramenta, pai por GUID existente
+  no PublicViewMap, origem por GUID no ProjectMap. Recusa nomes repetidos por pai/tipo.
+  Prévia vincula árvores; porta/token/recibos e releitura conferem GUID novo, nome,
+  tipo, pai e preservação dos anteriores. Sem garantia de Undo nativo, remoção manual
+  dos novos itens. Configurações do clone herdadas. Sem mover, excluir, salvar ou
+  publicar; fixture documental, não captura real; FILA e tarefas C intactas.
+- Validação Linux/Python 3.12.14: 1911 testes simulados passaram; Ruff passou.
+  Nenhuma chamada real. Revisão e merge pelo Claude.
+
+## 2026-10-15 — Codex / T26 itens de classificação
+
+- Branch `codex/t26-classification-items`, empilhada na T25. CreateClassificationItems
+  conferido em ClassificationCommands.cpp e CommonSchemaDefinitions.json,
+  Tapir 1.7.0/02691b5d. Até 50 itens com sistema/pai existentes por GUID, id, nome
+  e descrição; recusa ID repetido no sistema ou lote. Sem sistemas novos/filhos recursivos.
+- O nativo não acrescenta resultado de sucesso: executionResults vazio é o retorno
+  real do código-fonte, não erro de cardinalidade. Uma entrada por chamada permite
+  atribuir erro ao item; só a releitura oficial da árvore prova GUID novo, id/nome/
+  descrição/pai e preservação dos anteriores. Prévia vincula árvore, porta/token/
+  recibos compartilhados; resposta perdida interrompe próximos sem repetir. Um Undo
+  por item. Fixture documental, não captura real; sem excluir/salvar. FILA intacta.
+- Validação Linux/Python 3.12.14: 1957 testes simulados passaram; Ruff passou.
+  Servidor com 83 ferramentas. Teste adicional via cliente MCP/stdio contra fake:
+  as quatro ferramentas novas passaram prévia, apply, releitura e recusa do token usado.
+  Nenhuma chamada ao Archicad real; roteiro ao vivo acrescentado em docs/VALIDAR.md.
+  Nenhum merge em `main`. Abertura dos PRs depende de liberar api.github.com no proxy;
+  domínio acrescentado ao rascunho, branches publicadas via Git.
+- Itens de classificação agora relêem o contexto completo entre comandos do lote.
+  Teste com troca para projeto copiado preservando GUIDs para antes do segundo write.
+  Divergência na releitura da árvore também interrompe os comandos seguintes.
+  Sistema e árvore vinculados são relidos antes do próximo comando; alteração
+  concorrente simulada entre itens interrompe o lote.
+- Validação final da pilha: 1979 testes passaram em Linux/Python 3.11.17, 3.12.14
+  e 3.13.5; Ruff passou. Wheel, sdist e MCPB 0.1.0.dev0 foram construídos; o MCPB
+  passou no schema, iniciou descompactado e expôs 83 ferramentas. Cliente MCP/stdio
+  executou prévia, apply, releitura e recusa de token usado nas quatro ferramentas
+  novas contra o fake. Artefatos e fixtures são simulados; nenhuma chamada real.
+
+## 2026-10-15 — Codex / opções de projeto (somente leitura)
+
+- Branch `codex/t27-design-options-read`, empilhada na T26. Três ferramentas somente
+  leitura: inventário de conjuntos/opções/combinações, elementos de cada opção e opção
+  associada a cada elemento. Contratos conferidos diretamente em
+  `DesignOptionCommands.cpp` do Tapir 1.7.0/02691b5d.
+- O servidor valida GUIDs, quantidade, formato, ordem e identidade das respostas; erros
+  nativos por opção são preservados. Conjuntos, opções e associação de elementos exigem
+  Archicad 29+; não é anunciado suporte falso às versões 27/28.
+- Fixture sintético marcado `live_capture: false`; nenhum Archicad real foi aberto.
+  Servidor com 86 ferramentas, sendo 28 de leitura.
+
+## 2026-10-15 — Codex / revisão adicional T25
+
+- Reproduzidas duas falsas conferências: clone com origem ausente ou GUID de origem
+  diferente, mas mesmo nome/tipo/ID visível, era verified. NavigatorItemToObjectState
+  no Tapir 1.7.0/02691b5d expõe sourceNavigatorItemId; agora o leitor preserva e a
+  conferência exige o GUID de origem aprovado. Flags customName/customUiId/isIndependent
+  também entram na prévia e na preservação dos itens anteriores.
+- Prévia passa a recusar origem com filhos; um grupo não é mostrado como uma vista.
+  Nome de pasta com NUL ou acima de 255 unidades UTF-16 recusado antes da rede,
+  considerando a cópia nativa para uName; limite válido com emoji coberto.
+  Novos testes reproduziram as recusas faltantes; somente simulado.
+- Validação Linux/Python 3.12.14: 1925 testes simulados passaram; Ruff passou.
+  Nenhuma chamada ao Archicad real.
+- Pastas e clones agora também relêem o contexto completo entre comandos do lote.
+  Testes com troca para projeto copiado preservando GUIDs param antes do segundo write.
+  Divergência na releitura da árvore também interrompe os comandos seguintes.
+  Árvores vinculadas são relidas antes do próximo comando; alteração concorrente
+  simulada entre itens interrompe o lote.
+
+### Revisão adicional T24
+
+- O contexto completo do projeto agora é relido entre comentários de um mesmo lote.
+  Teste com troca para projeto copiado, mantendo os mesmos GUIDs, confirma que somente
+  o primeiro comentário é enviado e todos os seguintes ficam como não tentados.
+  Divergência na releitura do comentário também interrompe os comandos seguintes.
+  Incidência e comentários do próximo item são relidos antes do comando; alteração
+  concorrente simulada entre itens interrompe o lote.
+  Somente simulado; nenhuma chamada ao Archicad real.
+
+## 2026-10-15 — Codex / correção e validação do PR #62
+- Sem Nome/19724, Windows/AC30 build 3001 BRA/Tapir 1.7.0; sem salvar/excluir/Undo.
+  Teste das funções Python da branch; preparo das Opções de Projeto pelo MCP privado.
+- create_view_map_folders na raiz artificial ??? falhou -2130313112. Correção recusa depth=0
+  na prévia, inclusive para clones; usar pasta real Sem Nome ou subpasta. Fake e testes
+  distinguem mapa/pasta de projeto. Cabeçalhos/erro capturados ao vivo em fixture.
+- Pasta sob Sem Nome e clone do Pavimento Cobertura verified, com source_guid conferido.
+  Nova pasta após a correção verified; raiz artificial recusada antes de gravar.
+- Dois comentários (autor Vitor e padrão) e dois itens de classificação verified; tokens
+  reutilizados recusados nas aplicações executadas. T23 create_project_info_fields não
+  está nesta branch e não foi executada.
+- list_design_options conferiu conjunto com duas opções e combinação com uma ativa.
+  get_elements_of_design_options conferiu opção com a parede, opção vazia e erro de GUID
+  inexistente. get_design_options_for_elements distinguiu parede associada, corte no Modelo
+  Principal e GUID inexistente. Nenhuma escrita adicionada às três ferramentas de leitura.
+- Inspeção visual continua com Vitor; não executados todos os subcasos manuais de Undo
+  e herança visual. Nenhum merge pelo Codex.
+
+- Validação simulada final: 2020 testes passaram; uv run ruff check . passou, Windows/Python 3.12.10.
+
 
 ## 2026-10-15 — Claude / C1 cortes (rodada automática)
 
@@ -587,6 +714,31 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   83 ferramentas.
 - Lote 2 completo (C1 a C4). O PR #61 saiu de rascunho para o merge do Vitor.
 - Fila do Claude reabastecida com C5 a C8 para o lote 3 (`lote/claude-3`).
+
+## 2026-10-15 — Codex / correções e validação do PR #61
+- No Sem Nome, porta 19724, Windows/AC30 build 3001 BRA/Tapir 1.7.0, sem salvar/excluir/Undo.
+  Template da porta 19723 não alterado. Código do PR testado pelas funções Python; preparação
+  do padrão e consultas independentes pelo MCP privado, sem substituir a ferramenta sob teste.
+- Corte: APIERR_BADID com o padrão inicial; após aplicar explicitamente o favorito
+  Corte Técnico Marcador Simples à ferramenta Corte, nova prévia/aplicação verified.
+  Não identifica qual referência interna era inválida. Acrescentado aviso/hint; sem mudança
+  automática de favorito/padrão ou tentativa repetida.
+- Vista interna fechada: verified, quatro itens no Navegador. Parede de apoio e favorito
+  MCP Parede 20261015: verified. Nomes duplicados de vista interna/favorito recusados.
+- Propriedade textual Descrição do Bloco de Concreto - Estrutural verified. Densidade
+  1234 retornou 1234.000 e reproduziu falso verification_failed. Corrigida comparação
+  Decimal exata somente para number/integer sem unidade e formato ASCII inequívoco;
+  1235 retornou 1235.000 e verified. Texto, unidades, separadores ambíguos e diferenças
+  reais continuam estritos. Captura nova marcada ao vivo. Propriedade indisponível recusada.
+- Aprovação visual permanece com Vitor. Nenhum merge. Demais subcasos opcionais (favorito
+  de janela, mesmo nome entre tipos e profundidade visual) não foram executados.
+
+- Validação simulada final: 1905 testes passaram; uv run ruff check . passou, Windows/Python 3.12.10.
+
+## 2026-10-15 — Codex / integração da main no PR #62
+
+- origin/main c491e2c integrada por merge, sem rebase. Conflitos resolvidos preservando as ferramentas e correções do PR #61 e as do #62, mais ambas as documentações e registros de validação. Manifesto e teste de registro combinados: 90 ferramentas. Nenhuma chamada ao Archicad real nesta integração; nenhum merge de PR pelo Codex.
+- Validação após resolver os conflitos: 2113 testes simulados passaram e uv run ruff check . passou (Windows/Python 3.12.10).
 
 
 ## 2026-10-15 — Claude / C5 notas-chave (rodada automática, lote 3)

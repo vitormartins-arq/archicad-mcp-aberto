@@ -1,0 +1,46 @@
+{
+  "provenance": {
+    "live_capture": true,
+    "date": "2026-10-15",
+    "archicad_version": 30,
+    "build": 3001,
+    "language": "BRA",
+    "tapir_version": "1.7.0",
+    "os": "Windows",
+    "port": 19724,
+    "project": "Untitled test project; never saved",
+    "note": "GetNavigatorItemTree headers excerpt; children intentionally omitted."
+  },
+  "headers": {
+    "root": {
+      "type": "FolderItem",
+      "name": "???",
+      "navigatorItemId": {
+        "guid": "38185F87-EF79-4E75-851D-61DE8ED16E94"
+      },
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": false,
+      "isIndependent": false
+    },
+    "project_folder": {
+      "type": "FolderItem",
+      "name": "Sem Nome",
+      "navigatorItemId": {
+        "guid": "3C4A2145-A752-401C-AD75-902D0235F1D7"
+      },
+      "prefix": "",
+      "uiId": "",
+      "customUiId": false,
+      "customName": true,
+      "isIndependent": false
+    }
+  },
+  "create_under_synthetic_root": {
+    "error": {
+      "code": -2130313112,
+      "message": "Failed to create View Map folder (code -2130313112)."
+    }
+  }
+}

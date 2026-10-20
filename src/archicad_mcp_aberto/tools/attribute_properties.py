@@ -9,6 +9,8 @@ read-only properties and properties not available for that attribute. Never save
 
 from __future__ import annotations
 
+import re
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -104,6 +106,7 @@ async def _plan(client, changes, port, operation):
                 "attribute_guid": change.attribute_guid,
                 "property_guid": change.property_guid,
                 "property_name": definition.get("name"),
+                "property_type": definition.get("type"),
                 "before": before,
                 "parameters": {
                     "attributeId": {"guid": change.attribute_guid},
@@ -113,6 +116,23 @@ async def _plan(client, changes, port, operation):
             }
         )
     return {"operation": operation, "target": target, "items": items}
+
+
+def _equivalent(item: dict) -> bool:
+    wanted, actual = item["parameters"]["propertyValue"]["value"], item["after"]
+    if wanted == actual:
+        return True
+    if item.get("property_type") not in ("number", "integer") or not isinstance(actual, str):
+        return False
+    # Only unitless ASCII decimal literals; do not guess locale/group separators,
+    # parse units, tolerate rounding, or normalize strings/enumerations.
+    literal = r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
+    if not re.fullmatch(literal, wanted) or not re.fullmatch(literal, actual):
+        return False
+    try:
+        return Decimal(wanted) == Decimal(actual)
+    except InvalidOperation:
+        return False
 
 
 async def _verify(client, receipt, items):
@@ -125,7 +145,7 @@ async def _verify(client, receipt, items):
     for item in items:
         row = after[(item["attribute_guid"], item["property_guid"])]
         item["after"] = _text(row) if _text(row) is not None else row
-        if item["after"] == item["parameters"]["propertyValue"]["value"]:
+        if _equivalent(item):
             item["status"] = "verified"
         else:
             item.update(status="verification_failed", mismatches=["propertyValue"])

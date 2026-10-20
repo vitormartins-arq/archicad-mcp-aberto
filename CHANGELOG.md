@@ -21,6 +21,14 @@
   `CreateKeynoteItems`), refuse a key that already exists anywhere in the tree, and read
   each new entry back by GUID. Not yet tested live.
 
+- Add three read-only Design Options tools from the pinned Tapir 1.7.0 source:
+  `list_design_options` returns sets, options and combinations;
+  `get_elements_of_design_options` resolves option members; and
+  `get_design_options_for_elements` distinguishes linked options, the main model,
+  missing options and nonexistent elements. Inputs are bounded, GUIDs and response
+  identity are validated, and native per-option errors are preserved. These detailed
+  reads require Archicad 29+. The fixture is source-derived and explicitly not live.
+
 - Add `create_interior_elevations` (new `tools/interior_elevations.py`): up to 20
   interior elevations by Tapir 1.7.0 `CreateInteriorElevations`, each from a chain of 2
   to 50 points (one segment per pair, `closed` repeats the first point), with an optional
@@ -301,3 +309,50 @@
   layers by name/GUID. Protected first layer and duplicate aliases refused; unchanged
   name/identity/flags read back. No guaranteed attribute Undo; unexpected returned GUID
   is unknown, including the native overwrite base creating a vanished target. Simulated only.
+- 2026-10-15, T23 investigation: native Tapir 1.7.0 does not support custom Project
+  Info field creation on AC30 and filters generated IDs from its field reader.
+  Documented the upstream prerequisite; no unverified creation tool added.
+
+- Add `add_comment_to_issue`: 1–20 comments on existing issues with optional author,
+  shared preview/token/port/receipts, comment GUID/read-back and preserved prior comments.
+  Stops remaining writes after an unknown outcome; source-derived simulation only.
+
+- Add `create_view_map_folders` and `clone_to_view_map`, with existing parent/source
+  GUID preflight, bound trees, per-item native commands and independent tree verification.
+  No guaranteed Navigator Undo; never moves, deletes, saves or publishes. Simulated only.
+
+- Add `create_classification_items` with existing-system/parent GUID checks, duplicate
+  ID refusal and independent item/tree read-back. Handles native empty success result
+  arrays by sending one item per call; no success is inferred without read-back.
+  Shared preview/token/port/receipts, no deletion or saving. Simulated only.
+
+- Reconfirm the bound project context between sequential classification creation
+  commands and stop remaining items before dispatch after a project switch.
+  A classification tree read-back mismatch also stops the remaining batch.
+  Re-read the selected system and tree immediately before each later command.
+
+- Harden T25 clone verification: preserve and verify the native source GUID and
+  inheritance flags; reject Project Map containers instead of previewing them as one
+  viewpoint. Refuse embedded NUL and folder names exceeding 255 UTF-16 units.
+  Regressions reproduce previously verified clones with missing/wrong source identity.
+
+- Reconfirm the project context between sequential folder/clone commands and stop
+  remaining Navigator writes before dispatch after a project switch.
+  A tree read-back mismatch also stops the remaining batch before another write.
+  Re-read bound Navigator trees immediately before each later command.
+
+- Reconfirm the bound project context between sequential comment writes, stopping all
+  remaining items before dispatch if the selected project changes during the batch.
+  A comment read-back mismatch also stops the remaining batch before another write.
+  Re-read the next issue and its comments immediately before dispatch to catch concurrent edits.
+
+### Live corrections — 2026-10-15
+- Refuse the synthetic PublicViewMap root as a folder/clone insertion parent during preview.
+  Use the actual project folder or a subfolder. Add AC30 build 3001 BRA live headers/error
+  and regressions, preserving explicit-port and per-item receipt checks.
+
+
+### Live corrections — 2026-10-15
+- Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
+- Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
+  and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.

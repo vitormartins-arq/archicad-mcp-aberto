@@ -552,6 +552,25 @@ async def _context(client: ArchicadClient, port: int | None) -> tuple[int, dict,
     return port, target, [s["index"] for s in stories["stories"]]
 
 
+async def _guard_sequential_context(client: ArchicadClient, receipt: dict, index: int) -> bool:
+    """Reconfirm the preview target before a later command in a sequential batch."""
+    if index == 0:
+        return True
+    target = receipt["target"]
+    try:
+        _, current, _ = await _context(client, target["port"])
+        expected = {key: target[key] for key in current}
+        if current == expected:
+            return True
+        error = "Target context changed between batch items; run a new preview."
+    except (ArchicadError, KeyError, TypeError, ValueError) as exc:
+        error = f"Could not re-confirm target context between batch items: {exc}"
+    receipt["context_error"] = error
+    for item in receipt["items"][index:]:
+        item.update(status="failed", not_attempted=True, error=error)
+    return False
+
+
 def _create_payload(wall: WallCreate) -> dict:
     return {
         "begCoordinate": wall.start.model_dump(),
@@ -1765,3 +1784,24 @@ async def create_zones(
         raise ValueError("Pass between 1 and 20 zones.")
     validated = [z if isinstance(z, ZoneCreate) else ZoneCreate.model_validate(z) for z in zones]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_zones")
+
+
+OPERATIONS["add_comment_to_issue"] = (
+    "issue comment", "comment_receipt_id", "Adds comments only; each comment is one Undo step."
+)
+
+OPERATIONS.update({
+    "create_view_map_folders": (
+        "View Map folder", "folder_receipt_id",
+        "No guaranteed Navigator Undo; remove new folders manually."
+    ),
+    "clone_to_view_map": (
+        "View Map clone", "view_receipt_id",
+        "No guaranteed Navigator Undo; native settings are inherited."
+    ),
+})
+
+OPERATIONS["create_classification_items"] = (
+    "classification item", "classification_item_receipt_id",
+    "Creates only under existing parents; each item is one native Undo step."
+)

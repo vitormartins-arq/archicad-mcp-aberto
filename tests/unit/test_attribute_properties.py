@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+import httpx
 import pytest
 
 from archicad_mcp_aberto.connection import ArchicadClient
@@ -124,3 +128,59 @@ async def test_limits_and_explicit_port():
         preview = await tool(c, [change()])
         with pytest.raises(ValueError, match="explicit port"):
             await tool(c, [change()], None, False, preview["confirmation_token"])
+
+
+@pytest.mark.parametrize(
+    "kind,wanted,stored,verified",
+    [
+        ("number", "1234", "1234.000", True),
+        ("integer", "12", "12.000", True),
+        ("number", "1.25", "1.250", True),
+        ("number", "1234", "1234.001", False),
+        ("string", "1234", "1234.000", False),
+        ("length", "1234", "1234.000", False),
+        ("number", "1,234", "1234.000", False),
+        ("number", "1234", "1,234.000", False),
+        ("number", "1234", "1234 kg", False),
+        ("number", "NaN", "nan", False),
+        ("number", "1e9999999999999999999999", "0", False),
+    ],
+)
+async def test_scalar_numeric_formatting_is_verified_without_rewriting(
+    kind, wanted, stored, verified
+):
+    fake = model(attribute_property_stored=stored)
+    base = fake_transport(fake)
+
+    def handler(request):
+        response = base.handle_request(request)
+        if json.loads(request.content)["command"] == "API.GetDetailsOfProperties":
+            body = response.json()
+            for row in body["result"]["propertyDefinitions"]:
+                row["propertyDefinition"]["type"] = kind
+            return httpx.Response(200, json=body)
+        return response
+
+    async with ArchicadClient(transport=httpx.MockTransport(handler)) as client:
+        result = await apply(client, [change(prop=COST, value=wanted)])
+    item = result["items"][0]
+    assert item["status"] == ("verified" if verified else "verification_failed")
+    assert item["after"] == stored
+    assert fake.tapir_calls.count("SetPropertyValuesOfAttributes") == 1
+
+
+def test_live_number_capture_matches_value_without_changing_receipt_text():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_attribute_number_live.json")
+        .read_text(encoding="utf-8")
+    )
+    definition = fixture["number_definition"]["propertyDefinitions"][0]["propertyDefinition"]
+    actual = fixture["number_readback"]["propertyValuesForAttributes"][0]["propertyValues"][0]
+    item = {
+        "property_type": definition["type"],
+        "after": actual["propertyValue"]["value"],
+        "parameters": {"propertyValue": {"value": fixture["requested_value"]}},
+    }
+    assert fixture["provenance"]["live_capture"] is True
+    assert attribute_properties._equivalent(item)
+    assert item["after"] == "1235.000"

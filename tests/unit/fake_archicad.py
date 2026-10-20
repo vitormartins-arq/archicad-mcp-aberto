@@ -129,6 +129,11 @@ PROPERTY_DEFINITIONS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_property_definitions_documented.json"
     ).read_text(encoding="utf-8")
 )
+DESIGN_OPTIONS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_design_options_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
 # Navigator trees and new worksheets, details and layouts; not live captured.
 DOCUMENTS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_documents_documented.json").read_text(
@@ -449,6 +454,8 @@ class FakeArchicad:
     keynotes: dict = field(default_factory=lambda: {"foldersInRoot": [], "itemsInRoot": []})
     keynote_stored_title: str | None = None  # Archicad keeps this title instead
     lose_keynote_response: bool = False
+
+    issue_comments: dict[str, list[dict]] = field(default_factory=dict)
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -788,6 +795,131 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "GetDesignOptionSets":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptionSets": deepcopy(DESIGN_OPTIONS_FIXTURE["sets"])
+                    }
+                }
+            )
+        if name == "GetDesignOptions":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptions": deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
+                    }
+                }
+            )
+        if name == "GetDesignOptionCombinations":
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "designOptionCombinations": deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+                    }
+                }
+            )
+        if name == "GetElementsOfDesignOptions":
+            rows = []
+            mapping = DESIGN_OPTIONS_FIXTURE["elements_by_option"]
+            for item in args["designOptions"]:
+                guid = item["designOptionId"]["guid"]
+                if guid not in {
+                    r["designOptionId"]["guid"] for r in DESIGN_OPTIONS_FIXTURE["options"]
+                }:
+                    rows.append({"error": {"code": -2, "message": "Not found design option"}})
+                else:
+                    rows.append(
+                        {
+                            "designOptionId": {"guid": guid},
+                            "elements": [self._id(g) for g in mapping.get(guid, [])],
+                        }
+                    )
+            return ok({"addOnCommandResponse": {"elementsOfDesignOptions": rows}})
+        if name == "GetDesignOptionForElements":
+            linked = DESIGN_OPTIONS_FIXTURE["options"][0]
+            members = set(
+                DESIGN_OPTIONS_FIXTURE["elements_by_option"][linked["designOptionId"]["guid"]]
+            )
+            rows = []
+            for item in args["elements"]:
+                guid = item["elementId"]["guid"]
+                if guid not in self.elements:
+                    rows.append({"elementId": {"guid": guid}, "type": "NotExistingElement"})
+                elif guid in members:
+                    rows.append(
+                        {
+                            "elementId": {"guid": guid},
+                            "type": "LinkedToDesignOption",
+                            "designOption": deepcopy(linked),
+                        }
+                    )
+                else:
+                    rows.append({"elementId": {"guid": guid}, "type": "NotLinkedToAnyDesignOption"})
+            return ok({"addOnCommandResponse": {"designOptionForElements": rows}})
+        if name == "CreateClassificationItems":
+            results = []
+            for entry in args["newClassificationItems"]:
+                system = entry["classificationSystemId"]["guid"]
+                parent_guid = entry["parentClassificationItemId"]["guid"]
+                roots = self.classification_data["items"][system]["classificationItems"]
+                parent = _classification_creation_parent(roots, parent_guid)
+                assert parent is not None
+                row = {
+                    "classificationItemId": {"guid": str(uuid4()).upper()},
+                    **deepcopy(entry["classificationItemDetails"]),
+                }
+                parent.setdefault("children", []).append({"classificationItem": row})
+                # Source intentionally appends NO successful result.
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name in ("CreateViewMapFolder", "CloneProjectMapItemToViewMap"):
+            view_root = self.navigator_trees["PublicViewMap"]
+            data = args if name == "CreateViewMapFolder" else args["viewsData"][0]
+            parent = _view_map_node(view_root, data["parentNavigatorItemId"]["guid"])
+            assert parent is not None
+            # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
+            # the synthetic PublicViewMap root is not an insertion parent.
+            if parent is view_root and name == "CreateViewMapFolder":
+                return ok({"addOnCommandResponse": deepcopy(
+                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                )})
+            if name == "CreateViewMapFolder":
+                node = deepcopy(VIEW_MAP_FIXTURE["folder"])
+                node["name"] = args["folderName"]
+            else:
+                source = _view_map_node(
+                    self.navigator_trees["ProjectMap"], data["navigatorItemId"]["guid"]
+                )
+                assert source is not None
+                node = deepcopy(source)
+                node.pop("children", None)
+                # NavigatorItemToObjectState emits the native sourceGuid when present.
+                node["sourceNavigatorItemId"] = deepcopy(data["navigatorItemId"])
+            guid = str(uuid4()).upper()
+            node["navigatorItemId"] = {"guid": guid}
+            parent.setdefault("children", []).append({"navigatorItem": node})
+            result = {"navigatorItemId": {"guid": guid}}
+            if name == "CloneProjectMapItemToViewMap":
+                result = {"navigatorItems": [result]}
+            return ok({"addOnCommandResponse": result})
+        if name in ("GetCommentsFromIssue", "AddCommentToIssue"):
+            guid = args["issueId"]["guid"]
+            if name == "GetCommentsFromIssue":
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "comments": deepcopy(self.issue_comments.get(guid, []))
+                        }
+                    }
+                )
+            if guid not in self.issues:
+                return ok({"addOnCommandResponse": deepcopy(COMMENTS_FIXTURE["failed"])})
+            row = deepcopy(COMMENTS_FIXTURE["comment"])
+            row.update(
+                guid=str(uuid4()).upper(), text=args["text"], author=args.get("author", "API")
+            )
+            self.issue_comments.setdefault(guid, []).append(row)
+            return ok({"addOnCommandResponse": deepcopy(COMMENTS_FIXTURE["success"])})
         if name in (
             "GetIssues",
             "CreateIssue",
@@ -2411,4 +2543,48 @@ VIEW_SETTINGS_FIXTURE = json.loads(
     (Path(__file__).parents[1] / "fixtures" / "tapir170_view_settings_documented.json").read_text(
         encoding="utf-8"
     )
+)
+
+
+# IssueCommands.cpp 1.7.0: source-derived shapes, NOT a live capture.
+COMMENTS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_issue_comments_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+# NavigatorCommands.cpp 1.7.0: synthetic values, NOT a live capture.
+VIEW_MAP_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_view_map_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+def _view_map_node(root, guid):
+    if root["navigatorItemId"]["guid"] == guid:
+        return root
+    for child in root.get("children", []):
+        found = _view_map_node(child["navigatorItem"], guid)
+        if found is not None:
+            return found
+    return None
+
+
+def _classification_creation_parent(roots, guid):
+    for wrapper in roots:
+        row = wrapper["classificationItem"]
+        if row["classificationItemId"]["guid"] == guid:
+            return row
+        found = _classification_creation_parent(row.get("children", []), guid)
+        if found is not None:
+            return found
+    return None
+
+
+# Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
+VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
+    .read_text(encoding="utf-8")
 )

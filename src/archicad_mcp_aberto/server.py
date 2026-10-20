@@ -13,6 +13,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     classifications,
+    design_options,
     documents,
     drafting,
     edit,
@@ -1194,6 +1195,105 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def add_comment_to_issue(
+        ctx: Context,
+        comments: list[issues_tool.IssueComment],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/add up to 20 issue comments (issue_guid, text, optional author).
+        Explicit apply port, one-use token, per-comment receipt and read-back.
+        Never attaches, deletes or saves.
+        """
+        return await issues_tool.add_comment_to_issue(
+            client_of(ctx), comments, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_view_map_folders(
+        ctx: Context,
+        folders: list[navigator_tool.ViewMapFolder],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 View Map folders with name and existing parent_guid.
+        Explicit apply port/token, receipt and tree verification. No guaranteed Undo; never saves.
+        """
+        return await navigator_tool.create_view_map_folders(
+            client_of(ctx), folders, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def clone_to_view_map(
+        ctx: Context,
+        views: list[navigator_tool.ViewMapClone],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/clone up to 20 Project Map source_guid items into existing parent_guid
+        View Map folders. Native settings inherited; no guaranteed Undo. Port/token/receipts,
+        tree read-back; never moves, deletes, saves or publishes.
+        """
+        return await navigator_tool.clone_to_view_map(
+            client_of(ctx), views, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_classification_items(
+        ctx: Context,
+        items: list[classifications.ClassificationItemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 classification items: system_guid, parent_guid, id,
+        name and optional description. Existing system/parent only; duplicate IDs refused.
+        Explicit apply port/token, receipts and full item/tree read-back. Never deletes/saves.
+        """
+        return await classifications.create_classification_items(
+            client_of(ctx), items, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_design_options(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List Design Option sets, options and combinations. Query filters options by
+        id/name/set; pagination applies to options. Requires Archicad 29+ and Tapir 1.7.0.
+        Changes nothing.
+        """
+        return await design_options.list_design_options(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_elements_of_design_options(
+        ctx: Context, design_option_guids: list[str], port: int | None = None
+    ) -> dict:
+        """List elements belonging to 1–500 Design Options, preserving native errors per
+        option. Requires Archicad 29+ and Tapir 1.7.0. Changes nothing.
+        """
+        return await design_options.get_elements_of_design_options(
+            client_of(ctx), design_option_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_design_options_for_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read the Design Option status of 1–500 elements: linked option, main model,
+        missing option or nonexistent element. Archicad 29+ / Tapir 1.7.0. Changes nothing.
+        """
+        return await design_options.get_design_options_for_elements(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_sections(
         ctx: Context,
         sections: list[sections_tool.SectionCreate],
@@ -1210,6 +1310,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await sections_tool.create_sections(
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
+
 
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
@@ -1229,6 +1330,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
+
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1246,6 +1348,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
+
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(

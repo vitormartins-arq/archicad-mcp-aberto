@@ -384,6 +384,34 @@
       "description": "Safely change existing layer flags/group with preview, one-use confirmation and read-back; preserve name and identity."
     },
     {
+      "name": "add_comment_to_issue",
+      "description": "Safely add issue comments with optional author, single-use confirmation and independent comment read-back."
+    },
+    {
+      "name": "create_view_map_folders",
+      "description": "Safely create View Map folders under existing parent GUIDs with preview and tree read-back; no guaranteed Undo."
+    },
+    {
+      "name": "clone_to_view_map",
+      "description": "Safely clone Project Map viewpoints under existing View Map parent GUIDs with preview and tree verification."
+    },
+    {
+      "name": "create_classification_items",
+      "description": "Safely create classification items under existing system/parent GUIDs, refusing duplicate IDs and verifying full tree read-back."
+    },
+    {
+      "name": "list_design_options",
+      "description": "List Design Option sets, options and combinations without changing the model."
+    },
+    {
+      "name": "get_elements_of_design_options",
+      "description": "List the elements belonging to Design Options, preserving errors per option."
+    },
+    {
+      "name": "get_design_options_for_elements",
+      "description": "Read whether elements belong to a Design Option, the main model, or a missing option."
+    },
+    {
       "name": "create_sections",
       "description": "Preview/create up to 20 straight sections with a new name, checked on the story and in the Project Map."
     },

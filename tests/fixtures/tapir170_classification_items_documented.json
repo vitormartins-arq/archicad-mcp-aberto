@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/02691b5d680b60c73317e8e49b78ab14dfd4c9d8/archicad-addon/Sources/ClassificationCommands.cpp#L331",
+      "archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json: NewClassificationItems, ClassificationItemDetails"
+    ],
+    "note": "Source-derived shapes, synthetic IDs/text, NOT a live capture. Execute appends failed results only, so successful single-item creation returns executionResults: []. MCP verifies against the official classification tree instead."
+  },
+  "parameters": {"newClassificationItems": [{"classificationSystemId": {"guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11"}, "parentClassificationItemId": {"guid": "A1000000-0000-4000-8000-000000000003"}, "classificationItemDetails": {"id": "LAB-01", "name": "LAB item", "description": "Review"}}]},
+  "success": {"executionResults": []},
+  "failed": {"executionResults": [{"success": false, "error": {"code": -1, "message": "Failed to create classification item"}}]}
+}

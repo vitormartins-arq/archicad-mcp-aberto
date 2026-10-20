@@ -56,6 +56,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_property_groups` | Read | Property groups with custom flag and property count | yes |
 | `get_element_groups` | Read | The group holding each element and its members | yes |
 | `list_layers` | Read | Layers with hidden, locked, wireframe and intersection group | yes |
+| `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
+| `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
+| `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
 | `create_walls` | Write | Up to 20 straight Basic walls | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
@@ -484,6 +487,43 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   only; live validation pending. Registry after this addition: **79 tools (25 reads,
   54 writes/interactions)**.
 
+- T23 custom Project Info field creation is blocked by native Tapir 1.7.0 limitations:
+  AC30 explicitly rejects creation, and the reader filters generated custom field IDs.
+  See [source investigation](docs/T23-PROJECT-INFO-FIELDS.md). No creation tool is exposed
+  until complete preflight and independent read-back are possible.
+
+- `add_comment_to_issue(comments, port?, dry_run=true, confirmation_token?)` adds 1–20
+  comments: each item has `issue_guid`, `text`, optional `author` (default API).
+  Preview binds existing issue metadata and comments; apply needs explicit port and a
+  single-use token. New comment GUID/text/author/status and unchanged old comments are
+  checked via GetCommentsFromIssue. Each comment is a separate Undo step; no attachments,
+  deletion or saving. Tapir 1.7.0 source-derived simulated coverage; live test pending.
+
+- `create_view_map_folders(folders, ...)` adds 1–20 `{name, parent_guid}` folders.
+  `clone_to_view_map(views, ...)` adds 1–20 `{source_guid, parent_guid}` clones from
+  ProjectMap. Parents must be existing project folders or subfolders in PublicViewMap; the synthetic
+  map root (depth 0) is refused. Get GUIDs with
+  `get_navigator_tree`. Both require preview, one-use token and explicit apply port,
+  retain receipts and independently verify GUID/name/type/parent and prior tree rows.
+  Native clone settings are inherited. No guaranteed Navigator Undo: remove unwanted
+  new items manually. Never moves/deletes/saves/publishes. Source-derived tests only.
+
+- `create_classification_items(items, ...)` adds 1–50 `{system_guid, parent_guid,
+  id, name, description?}` items under existing classification parents. IDs must be
+  new across the entire selected system (case-insensitive); no recursive children or
+  new systems. Preview binds the tree; explicit apply port, one-use token and receipts.
+  The pinned Tapir command omits success rows (`executionResults: []`); one native call
+  per item and independent official tree read-back verify the new GUID/ID/name/description/parent
+  and unchanged prior items. Each item is a separate Undo step. Never deletes/saves.
+  Tapir 1.7.0 source-derived simulation only; live/operator validation pending.
+
+- View Map clone verification also checks the native `sourceNavigatorItemId` GUID;
+  identical names/types/IDs cannot stand in for source identity. Navigator reads expose
+  `source_guid` when present plus native inheritance flags (`custom_name`, `custom_ui_id`,
+  `is_independent`), which are bound to previews and checked unchanged for prior items.
+  Only leaf Project Map viewpoints may be cloned. Folder names must fit 255 UTF-16 units
+  without NUL; this accounts for the native Unicode name buffer, including emoji.
+
 - `create_sections([{start, end, floor_index, name, depth?}], port?, dry_run?,
   confirmation_token?)` creates up to 20 straight sections through Tapir 1.7.0
   CreateSections. Coordinates are metres; the section looks to the left of start->end,
@@ -533,8 +573,7 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   that already exists anywhere in the keynote tree is refused, so existing keynotes never
   change. New entries go in the root or in an existing folder from `list_keynotes`; to
   fill a new folder, create it first and use the GUID in its receipt. Each new entry is
-  read back by GUID. Fixtures come from the Tapir source, not a live capture. Registry:
-  **86 tools (26 reads, 60 writes/interactions)**.
+  read back by GUID. Fixtures come from the Tapir source, not a live capture.
 
 - `create_morphs([{base_point: {x, y, z}, size_x, size_y, size_z, floor_index}], port?,
   dry_run?, confirmation_token?)` creates up to 50 box morphs through Tapir 1.7.0
@@ -542,8 +581,7 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   sizes are positive metres along the project axes. Building material, surface and
   display settings come from the Morph tool defaults. Each morph is read back for type,
   story, origin and axes, and its 3D bounding box must match within 1 mm. Fixtures come
-  from the Tapir source, not a live capture. Registry: **87 tools (26 reads, 61
-  writes/interactions)**.
+  from the Tapir source, not a live capture.
 
 - `create_wall_thickness_dimensions([{wall_guid, reference_point?: {x, y}, direction?:
   {x, y}}], port?, dry_run?, confirmation_token?)` adds up to 50 associative dimensions of
@@ -553,5 +591,14 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   reference line, perpendicular to it; a curved wall needs an explicit direction. Display
   settings come from the Dimension tool defaults. Tapir returns no dimension-specific
   details, so the read-back checks the new element's type and story. Fixtures come from
-  the Tapir source, not a live capture. Registry: **88 tools (26 reads, 62
+  the Tapir source, not a live capture. Registry: **95 tools (29 reads, 66
   writes/interactions)**.
+
+### Live validation notes: sections and attribute values
+Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,
+an uninitialized/invalid marker returned APIERR_BADID. Explicitly applying an existing
+Section favorite in the test project allowed creation to verify. The tool provides
+recovery guidance and never changes defaults or retries automatically.
+Attribute properties of type number/integer accept equivalent unitless ASCII decimal
+read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
+numeric values remain strict. Receipt text preserves the actual Archicad response.
