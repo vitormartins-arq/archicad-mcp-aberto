@@ -770,3 +770,18 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   detalhes próprios da cota, então a conferência é tipo Dimension no pavimento da parede.
   1960 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 88 ferramentas.
   Próximo: C8 `create_openings`.
+
+## 2026-10-20 — Claude / C8 aberturas e PR do lote 3 (rodada automática)
+
+- PRs #61 (lote 2) e #62 (Codex, T27 opções de design) entraram na main. A main foi
+  integrada por merge na `lote/claude-3` (conflitos só de acréscimo, mantidos os dois
+  lados) e o PR #63 do lote 3 foi aberto para o Vitor fazer o merge.
+- `tools/voids.py`: `create_openings` por `CreateOpenings` do Tapir 1.7.0
+  (ExtendedElementCommands.cpp). Dono parede ou laje existente e editável; ponto base em
+  metros absolutos (z é a borda de baixo, desde a correção #533 do Tapir), largura e
+  altura positivas. Conferência: tipo Opening e o vão listado em `GetConnectedElements`
+  do dono com tipo Opening. Laje e parede inclinada ficam para o teste ao vivo
+  (docs/VALIDAR.md). 2197 testes simulados e Ruff passaram (Linux, Python 3.13).
+  Registro: 96 ferramentas.
+- Seção do Claude na FILA reabastecida: C9 `create_splines`, C10 `create_hotspots`, C11
+  `create_keynote_labels`, C12 `modify_morphs`, C13 cotas associativas. Próximo: C9.

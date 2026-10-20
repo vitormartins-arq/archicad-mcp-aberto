@@ -499,6 +499,12 @@ CREATE_COMMANDS["create_wall_thickness_dimensions"] = (
     "CreateWallThicknessDimensions",
     "dimensionsData",
 )
+OPERATIONS["create_openings"] = (
+    "opening",
+    "opening_receipt_id",
+    "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
+)
+CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
 
 
 @dataclass

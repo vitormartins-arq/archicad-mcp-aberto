@@ -399,6 +399,7 @@ class FakeArchicad:
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
+    hosted_openings: dict[str, list[str]] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
     command_requests: list[dict] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
@@ -423,6 +424,8 @@ class FakeArchicad:
     mesh_base_shift: float = 0.0
     morph_box_shift: float = 0.0
     dimension_floor_shift: int = 0
+    opening_unhosted: bool = False
+    connected_error: bool = False
 
     view_settings: dict[str, dict] = field(
         default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
@@ -2041,6 +2044,45 @@ class FakeArchicad:
                 }
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateOpenings":
+            # Shapes from Tapir 1.7.0 source (CreateOpenings); not live.
+            out = []
+            for index, data in enumerate(args["openingsData"]):
+                owner = data["ownerElementId"]["guid"].upper()
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if self.elements.get(owner) is None:
+                    error = {"code": -2130313100, "message": "Failed to create opening."}
+                    out.append({"error": error})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Opening"
+                floor = self.details.get(owner, {}).get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "Opening",
+                    "floorIndex": floor,
+                    "layerIndex": 1,
+                    "details": {},
+                }
+                if not self.opening_unhosted:
+                    self.hosted_openings.setdefault(owner, []).append(guid)
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetConnectedElements":
+            # Shapes from Tapir 1.7.0 source (ConnectedElementsOrError); not live.
+            if self.connected_error:
+                return ok({"addOnCommandResponse": {"error": {"code": -1, "message": "failed"}}})
+            rows = []
+            for item in args["elements"]:
+                owner = item["elementId"]["guid"].upper()
+                found = (
+                    self.hosted_openings.get(owner, [])
+                    if args.get("connectedElementType") == "Opening"
+                    else []
+                )
+                rows.append({"elements": [self._id(g) for g in found]})
+            return ok({"addOnCommandResponse": {"connectedElements": rows}})
         if name == "CreateMorphs":
             # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
             out = []

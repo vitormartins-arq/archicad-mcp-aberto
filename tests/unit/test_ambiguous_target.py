@@ -38,6 +38,7 @@ from archicad_mcp_aberto.tools import (
     selection,
     texts,
     views,
+    voids,
     wall_dimensions,
     write,
     zones,
@@ -215,6 +216,11 @@ INPUTS = {
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
     "create_keynote_items": {"items": [{"key": "01.01", "title": "Alvenaria"}]},
+    "create_openings": {
+        "openings": [
+            {"owner_guid": GUID, "base_point": {"x": 1, "y": 0, "z": 0.5}, "width": 1, "height": 1}
+        ]
+    },
     "create_wall_thickness_dimensions": {
         "dimensions": [
             {
@@ -356,6 +362,7 @@ TARGETED = {
         selection,
         texts,
         views,
+        voids,
         wall_dimensions,
         write,
         zones,

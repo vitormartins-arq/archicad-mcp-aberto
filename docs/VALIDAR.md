@@ -512,3 +512,16 @@ AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Und
   1235 foi relido 1235.000. Propriedade indisponível recusada.
 - [ ] Vitor: conferir desenho, marcador/profundidade do corte, favorito e vistas internas.
 AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.
+
+## Lote do Claude C8: aberturas (ferramenta Abertura)
+
+- [ ] **create_openings em parede.** No projeto novo sem nome, com uma parede reta ao
+  longo do eixo x: "Abra um vão de 0,90 por 1,20 m nessa parede, com o canto de baixo em
+  z 0,80." Conferir na planta e no 3D que o vão corta a parede no lugar pedido, se a
+  largura vai para o lado certo do ponto e que o recibo dá `verified`.
+- [ ] **Parede inclinada.** Repetir numa parede a 45 graus e anotar se o vão acompanha a
+  parede (o Tapir fixa o eixo do vão).
+- [ ] **create_openings em laje.** Repetir numa laje e anotar se o vão atravessa a laje ou
+  fica de pé; se não servir para lajes, a ferramenta passa a aceitar só paredes.
+- [ ] **Hospedeiro.** Conferir que `GetConnectedElements` com tipo Opening devolve o vão
+  novo da parede e da laje (é o que dá o `verified`).

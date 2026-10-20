@@ -81,8 +81,18 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   envolvente.
 - **C7 cotas de espessura de parede.** (Feito no lote `lote/claude-3`.) `CreateWallThicknessDimensions` em paredes
   existentes e editáveis, conferindo que a cota nova aparece na leitura dos elementos.
-- **C8 `create_openings`.** `CreateOpenings`: aberturas da ferramenta Abertura em paredes
-  ou lajes existentes, no padrão de `create_windows`.
+- **C8 `create_openings`.** (Feito no lote `lote/claude-3`.) `CreateOpenings`: aberturas
+  da ferramenta Abertura em paredes ou lajes existentes, no padrão de `create_windows`.
+- **C9 `create_splines`.** `CreateSplines`: curvas spline 2D em planta por pontos em
+  metros, no padrão de `create_polylines`, conferidas pela leitura de tipo e pavimento.
+- **C10 `create_hotspots`.** `CreateHotspots`: pontos quentes 2D em metros, no pavimento
+  dado, conferidos pela leitura de tipo, pavimento e posição.
+- **C11 `create_keynote_labels`.** `CreateKeynoteLabels`: etiqueta de nota-chave em
+  elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.
+- **C12 `modify_morphs`.** `ModifyMorphs`: mudar morfos existentes e editáveis no que o
+  Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
+- **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
+  elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
 
 ## Integrado
 

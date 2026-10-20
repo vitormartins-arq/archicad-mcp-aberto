@@ -42,6 +42,7 @@ from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
+from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
@@ -1438,6 +1439,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         one-use token and receipt; never saves."""
         return await wall_dimensions_tool.create_wall_thickness_dimensions(
             client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_openings(
+        ctx: Context,
+        openings: list[voids_tool.OpeningVoid],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 rectangular Opening-tool openings (Archicad 26+) in
+        existing editable walls or slabs (owner_guid): base_point x/y/z in absolute project
+        metres, z being the bottom edge, plus positive width and height. Other settings take
+        the Opening tool defaults. Reads back the type and the host's connected openings.
+        Explicit apply port, one-use token and receipt; never saves."""
+        return await voids_tool.create_openings(
+            client_of(ctx), openings, port, dry_run, confirmation_token
         )
 
     return mcp

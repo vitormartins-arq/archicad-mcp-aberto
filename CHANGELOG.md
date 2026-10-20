@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `create_openings` (new `tools/voids.py`): up to 50 rectangular Opening-tool
+  openings by Tapir 1.7.0 `CreateOpenings` in existing editable walls or slabs, from a
+  base point in absolute project metres (z is the bottom edge) and a positive width and
+  height. Read back as an Opening that the host lists among its connected openings.
+  Not yet tested live.
+
 - Add `create_wall_thickness_dimensions` (new `tools/wall_dimensions.py`): up to 50
   associative dimensions of both faces of existing editable walls by Tapir 1.7.0
   `CreateWallThicknessDimensions`, one per wall, on the wall's story. By default the

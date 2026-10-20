@@ -126,6 +126,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
+| `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 
 ### Reported live validation
 
@@ -591,8 +592,18 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   reference line, perpendicular to it; a curved wall needs an explicit direction. Display
   settings come from the Dimension tool defaults. Tapir returns no dimension-specific
   details, so the read-back checks the new element's type and story. Fixtures come from
-  the Tapir source, not a live capture. Registry: **95 tools (29 reads, 66
-  writes/interactions)**.
+  the Tapir source, not a live capture.
+
+- `create_openings([{owner_guid, base_point: {x, y, z}, width, height}], port?, dry_run?,
+  confirmation_token?)` cuts up to 50 rectangular openings of the Opening tool (Archicad
+  26 or newer) into existing editable walls or slabs through Tapir 1.7.0
+  `CreateOpenings`. The base point is in absolute project metres and its z is the
+  opening's bottom edge; width and height are positive metres. Tapir sets the opening's
+  frame itself, and the shape, extrusion and display come from the Opening tool defaults.
+  Tapir returns no opening-specific details, so the read-back checks the new element's
+  type and that the host lists it among its connected openings (`GetConnectedElements`).
+  Fixtures come from the Tapir source, not a live capture. Registry: **96 tools (29
+  reads, 67 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,
