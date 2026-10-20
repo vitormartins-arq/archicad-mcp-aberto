@@ -39,11 +39,12 @@ async def test_preview_then_create_and_verify_story_origin_and_box():
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         preview = await morphs.create_morphs(c, [INPUT], 19723)
         item = preview["items"][0]
-        assert item["parameters"] == {
-            "basePoint": {"x": 1, "y": 2, "z": 3.5},
-            "size": {"x": 0.6, "y": 0.4, "z": 0.9},
-            "floorIndex": 1,
-        }
+        params = item["parameters"]
+        assert params["basePoint"] == {"x": 1, "y": 2, "z": 3.5}
+        assert params["floorIndex"] == 1 and "size" not in params
+        assert params["body"]["bodyType"] == "Solid"
+        assert len(params["body"]["vertices"]) == 8 and len(params["body"]["polygons"]) == 6
+        assert "dialog that blocks the API" in preview["note"]
         assert item["expected_box"]["zMax"] == pytest.approx(4.4)
         assert "CreateMorphs" not in fake.tapir_calls and fake.elements == {}
         result = await morphs.create_morphs(c, [INPUT], 19723, False, preview["confirmation_token"])
@@ -65,6 +66,39 @@ async def test_box_out_of_place_fails_verification():
     item = result["items"][0]
     assert item["status"] == "verification_failed"
     assert item["mismatches"] == ["boundingBox3D"]
+
+
+def test_box_faces_are_closed_and_point_outwards():
+    body = morphs._body(morphs.MorphCreate.model_validate(INPUT))
+    points = [(v["x"], v["y"], v["z"]) for v in body["vertices"]]
+    centre = tuple(sum(c) / 8 for c in zip(*points, strict=True))
+    edges = {}
+    for face in body["polygons"]:
+        ids = face["vertexIds"]
+        a, b, c = (points[i] for i in ids[:3])
+        u = [b[k] - a[k] for k in range(3)]
+        w = [c[k] - b[k] for k in range(3)]
+        normal = (u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0])
+        mid = [sum(points[i][k] for i in ids) / 4 for k in range(3)]
+        assert sum(normal[k] * (mid[k] - centre[k]) for k in range(3)) > 0
+        for i in range(4):
+            edge = (ids[i], ids[(i + 1) % 4])
+            assert edge not in edges  # each directed edge once: consistent winding
+            edges[edge] = True
+    assert all((b, a) in edges for a, b in edges)  # every edge shared by two faces
+
+
+async def test_open_surface_box_from_archicad_fails_verification():
+    fake = model(morph_open_body=True)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [INPUT])
+    item = result["items"][0]
+    assert item["status"] == "verification_failed"
+    assert item["mismatches"] == [
+        "details.body.bodyType",
+        "details.body.isClosed",
+        "details.body.polygons",
+    ]
 
 
 async def test_wrong_story_or_rotated_axes_in_read_back_are_mismatches():

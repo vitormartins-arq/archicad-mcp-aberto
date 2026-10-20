@@ -525,3 +525,26 @@ AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Un
   fica de pé; se não servir para lajes, a ferramenta passa a aceitar só paredes.
 - [ ] **Hospedeiro.** Conferir que `GetConnectedElements` com tipo Opening devolve o vão
   novo da parede e da laje (é o que dá o `verified`).
+
+## Resultado do lote 3 ao vivo — 20/10/2026 (PR #63)
+
+AC30 build 3001 BRA, Tapir 1.7.0, Windows, projeto "Sem Nome" (arquivo em Downloads),
+porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
+
+- [x] list_keynotes: nenhuma pasta e 1 item já existente.
+- [x] Pasta 90 Teste MCP e item 90.01 Alvenaria de vedação (Memorial 3.2): verified.
+  Repetir 90.01 foi recusado na prévia.
+- [x] Morfo no térreo: verified, caixa 3D exata (x 1 a 1,6, y 2 a 2,4, z 0 a 0,9).
+- [x] Morfo no pavimento 1: criado no lugar certo, mas o ArchiCAD abriu o aviso
+  "Elementos foram criados nos Pisos atualmente invisíveis" e travou a API até o Vitor
+  clicar; recibo `unknown`. A prévia agora avisa disso.
+- [x] Os dois morfos vieram abertos (5 faces, Surface, isClosed false). Corrigido no
+  commit seguinte: a caixa vai como corpo sólido fechado e a conferência exige Solid
+  fechado com 6 faces. **Conferir de novo ao vivo.**
+- [x] Cota de espessura na parede reta: verified.
+- [x] Aberturas 0,90 x 1,20: parede reta, parede a 45° e laje, todas verified. A largura
+  fica centrada no ponto e acompanha a parede; na laje o vão fica deitado e a altura vai
+  para -y. Get3DBoundingBoxes devolve z 0 a 0 para aberturas.
+- [ ] Vitor: no 3D, vãos das paredes de 0,80 a 2,00; vão da laje atravessando a laje;
+  na planta, cota no meio da parede medindo 0,20.
+- [ ] Morfo corrigido: criar de novo e ver no 3D que a caixa tem fundo.

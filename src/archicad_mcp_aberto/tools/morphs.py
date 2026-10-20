@@ -4,6 +4,10 @@ Each morph is an axis-aligned box: a base corner in absolute project metres and 
 positive size. Tapir places the box with its corner at ``basePoint`` (``tranmat`` stays
 absolute) and the explicit ``floorIndex`` decides the owner story. Building material,
 surface and display settings inherit the Morph tool defaults in this initial tool.
+
+The box goes to Tapir as an explicit closed ``body`` with ``bodyType`` Solid, not as
+``size``: live on AC30 build 3001 BRA with Tapir 1.7.0 (20/10/2026), ``size`` built a
+Surface body with five faces and ``isClosed`` false, an open box instead of a solid.
 """
 
 from __future__ import annotations
@@ -42,6 +46,22 @@ class MorphCreate(write.InputModel):
         return self
 
 
+# Corners of the box relative to basePoint, then each face wound anticlockwise seen from
+# outside, so every face normal points out of the solid.
+FACES = ([0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7])
+
+
+def _body(morph: MorphCreate) -> dict:
+    x, y, z = morph.size_x, morph.size_y, morph.size_z
+    corners = [(0, 0), (x, 0), (x, y), (0, y)]
+    vertices = [{"x": cx, "y": cy, "z": cz} for cz in (0, z) for cx, cy in corners]
+    return {
+        "bodyType": "Solid",
+        "vertices": vertices,
+        "polygons": [{"vertexIds": face} for face in FACES],
+    }
+
+
 def _box(morph: MorphCreate) -> dict:
     b = morph.base_point
     return {
@@ -68,7 +88,7 @@ async def _plan(client, morphs, port, operation):
                 "expected_box": _box(morph),
                 "parameters": {
                     "basePoint": morph.base_point.model_dump(),
-                    "size": {"x": morph.size_x, "y": morph.size_y, "z": morph.size_z},
+                    "body": _body(morph),
                     "floorIndex": morph.floor_index,
                 },
             }
@@ -100,6 +120,14 @@ def _mismatches(item: dict, row) -> list[str]:
             _close(axis.get(c), v) for c, v in zip("xyz", unit, strict=True)
         ):
             differences.append(f"details.{key}")
+    body = details.get("body") if isinstance(details.get("body"), dict) else {}
+    if body.get("bodyType") != "Solid":
+        differences.append("details.body.bodyType")
+    if body.get("isClosed") is not True:
+        differences.append("details.body.isClosed")
+    polygons = body.get("polygons")
+    if not isinstance(polygons, list) or len(polygons) != len(FACES):
+        differences.append("details.body.polygons")
     return differences
 
 

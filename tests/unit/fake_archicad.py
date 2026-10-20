@@ -423,6 +423,7 @@ class FakeArchicad:
     lose_mesh_response: bool = False
     mesh_base_shift: float = 0.0
     morph_box_shift: float = 0.0
+    morph_open_body: bool = False
     dimension_floor_shift: int = 0
     opening_unhosted: bool = False
     connected_error: bool = False
@@ -2085,6 +2086,8 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {"connectedElements": rows}})
         if name == "CreateMorphs":
             # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
+            # morph_open_body copies the live AC30 result of the `size` box (20/10/2026):
+            # a Surface body with five faces and isClosed false.
             out = []
             for index, morph in enumerate(args["morphsData"]):
                 if index in self.create_errors:
@@ -2092,7 +2095,12 @@ class FakeArchicad:
                     continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Morph"
-                base, size = morph["basePoint"], morph["size"]
+                base, body = morph["basePoint"], morph["body"]
+                size = {k: max(v[k] for v in body["vertices"]) for k in "xyz"}
+                polygons = deepcopy(body["polygons"])
+                closed = not self.morph_open_body
+                if self.morph_open_body:
+                    polygons = polygons[1:]
                 self.details[guid] = {
                     "type": "Morph",
                     "floorIndex": morph["floorIndex"],
@@ -2105,6 +2113,13 @@ class FakeArchicad:
                         "castShadow": True,
                         "receiveShadow": True,
                         "isAutoOnStoryVisibility": True,
+                        "body": {
+                            "bodyType": body["bodyType"] if closed else "Surface",
+                            "edgeDefault": "SoftHidden",
+                            "isClosed": closed,
+                            "vertices": deepcopy(body["vertices"]),
+                            "polygons": polygons,
+                        },
                     },
                 }
                 shift = self.morph_box_shift

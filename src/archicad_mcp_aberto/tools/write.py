@@ -487,7 +487,9 @@ OPERATIONS["create_favorites_from_elements"] = (
 OPERATIONS["create_morphs"] = (
     "morph",
     "morph_receipt_id",
-    "Axis-aligned boxes in absolute project metres; Morph tool defaults for the rest.",
+    "Axis-aligned closed solid boxes in absolute project metres; Morph tool defaults for "
+    "the rest. A morph on a story that is not shown in Archicad makes Archicad open a "
+    "dialog that blocks the API until someone clicks it; show that story first.",
 )
 CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
 OPERATIONS["create_wall_thickness_dimensions"] = (

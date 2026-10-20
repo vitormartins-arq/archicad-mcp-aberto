@@ -6,26 +6,31 @@
   openings by Tapir 1.7.0 `CreateOpenings` in existing editable walls or slabs, from a
   base point in absolute project metres (z is the bottom edge) and a positive width and
   height. Read back as an Opening that the host lists among its connected openings.
-  Not yet tested live.
+  Tested live on AC30 build 3001 BRA with Tapir 1.7.0 in a straight wall, a 45-degree
+  wall and a slab (all verified).
 
 - Add `create_wall_thickness_dimensions` (new `tools/wall_dimensions.py`): up to 50
   associative dimensions of both faces of existing editable walls by Tapir 1.7.0
   `CreateWallThicknessDimensions`, one per wall, on the wall's story. By default the
   dimension line crosses the middle of a straight wall, perpendicular to it; a reference
   point and direction can be given, and a curved wall needs the direction. Read back as a
-  Dimension on the wall's story. Not yet tested live.
+  Dimension on the wall's story. Tested live on AC30 build 3001 BRA (verified).
 
 - Add `create_morphs` (new `tools/morphs.py`): up to 50 axis-aligned box morphs by
   Tapir 1.7.0 `CreateMorphs`, each from a base corner in absolute project metres, a
   positive size and an explicit story. Material and display take the Morph defaults. The
-  read-back checks type, story, origin and axes, then the 3D bounding box. Not yet tested
-  live.
+  read-back checks type, story, origin, axes and a closed Solid body, then the 3D
+  bounding box. The box is sent as an explicit closed `body`: live on AC30 build 3001 BRA
+  with Tapir 1.7.0, the `size` box came out as an open Surface with five faces. The
+  preview warns that a morph on a story Archicad is not showing opens a dialog that
+  blocks the API.
 
 - Add keynotes (new `tools/keynotes.py`, Archicad 28 or newer): `list_keynotes` reads the
   tree (Tapir 1.7.0 `GetKeynoteTree`) as folders and items with GUIDs and key paths;
   `create_keynote_folders` and `create_keynote_items` only add (`CreateKeynoteFolders`,
   `CreateKeynoteItems`), refuse a key that already exists anywhere in the tree, and read
-  each new entry back by GUID. Not yet tested live.
+  each new entry back by GUID. Tested live on AC30 build 3001 BRA (verified; a repeated
+  key is refused).
 
 - Add three read-only Design Options tools from the pinned Tapir 1.7.0 source:
   `list_design_options` returns sets, options and combinations;

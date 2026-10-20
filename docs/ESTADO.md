@@ -785,3 +785,16 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Registro: 96 ferramentas.
 - Seção do Claude na FILA reabastecida: C9 `create_splines`, C10 `create_hotspots`, C11
   `create_keynote_labels`, C12 `modify_morphs`, C13 cotas associativas. Próximo: C9.
+
+## 2026-10-20 — Claude / teste ao vivo do lote 3 e correção do morfo
+
+- Teste ao vivo do PR #63 no PC do Vitor (AC30 build 3001 BRA, Tapir 1.7.0, porta 19724,
+  "Sem Nome"): notas-chave, cota de espessura e as três aberturas deram verified.
+- O `size` do `CreateMorphs` do Tapir criou caixas abertas (5 faces, Surface,
+  isClosed false). `create_morphs` agora manda um `body` fechado (8 vértices, 6 faces
+  com normais para fora, bodyType Solid) e a conferência exige Solid fechado com 6 faces.
+  Vale levar ao Tapir upstream: o `BuildCuboidMorphMemo` dá às faces de baixo e de cima a
+  mesma orientação e não define o bodyType.
+- Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
+  API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.

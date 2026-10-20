@@ -580,9 +580,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   dry_run?, confirmation_token?)` creates up to 50 box morphs through Tapir 1.7.0
   `CreateMorphs`. The base point is the box's lowest corner in absolute project metres;
   sizes are positive metres along the project axes. Building material, surface and
-  display settings come from the Morph tool defaults. Each morph is read back for type,
-  story, origin and axes, and its 3D bounding box must match within 1 mm. Fixtures come
-  from the Tapir source, not a live capture.
+  display settings come from the Morph tool defaults. The box is sent as an explicit
+  closed solid body, because Tapir's own `size` box came out open (five faces, Surface)
+  in a live test. Each morph is read back for type, story, origin, axes and a closed
+  six-face Solid body, and its 3D bounding box must match within 1 mm. A morph on a
+  story that Archicad is not showing makes Archicad open a dialog that blocks the API
+  until someone clicks it, so show that story first. Fixtures come from the Tapir
+  source, not a live capture.
 
 - `create_wall_thickness_dimensions([{wall_guid, reference_point?: {x, y}, direction?:
   {x, y}}], port?, dry_run?, confirmation_token?)` adds up to 50 associative dimensions of
@@ -598,8 +602,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   confirmation_token?)` cuts up to 50 rectangular openings of the Opening tool (Archicad
   26 or newer) into existing editable walls or slabs through Tapir 1.7.0
   `CreateOpenings`. The base point is in absolute project metres and its z is the
-  opening's bottom edge; width and height are positive metres. Tapir sets the opening's
-  frame itself, and the shape, extrusion and display come from the Opening tool defaults.
+  opening's bottom edge; width and height are positive metres. Tested live, the width is
+  centred on the base point and follows the wall's direction; in a slab the opening lies
+  flat, its height running towards -y from the point. Tapir sets the opening's frame
+  itself, and the shape, extrusion and display come from the Opening tool defaults.
   Tapir returns no opening-specific details, so the read-back checks the new element's
   type and that the host lists it among its connected openings (`GetConnectedElements`).
   Fixtures come from the Tapir source, not a live capture. Registry: **96 tools (29
