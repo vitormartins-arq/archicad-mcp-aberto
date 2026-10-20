@@ -547,4 +547,6 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   para -y. Get3DBoundingBoxes devolve z 0 a 0 para aberturas.
 - [ ] Vitor: no 3D, vãos das paredes de 0,80 a 2,00; vão da laje atravessando a laje;
   na planta, cota no meio da parede medindo 0,20.
-- [ ] Morfo corrigido: criar de novo e ver no 3D que a caixa tem fundo.
+- [x] Morfo corrigido (commit bb25c5a), térreo em x 3 y 2 z 0: verified, caixa 3D exata,
+  corpo relido Solid, isClosed true, 6 faces e 8 vértices.
+- [ ] Vitor: no 3D, ver que o morfo em x 3 tem fundo.
