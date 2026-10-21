@@ -827,3 +827,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `create_meshes` (saia, arestas e linhas vêm do favorito se não forem dadas) e no
   desenho 2D. Só `create_objects` ficou de fora. 2247 testes simulados e Ruff passaram
   (Linux, Python 3.13).
+
+- C14 objetos (lote `lote/claude-6`): `create_objects` aceita `favorite`. O Tapir 1.7.0
+  exige `libraryPartName` mesmo com favorito e troca a peça depois de aplicar o favorito
+  (`ResolveLibraryPartName`), e não há como ler a peça de um favorito; por isso a prévia
+  avisa para passar a peça do próprio favorito, que o `lab_find_favorite` do Lab mostra.
+  O ângulo vem do favorito se não for dado. 2249 testes simulados e Ruff passaram
+  (Linux, Python 3.13).

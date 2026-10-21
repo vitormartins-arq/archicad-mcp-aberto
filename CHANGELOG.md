@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `create_objects` takes an optional `favorite` too. Tapir still needs
+  `libraryPartName` and cannot tell which part a favorite holds, so the preview notes
+  that the favorite's own part must be given. The angle comes from the favorite unless
+  given. Not tested live yet.
+
 - `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
   `favorite` (Tapir 1.7.0 `favoriteName`): the favorite is applied to the tool first,
   the given fields override it, and the size and structure it holds may be left out.

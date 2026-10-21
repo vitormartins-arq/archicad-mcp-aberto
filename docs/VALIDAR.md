@@ -583,3 +583,6 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   recusa.
 - [ ] **Zona, texto, etiqueta e linha por favorito.** Um de cada com um favorito LAB:
   conferir categoria da zona, estilo do texto e da etiqueta, e vegetal e tipo de linha.
+- [ ] **Objeto por favorito.** Com um favorito de objeto LAB e a peça de biblioteca dele
+  (o `lab_find_favorite` mostra qual é): conferir vegetal, penas e parâmetros do
+  favorito. Anotar o que acontece se a peça dada for outra.
