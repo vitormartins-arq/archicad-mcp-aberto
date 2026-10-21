@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from archicad_mcp_aberto.connection import ArchicadClient
-from archicad_mcp_aberto.tools import write
+from archicad_mcp_aberto.tools import drafting, labels, meshes, texts, write
 from tests.unit.fake_archicad import FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
@@ -167,3 +167,83 @@ async def test_size_required_without_a_favorite(tool, item):
         with pytest.raises(ValidationError):
             await tool(c, [item], 19723)
     assert not fake.calls
+
+
+SECOND = [
+    (
+        "Zone",
+        write.create_zones,
+        "CreateZones",
+        "zonesData",
+        {"outline": SQUARE, "name": "SALA", "number": "01", "floor_index": 0},
+    ),
+    (
+        "Line",
+        drafting.create_lines,
+        "CreateLineElements",
+        "linesData",
+        {"start": {"x": 0, "y": 0}, "end": {"x": 5, "y": 0}, "floor_index": 0},
+    ),
+    (
+        "Hatch",
+        drafting.create_fills,
+        "CreateHatches",
+        "hatchesData",
+        {"outline": SQUARE, "floor_index": 0},
+    ),
+    (
+        "Text",
+        texts.create_texts,
+        "CreateTexts",
+        "textsData",
+        {"text": "SALA", "position": {"x": 1, "y": 1}, "floor_index": 0},
+    ),
+    (
+        "Label",
+        labels.create_labels,
+        "CreateLabels",
+        "labelsData",
+        {"text": "NOTA", "position": {"x": 1, "y": 1}, "floor_index": 0},
+    ),
+    (
+        "Mesh",
+        meshes.create_meshes,
+        "CreateMeshes",
+        "meshesData",
+        {
+            "outline": [{**p, "z": 0.0} for p in SQUARE],
+            "floor_index": 0,
+            "level": 0.0,
+        },
+    ),
+]
+
+
+@pytest.mark.parametrize(("kind", "tool", "command", "key", "item"), SECOND)
+async def test_other_create_tools_take_a_favorite(kind, tool, command, key, item):
+    fake = model()
+    fake.favorites[kind] = [f" {kind.upper()} LAB"]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match=f"No {kind} favorite"):
+            await tool(c, [{**item, "favorite": "OUTRO"}], 19723)
+        preview, result = await apply(tool, c, [{**item, "favorite": f"{kind.lower()} lab"}])
+    assert preview["items"][0]["favorite"] == f" {kind.upper()} LAB"
+    assert sent(fake, command, key)[0]["favoriteName"] == f" {kind.upper()} LAB"
+    assert result["status"] == "verified", result["items"][0].get("mismatches")
+
+
+async def test_mesh_settings_come_from_the_favorite_unless_given():
+    fake = model()
+    fake.favorites["Mesh"] = ["TERRENO LAB"]
+    mesh = {
+        "outline": [{**p, "z": 0.0} for p in SQUARE],
+        "floor_index": 0,
+        "level": 0.0,
+        "favorite": "TERRENO LAB",
+        "ridges": "AllSmooth",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        await apply(meshes.create_meshes, c, [mesh])
+    payload = sent(fake, "CreateMeshes", "meshesData")[0]
+    assert payload["ridges"] == "AllSmooth"
+    assert not {"skirtType", "skirtLevel", "showLines"} & set(payload)

@@ -823,3 +823,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   geometria e o que foi dado. A prévia confere o favorito por `GetFavoritesByType`.
   Lote `lote/claude-5`. Próximo: o mesmo em textos, etiquetas, zonas, objetos, malhas e
   desenho 2D; depois, no Lab, o guia de qual favorito LAB usar para cada coisa.
+- C14 continuação: `favorite` também em `create_zones`, `create_texts`, `create_labels`,
+  `create_meshes` (saia, arestas e linhas vêm do favorito se não forem dadas) e no
+  desenho 2D. Só `create_objects` ficou de fora. 2247 testes simulados e Ruff passaram
+  (Linux, Python 3.13).

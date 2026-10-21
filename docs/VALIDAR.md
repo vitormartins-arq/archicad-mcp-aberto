@@ -581,3 +581,5 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   que vêm do favorito.
 - [ ] **Favorito errado.** Pedir uma parede com o nome de um favorito de laje: a prévia
   recusa.
+- [ ] **Zona, texto, etiqueta e linha por favorito.** Um de cada com um favorito LAB:
+  conferir categoria da zona, estilo do texto e da etiqueta, e vegetal e tipo de linha.

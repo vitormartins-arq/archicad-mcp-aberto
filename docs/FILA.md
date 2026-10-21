@@ -116,10 +116,10 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
 - **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
-- **C14 criar a partir de favorito.** (Paredes, lajes, pilares e vigas feitos no lote
-  `lote/claude-5`.) `favoriteName` do Tapir 1.7.0 nas ferramentas de criação. Falta:
-  textos, etiquetas, zonas, objetos, malhas, linhas, polilinhas, arcos, círculos,
-  hachuras, splines e pontos quentes.
+- **C14 criar a partir de favorito.** (Feito no lote `lote/claude-5`, menos objetos.)
+  `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
+  etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
+  biblioteca viria dele e a conferência por nome da peça teria de mudar.
 
 
 ## Integrado

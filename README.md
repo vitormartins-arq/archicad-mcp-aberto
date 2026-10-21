@@ -618,8 +618,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   it, so with a favorite the settings it holds may be left out: wall height and
   thickness, slab thickness, column height and section, beam width and height. The
   wall's structure (Basic, Composite or Profile) comes from the favorite too. The
-  read-back checks the geometry and the fields that were given. Fixtures come from the
-  Tapir source, not a live capture.
+  read-back checks the geometry and the fields that were given. `create_zones`,
+  `create_texts`, `create_labels`, `create_meshes` and the 2D drafting tools (lines,
+  polylines, splines, arcs, circles, fills and hotspots) take `favorite` the same way;
+  a mesh's skirt, ridges and line display come from the favorite unless given.
+  `create_objects` does not yet (the library part comes from the name). Fixtures come
+  from the Tapir source, not a live capture.
 - `create_splines([{points, closed?, floor_index, layer?, pen?}], port?, dry_run?,
   confirmation_token?)` draws up to 50 2D splines by Tapir 1.7.0 `CreateSplines`. Each
   goes through 3 to 500 points in metres; Archicad smooths the curve itself (the Bezier

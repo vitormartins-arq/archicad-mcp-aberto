@@ -204,7 +204,7 @@ class SlabCreate(_Favored):
         return self
 
 
-class ZoneCreate(InputModel):
+class ZoneCreate(_Favored):
     outline: Annotated[list[Point], Field(min_length=3, max_length=200)]
     name: Annotated[str, Field(min_length=1)]
     number: Annotated[str, Field(min_length=1)]
@@ -767,6 +767,15 @@ async def _favorite_names(client, port: int, kind: str, items: list) -> dict[str
             raise ValueError(f"No {kind} favorite named {name!r}.")
         out[name] = found
     return out
+
+
+async def _resolve_favorites(client, port: int, kind: str, models: list, items: list) -> None:
+    """Swap each item's requested favorite for its exact name; raises when one is missing."""
+    exact = await _favorite_names(client, port, kind, models)
+    for item in items:
+        parameters = item["parameters"]
+        if "favoriteName" in parameters:
+            parameters["favoriteName"] = item["favorite"] = exact[parameters["favoriteName"]]
 
 
 def _expected(item: dict) -> dict:
@@ -1841,16 +1850,20 @@ async def create_beams(
 
 
 def _zone_payload(zone: ZoneCreate) -> dict:
-    return {
-        "floorIndex": zone.floor_index,
-        "name": zone.name,
-        "numberStr": zone.number,
-        "geometry": {
-            "polygonCoordinates": [p.model_dump() for p in zone.outline],
-            "polygonArcs": [],
-            "holes": [],
+    return _favored(
+        {
+            "floorIndex": zone.floor_index,
+            "name": zone.name,
+            "numberStr": zone.number,
+            "geometry": {
+                "polygonCoordinates": [p.model_dump() for p in zone.outline],
+                "polygonArcs": [],
+                "holes": [],
+            },
         },
-    }
+        zone,
+        {},
+    )
 
 
 def _zone_mismatches(item: dict, row: Any) -> list[str]:

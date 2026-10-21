@@ -2161,6 +2161,10 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                mesh, extra = self._favored("Mesh", mesh)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Mesh"
                 row = deepcopy(MESHES_FIXTURE["mesh_details"])
@@ -2253,6 +2257,10 @@ class FakeArchicad:
             "isWidthAndHeightLinked": False,
         },
         "Beam": {"width": 0.2, "height": 0.4},
+        "Mesh": {
+            "skirtType": "SurfaceOnlyWithoutSkirt", "skirtLevel": 1.0, "ridges": "AllSharp",
+            "showLines": True,
+        },
     }  # fmt: skip
 
     def _favored(self, kind: str, data: dict) -> tuple[dict, dict]:

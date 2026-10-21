@@ -22,7 +22,7 @@ def _lines(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
-class TextCreate(write.InputModel):
+class TextCreate(write._Favored):
     text: Annotated[str, Field(min_length=1, max_length=2000)]
     position: write.Point
     floor_index: int
@@ -49,6 +49,8 @@ def _payload(text: TextCreate, story_level: float) -> dict:
         payload["height"] = text.height_mm
     if text.justification is not None:
         payload["justification"] = text.justification
+    if text.favorite is not None:
+        payload["favoriteName"] = text.favorite
     return payload
 
 
@@ -66,6 +68,7 @@ async def _plan(client, texts, port, operation):
                 "parameters": _payload(text, levels[text.floor_index]),
             }
         )
+    await write._resolve_favorites(client, port, "Text", texts, items)
     return {"operation": operation, "target": target, "items": items}
 
 
