@@ -450,6 +450,22 @@
     {
       "name": "create_keynote_items",
       "description": "Preview/create new keynote items with new keys; only adds, read back by GUID."
+    },
+    {
+      "name": "get_subelements",
+      "description": "Read hierarchical element subelements."
+    },
+    {
+      "name": "get_element_trims",
+      "description": "Read element trim relationships."
+    },
+    {
+      "name": "get_solid_operation_links",
+      "description": "Read solid-operation target/operator links."
+    },
+    {
+      "name": "get_section_elements",
+      "description": "Read section elements and their model owners."
     }
   ],
   "compatibility": {

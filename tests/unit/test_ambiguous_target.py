@@ -15,6 +15,7 @@ from archicad_mcp_aberto.tools import (
     documents,
     drafting,
     edit,
+    element_structure,
     favorites,
     gateway,
     interior_elevations,
@@ -63,6 +64,10 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "get_subelements": {"element_guids": [GUID]},
+    "get_element_trims": {"element_guids": [GUID]},
+    "get_solid_operation_links": {"element_guids": [GUID]},
+    "get_section_elements": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -322,17 +327,22 @@ INPUTS = {
         "folders": [{"parent_guid": "77777777-7777-4777-8777-000000000002", "name": "New"}]
     },
     "clone_to_view_map": {
-        "views": [{
-            "parent_guid": "77777777-7777-4777-8777-000000000002",
-            "source_guid": "88888888-8888-4888-8888-000000000002"
-        }]
+        "views": [
+            {
+                "parent_guid": "77777777-7777-4777-8777-000000000002",
+                "source_guid": "88888888-8888-4888-8888-000000000002",
+            }
+        ]
     },
     "create_classification_items": {
-        "items": [{
-            "system_guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11",
-            "parent_guid": "A1000000-0000-4000-8000-000000000003",
-            "id": "LAB-01", "name": "LAB item"
-        }]
+        "items": [
+            {
+                "system_guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11",
+                "parent_guid": "A1000000-0000-4000-8000-000000000003",
+                "id": "LAB-01",
+                "name": "LAB item",
+            }
+        ]
     },
 }
 TARGETED = {
@@ -346,6 +356,8 @@ TARGETED = {
         drafting,
         renames,
         edit,
+        element_structure,
+        element_structure,
         favorites,
         gateway,
         interior_elevations,

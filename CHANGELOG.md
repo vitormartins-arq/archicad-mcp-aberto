@@ -376,3 +376,6 @@
 - Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
+
+### Element structure reading
+- Add hierarchical subelement, trim, solid-operation and section-owner queries.

@@ -633,3 +633,8 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `get_subelements`, `get_element_trims`, `get_solid_operation_links` and
+  `get_section_elements` expose bounded, aligned structural relationships through Tapir
+  1.7.0. Each element/database list accepts at most 100 GUIDs. Fixtures are source-derived,
+  not a live capture. Registry: **102 tools (33 reads, 69 writes/interactions)**.

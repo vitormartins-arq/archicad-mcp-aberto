@@ -567,3 +567,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
   (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
   configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.
+
+## T37 — Element structure
+- [ ] Compare curtain-wall/stair/railing subelements, trim and solid-operation links with the model.
+- [ ] In section/elevation databases, compare generated element GUIDs and their model owners.
