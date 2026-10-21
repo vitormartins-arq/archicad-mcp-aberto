@@ -810,3 +810,32 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
   API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
   Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.
+
+## 2026-10-21 — Claude / C9 splines e tarefas novas do Codex
+
+- `tools/drafting.py`: `create_splines` por `CreateSplines` do Tapir 1.7.0
+  (ElementCreationCommands.cpp). 3 a 500 pontos em metros, aberta ou fechada (sem
+  repetir o primeiro ponto), vegetal e pena opcionais; o ArchiCAD suaviza a curva
+  sozinho. Conferência por tipo, pavimento, vegetal, pena, `closed` e pontos lidos em
+  `GetDetailsOfElements` (até 1 mm). Lote `lote/claude-4`. Registro: 97 ferramentas (C9).
+- Codex: tarefas T28 (terminar o PR dos hotlinks, a branch já existia sem PR) a T34, todas
+  de leitura, na seção "A fazer" de `docs/FILA.md`. O prompt foi mandado ao Vitor.
+- C10: `create_hotspots` em `tools/drafting.py`, por `CreateHotspots` do Tapir 1.7.0
+  (posição, altura opcional, vegetal e pena). Conferência por tipo, pavimento, vegetal,
+  posição, altura e pena. 2231 testes simulados e Ruff passaram (Linux, Python 3.13).
+  Registro: 98 ferramentas. Próximo: C11 `create_keynote_labels`.
+
+## 2026-10-21 — Claude / C14 criar a partir de favorito (lote 5)
+
+- Pedido do Vitor: com os dois MCPs, modelar já no padrão dele. Passo 1 no aberto:
+  `create_walls`, `create_slabs`, `create_columns` e `create_beams` aceitam `favorite`
+  (o `favoriteName` do Tapir 1.7.0, `CreateElementsCommandBase`). Com favorito, os
+  campos de configuração que ficaram de fora saem do payload (a parede não manda mais
+  `structureType` Basic, que sobrescreveria a composição) e a conferência só cobra a
+  geometria e o que foi dado. A prévia confere o favorito por `GetFavoritesByType`.
+  Lote `lote/claude-5`. Próximo: o mesmo em textos, etiquetas, zonas, objetos, malhas e
+  desenho 2D; depois, no Lab, o guia de qual favorito LAB usar para cada coisa.
+- C14 continuação: `favorite` também em `create_zones`, `create_texts`, `create_labels`,
+  `create_meshes` (saia, arestas e linhas vêm do favorito se não forem dadas) e no
+  desenho 2D. Só `create_objects` ficou de fora. 2247 testes simulados e Ruff passaram
+  (Linux, Python 3.13).

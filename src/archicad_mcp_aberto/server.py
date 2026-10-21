@@ -184,8 +184,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Preview straight Basic walls (up to 20). All lengths are metres.
         Requires Tapir. Review the preview with the user, then repeat identical inputs
         with dry_run=false, explicit port and confirmation_token. New walls inherit the
-        default layer and building material. Returns per-wall results and local receipts;
-        verifies geometry after writing. Never saves the project."""
+        default layer and building material, or take everything from `favorite` (a Wall
+        favorite's name; height and thickness may then be left out, given fields override
+        it). Returns per-wall results and local receipts; verifies geometry after writing.
+        Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -206,9 +208,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Preview up to 20 simple polygon slabs. Metres; level is absolute project Z.
         Requires Tapir. Straight edges, no holes, top reference plane; layer/material
-        inherit defaults. Review before applying identical inputs with dry_run=false,
-        explicit port and single-use confirmation_token. Verifies each slab and returns
-        local receipts. Never saves the project."""
+        inherit defaults, or come from `favorite` (a Slab favorite; thickness may then be
+        left out). Review before applying identical inputs with dry_run=false, explicit
+        port and single-use confirmation_token. Verifies each slab and returns local
+        receipts. Never saves the project."""
         return await write.create_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
@@ -220,8 +223,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview up to 20 straight rectangular/circular columns, in metres.
-        base_level is absolute project Z. Requires Tapir; review then apply identical
-        inputs with explicit port and single-use token. Verifies each column; never saves."""
+        base_level is absolute project Z. With `favorite` (a Column favorite), height and
+        section may be left out. Requires Tapir; review then apply identical inputs with
+        explicit port and single-use token. Verifies each column; never saves."""
         return await write.create_columns(
             client_of(ctx), columns, port, dry_run, confirmation_token
         )
@@ -670,7 +674,8 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview straight rectangular beams, up to 20. Metres; level is absolute Z.
-        Requires Tapir, explicit port and single-use token to apply; never saves.
+        With `favorite` (a Beam favorite), width and height may be left out. Requires
+        Tapir, explicit port and single-use token to apply; never saves.
         """
         return await write.create_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
 
@@ -897,6 +902,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         apply with explicit port and token; the plan box is checked. Never saves."""
         return await drafting.create_polylines(
             client_of(ctx), polylines, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_splines(
+        ctx: Context,
+        splines: list[drafting.SplineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 auto-smoothed splines: points (3 to 500, metres; never repeat the
+        first), closed (default false), floor_index, optional layer (name) and pen. Requires
+        Tapir; apply with explicit port and token; points are read back. Never saves."""
+        return await drafting.create_splines(
+            client_of(ctx), splines, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_hotspots(
+        ctx: Context,
+        hotspots: list[drafting.HotspotCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 2D hotspots: position {x, y} in metres, optional height (the
+        hotspot's z on its story, metres), floor_index, optional layer (name) and pen.
+        Requires Tapir; apply with explicit port and token; each is read back. Never saves."""
+        return await drafting.create_hotspots(
+            client_of(ctx), hotspots, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)
