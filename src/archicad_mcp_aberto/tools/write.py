@@ -148,7 +148,7 @@ class ColumnCreate(_Favored):
         return (self.width, self.depth, self.diameter) == (None, None, None)
 
 
-class ObjectCreate(InputModel):
+class ObjectCreate(_Favored):
     library_part_name: Annotated[str, Field(min_length=1, max_length=255)]
     origin: Point
     floor_index: int
@@ -735,6 +735,11 @@ async def _plan(
         if "favoriteName" in payload:
             payload["favoriteName"] = item["favorite"] = exact[payload["favoriteName"]]
         if obj:
+            if "favoriteName" in payload:
+                item["note"] = (
+                    "Tapir cannot read which library part a favorite holds: pass the "
+                    "favorite's own library part, or its parameters may not fit."
+                )
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
             if candidates:
                 item["library_part_guid"] = candidates[0]["guid"].upper()
@@ -1138,12 +1143,13 @@ async def create_columns(
 
 
 def _object_payload(obj: ObjectCreate) -> dict:
-    return {
+    payload = {
         "libraryPartName": obj.library_part_name,
         "coordinates": {**obj.origin.model_dump(), "z": obj.base_level},
         "floorIndex": obj.floor_index,
         "angle": obj.angle,
     }
+    return _favored(payload, obj, {"angle": "angle"})
 
 
 def _object_mismatches(item: dict, row: Any) -> list[str]:
@@ -1157,7 +1163,9 @@ def _object_mismatches(item: dict, row: Any) -> list[str]:
     details = row.get("details") if isinstance(row, dict) else None
     details = details if isinstance(details, dict) else {}
     angle = details.get("angle")
-    if not isinstance(angle, (float, int)) or isinstance(angle, bool):
+    if "angle" not in p:
+        pass  # The favorite's angle.
+    elif not isinstance(angle, (float, int)) or isinstance(angle, bool):
         differences.append("details.angle")
     else:
         # Archicad may store the angle in another turn; compare on the circle.
@@ -1181,7 +1189,8 @@ async def create_objects(
     """Preview/apply up to 20 library part objects by name. Metres, radians.
 
     base_level is absolute project Z. Size and parameters stay the library part's
-    defaults; layer and pens inherit the Object tool. A name Archicad cannot find
+    defaults; layer and pens inherit the Object tool, or the named `favorite`
+    (give that favorite's own library part). A name Archicad cannot find
     fails only that object. Shares the token, receipt and timeout policy.
     """
     if not 1 <= len(objects) <= MAX_OBJECTS:

@@ -247,3 +247,44 @@ async def test_mesh_settings_come_from_the_favorite_unless_given():
     payload = sent(fake, "CreateMeshes", "meshesData")[0]
     assert payload["ridges"] == "AllSmooth"
     assert not {"skirtType", "skirtLevel", "showLines"} & set(payload)
+
+
+async def test_object_from_favorite_keeps_its_angle_and_notes_the_library_part():
+    fake = FakeArchicad(
+        19723,
+        stories=[dict(s) for s in STORIES],
+        favorites={"Object": ["CADEIRA LAB"]},
+        favorite_settings={"CADEIRA LAB": {"defaults": {"angle": 1.5}}},
+    )
+    fake.library_parts = {"Cadeira 01"}
+    item = {
+        "library_part_name": "Cadeira 01",
+        "origin": {"x": 1, "y": 2},
+        "floor_index": 0,
+        "base_level": 0.0,
+        "favorite": "cadeira lab",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(write.create_objects, c, [item])
+    assert "library part" in preview["items"][0]["note"]
+    payload = sent(fake, "CreateObjects", "objectsData")[0]
+    assert payload["favoriteName"] == "CADEIRA LAB" and "angle" not in payload
+    assert result["items"][0]["status"] == "verified"
+    assert fake.details[result["items"][0]["element_guid"]]["details"]["angle"] == 1.5
+
+
+async def test_object_favorite_of_another_type_fails_that_object():
+    fake = FakeArchicad(
+        19723, stories=[dict(s) for s in STORIES], favorites={"Object": ["CADEIRA LAB"]}
+    )
+    fake.library_parts = {"Cadeira 01"}
+    item = {
+        "library_part_name": "Cadeira 01",
+        "origin": {"x": 1, "y": 2},
+        "floor_index": 0,
+        "base_level": 0.0,
+        "favorite": "PAREDE",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="No Object favorite named 'PAREDE'"):
+            await write.create_objects(c, [item], 19723)

@@ -240,7 +240,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Preview up to 20 library part objects by exact name, in metres and radians.
         base_level is absolute project Z; size stays the part's default. Requires Tapir;
         review then apply identical inputs with explicit port and single-use token.
-        An unknown name fails only that object. Verifies each object; never saves."""
+        An unknown name fails only that object. `favorite` takes an Object favorite's
+        pens, layer and parameters; pass that favorite's own library part. Verifies each
+        object; never saves."""
         return await write.create_objects(
             client_of(ctx), objects, port, dry_run, confirmation_token
         )

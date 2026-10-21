@@ -1769,6 +1769,10 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                obj, extra = self._favored("Object", obj)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
                 lookup = {n.casefold(): n for n in self.library_parts}
                 found = lookup.get(obj["libraryPartName"].casefold())
                 if found is None:
@@ -1786,6 +1790,7 @@ class FakeArchicad:
                         "origin": deepcopy(obj["coordinates"]),
                         "dimensions": {"x": 1.2, "y": 0.8, "z": 0.75},
                         "angle": obj.get("angle", 0.0) % math.tau,
+                        **extra,
                     },
                 }
                 out.append(self._id(guid))
@@ -2257,6 +2262,7 @@ class FakeArchicad:
             "isWidthAndHeightLinked": False,
         },
         "Beam": {"width": 0.2, "height": 0.4},
+        "Object": {"angle": 0.0},
         "Mesh": {
             "skirtType": "SurfaceOnlyWithoutSkirt", "skirtLevel": 1.0, "ridges": "AllSharp",
             "showLines": True,
