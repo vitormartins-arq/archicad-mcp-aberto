@@ -1,4 +1,5 @@
-"""2D drafting on a story: lines, polylines, splines, arcs, circles and fills (Tapir 1.7.0).
+"""2D drafting on a story: lines, polylines, splines, arcs, circles, fills and hotspots
+(Tapir 1.7.0).
 
 Coordinates in metres, angles in radians. Every element needs its story; layer and fill
 are named as in Archicad, and the pen is a pen-table index. Omitted settings keep the
@@ -66,6 +67,17 @@ class SplineCreate(_Drawn):
         return self
 
 
+class HotspotCreate(_Drawn):
+    position: write.Point
+    height: float | None = None
+
+    @model_validator(mode="after")
+    def finite_height(self) -> HotspotCreate:
+        if self.height is not None and not math.isfinite(self.height):
+            raise ValueError("Hotspot height must be finite.")
+        return self
+
+
 class CircleCreate(_Drawn):
     center: write.Point
     radius: write.Positive
@@ -107,6 +119,7 @@ KINDS = {
     "create_arcs": ("Arc", ArcCreate),
     "create_circles": ("Circle", CircleCreate),
     "create_fills": ("Hatch", FillCreate),
+    "create_hotspots": ("Hotspot", HotspotCreate),
 }
 
 
@@ -138,12 +151,17 @@ def _payload(operation: str, item: Any) -> dict:
         p |= {"origin": item.center.model_dump(), "radius": item.radius}
         if operation == "create_arcs":
             p |= {"begAngle": item.start_angle, "endAngle": item.end_angle}
+    elif operation == "create_hotspots":
+        p["position"] = item.position.model_dump()
+        if item.height is not None:
+            p["height"] = item.height
     else:
         p |= {"coordinates": [q.model_dump() for q in item.outline], "arcs": []}
         if item.contour_pen is not None:
             p["contourPenIndex"] = item.contour_pen
     if item.pen is not None:
-        p["fillPenIndex" if operation == "create_fills" else "linePenIndex"] = item.pen
+        pens = {"create_fills": "fillPenIndex", "create_hotspots": "penIndex"}
+        p[pens.get(operation, "linePenIndex")] = item.pen
     return p
 
 
@@ -233,6 +251,9 @@ def _checker(operation: str):
                 "origin",
                 "radius",
                 "closed",
+                "position",
+                "height",
+                "penIndex",
                 "linePenIndex",
                 "fillPenIndex",
                 "contourPenIndex",
@@ -343,3 +364,15 @@ async def create_fills(
 ) -> dict:
     """Preview/apply up to 50 fills (Archicad hatches) on simple polygons."""
     return await _create(client, fills, port, dry_run, confirmation_token, "create_fills")
+
+
+async def create_hotspots(
+    client: ArchicadClient,
+    hotspots: list[dict | HotspotCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 50 2D hotspots: position, optional height (metres, the
+    hotspot's z on its story)."""
+    return await _create(client, hotspots, port, dry_run, confirmation_token, "create_hotspots")

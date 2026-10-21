@@ -71,6 +71,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_lines` | Write | Up to 50 straight 2D lines on a story | yes |
 | `create_polylines` | Write | Up to 50 straight-segment 2D polylines | yes |
 | `create_splines` | Write | Up to 50 auto-smoothed 2D splines | yes |
+| `create_hotspots` | Write | Up to 50 2D hotspots on a story | yes |
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
@@ -616,8 +617,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   handles are not settable). `closed` joins the last point back to the first, so the
   first point is never repeated. Layer and pen work as in `create_polylines`. The
   read-back compares type, story, layer, pen, `closed` and the stored points within
-  1 mm. Fixtures come from the Tapir source, not a live capture. Registry: **97 tools
-  (29 reads, 68 writes/interactions)**.
+  1 mm. Fixtures come from the Tapir source, not a live capture.
+- `create_hotspots([{position, height?, floor_index, layer?, pen?}], port?, dry_run?,
+  confirmation_token?)` places up to 50 2D hotspots by Tapir 1.7.0 `CreateHotspots`:
+  position in metres, optional height (the hotspot's z on its story, metres), layer by
+  name and pen index. The read-back compares type, story, layer, position, height and
+  pen. Fixtures come from the Tapir source, not a live capture. Registry: **98 tools
+  (29 reads, 69 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

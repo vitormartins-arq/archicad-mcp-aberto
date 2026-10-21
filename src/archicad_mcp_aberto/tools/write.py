@@ -302,6 +302,11 @@ OPERATIONS = {
         "polyline_receipt_id",
         "New polylines take line type from the Polyline tool.",
     ),
+    "create_hotspots": (
+        "hotspot",
+        "hotspot_receipt_id",
+        "New hotspots keep the Hotspot tool's settings unless named here.",
+    ),
     "create_splines": (
         "spline",
         "spline_receipt_id",
@@ -455,6 +460,7 @@ CREATE_COMMANDS = {
     "create_lines": ("CreateLineElements", "linesData"),
     "create_polylines": ("CreatePolylines", "polylinesData"),
     "create_splines": ("CreateSplines", "splinesData"),
+    "create_hotspots": ("CreateHotspots", "hotspotsData"),
     "create_arcs": ("CreateArcs", "arcsData"),
     "create_circles": ("CreateCircles", "circlesData"),
     "create_fills": ("CreateHatches", "hatchesData"),
@@ -1606,6 +1612,7 @@ NAMED_PREVIEWS = {
     "create_lines",
     "create_polylines",
     "create_splines",
+    "create_hotspots",
     "create_arcs",
     "create_circles",
     "create_fills",

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_hotspots` to `tools/drafting.py`: up to 50 2D hotspots by Tapir 1.7.0
+  `CreateHotspots`, with position, optional height, layer and pen. Read back by type,
+  story, layer, position, height and pen. Not tested live yet.
+
 - Add `create_splines` to `tools/drafting.py`: up to 50 auto-smoothed 2D splines by
   Tapir 1.7.0 `CreateSplines`, through 3 to 500 points in metres, open or closed, with
   optional layer and pen. Read back by type, story, layer, pen, `closed` and points

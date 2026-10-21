@@ -561,3 +561,9 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   `closed` true e os mesmos quatro pontos.
 - [ ] **Vegetal e pena.** Uma spline com vegetal e pena dados: conferir as duas coisas na
   caixa de configurações da spline.
+
+## Lote do Claude C10: pontos quentes
+
+- [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
+  (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
+  configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.

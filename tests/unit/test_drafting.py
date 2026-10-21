@@ -47,6 +47,10 @@ def spline(**changes):
     return {"points": SQUARE, "floor_index": 1, "closed": True, **changes}
 
 
+def hotspot(**changes):
+    return {"position": {"x": 2, "y": 3}, "floor_index": 0, **changes}
+
+
 def arc(**changes):
     return {
         "center": {"x": 1, "y": 1},
@@ -73,6 +77,7 @@ CASES = [
     (drafting.create_arcs, "CreateArcs", "arcsData", arc),
     (drafting.create_circles, "CreateCircles", "circlesData", circle),
     (drafting.create_fills, "CreateHatches", "hatchesData", fill),
+    (drafting.create_hotspots, "CreateHotspots", "hotspotsData", hotspot),
 ]
 
 
@@ -91,7 +96,8 @@ async def test_preview_then_apply(tool, command, key, make):
     assert result["status"] == "verified", result["items"][0].get("mismatches")
     payload = sent(fake, command, key)[0]
     assert payload["layerIndex"] == 7
-    assert payload["fillPenIndex" if command == "CreateHatches" else "linePenIndex"] == 5
+    pens = {"CreateHatches": "fillPenIndex", "CreateHotspots": "penIndex"}
+    assert payload[pens.get(command, "linePenIndex")] == 5
     assert payload["floorInd"] == inputs[0]["floor_index"]
 
 
@@ -102,7 +108,15 @@ async def test_defaults_are_left_to_the_tool(tool, command, key, make):
         result = await apply(tool, c, [make()])
     assert result["status"] == "verified"
     payload = sent(fake, command, key)[0]
-    for absent in ("layerIndex", "linePenIndex", "fillPenIndex", "fillId", "contourPenIndex"):
+    for absent in (
+        "layerIndex",
+        "linePenIndex",
+        "fillPenIndex",
+        "penIndex",
+        "fillId",
+        "contourPenIndex",
+        "height",
+    ):
         assert absent not in payload
 
 
@@ -153,6 +167,33 @@ async def test_spline_payload_and_closed_read_back():
             c, [spline()], 19723, False, preview["confirmation_token"]
         )
     assert result["items"][0]["mismatches"] == ["details.closed"]
+
+
+async def test_hotspot_payload_and_position_read_back():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(drafting.create_hotspots, c, [hotspot(height=1.2)])
+        assert result["status"] == "verified"
+        assert sent(fake, "CreateHotspots", "hotspotsData")[0] == {
+            "floorInd": 0,
+            "position": {"x": 2, "y": 3},
+            "height": 1.2,
+        }
+        preview = await drafting.create_hotspots(c, [hotspot()], 19723)
+        original = fake._tapir
+
+        def moved(params):
+            response = original(params)
+            for row in fake.details.values():
+                if row["type"] == "Hotspot":
+                    row["details"]["position"] = {"x": 2.5, "y": 3}
+            return response
+
+        fake._tapir = moved
+        result = await drafting.create_hotspots(
+            c, [hotspot()], 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["mismatches"] == ["details.position.x"]
 
 
 async def test_fill_by_name():
@@ -260,6 +301,8 @@ async def test_arc_angle_on_the_circle_and_wrong_geometry():
         (drafting.create_splines, spline(points=SQUARE[:2])),
         (drafting.create_splines, spline(points=[*SQUARE, SQUARE[0]])),
         (drafting.create_splines, spline(points=[SQUARE[0], SQUARE[1], SQUARE[1]])),
+        (drafting.create_hotspots, hotspot(height="inf")),
+        (drafting.create_hotspots, hotspot(pen=0)),
         (drafting.create_arcs, arc(end_angle=2 * math.pi)),
         (drafting.create_arcs, arc(radius=0)),
         (drafting.create_circles, circle(radius=-1)),

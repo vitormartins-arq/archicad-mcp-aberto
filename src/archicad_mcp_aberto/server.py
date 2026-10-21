@@ -914,6 +914,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_hotspots(
+        ctx: Context,
+        hotspots: list[drafting.HotspotCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 2D hotspots: position {x, y} in metres, optional height (the
+        hotspot's z on its story, metres), floor_index, optional layer (name) and pen.
+        Requires Tapir; apply with explicit port and token; each is read back. Never saves."""
+        return await drafting.create_hotspots(
+            client_of(ctx), hotspots, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_arcs(
         ctx: Context,
         arcs: list[drafting.ArcCreate],

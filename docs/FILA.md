@@ -89,7 +89,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   da ferramenta Abertura em paredes ou lajes existentes, no padrão de `create_windows`.
 - **C9 `create_splines`.** (Feito no lote `lote/claude-4`.) `CreateSplines`: curvas spline 2D em planta por pontos em
   metros, no padrão de `create_polylines`, conferidas pela leitura de tipo e pavimento.
-- **C10 `create_hotspots`.** `CreateHotspots`: pontos quentes 2D em metros, no pavimento
+- **C10 `create_hotspots`.** (Feito no lote `lote/claude-4`.) `CreateHotspots`: pontos quentes 2D em metros, no pavimento
   dado, conferidos pela leitura de tipo, pavimento e posição.
 - **C11 `create_keynote_labels`.** `CreateKeynoteLabels`: etiqueta de nota-chave em
   elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.

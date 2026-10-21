@@ -148,6 +148,7 @@ INPUTS = {
             {"points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 1}], "floor_index": 0}
         ]
     },
+    "create_hotspots": {"hotspots": [{"position": {"x": 0, "y": 0}, "floor_index": 0}]},
     "create_arcs": {
         "arcs": [
             {

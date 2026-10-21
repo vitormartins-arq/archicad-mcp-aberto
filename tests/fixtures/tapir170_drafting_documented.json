@@ -8,7 +8,7 @@
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/ElementCommands.cpp",
       "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/main/archicad-addon/Sources/AttributeCommands.cpp"
     ],
-    "note": "CreateLineElements/CreatePolylines/CreateArcs/CreateCircles/CreateHatches inputs and the GetDetailsOfElements keys for Line, PolyLine, Arc, Circle and Hatch read in the Tapir 1.7.0 source (PolyLine and Hatch details carry coordinates and arcs). Live 14/10/2026 (AC30 3001 BRA): a circle reads back as type Arc with begAngle == endAngle == 0, and Get2DBoundingBoxes answers error 7203 for PolyLine and Hatch. Values are synthetic, not a live capture. CreateSplines (splinesData: coordinates, closed, line-family settings; auto-smoothed) and the Spline details (coordinates without a closing repeat, closed, line-family settings, zCoordinate) read in the same source on 21/10/2026; not live."
+    "note": "CreateLineElements/CreatePolylines/CreateArcs/CreateCircles/CreateHatches inputs and the GetDetailsOfElements keys for Line, PolyLine, Arc, Circle and Hatch read in the Tapir 1.7.0 source (PolyLine and Hatch details carry coordinates and arcs). Live 14/10/2026 (AC30 3001 BRA): a circle reads back as type Arc with begAngle == endAngle == 0, and Get2DBoundingBoxes answers error 7203 for PolyLine and Hatch. Values are synthetic, not a live capture. CreateSplines (splinesData: coordinates, closed, line-family settings; auto-smoothed) and the Spline details (coordinates without a closing repeat, closed, line-family settings, zCoordinate) read in the same source on 21/10/2026; not live. CreateHotspots (hotspotsData: position, height, penIndex) and the Hotspot details (position, height, penIndex) read in the same source on 21/10/2026; not live."
   },
   "details": {
     "Line": {
@@ -97,6 +97,14 @@
         "guid": "44444444-4444-4444-8444-444444444444"
       },
       "zCoordinate": 0
+    },
+    "Hotspot": {
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "height": 0,
+      "penIndex": 1
     }
   },
   "fills": [
