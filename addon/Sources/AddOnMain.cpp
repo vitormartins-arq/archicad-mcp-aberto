@@ -30,6 +30,7 @@ GSErrCode Initialize (void)
     err |= InstallCommand<Save3DViewCommand> ();
     err |= InstallCommand<Get3DCutPlanesCommand> ();
     err |= InstallCommand<Set3DCutPlanesCommand> ();
+    err |= InstallCommand<Show3DAllCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif

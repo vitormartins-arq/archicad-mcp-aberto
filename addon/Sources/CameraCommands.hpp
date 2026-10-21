@@ -57,3 +57,12 @@ public:
     virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
     virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
 };
+
+// "Show All in 3D" (clears the 3D element filter) and/or "Fit in Window" on the 3D window.
+class Show3DAllCommand : public CommandBase
+{
+public:
+    virtual GS::String GetName () const override;
+    virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
+    virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
+};

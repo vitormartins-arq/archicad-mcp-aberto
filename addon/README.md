@@ -38,6 +38,8 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
 - `Save3DView`: `{"name", "folderPath"?}` saves the current 3D projection as a View
   Map view, creating the folders it needs.
 - `Get3DCutPlanes` / `Set3DCutPlanes`: the 3D Cutting Planes dialog, planes passed raw.
+- `Show3DAll`: Show All in 3D and, optionally, Fit in Window, for when the model
+  disappears from the 3D window.
 - `Get3DWindowImage` (Archicad 30 only): the 3D window as base64 PNG or JPG.
 
 Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands

@@ -478,6 +478,44 @@ GS::ObjectState Set3DCutPlanesCommand::Execute (const GS::ObjectState& parameter
     return response;
 }
 
+GS::String Show3DAllCommand::GetName () const
+{
+    return "Show3DAll";
+}
+
+GS::Optional<GS::UniString> Show3DAllCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "showAll": {"type": "boolean", "description": "Show All in 3D, which clears the 3D element filter. Default true."},
+            "fitInWindow": {"type": "boolean", "description": "Fit in Window on the 3D window; it may move a perspective camera. Default false."}
+        },
+        "additionalProperties": false
+    })";
+}
+
+GS::ObjectState Show3DAllCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
+{
+    bool showAll = true;
+    bool fitInWindow = false;
+    parameters.Get ("showAll", showAll);
+    parameters.Get ("fitInWindow", fitInWindow);
+    if (showAll) {
+        const GSErrCode err = ACAPI_View_ShowAllIn3D ();
+        if (err != NoError) {
+            return CreateErrorResponse (err, "Failed to show all in 3D.");
+        }
+    }
+    if (fitInWindow) {
+        const GSErrCode err = ACAPI_View_Zoom ();
+        if (err != NoError) {
+            return CreateErrorResponse (err, "Failed to fit the 3D window; it must be the front window.");
+        }
+    }
+    return GS::ObjectState ("showAll", showAll, "fitInWindow", fitInWindow);
+}
+
 #ifdef ServerMainVers_3000
 GS::String Get3DWindowImageCommand::GetName () const
 {
