@@ -860,3 +860,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `GetDimensionData` e compara parede e posição de cada ponto. 2314 testes simulados e
   Ruff passaram (Linux, Python 3.13). Registro: 101 ferramentas. Fila do Claude
   reabastecida com C15 a C18.
+- C15: `create_lamps`, pelo `CreateLamps` do Tapir 1.7.0, no mesmo caminho do
+  `create_objects` (inventário filtrado pelo tipo `Lamp`, conferência pelo tipo `Lamp`),
+  com `favorite`. 2328 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  102 ferramentas. No Lab, o `lab_find_favorite` ainda não conhece favoritos de
+  luminária: falta ver no export de favoritos como o tipo aparece.

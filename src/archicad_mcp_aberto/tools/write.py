@@ -318,6 +318,12 @@ OPERATIONS = {
         "New objects keep the library part's default size and the Object tool's layer. "
         "A library part name Archicad cannot find fails only that object.",
     ),
+    "create_lamps": (
+        "lamp",
+        "lamp_receipt_id",
+        "New lamps keep the library part's default size and light and the Lamp tool's layer. "
+        "A library part name Archicad cannot find fails only that lamp.",
+    ),
     "move_elements": (
         "move",
         "move_receipt_id",
@@ -502,6 +508,7 @@ CREATE_COMMANDS = {
     "create_slabs": ("CreateSlabs", "slabsData"),
     "create_columns": ("CreateColumns", "columnsData"),
     "create_objects": ("CreateObjects", "objectsData"),
+    "create_lamps": ("CreateLamps", "lampsData"),
     "create_roofs": ("CreateRoofs", "roofsData"),
     "create_texts": ("CreateTexts", "textsData"),
     "create_labels": ("CreateLabels", "labelsData"),
@@ -701,17 +708,20 @@ async def _plan(
     column = operation == "create_columns"
     zone = operation == "create_zones"
     beam = operation == "create_beams"
-    obj = operation == "create_objects"
+    lamp = operation == "create_lamps"
+    obj = operation == "create_objects" or lamp
     kind = (
         "Beam" if beam else "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
     )
+    if lamp:
+        kind = "Lamp"
     if zone:
         kind = "Zone"
     library_parts = {}
     if obj:
         inventory = await _library_inventory(client, port)
         for row in inventory["libraryParts"]:
-            if row["typeId"] == "Object":
+            if row["typeId"] == kind:
                 library_parts.setdefault(row["documentName"].casefold(), []).append(row)
         for wall in walls:
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
@@ -720,7 +730,7 @@ async def _plan(
                     continue  # An unreadable part may still resolve during CreateObjects.
                 raise ValueError(
                     f"Library part {wall.library_part_name!r}: "
-                    "name not in loaded Object library parts."
+                    f"name not in loaded {kind} library parts."
                 )
             if len({row["guid"].upper() for row in candidates}) != 1:
                 raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
@@ -851,7 +861,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict, mismatch=None) -> Non
     column = receipt["operation"] == "create_columns"
     zone = receipt["operation"] == "create_zones"
     beam = receipt["operation"] == "create_beams"
-    obj = receipt["operation"] == "create_objects"
+    obj = receipt["operation"] in ("create_objects", "create_lamps")
     command, key = CREATE_COMMANDS[receipt["operation"]]
     try:
         raw = await client.tapir(
@@ -915,7 +925,9 @@ async def _dispatch(client: ArchicadClient, receipt: dict, mismatch=None) -> Non
                 if slab
                 else _column_mismatches(item, row, receipt["target"])
                 if column
-                else _object_mismatches(item, row)
+                else _object_mismatches(
+                    item, row, "Lamp" if receipt["operation"] == "create_lamps" else "Object"
+                )
                 if obj
                 else _beam_mismatches(item, row, receipt["target"])
                 if beam
@@ -1174,10 +1186,10 @@ def _object_payload(obj: ObjectCreate) -> dict:
     return _favored(payload, obj, {"angle": "angle"})
 
 
-def _object_mismatches(item: dict, row: Any) -> list[str]:
+def _object_mismatches(item: dict, row: Any, kind: str = "Object") -> list[str]:
     p = item["parameters"]
     expected = {
-        "type": "Object",
+        "type": kind,
         "floorIndex": p["floorIndex"],
         "details": {"origin": p["coordinates"]},
     }
@@ -1221,6 +1233,26 @@ async def create_objects(
         o if isinstance(o, ObjectCreate) else ObjectCreate.model_validate(o) for o in objects
     ]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_objects")
+
+
+async def create_lamps(
+    client: ArchicadClient,
+    lamps: list[dict | ObjectCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 lamps by library part name, like create_objects.
+
+    Tapir 1.7.0 CreateLamps places Lamp library parts only; base_level is absolute
+    project Z. Takes a Lamp `favorite` (give that favorite's own library part).
+    """
+    if not 1 <= len(lamps) <= MAX_OBJECTS:
+        raise ValueError(f"Pass between 1 and {MAX_OBJECTS} lamps.")
+    validated = [
+        o if isinstance(o, ObjectCreate) else ObjectCreate.model_validate(o) for o in lamps
+    ]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_lamps")
 
 
 class Vector(InputModel):

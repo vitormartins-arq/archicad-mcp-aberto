@@ -367,6 +367,7 @@ class FakeArchicad:
     library_inventory: list[dict] | None = None
     library_skipped_count: int = 0
     library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
+    lamp_parts: set[str] = field(default_factory=lambda: {"Pendente 01"})  # Lamp parts
     lose_delete_response: bool = False
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
@@ -1772,6 +1773,17 @@ class FakeArchicad:
                     }
                     for index, name in enumerate(sorted(self.library_parts), 1)
                 ]
+                + [
+                    {
+                        **deepcopy(fixture["response"]["libraryParts"][0]),
+                        "guid": str(UUID(int=1000 + index)).upper(),
+                        "index": 1000 + index,
+                        "documentName": name,
+                        "fileName": f"{name}.gsm",
+                        "typeId": "Lamp",
+                    }
+                    for index, name in enumerate(sorted(self.lamp_parts), 1)
+                ]
             )
             return ok(
                 {
@@ -1782,27 +1794,31 @@ class FakeArchicad:
                     }
                 }
             )
-        if name == "CreateObjects":
-            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0.
+        if name in ("CreateObjects", "CreateLamps"):
+            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0
+            # (CreateObjects); CreateLamps shares that code in the Tapir source, not live.
+            lamp = name == "CreateLamps"
+            kind = "Lamp" if lamp else "Object"
             out = []
-            for index, obj in enumerate(args["objectsData"]):
+            for index, obj in enumerate(args["lampsData" if lamp else "objectsData"]):
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
-                obj, extra = self._favored("Object", obj)
+                obj, extra = self._favored(kind, obj)
                 if "error" in extra:
                     out.append(extra)
                     continue
-                lookup = {n.casefold(): n for n in self.library_parts}
+                parts = self.lamp_parts if lamp else self.library_parts
+                lookup = {n.casefold(): n for n in parts}
                 found = lookup.get(obj["libraryPartName"].casefold())
                 if found is None:
                     message = f"Not found library part with name '{obj['libraryPartName']}'"
                     out.append({"error": {"code": -2130313113, "message": message}})
                     continue
                 guid = str(uuid4()).upper()
-                self.elements[guid] = "Object"
+                self.elements[guid] = kind
                 self.details[guid] = {
-                    "type": "Object",
+                    "type": kind,
                     "floorIndex": obj["floorIndex"],
                     "layerIndex": 1,
                     "details": {
@@ -2368,6 +2384,7 @@ class FakeArchicad:
         },
         "Beam": {"width": 0.2, "height": 0.4},
         "Object": {"angle": 0.0},
+        "Lamp": {"angle": 0.0},
         "Mesh": {
             "skirtType": "SurfaceOnlyWithoutSkirt", "skirtLevel": 1.0, "ridges": "AllSharp",
             "showLines": True,

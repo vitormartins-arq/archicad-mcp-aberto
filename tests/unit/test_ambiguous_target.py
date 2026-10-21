@@ -223,6 +223,16 @@ INPUTS = {
             }
         ]
     },
+    "create_lamps": {
+        "lamps": [
+            {
+                "library_part_name": "Pendente 01",
+                "origin": {"x": 1, "y": 2},
+                "floor_index": 0,
+                "base_level": 2.5,
+            }
+        ]
+    },
     "get_bounding_boxes": {"element_ids": [GUID]},
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},

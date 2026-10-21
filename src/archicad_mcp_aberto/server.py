@@ -248,6 +248,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_lamps(
+        ctx: Context,
+        lamps: list[write.ObjectCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 lamps (Lamp library parts) by exact name, in metres and
+        radians, like create_objects. base_level is absolute project Z. Optional Lamp
+        `favorite` (pass its own library part). Requires Tapir; apply with explicit port
+        and single-use token. Verifies each lamp; never saves."""
+        return await write.create_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
     async def move_elements(
         ctx: Context,
         moves: list[write.ElementMove],

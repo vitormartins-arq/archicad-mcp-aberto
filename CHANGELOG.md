@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `create_lamps`: up to 20 Lamp library parts by name, like `create_objects`, by
+  Tapir 1.7.0 `CreateLamps`, with `favorite`. Not tested live yet.
+
 - Add `create_associative_dimensions` to `tools/wall_dimensions.py`: linear dimensions
   between wall ends, linked to the walls, by Tapir 1.7.0 `CreateAssociativeDimensions`,
   read back witness point by witness point with `GetDimensionData`. Not tested live yet.

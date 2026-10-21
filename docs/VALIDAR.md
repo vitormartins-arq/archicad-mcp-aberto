@@ -611,3 +611,9 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   linha de cota 2 m acima." Conferir na planta que a cota pega as pontas certas (o
   `inIndex` 1 e 2 é o começo e o fim da linha de referência?), que ela acompanha a
   parede quando a parede é movida, e o recibo `verified`.
+
+## Lote do Claude C15: luminárias
+
+- [ ] **create_lamps.** No projeto novo: "Ponha uma luminária <peça> em (1,2), a 2,60 m."
+  Conferir na planta e no 3D, e que o recibo dá `verified`. Repetir com um favorito de
+  luminária LAB, se houver.

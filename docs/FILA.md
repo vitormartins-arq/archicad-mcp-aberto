@@ -116,7 +116,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
 - **C13 cotas associativas.** (Feito no lote `lote/claude-7`, só pontas de parede.) `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
-- **C15 `create_lamps`.** `CreateLamps`: luminárias por nome de peça de biblioteca, no
+- **C15 `create_lamps`.** (Feito no lote `lote/claude-7`.) `CreateLamps`: luminárias por nome de peça de biblioteca, no
   padrão de `create_objects`, com `favorite`. Conferência por tipo, pavimento, origem e
   peça.
 - **C16 `create_stairs`.** `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
