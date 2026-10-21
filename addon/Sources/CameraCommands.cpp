@@ -218,6 +218,124 @@ GS::ObjectState Set3DCameraCommand::Execute (const GS::ObjectState& parameters, 
     return ProjectionToObjectState (after);
 }
 
+GS::String Save3DViewCommand::GetName () const
+{
+    return "Save3DView";
+}
+
+GS::Optional<GS::UniString> Save3DViewCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 200, "description": "Name of the new view."},
+            "folder": {"type": "string", "minLength": 1, "maxLength": 200, "description": "View Map folder at the top level; found by name or created."}
+        },
+        "additionalProperties": false,
+        "required": ["name"]
+    })";
+}
+
+static void SetItemName (API_NavigatorItem& item, const GS::UniString& name)
+{
+    GS::ucscpy (item.uName, name.ToUStr ().Get ());
+    item.customName = true;
+}
+
+static GSErrCode FindOrCreateFolder (const API_Guid& rootGuid, const GS::UniString& folder, API_Guid& folderGuid)
+{
+    API_NavigatorItem root {};
+    root.guid = rootGuid;
+    root.mapId = API_PublicViewMap;
+    GS::Array<API_NavigatorItem> children;
+    GSErrCode err = ACAPI_Navigator_GetNavigatorChildrenItems (&root, &children);
+    if (err != NoError) {
+        return err;
+    }
+    for (const API_NavigatorItem& child : children) {
+        if (child.itemType == API_FolderNavItem && GS::UniString (child.uName) == folder) {
+            folderGuid = child.guid;
+            return NoError;
+        }
+    }
+    API_NavigatorItem newFolder {};
+    newFolder.mapId = API_PublicViewMap;
+    newFolder.itemType = API_FolderNavItem;
+    SetItemName (newFolder, folder);
+    const GS::Guid parent = APIGuid2GSGuid (rootGuid);
+    err = ACAPI_Navigator_NewNavigatorView (&newFolder, nullptr, &parent, nullptr);
+    if (err == NoError) {
+        folderGuid = newFolder.guid;
+    }
+    return err;
+}
+
+GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
+{
+    GS::UniString name;
+    parameters.Get ("name", name);
+    GS::UniString folder;
+    const bool hasFolder = parameters.Get ("folder", folder);
+    if (name.GetLength () >= API_UniLongNameLen - 1 || folder.GetLength () >= API_UniLongNameLen - 1) {
+        return CreateErrorResponse (APIERR_BADPARS, "name and folder must be shorter than 255 characters.");
+    }
+
+    API_3DProjectionInfo info {};
+    GSErrCode err = ACAPI_View_Get3DProjectionSets (&info);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to read the 3D projection.");
+    }
+
+    // The Project Map's generic 3D item follows the current 3D projection; its clone
+    // in the View Map keeps that camera.
+    API_NavigatorItem search {};
+    search.mapId = API_ProjectMap;
+    search.itemType = info.isPersp ? API_PerspectiveNavItem : API_AxonometryNavItem;
+    GS::Array<API_NavigatorItem> sources;
+    err = ACAPI_Navigator_SearchNavigatorItem (&search, &sources);
+    if (err != NoError || sources.IsEmpty ()) {
+        return CreateErrorResponse (err != NoError ? err : APIERR_GENERAL, "The Project Map has no 3D item to clone.");
+    }
+
+    API_NavigatorSet viewMap {};
+    viewMap.mapId = API_PublicViewMap;
+    err = ACAPI_Navigator_GetNavigatorSet (&viewMap);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to read the View Map.");
+    }
+    API_Guid parentGuid = viewMap.rootGuid;
+    if (hasFolder) {
+        err = FindOrCreateFolder (viewMap.rootGuid, folder, parentGuid);
+        if (err != NoError) {
+            return CreateErrorResponse (err, "Failed to find or create the View Map folder.");
+        }
+    }
+
+    API_Guid createdGuid = APINULLGuid;
+    err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&sources[0].guid, &parentGuid, &createdGuid);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to save the 3D view in the View Map.");
+    }
+
+    API_NavigatorItem created {};
+    created.mapId = API_PublicViewMap;
+    err = ACAPI_Navigator_GetNavigatorItem (&createdGuid, &created);
+    if (err == NoError) {
+        SetItemName (created, name);
+        err = ACAPI_Navigator_ChangeNavigatorItem (&created);
+    }
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Saved the 3D view but failed to name it.");
+    }
+
+    GS::ObjectState response ("viewGuid", APIGuidToString (createdGuid), "name", name, "isPerspective", info.isPersp);
+    if (hasFolder) {
+        response.Add ("folder", folder);
+        response.Add ("folderGuid", APIGuidToString (parentGuid));
+    }
+    return response;
+}
+
 #ifdef ServerMainVers_3000
 GS::String Get3DWindowImageCommand::GetName () const
 {

@@ -27,6 +27,7 @@ GSErrCode Initialize (void)
     GSErrCode err = NoError;
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
+    err |= InstallCommand<Save3DViewCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif

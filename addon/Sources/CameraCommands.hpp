@@ -30,3 +30,12 @@ public:
     virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
 };
 #endif
+
+// Saves the current 3D projection as a named view in the View Map, optionally in a folder.
+class Save3DViewCommand : public CommandBase
+{
+public:
+    virtual GS::String GetName () const override;
+    virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
+    virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
+};
