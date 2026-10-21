@@ -633,3 +633,8 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `get_dimension_data`, `get_model_view_options` and `list_libraries` read dimensions,
+  model-view options, loaded libraries and official special-folder paths. Dimension calls
+  accept up to 100 GUIDs. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.

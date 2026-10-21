@@ -24,6 +24,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    project_resources,
     property_definitions,
     read,
     write,
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1487,6 +1485,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_data(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read source-derived dimension data for up to 100 elements."""
+        return await project_resources.get_dimension_data(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_model_view_options(ctx: Context, port: int | None = None) -> dict:
+        """List the project's model-view-option combinations."""
+        return await project_resources.get_model_view_options(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_libraries(
+        ctx: Context, folder_types: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """List project libraries and requested Archicad special folders."""
+        return await project_resources.list_libraries(client_of(ctx), folder_types, port)
 
     return mcp
 
