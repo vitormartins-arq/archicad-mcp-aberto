@@ -28,6 +28,8 @@ GSErrCode Initialize (void)
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
     err |= InstallCommand<Save3DViewCommand> ();
+    err |= InstallCommand<Get3DCutPlanesCommand> ();
+    err |= InstallCommand<Set3DCutPlanesCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif

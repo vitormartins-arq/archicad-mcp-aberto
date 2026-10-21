@@ -229,7 +229,12 @@ GS::Optional<GS::UniString> Save3DViewCommand::GetInputParametersSchema () const
         "type": "object",
         "properties": {
             "name": {"type": "string", "minLength": 1, "maxLength": 200, "description": "Name of the new view."},
-            "folder": {"type": "string", "minLength": 1, "maxLength": 200, "description": "View Map folder at the top level; found by name or created."}
+            "folderPath": {
+                "type": "array",
+                "description": "View Map folders from the top level down, e.g. [\"02 | MODELO 3D\", \"AMBIENTES\", \"RECEPCAO\"]; each is found by name or created.",
+                "items": {"type": "string", "minLength": 1, "maxLength": 200},
+                "maxItems": 10
+            }
         },
         "additionalProperties": false,
         "required": ["name"]
@@ -242,10 +247,10 @@ static void SetItemName (API_NavigatorItem& item, const GS::UniString& name)
     item.customName = true;
 }
 
-static GSErrCode FindOrCreateFolder (const API_Guid& rootGuid, const GS::UniString& folder, API_Guid& folderGuid)
+static GSErrCode FindOrCreateFolder (const API_Guid& parentGuid, const GS::UniString& folder, API_Guid& folderGuid)
 {
     API_NavigatorItem root {};
-    root.guid = rootGuid;
+    root.guid = parentGuid;
     root.mapId = API_PublicViewMap;
     GS::Array<API_NavigatorItem> children;
     GSErrCode err = ACAPI_Navigator_GetNavigatorChildrenItems (&root, &children);
@@ -262,7 +267,7 @@ static GSErrCode FindOrCreateFolder (const API_Guid& rootGuid, const GS::UniStri
     newFolder.mapId = API_PublicViewMap;
     newFolder.itemType = API_FolderNavItem;
     SetItemName (newFolder, folder);
-    const GS::Guid parent = APIGuid2GSGuid (rootGuid);
+    const GS::Guid parent = APIGuid2GSGuid (parentGuid);
     err = ACAPI_Navigator_NewNavigatorView (&newFolder, nullptr, &parent, nullptr);
     if (err == NoError) {
         folderGuid = newFolder.guid;
@@ -274,10 +279,14 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
 {
     GS::UniString name;
     parameters.Get ("name", name);
-    GS::UniString folder;
-    const bool hasFolder = parameters.Get ("folder", folder);
-    if (name.GetLength () >= API_UniLongNameLen - 1 || folder.GetLength () >= API_UniLongNameLen - 1) {
-        return CreateErrorResponse (APIERR_BADPARS, "name and folder must be shorter than 255 characters.");
+    GS::Array<GS::UniString> folderPath;
+    parameters.Get ("folderPath", folderPath);
+    bool tooLong = name.GetLength () >= API_UniLongNameLen - 1;
+    for (const GS::UniString& folder : folderPath) {
+        tooLong = tooLong || folder.GetLength () >= API_UniLongNameLen - 1;
+    }
+    if (tooLong) {
+        return CreateErrorResponse (APIERR_BADPARS, "Names must be shorter than 255 characters.");
     }
 
     API_3DProjectionInfo info {};
@@ -304,10 +313,10 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
         return CreateErrorResponse (err, "Failed to read the View Map.");
     }
     API_Guid parentGuid = viewMap.rootGuid;
-    if (hasFolder) {
-        err = FindOrCreateFolder (viewMap.rootGuid, folder, parentGuid);
+    for (const GS::UniString& folder : folderPath) {
+        err = FindOrCreateFolder (parentGuid, folder, parentGuid);
         if (err != NoError) {
-            return CreateErrorResponse (err, "Failed to find or create the View Map folder.");
+            return CreateErrorResponse (err, "Failed to find or create the View Map folder " + folder + ".");
         }
     }
 
@@ -329,9 +338,142 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
     }
 
     GS::ObjectState response ("viewGuid", APIGuidToString (createdGuid), "name", name, "isPerspective", info.isPersp);
-    if (hasFolder) {
-        response.Add ("folder", folder);
+    if (!folderPath.IsEmpty ()) {
         response.Add ("folderGuid", APIGuidToString (parentGuid));
+    }
+    return response;
+}
+
+// The meaning of pa..pd is not documented clearly (the reference calls them section
+// line ends); they are passed through raw until a live read of a known cut shows it.
+static GS::ObjectState CutPlanesToObjectState (const API_3DCutPlanesInfo& info)
+{
+    GS::ObjectState os ("enabled", info.isCutPlanes);
+    const auto& planes = os.AddList<GS::ObjectState> ("planes");
+    for (short i = 0; i < info.nShapes && info.shapes != nullptr; ++i) {
+        const API_3DCutShapeType& shape = (*info.shapes)[i];
+        planes (GS::ObjectState ("cutStatus", shape.cutStatus, "cutPen", shape.cutPen,
+            "pa", shape.pa, "pb", shape.pb, "pc", shape.pc, "pd", shape.pd));
+    }
+    return os;
+}
+
+GS::String Get3DCutPlanesCommand::GetName () const
+{
+    return "Get3DCutPlanes";
+}
+
+GS::Optional<GS::UniString> Get3DCutPlanesCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+    })";
+}
+
+GS::ObjectState Get3DCutPlanesCommand::Execute (const GS::ObjectState& /*parameters*/, GS::ProcessControl& /*processControl*/) const
+{
+    API_3DCutPlanesInfo info {};
+    const GSErrCode err = ACAPI_View_Get3DCuttingPlanes (&info);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to read the 3D cutting planes.");
+    }
+    GS::ObjectState response = CutPlanesToObjectState (info);
+    if (info.shapes != nullptr) {
+        BMKillHandle (reinterpret_cast<GSHandle*> (&info.shapes));
+    }
+    return response;
+}
+
+GS::String Set3DCutPlanesCommand::GetName () const
+{
+    return "Set3DCutPlanes";
+}
+
+GS::Optional<GS::UniString> Set3DCutPlanesCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "enabled": {"type": "boolean"},
+            "planes": {
+                "type": "array",
+                "maxItems": 20,
+                "description": "Planes in the shape Get3DCutPlanes returns; left out, the current planes stay.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "cutStatus": {"type": "integer"},
+                        "cutPen": {"type": "integer"},
+                        "pa": {"type": "number"},
+                        "pb": {"type": "number"},
+                        "pc": {"type": "number"},
+                        "pd": {"type": "number"}
+                    },
+                    "additionalProperties": false,
+                    "required": ["cutStatus", "pa", "pb", "pc", "pd"]
+                }
+            }
+        },
+        "additionalProperties": false,
+        "required": ["enabled"]
+    })";
+}
+
+GS::ObjectState Set3DCutPlanesCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
+{
+    API_3DCutPlanesInfo info {};
+    GSErrCode err = ACAPI_View_Get3DCuttingPlanes (&info);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to read the 3D cutting planes.");
+    }
+    parameters.Get ("enabled", info.isCutPlanes);
+
+    GS::Array<GS::ObjectState> planes;
+    if (parameters.Get ("planes", planes)) {
+        if (info.shapes != nullptr) {
+            BMKillHandle (reinterpret_cast<GSHandle*> (&info.shapes));
+        }
+        info.nShapes = static_cast<short> (planes.GetSize ());
+        if (info.nShapes > 0) {
+            info.shapes = reinterpret_cast<API_3DCutShapeType**> (BMAllocateHandle (info.nShapes * sizeof (API_3DCutShapeType), ALLOCATE_CLEAR, 0));
+            if (info.shapes == nullptr) {
+                return CreateErrorResponse (APIERR_MEMFULL, "Failed to allocate the cutting planes.");
+            }
+            for (short i = 0; i < info.nShapes; ++i) {
+                API_3DCutShapeType& shape = (*info.shapes)[i];
+                const GS::ObjectState& plane = planes[i];
+                Int32 value = 0;
+                plane.Get ("cutStatus", value);
+                shape.cutStatus = static_cast<short> (value);
+                value = 1;
+                plane.Get ("cutPen", value);
+                shape.cutPen = static_cast<short> (value);
+                plane.Get ("pa", shape.pa);
+                plane.Get ("pb", shape.pb);
+                plane.Get ("pc", shape.pc);
+                plane.Get ("pd", shape.pd);
+            }
+        }
+    }
+
+    err = ACAPI_View_Change3DCuttingPlanes (&info);
+    if (info.shapes != nullptr) {
+        BMKillHandle (reinterpret_cast<GSHandle*> (&info.shapes));
+    }
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Failed to change the 3D cutting planes.");
+    }
+
+    API_3DCutPlanesInfo after {};
+    err = ACAPI_View_Get3DCuttingPlanes (&after);
+    if (err != NoError) {
+        return CreateErrorResponse (err, "Changed the 3D cutting planes but failed to read them back.");
+    }
+    GS::ObjectState response = CutPlanesToObjectState (after);
+    if (after.shapes != nullptr) {
+        BMKillHandle (reinterpret_cast<GSHandle*> (&after.shapes));
     }
     return response;
 }

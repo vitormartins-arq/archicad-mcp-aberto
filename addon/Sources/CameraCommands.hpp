@@ -39,3 +39,21 @@ public:
     virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
     virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
 };
+
+// Reads the 3D Cutting Planes dialog: on/off and each plane's raw values.
+class Get3DCutPlanesCommand : public CommandBase
+{
+public:
+    virtual GS::String GetName () const override;
+    virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
+    virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
+};
+
+// Sets the 3D Cutting Planes: on/off and the planes as read by Get3DCutPlanes.
+class Set3DCutPlanesCommand : public CommandBase
+{
+public:
+    virtual GS::String GetName () const override;
+    virtual GS::Optional<GS::UniString> GetInputParametersSchema () const override;
+    virtual GS::ObjectState Execute (const GS::ObjectState& parameters, GS::ProcessControl& processControl) const override;
+};
