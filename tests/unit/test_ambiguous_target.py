@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classifications,
     design_options,
     documents,
@@ -63,6 +64,7 @@ MODIFY_TYPES = {
     "modify_meshes": "Mesh",
 }
 INPUTS = {
+    "get_attribute_details": {"kind": "composites", "guids": []},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -333,6 +335,7 @@ TARGETED = {
     name: function
     for module in (
         attribute_properties,
+        attributes_details,
         attributes,
         classifications,
         design_options,

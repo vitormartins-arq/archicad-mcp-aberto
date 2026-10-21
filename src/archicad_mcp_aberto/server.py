@@ -12,6 +12,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classifications,
     design_options,
     documents,
@@ -1457,6 +1458,18 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_attribute_details(
+        ctx: Context,
+        kind: attributes_details.AttributeKind,
+        guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read details for up to 500 composites, profiles, surfaces, building material
+        physics, zone categories, pen tables, line types or fill types. Omit guids to
+        read that whole attribute kind. Native errors remain per item; never writes."""
+        return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
 
     return mcp
 

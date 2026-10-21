@@ -237,6 +237,13 @@ ROOFS_TEXTS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
     ).read_text(encoding="utf-8")
 )
+ATTRIBUTE_DETAILS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1]
+        / "fixtures"
+        / "tapir170_attribute_details_documented.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def ok(result: Any) -> dict:
@@ -799,6 +806,48 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in ATTRIBUTE_DETAILS_FIXTURE["rows"]:
+            row = ATTRIBUTE_DETAILS_FIXTURE["rows"][name]
+            key = {
+                "GetComposites": "composites",
+                "GetProfiles": "profiles",
+                "GetSurfaces": "surfaces",
+                "GetBuildingMaterialPhysicalProperties": "properties",
+                "GetZoneCategories": "zoneCategories",
+                "GetPenTables": "penTables",
+                "GetLines": "lines",
+                "GetFills": "fills",
+            }[name]
+            requested = [item["attributeId"]["guid"] for item in args["attributeIds"]]
+            rows = [
+                deepcopy(row)
+                if guid == ATTRIBUTE_DETAILS_FIXTURE["guid"]
+                else {"error": {"code": -2, "message": "Attribute not found"}}
+                for guid in requested
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if name == "GetAttributesByType" and args["attributeType"] in {
+            "Composite",
+            "Profile",
+            "ZoneCategory",
+            "PenTable",
+            "Line",
+        }:
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {
+                                    "guid": ATTRIBUTE_DETAILS_FIXTURE["guid"]
+                                },
+                                "index": 1,
+                                "name": args["attributeType"],
+                            }
+                        ]
+                    }
+                }
+            )
         if name == "GetDesignOptionSets":
             return ok(
                 {

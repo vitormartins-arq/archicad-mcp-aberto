@@ -367,3 +367,9 @@
 - Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
+
+### Read detailed attributes
+
+- Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir
+  1.7.0 attribute commands. Optional GUIDs preserve order and native per-item errors;
+  omission inventories the kind first. Calls are bounded to 500 and batched by 100.

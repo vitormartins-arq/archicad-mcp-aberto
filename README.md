@@ -127,6 +127,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
+| `get_attribute_details` | Read | Detailed composites, profiles, surfaces, material physics, zone categories, pen tables, lines or fills | yes |
 
 ### Reported live validation
 

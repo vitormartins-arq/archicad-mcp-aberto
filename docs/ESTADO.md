@@ -798,3 +798,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
   API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
   Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.
+
+## 2026-10-21 — Codex / T29 detalhes de atributos
+
+- Branch `codex/t29-attribute-details`, somente leitura. `get_attribute_details` cobre
+  composites, profiles, surfaces, building material physics, zone categories, pen
+  tables, lines e fills pelos oito comandos do Tapir 1.7.0. Até 500 GUIDs, lotes de
+  100 e erro nativo por item. Fixture source-derived, not a live capture.

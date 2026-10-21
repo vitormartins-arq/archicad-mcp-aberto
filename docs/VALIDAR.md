@@ -550,3 +550,9 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [x] Morfo corrigido (commit bb25c5a), térreo em x 3 y 2 z 0: verified, caixa 3D exata,
   corpo relido Solid, isClosed true, 6 faces e 8 vértices.
 - [ ] Vitor: no 3D, ver que o morfo em x 3 tem fundo.
+
+## T29 — detalhes de atributos
+
+- [ ] Em cópia de teste, consultar os oito `kind` com e sem GUIDs; comparar nomes,
+  skins, cores, texturas, propriedades físicas, penas, linhas e hachuras com os diálogos
+  de atributos. Conferir GUID inexistente como erro isolado. Somente leitura.
