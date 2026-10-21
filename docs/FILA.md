@@ -131,6 +131,13 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   do Tapir 1.7.0 a partir da Perspectiva genérica do Mapa do projeto, com nome e pasta
   do Mapa de vistas, conferida pela árvore do Navegador. O Tapir não move a câmera: o
   Vitor acerta o ângulo na tela e o MCP salva. Conferir ao vivo se o ângulo fica gravado.
+- **C20 gerar cenas 3D.** (Pedido do Vitor, 21/10/2026: "gera várias vistas legais do meu
+  3D e salva no mapa de vistas".) Passo 1: investigar na API C++ do ArchiCAD o que lê e
+  define a câmera do 3D (posição, alvo, lente, axonometria) e propor ao Tapir um comando
+  para isso, pela regra de upstream primeiro. Passo 2: no MCP, `create_3d_scenes`, que lê
+  a caixa 3D do modelo, escolhe ângulos (axonometrias dos cantos, perspectivas na altura
+  dos olhos), põe a câmera, salva cada uma no Mapa de vistas com nome e pasta (C19) e
+  tira print para conferir. Até o Tapir ter o comando, só o passo 1.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
