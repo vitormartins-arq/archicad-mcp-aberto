@@ -633,3 +633,9 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `find_collisions(group1_guids, group2_guids, volume_tolerance?, perform_surface_check?,
+  surface_tolerance?, port?)` runs Tapir 1.7.0 `GetCollisions` for at most 500 elements
+  per group. Tolerances are SI (m³ volume and m² surface); it never edits the model.
+  Fixtures are source-derived, not a live capture. Registry: **99 tools (30 reads,
+  69 writes/interactions)**.

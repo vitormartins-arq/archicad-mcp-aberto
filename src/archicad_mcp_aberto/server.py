@@ -13,6 +13,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     classifications,
+    collisions,
     design_options,
     documents,
     drafting,
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1486,6 +1484,28 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_collisions(
+        ctx: Context,
+        group1_guids: list[str],
+        group2_guids: list[str],
+        volume_tolerance: float = 0.001,
+        perform_surface_check: bool = False,
+        surface_tolerance: float = 0.001,
+        port: int | None = None,
+    ) -> dict:
+        """Find collisions between two groups of up to 500 elements. Tolerances use
+        project-independent SI: volume in m³ and surface area in m². Read-only."""
+        return await collisions.find_collisions(
+            client_of(ctx),
+            group1_guids,
+            group2_guids,
+            volume_tolerance,
+            perform_surface_check,
+            surface_tolerance,
+            port,
         )
 
     return mcp
