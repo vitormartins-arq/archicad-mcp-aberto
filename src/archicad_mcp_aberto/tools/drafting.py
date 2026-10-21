@@ -1,8 +1,9 @@
-"""2D drafting on a story: lines, polylines, arcs, circles and fills (Tapir 1.7.0).
+"""2D drafting on a story: lines, polylines, splines, arcs, circles and fills (Tapir 1.7.0).
 
 Coordinates in metres, angles in radians. Every element needs its story; layer and fill
 are named as in Archicad, and the pen is a pen-table index. Omitted settings keep the
-tool default. Polylines and fills are checked by the coordinates in their details
+tool default. Splines are auto-smoothed: Archicad places the Bezier handles itself.
+Polylines, splines and fills are checked by the coordinates in their details
 (Get2DBoundingBoxes answers error 7203 for them in Archicad 30). Archicad stores a
 circle as a full Arc (begAngle == endAngle), which counts as a circle. Never saves.
 """
@@ -50,6 +51,21 @@ class PolylineCreate(_Drawn):
         return self
 
 
+class SplineCreate(_Drawn):
+    points: Annotated[list[write.Point], Field(min_length=3, max_length=500)]
+    closed: bool = False
+
+    @model_validator(mode="after")
+    def no_repeats(self) -> SplineCreate:
+        pairs = zip(self.points, self.points[1:], strict=False)
+        if any(math.hypot(a.x - b.x, a.y - b.y) < 1e-6 for a, b in pairs):
+            raise ValueError("Consecutive spline points must differ.")
+        first, last = self.points[0], self.points[-1]
+        if math.hypot(first.x - last.x, first.y - last.y) < 1e-6:
+            raise ValueError("Do not repeat the first spline point; set closed instead.")
+        return self
+
+
 class CircleCreate(_Drawn):
     center: write.Point
     radius: write.Positive
@@ -87,6 +103,7 @@ class FillCreate(write.InputModel):
 KINDS = {
     "create_lines": ("Line", LineCreate),
     "create_polylines": ("PolyLine", PolylineCreate),
+    "create_splines": ("Spline", SplineCreate),
     "create_arcs": ("Arc", ArcCreate),
     "create_circles": ("Circle", CircleCreate),
     "create_fills": ("Hatch", FillCreate),
@@ -115,6 +132,8 @@ def _payload(operation: str, item: Any) -> dict:
         p |= {"begCoordinate": item.start.model_dump(), "endCoordinate": item.end.model_dump()}
     elif operation == "create_polylines":
         p |= {"coordinates": [q.model_dump() for q in item.points], "arcs": []}
+    elif operation == "create_splines":
+        p |= {"coordinates": [q.model_dump() for q in item.points], "closed": item.closed}
     elif operation in ("create_arcs", "create_circles"):
         p |= {"origin": item.center.model_dump(), "radius": item.radius}
         if operation == "create_arcs":
@@ -213,6 +232,7 @@ def _checker(operation: str):
                 "endCoordinate",
                 "origin",
                 "radius",
+                "closed",
                 "linePenIndex",
                 "fillPenIndex",
                 "contourPenIndex",
@@ -278,6 +298,18 @@ async def create_polylines(
 ) -> dict:
     """Preview/apply up to 50 straight-segment polylines; repeat the first point to close."""
     return await _create(client, polylines, port, dry_run, confirmation_token, "create_polylines")
+
+
+async def create_splines(
+    client: ArchicadClient,
+    splines: list[dict | SplineCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 50 auto-smoothed splines through 3 to 500 points; closed joins
+    the last point back to the first without repeating it."""
+    return await _create(client, splines, port, dry_run, confirmation_token, "create_splines")
 
 
 async def create_arcs(

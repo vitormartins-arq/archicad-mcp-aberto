@@ -43,6 +43,10 @@ def polyline(**changes):
     return {"points": [*SQUARE, SQUARE[0]], "floor_index": 1, **changes}
 
 
+def spline(**changes):
+    return {"points": SQUARE, "floor_index": 1, "closed": True, **changes}
+
+
 def arc(**changes):
     return {
         "center": {"x": 1, "y": 1},
@@ -65,6 +69,7 @@ def fill(**changes):
 CASES = [
     (drafting.create_lines, "CreateLineElements", "linesData", line),
     (drafting.create_polylines, "CreatePolylines", "polylinesData", polyline),
+    (drafting.create_splines, "CreateSplines", "splinesData", spline),
     (drafting.create_arcs, "CreateArcs", "arcsData", arc),
     (drafting.create_circles, "CreateCircles", "circlesData", circle),
     (drafting.create_fills, "CreateHatches", "hatchesData", fill),
@@ -123,6 +128,33 @@ async def test_payload_shapes():
     assert len(hatch["coordinates"]) == 4 and hatch["contourPenIndex"] == 3
 
 
+async def test_spline_payload_and_closed_read_back():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(drafting.create_splines, c, [spline(closed=False)])
+        assert result["status"] == "verified"
+        assert sent(fake, "CreateSplines", "splinesData")[0] == {
+            "floorInd": 1,
+            "coordinates": SQUARE,
+            "closed": False,
+        }
+        preview = await drafting.create_splines(c, [spline()], 19723)
+        original = fake._tapir
+
+        def opened(params):
+            response = original(params)
+            for row in fake.details.values():
+                if row["type"] == "Spline":
+                    row["details"]["closed"] = False
+            return response
+
+        fake._tapir = opened
+        result = await drafting.create_splines(
+            c, [spline()], 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["mismatches"] == ["details.closed"]
+
+
 async def test_fill_by_name():
     fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:
@@ -150,7 +182,12 @@ async def test_unknown_layer_and_story_refused():
 
 
 @pytest.mark.parametrize(
-    ("tool", "make"), [(drafting.create_polylines, polyline), (drafting.create_fills, fill)]
+    ("tool", "make"),
+    [
+        (drafting.create_polylines, polyline),
+        (drafting.create_splines, spline),
+        (drafting.create_fills, fill),
+    ],
 )
 async def test_coordinates_checked_without_2d_boxes(tool, make):
     fake = model()
@@ -220,6 +257,9 @@ async def test_arc_angle_on_the_circle_and_wrong_geometry():
         (drafting.create_lines, line(color="red")),
         (drafting.create_polylines, polyline(points=[{"x": 0, "y": 0}])),
         (drafting.create_polylines, polyline(points=[{"x": 0, "y": 0}, {"x": 0, "y": 0}])),
+        (drafting.create_splines, spline(points=SQUARE[:2])),
+        (drafting.create_splines, spline(points=[*SQUARE, SQUARE[0]])),
+        (drafting.create_splines, spline(points=[SQUARE[0], SQUARE[1], SQUARE[1]])),
         (drafting.create_arcs, arc(end_angle=2 * math.pi)),
         (drafting.create_arcs, arc(radius=0)),
         (drafting.create_circles, circle(radius=-1)),

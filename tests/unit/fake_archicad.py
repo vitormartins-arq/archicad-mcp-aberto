@@ -219,6 +219,7 @@ RENAME_OVERWRITES = (
 DRAFTING_COMMANDS = {
     "CreateLineElements": ("Line", "linesData"),
     "CreatePolylines": ("PolyLine", "polylinesData"),
+    "CreateSplines": ("Spline", "splinesData"),
     "CreateArcs": ("Arc", "arcsData"),
     "CreateCircles": ("Circle", "circlesData"),
     "CreateHatches": ("Hatch", "hatchesData"),
@@ -1931,6 +1932,7 @@ class FakeArchicad:
                     "endCoordinate",
                     "origin",
                     "radius",
+                    "closed",
                     "begAngle",
                     "endAngle",
                     "linePenIndex",

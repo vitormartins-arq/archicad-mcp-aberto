@@ -899,6 +899,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_splines(
+        ctx: Context,
+        splines: list[drafting.SplineCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 auto-smoothed splines: points (3 to 500, metres; never repeat the
+        first), closed (default false), floor_index, optional layer (name) and pen. Requires
+        Tapir; apply with explicit port and token; points are read back. Never saves."""
+        return await drafting.create_splines(
+            client_of(ctx), splines, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_arcs(
         ctx: Context,
         arcs: list[drafting.ArcCreate],

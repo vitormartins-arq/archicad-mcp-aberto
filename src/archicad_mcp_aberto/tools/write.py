@@ -302,6 +302,11 @@ OPERATIONS = {
         "polyline_receipt_id",
         "New polylines take line type from the Polyline tool.",
     ),
+    "create_splines": (
+        "spline",
+        "spline_receipt_id",
+        "New splines are auto-smoothed and take line type from the Spline tool.",
+    ),
     "create_arcs": ("arc", "arc_receipt_id", "New arcs take line type from the Arc tool."),
     "create_circles": ("circle", "circle_receipt_id", "New circles take line type from the tool."),
     "create_fills": (
@@ -449,6 +454,7 @@ CREATE_COMMANDS = {
     "create_labels": ("CreateLabels", "labelsData"),
     "create_lines": ("CreateLineElements", "linesData"),
     "create_polylines": ("CreatePolylines", "polylinesData"),
+    "create_splines": ("CreateSplines", "splinesData"),
     "create_arcs": ("CreateArcs", "arcsData"),
     "create_circles": ("CreateCircles", "circlesData"),
     "create_fills": ("CreateHatches", "hatchesData"),
@@ -1599,6 +1605,7 @@ NAMED_PREVIEWS = {
     "apply_favorites",
     "create_lines",
     "create_polylines",
+    "create_splines",
     "create_arcs",
     "create_circles",
     "create_fills",

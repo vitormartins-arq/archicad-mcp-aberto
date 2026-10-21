@@ -29,34 +29,38 @@ caso abra o PR dessa tarefa explicando o que falta.
 
 ## A fazer
 
-Base: a `main` atualizada (os lotes 1 a 13 e os PRs #51 a #57 já estão nela). A
-primeira branch sai da `main`; as seguintes saem da anterior, e todo PR tem base `main`.
-Em `write.py`, `server.py`, `manifest.json`, README, CHANGELOG, `docs/ESTADO.md`,
+Base: a `main` atualizada. Uma branch por tarefa, saindo da `main`, e um PR por tarefa
+com base `main`. Todas são só leitura: nada de criar, alterar, apagar, salvar ou
+publicar. Em `server.py`, `manifest.json`, README, CHANGELOG, `docs/ESTADO.md`,
 `docs/VALIDAR.md`, no fake e nos testes de registro, só **acrescente** (entradas novas no
-fim das listas).
+fim das listas). (T23 a T27 já entraram na main; a T23 ficou bloqueada no AC30.)
 
-- **T23 campos de informações do projeto, branch `codex/t23-project-info-fields`.** Em
-  `tools/project_info.py`: `create_project_info_fields` por `CreateProjectInfoFields` do
-  Tapir 1.7.0 (confira os campos no código-fonte), até 20 campos novos com nome e valor.
-  Recuse nome que já existe na prévia. Conferência relendo as informações do projeto.
-  Sem apagar nem renomear campos. (A T23 antiga, `create_fills`, foi tirada: a ferramenta
-  já existe em `tools/drafting.py`, e o `CreateFills` do Tapir cria tipos de hachura, não
-  hachuras desenhadas.)
-- **T24 `add_comment_to_issue`, branch `codex/t24-issue-comments`.** Em
-  `tools/issues.py`: comentário de texto em incidência existente por `AddCommentToIssue`
-  (confira `IssueCommands.cpp`), até 20 por chamada, com autor opcional. Conferência por
-  `GetCommentsFromIssue`.
-  Nada de apagar nem de destacar elementos.
-- **T25 pastas e vistas no Mapa de Vistas, branch `codex/t25-view-map`.** Arquivo
-  `tools/navigator.py`: `create_view_map_folders` (`CreateViewMapFolder`) e
-  `clone_to_view_map` (`CloneProjectMapItemToViewMap`), ambos por GUID de pai existente
-  vindo de `get_navigator_tree`. Conferência relendo a árvore. Sem mover, apagar nem
-  publicar.
-- **T26 `create_classification_items`, branch `codex/t26-classification-items`.** Em
-  `tools/classifications.py`: itens novos dentro de um sistema e pai existentes, por
-  `CreateClassificationItems` (confira `ClassificationCommands.cpp`), até 50, com id, nome
-  e descrição. Recuse id repetido no mesmo sistema na prévia. Conferência relendo a árvore
-  com `list_classifications`. Sem apagar.
+- **T28 inventário de hotlinks, branch `codex/t28-hotlinks-read`.** A branch já tem o
+  commit "feat: add read-only hotlink inventory" e não tem PR: atualize com a `main`,
+  confira os testes e abra o PR.
+- **T29 detalhes de atributos, branch `codex/t29-attribute-details`.** Arquivo
+  `tools/attributes_details.py`: `get_attribute_details(kind, guids?)` por
+  `GetComposites`, `GetProfiles`, `GetSurfaces`, `GetBuildingMaterialPhysicalProperties`,
+  `GetZoneCategories`, `GetPenTables`, `GetLines` e `GetFills`. Uma ferramenta, com
+  `kind` numa lista fechada.
+- **T30 contorno de zonas, branch `codex/t30-zone-boundaries`.** `get_zone_boundaries`
+  por `GetZoneBoundaries` e `get_zone_relations` por `GetRelationsOfElements`, até 100
+  zonas.
+- **T31 colisões, branch `codex/t31-collisions`.** `find_collisions` por `GetCollisions`
+  entre dois grupos de GUIDs, com as tolerâncias do comando em metros, até 500 elementos
+  por grupo.
+- **T32 revisões, branch `codex/t32-revisions`.** Arquivo `tools/revisions.py`:
+  `list_document_revisions` (`GetDocumentRevisions`), `list_revision_issues`
+  (`GetRevisionIssues`) e `get_revision_changes` (`GetRevisionChanges`,
+  `GetCurrentRevisionChangesOfLayouts`, `GetRevisionChangesOfElements`). Nada de emitir
+  revisão.
+- **T33 IFC dos elementos, branch `codex/t33-ifc-read`.** Arquivo `tools/ifc.py`:
+  `get_ifc_of_elements` (`GetIFCTypeOfElements`, `GetIFCIdsOfElements`,
+  `GetIFCPropertiesOfElements`) e `find_elements_by_ifc_ids` (`GetElementsByIFCIds`).
+  Nada de exportar.
+- **T34 local e unidades do projeto, branch `codex/t34-project-location`.**
+  `get_project_location` por `GetGeoLocation` e `GetCalculationUnits`, e
+  `get_layout_settings` por `GetLayoutSettings`.
 
 ## Tarefas do Claude (Codex: não pegue)
 
@@ -83,7 +87,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   existentes e editáveis, conferindo que a cota nova aparece na leitura dos elementos.
 - **C8 `create_openings`.** (Feito no lote `lote/claude-3`.) `CreateOpenings`: aberturas
   da ferramenta Abertura em paredes ou lajes existentes, no padrão de `create_windows`.
-- **C9 `create_splines`.** `CreateSplines`: curvas spline 2D em planta por pontos em
+- **C9 `create_splines`.** (Feito no lote `lote/claude-4`.) `CreateSplines`: curvas spline 2D em planta por pontos em
   metros, no padrão de `create_polylines`, conferidas pela leitura de tipo e pavimento.
 - **C10 `create_hotspots`.** `CreateHotspots`: pontos quentes 2D em metros, no pavimento
   dado, conferidos pela leitura de tipo, pavimento e posição.
