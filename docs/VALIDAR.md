@@ -567,3 +567,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
   (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
   configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.
+
+## T34 — Project location, units and layouts
+- [ ] Compare longitude, latitude, altitude, north angle, survey point and CRS with Location Settings.
+- [ ] Compare calculation units and layout size, margins, numbering and custom data; include an invalid layout GUID.

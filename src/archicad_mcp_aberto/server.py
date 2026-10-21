@@ -24,6 +24,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    project_location,
     property_definitions,
     read,
     write,
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1486,6 +1484,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_location(ctx: Context, port: int | None = None) -> dict:
+        """Read geolocation, survey point and calculation units; north is radians."""
+        return await project_location.get_project_location(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_layout_settings(
+        ctx: Context, layout_database_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read sizes, margins, numbering and custom data for up to 100 layouts."""
+        return await project_location.get_layout_settings(
+            client_of(ctx), layout_database_guids, port
         )
 
     return mcp

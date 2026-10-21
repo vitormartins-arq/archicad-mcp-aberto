@@ -450,6 +450,14 @@
     {
       "name": "create_keynote_items",
       "description": "Preview/create new keynote items with new keys; only adds, read back by GUID."
+    },
+    {
+      "name": "get_project_location",
+      "description": "Read geolocation, survey point and calculation units."
+    },
+    {
+      "name": "get_layout_settings",
+      "description": "Read layout dimensions, margins, numbering and custom data."
     }
   ],
   "compatibility": {
