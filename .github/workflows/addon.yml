@@ -1,0 +1,34 @@
+name: Add-on
+
+on:
+  pull_request:
+    paths: ["addon/**", ".github/workflows/addon.yml"]
+  push:
+    branches: [main]
+    paths: ["addon/**", ".github/workflows/addon.yml"]
+
+jobs:
+  build_win:
+    # Compile check only: CI builds with placeholder MDID 1/1, which Archicad refuses.
+    # The real package is built with -DAC_MDID_DEVELOPER_ID and -DAC_MDID_LOCAL_ID.
+    strategy:
+      fail-fast: false
+      matrix:
+        params:
+          - acVersion: 29
+            devKitUrl: https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/29.3000/API.Development.Kit.WIN.29.3000.zip
+          - acVersion: 30
+            devKitUrl: https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/30.3000/API.Development.Kit.WIN.30.3000.zip
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Development Kit
+        run: python addon/Tools/download_and_unzip.py ${{ matrix.params.devKitUrl }} addon/devkit/AC${{ matrix.params.acVersion }}
+      - name: Generate project
+        run: cmake -B addon/build -G "Visual Studio 17 2022" -A "x64" -T "v143" -DAC_VERSION=${{ matrix.params.acVersion }} -DAC_API_DEVKIT_DIR="addon/devkit/AC${{ matrix.params.acVersion }}/Support" addon
+      - name: Build
+        run: cmake --build addon/build --config RelWithDebInfo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArchicadMcpAberto AC${{ matrix.params.acVersion }} Win (placeholder MDID)
+          path: addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx
