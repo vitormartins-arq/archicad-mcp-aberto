@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add `create_hotspots` to `tools/drafting.py`: up to 50 2D hotspots by Tapir 1.7.0
+  `CreateHotspots`, with position, optional height, layer and pen. Read back by type,
+  story, layer, position, height and pen. Not tested live yet.
+
+- Add `create_splines` to `tools/drafting.py`: up to 50 auto-smoothed 2D splines by
+  Tapir 1.7.0 `CreateSplines`, through 3 to 500 points in metres, open or closed, with
+  optional layer and pen. Read back by type, story, layer, pen, `closed` and points
+  within 1 mm. Not tested live yet.
+
 - Add `create_openings` (new `tools/voids.py`): up to 50 rectangular Opening-tool
   openings by Tapir 1.7.0 `CreateOpenings` in existing editable walls or slabs, from a
   base point in absolute project metres (z is the bottom edge) and a positive width and

@@ -550,3 +550,20 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [x] Morfo corrigido (commit bb25c5a), térreo em x 3 y 2 z 0: verified, caixa 3D exata,
   corpo relido Solid, isClosed true, 6 faces e 8 vértices.
 - [ ] Vitor: no 3D, ver que o morfo em x 3 tem fundo.
+
+## Lote do Claude C9: splines
+
+- [ ] **create_splines aberta.** No projeto novo sem nome, no pavimento que está na tela:
+  "Desenhe uma spline passando por (0,0), (2,1), (4,0) e (6,1)." Conferir na planta que a
+  curva é suave, passa pelos quatro pontos e que o recibo dá `verified`.
+- [ ] **create_splines fechada.** Repetir com `closed` e os pontos (0,0), (3,0), (3,2) e
+  (0,2). Conferir que a curva fecha sem um ponto repetido e que a leitura devolve
+  `closed` true e os mesmos quatro pontos.
+- [ ] **Vegetal e pena.** Uma spline com vegetal e pena dados: conferir as duas coisas na
+  caixa de configurações da spline.
+
+## Lote do Claude C10: pontos quentes
+
+- [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
+  (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
+  configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.

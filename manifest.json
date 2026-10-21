@@ -248,6 +248,14 @@
       "description": "Preview/create up to 50 straight-segment 2D polylines, checked by plan box."
     },
     {
+      "name": "create_splines",
+      "description": "Preview/create up to 50 auto-smoothed 2D splines, checked by their points."
+    },
+    {
+      "name": "create_hotspots",
+      "description": "Preview/create up to 50 2D hotspots on a story, with verification."
+    },
+    {
       "name": "create_arcs",
       "description": "Preview/create up to 50 circular 2D arcs, with verification."
     },

@@ -1,8 +1,10 @@
-"""2D drafting on a story: lines, polylines, arcs, circles and fills (Tapir 1.7.0).
+"""2D drafting on a story: lines, polylines, splines, arcs, circles, fills and hotspots
+(Tapir 1.7.0).
 
 Coordinates in metres, angles in radians. Every element needs its story; layer and fill
 are named as in Archicad, and the pen is a pen-table index. Omitted settings keep the
-tool default. Polylines and fills are checked by the coordinates in their details
+tool default. Splines are auto-smoothed: Archicad places the Bezier handles itself.
+Polylines, splines and fills are checked by the coordinates in their details
 (Get2DBoundingBoxes answers error 7203 for them in Archicad 30). Archicad stores a
 circle as a full Arc (begAngle == endAngle), which counts as a circle. Never saves.
 """
@@ -50,6 +52,32 @@ class PolylineCreate(_Drawn):
         return self
 
 
+class SplineCreate(_Drawn):
+    points: Annotated[list[write.Point], Field(min_length=3, max_length=500)]
+    closed: bool = False
+
+    @model_validator(mode="after")
+    def no_repeats(self) -> SplineCreate:
+        pairs = zip(self.points, self.points[1:], strict=False)
+        if any(math.hypot(a.x - b.x, a.y - b.y) < 1e-6 for a, b in pairs):
+            raise ValueError("Consecutive spline points must differ.")
+        first, last = self.points[0], self.points[-1]
+        if math.hypot(first.x - last.x, first.y - last.y) < 1e-6:
+            raise ValueError("Do not repeat the first spline point; set closed instead.")
+        return self
+
+
+class HotspotCreate(_Drawn):
+    position: write.Point
+    height: float | None = None
+
+    @model_validator(mode="after")
+    def finite_height(self) -> HotspotCreate:
+        if self.height is not None and not math.isfinite(self.height):
+            raise ValueError("Hotspot height must be finite.")
+        return self
+
+
 class CircleCreate(_Drawn):
     center: write.Point
     radius: write.Positive
@@ -87,9 +115,11 @@ class FillCreate(write.InputModel):
 KINDS = {
     "create_lines": ("Line", LineCreate),
     "create_polylines": ("PolyLine", PolylineCreate),
+    "create_splines": ("Spline", SplineCreate),
     "create_arcs": ("Arc", ArcCreate),
     "create_circles": ("Circle", CircleCreate),
     "create_fills": ("Hatch", FillCreate),
+    "create_hotspots": ("Hotspot", HotspotCreate),
 }
 
 
@@ -115,16 +145,23 @@ def _payload(operation: str, item: Any) -> dict:
         p |= {"begCoordinate": item.start.model_dump(), "endCoordinate": item.end.model_dump()}
     elif operation == "create_polylines":
         p |= {"coordinates": [q.model_dump() for q in item.points], "arcs": []}
+    elif operation == "create_splines":
+        p |= {"coordinates": [q.model_dump() for q in item.points], "closed": item.closed}
     elif operation in ("create_arcs", "create_circles"):
         p |= {"origin": item.center.model_dump(), "radius": item.radius}
         if operation == "create_arcs":
             p |= {"begAngle": item.start_angle, "endAngle": item.end_angle}
+    elif operation == "create_hotspots":
+        p["position"] = item.position.model_dump()
+        if item.height is not None:
+            p["height"] = item.height
     else:
         p |= {"coordinates": [q.model_dump() for q in item.outline], "arcs": []}
         if item.contour_pen is not None:
             p["contourPenIndex"] = item.contour_pen
     if item.pen is not None:
-        p["fillPenIndex" if operation == "create_fills" else "linePenIndex"] = item.pen
+        pens = {"create_fills": "fillPenIndex", "create_hotspots": "penIndex"}
+        p[pens.get(operation, "linePenIndex")] = item.pen
     return p
 
 
@@ -213,6 +250,10 @@ def _checker(operation: str):
                 "endCoordinate",
                 "origin",
                 "radius",
+                "closed",
+                "position",
+                "height",
+                "penIndex",
                 "linePenIndex",
                 "fillPenIndex",
                 "contourPenIndex",
@@ -280,6 +321,18 @@ async def create_polylines(
     return await _create(client, polylines, port, dry_run, confirmation_token, "create_polylines")
 
 
+async def create_splines(
+    client: ArchicadClient,
+    splines: list[dict | SplineCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 50 auto-smoothed splines through 3 to 500 points; closed joins
+    the last point back to the first without repeating it."""
+    return await _create(client, splines, port, dry_run, confirmation_token, "create_splines")
+
+
 async def create_arcs(
     client: ArchicadClient,
     arcs: list[dict | ArcCreate],
@@ -311,3 +364,15 @@ async def create_fills(
 ) -> dict:
     """Preview/apply up to 50 fills (Archicad hatches) on simple polygons."""
     return await _create(client, fills, port, dry_run, confirmation_token, "create_fills")
+
+
+async def create_hotspots(
+    client: ArchicadClient,
+    hotspots: list[dict | HotspotCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 50 2D hotspots: position, optional height (metres, the
+    hotspot's z on its story)."""
+    return await _create(client, hotspots, port, dry_run, confirmation_token, "create_hotspots")

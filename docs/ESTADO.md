@@ -798,3 +798,17 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
   API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
   Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.
+
+## 2026-10-21 — Claude / C9 splines e tarefas novas do Codex
+
+- `tools/drafting.py`: `create_splines` por `CreateSplines` do Tapir 1.7.0
+  (ElementCreationCommands.cpp). 3 a 500 pontos em metros, aberta ou fechada (sem
+  repetir o primeiro ponto), vegetal e pena opcionais; o ArchiCAD suaviza a curva
+  sozinho. Conferência por tipo, pavimento, vegetal, pena, `closed` e pontos lidos em
+  `GetDetailsOfElements` (até 1 mm). Lote `lote/claude-4`. Registro: 97 ferramentas (C9).
+- Codex: tarefas T28 (terminar o PR dos hotlinks, a branch já existia sem PR) a T34, todas
+  de leitura, na seção "A fazer" de `docs/FILA.md`. O prompt foi mandado ao Vitor.
+- C10: `create_hotspots` em `tools/drafting.py`, por `CreateHotspots` do Tapir 1.7.0
+  (posição, altura opcional, vegetal e pena). Conferência por tipo, pavimento, vegetal,
+  posição, altura e pena. 2231 testes simulados e Ruff passaram (Linux, Python 3.13).
+  Registro: 98 ferramentas. Próximo: C11 `create_keynote_labels`.
