@@ -9,8 +9,7 @@ on:
 
 jobs:
   build_win:
-    # Compile check only: CI builds with placeholder MDID 1/1, which Archicad refuses.
-    # The real package is built with -DAC_MDID_DEVELOPER_ID and -DAC_MDID_LOCAL_ID.
+    # Builds with the MDID defaults in addon/CMakeLists.txt, so the artifact loads in Archicad.
     strategy:
       fail-fast: false
       matrix:
@@ -30,5 +29,5 @@ jobs:
         run: cmake --build addon/build --config RelWithDebInfo
       - uses: actions/upload-artifact@v4
         with:
-          name: ArchicadMcpAberto AC${{ matrix.params.acVersion }} Win (placeholder MDID)
+          name: ArchicadMcpAberto AC${{ matrix.params.acVersion }} Win
           path: addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx

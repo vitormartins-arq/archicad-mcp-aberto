@@ -9,7 +9,8 @@ If an add-on is built:
   (Windows: Visual Studio toolset v143, x64 for Archicad 29).
 - The DevKit is downloaded from Graphisoft and never committed (`addon/devkit/` is ignored).
 - The MDID (Developer ID and Local ID) must be issued by Graphisoft for this add-on.
-  Example IDs or IDs borrowed from another add-on make Archicad reject it.
+  Ours is Developer ID 1110659426, Local ID 287719994 ("Archicad MCP Aberto"), the
+  CMake defaults. Example IDs or IDs borrowed from another add-on make Archicad reject it.
 
 ## Build
 
@@ -18,13 +19,12 @@ version (`addon/devkit/` is ignored):
 
 ```
 cmake -B addon/build -G "Visual Studio 17 2022" -A x64 -T v143 ^
-  -DAC_VERSION=30 -DAC_API_DEVKIT_DIR=<DevKit>/Support ^
-  -DAC_MDID_DEVELOPER_ID=<id> -DAC_MDID_LOCAL_ID=<id> addon
+  -DAC_VERSION=30 -DAC_API_DEVKIT_DIR=<DevKit>/Support addon
 cmake --build addon/build --config RelWithDebInfo
 ```
 
-CI (`.github/workflows/addon.yml`) compiles for Archicad 29 and 30 with a placeholder
-MDID, so its `.apx` only proves the code builds. The build tooling in `Tools/` comes
+CI (`.github/workflows/addon.yml`) builds the `.apx` for Archicad 29 and 30 with the
+real MDID and keeps it as a run artifact. The build tooling in `Tools/` comes
 from Tapir (MIT, `Tools/LICENSE-Tapir`).
 
 ## Commands

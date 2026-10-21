@@ -8,9 +8,10 @@ set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 set (AC_API_DEVKIT_DIR ${AC_API_DEVKIT_DIR} CACHE PATH "API DevKit directory.")
 set (AC_VERSION ${API_AC_VERSION} CACHE STRING "Archicad version.")
-# Graphisoft-issued MDID. The 1/1 defaults only let CI compile; Archicad refuses them.
-set (AC_MDID_DEVELOPER_ID 1 CACHE STRING "MDID Developer ID issued by Graphisoft.")
-set (AC_MDID_LOCAL_ID 1 CACHE STRING "MDID Local ID issued by Graphisoft for this add-on.")
+# MDID issued by Graphisoft for "Archicad MCP Aberto" (registered 21/10/2026). A fork
+# that ships its own build registers its own Local ID and passes it here.
+set (AC_MDID_DEVELOPER_ID 1110659426 CACHE STRING "MDID Developer ID issued by Graphisoft.")
+set (AC_MDID_LOCAL_ID 287719994 CACHE STRING "MDID Local ID issued by Graphisoft for this add-on.")
 
 SetGlobalCompilerDefinitions (${AC_VERSION})
 

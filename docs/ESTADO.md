@@ -885,3 +885,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   element type`), então a conferência é tipo, pavimento e caixa 3D. 2375 testes
   simulados e Ruff passaram (Linux, Python 3.13). Registro: 104 ferramentas. Próximo:
   C18 compostos.
+
+- **Claude / MDID do add-on próprio, 21/10/2026:** o Vitor registrou no portal da Graphisoft o
+  add-on "Archicad MCP Aberto": Developer ID 1110659426, Local ID 287719994. Viraram os padrões
+  do `addon/CMakeLists.txt`, então o `.apx` do CI (PR #68) já carrega no ArchiCAD. Outro Local ID,
+  3542434559 ("LAB Automação"), foi registrado no mesmo dia para comandos só do LAB; não usar aqui.
