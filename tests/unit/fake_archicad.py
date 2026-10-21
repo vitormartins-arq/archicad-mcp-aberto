@@ -801,6 +801,44 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name.startswith("GetMEP"):
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            mapping = {
+                "GetMEPSystems": ("mepSystems", [fixture["system"]]),
+                "GetMEPDistributionSystems": ("distributionSystems", [fixture["distribution"]]),
+                "GetMEPElements": ("elements", [fixture["element"]]),
+                "GetMEPPreferenceTables": ("tables", fixture["tables"]),
+            }
+            if name == "GetMEPRoutingElements":
+                key, rows = "routingElements", [fixture["routing"] for _ in args["elements"]]
+            elif name == "GetMEPPorts":
+                key, rows = "elementPorts", [fixture["ports"] for _ in args["elements"]]
+            else:
+                key, rows = mapping[name]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name == "GetAttributesByType" and args["attributeType"] == "MEPSystem":
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": fixture["system_guid"]},
+                                "index": 1,
+                                "name": "Domestic Water",
+                            }
+                        ]
+                    }
+                }
+            )
         if name == "GetDesignOptionSets":
             return ok(
                 {
@@ -886,9 +924,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -2648,6 +2690,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )
