@@ -801,6 +801,41 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in {
+            "GetIFCTypeOfElements",
+            "GetIFCIdsOfElements",
+            "GetIFCPropertiesOfElements",
+            "GetElementsByIFCIds",
+        }:
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_ifc_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            if name == "GetElementsByIFCIds":
+                rows = [
+                    {
+                        "ifcId": value,
+                        "elements": [{"elementId": {"guid": fixture["element_guid"]}}]
+                        if value == fixture["ifc_id"]
+                        else [],
+                    }
+                    for value in args["ifcIds"]
+                ]
+                return ok({"addOnCommandResponse": {"elementsByIFCIds": rows}})
+            keys = {
+                "GetIFCTypeOfElements": "elementIFCTypes",
+                "GetIFCIdsOfElements": "elementIFCIds",
+                "GetIFCPropertiesOfElements": "elementIFCProperties",
+            }
+            key = keys[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["element_guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name == "GetDesignOptionSets":
             return ok(
                 {
@@ -886,9 +921,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -2648,6 +2687,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )

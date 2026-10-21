@@ -19,6 +19,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    ifc,
     keynotes,
     locks,
     modify,
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1487,6 +1485,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_ifc_of_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read IFC type, IDs and properties for up to 100 elements. No export."""
+        return await ifc.get_ifc_of_elements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements_by_ifc_ids(
+        ctx: Context, ifc_ids: list[str], port: int | None = None
+    ) -> dict:
+        """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
+        return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
 
     return mcp
 
