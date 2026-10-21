@@ -88,11 +88,19 @@ class _Favored(InputModel):
 
 
 class WallCreate(_Favored):
+    """A straight wall. Tapir 1.7.0 CreateWalls always needs height and thickness, also
+    with a favorite (refused live, 21/10/2026), and always sets the structure (Basic
+    unless a composite is given), the bottom, the offset and an unlinked top: from a
+    favorite only layer, pens, materials and the like are kept. ``composite`` names a
+    Composite attribute for walls; its total thickness is the wall's thickness.
+    """
+
     start: Point
     end: Point
     floor_index: int
-    height: Positive | None = None
+    height: Positive
     thickness: Positive | None = None
+    composite: Annotated[str, Field(min_length=1, max_length=255)] | None = None
     bottom_offset: float = 0.0
     offset: float = 0.0
     reference_line: Literal["Outside", "Center", "Inside"] = "Center"
@@ -101,7 +109,8 @@ class WallCreate(_Favored):
     def nonzero_length(self) -> WallCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A wall must have a reference line at least 0.000001 m long.")
-        self._needs("height", "thickness")
+        if self.thickness is None and self.composite is None:
+            raise ValueError("thickness required unless a composite is given.")
         return self
 
 
@@ -691,18 +700,51 @@ def _create_payload(wall: WallCreate) -> dict:
         "structureType": "Basic",
         "referenceLineLocation": wall.reference_line,
     }
-    return _favored(
-        payload,
-        wall,
-        {
-            "height": "height",
-            "thickness": "thickness",
-            "zCoordinate": "bottom_offset",
-            "offset": "offset",
-            "structureType": "",
-            "referenceLineLocation": "reference_line",
-        },
-    )
+    if wall.favorite is not None:
+        # Left out, Tapir keeps the favorite's building material on the Basic wall.
+        del payload["structureType"]
+        payload["favoriteName"] = wall.favorite
+    return payload
+
+
+async def _wall_composites(client, port: int, walls: list) -> dict[str, tuple[str, float]]:
+    """Composite name -> (guid, total thickness) for the walls; raises on a bad name."""
+    wanted = sorted({w.composite for w in walls if getattr(w, "composite", None)})
+    if not wanted:
+        return {}
+    response = await client.tapir(port, "GetAttributesByType", {"attributeType": "Composite"})
+    rows = response.get("attributes")
+    if not isinstance(rows, list):
+        raise ValueError(f"Cannot read the composites ({response}).")
+    found = {}
+    for name in wanted:
+        hits = [
+            r
+            for r in rows
+            if isinstance(r, dict) and str(r.get("name")).casefold() == name.casefold()
+        ]
+        if len(hits) != 1:
+            problem = "is ambiguous" if hits else "does not exist"
+            raise ValueError(f"Composite {name!r} {problem} in this project.")
+        found[name] = hits[0]["attributeId"]["guid"]
+    response = await client.tapir(
+        port,
+        "GetComposites",
+        {"attributeIds": [{"attributeId": {"guid": g}} for g in found.values()],
+         "fields": ["useWith", "skins"]},
+    )  # fmt: skip
+    composites = response.get("composites")
+    if not isinstance(composites, list) or len(composites) != len(found):
+        raise ValueError(f"Cannot read the composites ({response}).")
+    out = {}
+    for name, row in zip(found, composites, strict=True):
+        skins = row.get("skins") if isinstance(row, dict) else None
+        if not isinstance(skins, list) or not skins:
+            raise ValueError(f"Cannot read the skins of composite {name!r} ({row}).")
+        if "Wall" not in row.get("useWith", []):
+            raise ValueError(f"Composite {name!r} is not for walls.")
+        out[name] = (found[name], round(sum(float(k["thickness"]) for k in skins), 9))
+    return out
 
 
 async def _plan(
@@ -741,6 +783,7 @@ async def _plan(
             if len({row["guid"].upper() for row in candidates}) != 1:
                 raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
     exact = await _favorite_names(client, port, kind, walls)
+    composites = await _wall_composites(client, port, walls) if kind == "Wall" else {}
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
@@ -772,6 +815,19 @@ async def _plan(
         item = {"index": index, "status": "ready", "parameters": payload}
         if "favoriteName" in payload:
             payload["favoriteName"] = item["favorite"] = exact[payload["favoriteName"]]
+        if kind == "Wall" and wall.composite is not None:
+            guid, total = composites[wall.composite]
+            if wall.thickness is not None and abs(wall.thickness - total) > 1e-4:
+                raise ValueError(
+                    f"Wall {index}: composite {wall.composite!r} is {total:g} m thick, "
+                    f"not {wall.thickness:g} m."
+                )
+            payload.update(thickness=total, structureType="Composite", compositeId={"guid": guid})
+        elif kind == "Wall" and "favoriteName" in payload:
+            item["note"] = (
+                "Tapir 1.7.0 builds this wall as Basic with the height and thickness given "
+                "here and an unlinked top; pass composite to keep a composite favorite."
+            )
         if obj:
             if "favoriteName" in payload:
                 item["note"] = (
@@ -829,9 +885,12 @@ def _expected(item: dict) -> dict:
         "begCoordinate": parameters["begCoordinate"],
         "endCoordinate": parameters["endCoordinate"],
     }
+    # Tapir 1.7.0 sets structure and an unlinked top even over a favorite.
+    details.update(structureType=parameters.get("structureType", "Basic"), relativeTopStory=0.0)
+    if "compositeId" in parameters:
+        details["compositeId"] = parameters["compositeId"]
     if "favoriteName" not in parameters:
-        # A favorite may hold a composite or profile and a top linked to a story.
-        details.update(structureType="Basic", relativeTopStory=0.0, profileType="Normal")
+        details["profileType"] = "Normal"  # A favorite may hold a slanted profile.
     for key, detail in (
         ("zCoordinate", "bottomOffset"),
         ("referenceLineLocation", "referenceLineLocation"),
@@ -1054,7 +1113,7 @@ async def create_walls(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview or apply up to 20 straight Basic walls. Lengths are metres."""
+    """Preview or apply up to 20 straight walls, Basic or of a composite. Lengths are metres."""
     if not 1 <= len(walls) <= MAX_WALLS:
         raise ValueError(f"Pass between 1 and {MAX_WALLS} walls.")
     validated = [w if isinstance(w, WallCreate) else WallCreate.model_validate(w) for w in walls]

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fix `create_walls` with `favorite`: Tapir 1.7.0 `CreateWalls` requires height and
+  thickness even with a favorite, so a wall with only a favorite was refused live
+  (Archicad 30 build 3001 BRA, 21/10/2026). Height and thickness are required again,
+  and the read-back expects the Basic structure and unlinked top that Tapir 1.7.0 sets
+  over the favorite. New `composite` field: a wall Composite by name, whose skins set
+  the thickness, so a composite favorite's walls can keep their composite.
+
 - Add `create_zone_categories` (`tools/zone_categories.py`): new zone categories with
   name, code and colour by Tapir 1.7.0 `CreateZoneCategories`, never overwriting an
   existing one, read back with `GetZoneCategories`. Not tested live yet.

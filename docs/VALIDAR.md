@@ -624,3 +624,12 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   código VAR, cor verde." Conferir em Opções > Atributos de Elemento > Categorias de
   Zona que ela aparece com o código, a cor e o carimbo da primeira categoria, e que o
   recibo dá `verified`. Pedir de novo o mesmo nome: a prévia deve recusar.
+
+## Correção: parede por favorito e composição
+
+- [ ] **Parede com favorito e composição.** No projeto novo: "Faça uma parede de 4 m
+  com o favorito <favorito de parede composta>, altura 3, composição <a do favorito>."
+  Conferir na planta que a parede sai composta (camadas da composição), com a espessura
+  total dela, no vegetal do favorito, e que o recibo dá `verified`.
+- [ ] **Parede só com favorito.** A prévia deve pedir altura e espessura, e avisar que a
+  composição do favorito se perde sem `composite`.

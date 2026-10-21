@@ -274,6 +274,29 @@ class FakeArchicad:
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
+    # Composites in the GetComposites shape (Tapir 1.7.0 source); synthetic, not live.
+    composites: dict[str, dict] = field(
+        default_factory=lambda: {
+            "C0C0C0C0-0000-4000-8000-000000000001": {
+                "attributeId": {"guid": "C0C0C0C0-0000-4000-8000-000000000001"},
+                "index": 3,
+                "name": "Alvenaria 14cm com Reboco",
+                "useWith": ["Wall"],
+                "skins": [
+                    {"type": "Finish", "framePen": 1, "thickness": 0.02},
+                    {"type": "Core", "framePen": 1, "thickness": 0.1},
+                    {"type": "Finish", "framePen": 1, "thickness": 0.02},
+                ],
+            },
+            "C0C0C0C0-0000-4000-8000-000000000002": {
+                "attributeId": {"guid": "C0C0C0C0-0000-4000-8000-000000000002"},
+                "index": 4,
+                "name": "Laje Composta 20",
+                "useWith": ["Slab"],
+                "skins": [{"type": "Core", "framePen": 1, "thickness": 0.2}],
+            },
+        }
+    )
     surfaces: dict[int, str] = field(
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
@@ -1477,6 +1500,22 @@ class FakeArchicad:
                 keys = {"attributeId", "index", "name", *args.get("fields", [])}
                 out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
             return ok({"addOnCommandResponse": {"zoneCategories": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Composite":
+            rows = [
+                {k: deepcopy(r[k]) for k in ("attributeId", "index", "name")}
+                for r in self.composites.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetComposites":
+            out = []
+            for entry in args["attributeIds"]:
+                row = self.composites.get(entry["attributeId"]["guid"])
+                if row is None:
+                    out.append({"error": {"code": -2130313112, "message": "Not found."}})
+                    continue
+                keys = {"attributeId", "index", "name", *args.get("fields", ["useWith", "skins"])}
+                out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"composites": out}})
         if name == "GetAttributesByType" and args["attributeType"] == "Fill":
             return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":
@@ -1803,6 +1842,8 @@ class FakeArchicad:
                     coreAnchor=column["coreAnchor"],
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2392,6 +2433,8 @@ class FakeArchicad:
                     holes=deepcopy(slab["holes"]),
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2401,10 +2444,22 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                if not {"height", "thickness"} <= set(wall):
+                    # Tapir 1.7.0 refuses the whole command by its schema, favorite or
+                    # not (live 21/10/2026); this message and code are synthetic.
+                    error = {"code": 4001, "message": "Invalid command parameters: required"}
+                    return ok({"addOnCommandResponse": {"error": error}})
                 wall, extra = self._favored("Wall", wall)
                 if "error" in extra:
                     out.append(extra)
                     continue
+                # Tapir 1.7.0 sets the structure and an unlinked top over any favorite
+                # (CreateWallsCommand source; Basic seen live 21/10/2026).
+                for key in ("structureType", "compositeId", "buildingMaterialId"):
+                    extra.pop(key, None)
+                extra["relativeTopStory"] = 0
+                if "compositeId" in wall:
+                    extra.update(structureType="Composite", compositeId=wall["compositeId"])
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Wall"
                 row = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
@@ -2422,6 +2477,8 @@ class FakeArchicad:
                     referenceLineLocation=wall["referenceLineLocation"],
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})

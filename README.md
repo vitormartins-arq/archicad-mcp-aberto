@@ -59,7 +59,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
 | `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
 | `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
-| `create_walls` | Write | Up to 20 straight Basic walls | yes |
+| `create_walls` | Write | Up to 20 straight walls, Basic or of a composite | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
@@ -230,8 +230,9 @@ Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports
 ## Wall creation
 
 `create_walls` accepts `walls`, an optional `port`, `dry_run` (default `true`), and
-`confirmation_token`. This initial scope supports straight Basic walls only. Lengths
-are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`:
+`confirmation_token`. It creates straight walls, Basic or of a composite. Lengths
+are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`
+(or `composite`, below):
 
 ```json
 {
@@ -246,9 +247,12 @@ are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickne
 }
 ```
 
-Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`
-and `reference_line` (`Outside`, `Center` or `Inside`). New walls inherit Archicad's
-current default layer and building material.
+Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`,
+`reference_line` (`Outside`, `Center` or `Inside`), `composite` and `favorite`. New
+walls inherit Archicad's current default layer and building material. `composite` names
+a Composite attribute for walls: the preview reads its skins with `GetComposites`, the
+wall's thickness is their total (a different `thickness` is refused), and the read-back
+checks the structure and the composite.
 
 The default call only reads the target and returns a preview. After the user reviews
 it, repeat the same wall inputs with the preview's explicit port, `dry_run: false`
@@ -620,9 +624,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir
   1.7.0 applies the favorite to the tool defaults first and the given fields override
-  it, so with a favorite the settings it holds may be left out: wall height and
-  thickness, slab thickness, column height and section, beam width and height. The
-  wall's structure (Basic, Composite or Profile) comes from the favorite too. The
+  it, so with a favorite the settings it holds may be left out: slab thickness,
+  column height and section, beam width and height. Walls are the exception: Tapir
+  1.7.0 `CreateWalls` requires height and thickness even with a favorite (refused live
+  on 21/10/2026) and sets the structure to Basic, the reference line, the bottom and
+  an unlinked top over it, so a wall keeps only the favorite's layer, pens, materials
+  and the like. Pass the favorite's `composite` to keep a composite wall. The
   read-back checks the geometry and the fields that were given. `create_zones`,
   `create_texts`, `create_labels`, `create_meshes` and the 2D drafting tools (lines,
   polylines, splines, arcs, circles, fills and hotspots) take `favorite` the same way;

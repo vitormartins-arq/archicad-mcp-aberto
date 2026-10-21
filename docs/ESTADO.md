@@ -870,3 +870,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   já existe é recusado na prévia. A conferência lê `GetZoneCategories` (nome, código e
   cor). 2348 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 103
   ferramentas. Falta levar as categorias do LAB Template ao `lab_apply_template`.
+- Correção da parede por favorito (teste ao vivo de 21/10/2026, ArchiCAD 30 build 3001
+  BRA, Tapir 1.7.0): o `CreateWalls` do Tapir 1.7.0 exige altura e espessura mesmo com
+  favorito e, pelo código-fonte, força estrutura Basic, linha de referência, base e topo
+  solto por cima do favorito. Por isso a parede só com favorito foi recusada, e com
+  altura e espessura saiu Basic. Agora `create_walls` volta a exigir altura e espessura,
+  avisa na prévia, e ganhou `composite` (composição de parede por nome; a espessura é a
+  soma das camadas lidas no `GetComposites`). O `lab_find_favorite` do Lab já devolve a
+  composição do favorito. O falso agora recusa parede sem altura ou espessura. 2353
+  testes simulados e Ruff passaram (Linux, Python 3.13).

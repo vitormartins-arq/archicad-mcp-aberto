@@ -181,13 +181,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview straight Basic walls (up to 20). All lengths are metres.
+        """Preview straight walls (up to 20). All lengths are metres.
         Requires Tapir. Review the preview with the user, then repeat identical inputs
-        with dry_run=false, explicit port and confirmation_token. New walls inherit the
-        default layer and building material, or take everything from `favorite` (a Wall
-        favorite's name; height and thickness may then be left out, given fields override
-        it). Returns per-wall results and local receipts; verifies geometry after writing.
-        Never saves the project."""
+        with dry_run=false, explicit port and confirmation_token. Height is always needed,
+        thickness too unless `composite` (a wall Composite's name) is given; the wall then
+        takes the composite and its total thickness. New walls inherit the default layer
+        and building material, or those of `favorite` (a Wall favorite's name). Tapir 1.7.0
+        does not keep a favorite's structure, height or linked top: pass the favorite's
+        composite to keep it. Returns per-wall results and local receipts; verifies
+        geometry after writing. Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=READ_ONLY)
