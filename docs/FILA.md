@@ -127,6 +127,10 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   `lab_apply_template` as categorias de zona do LAB Template.
 - **C18 compostos.** `CreateComposites`: compostos novos por camadas (material de
   construção e espessura), sem sobrescrever. Depois, no Lab, os compostos do template.
+- **C19 salvar a vista 3D atual.** (Pedido do Vitor, 21/10/2026.) `CreateViewsInViewMap`
+  do Tapir 1.7.0 a partir da Perspectiva genérica do Mapa do projeto, com nome e pasta
+  do Mapa de vistas, conferida pela árvore do Navegador. O Tapir não move a câmera: o
+  Vitor acerta o ângulo na tela e o MCP salva. Conferir ao vivo se o ângulo fica gravado.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
