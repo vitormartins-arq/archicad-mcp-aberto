@@ -633,3 +633,9 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `get_element_preview`, `get_zone_image` and `get_favorite_preview` return real MCP PNG
+  image content for up to 10 targets. Dimensions are capped at 1024 × 1024 and decoded
+  images at 5 MiB. Each target also gets metadata or its own error. Fixtures are
+  source-derived, not a live capture. Registry: **101 tools (32 reads, 69
+  writes/interactions)**.

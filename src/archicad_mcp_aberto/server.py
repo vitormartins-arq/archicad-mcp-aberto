@@ -23,6 +23,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     modify,
     openings,
+    preview_images,
     project_info,
     property_definitions,
     read,
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1487,6 +1485,52 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_preview(
+        ctx: Context,
+        element_guids: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 element previews."""
+        result = await preview_images.get_element_preview(
+            client_of(ctx), element_guids, image_type, width, height, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_image(
+        ctx: Context,
+        zone_guids: list[str],
+        width: int = 256,
+        height: int = 256,
+        offset: float = 0.001,
+        scale: float = 0.005,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 zone plan images."""
+        result = await preview_images.get_zone_image(
+            client_of(ctx), zone_guids, width, height, offset, scale, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_favorite_preview(
+        ctx: Context,
+        favorite_names: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 favorite previews."""
+        result = await preview_images.get_favorite_preview(
+            client_of(ctx), favorite_names, image_type, width, height, port
+        )
+        return result["content"]
 
     return mcp
 

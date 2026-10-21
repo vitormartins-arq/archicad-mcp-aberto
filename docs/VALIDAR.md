@@ -567,3 +567,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
   (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
   configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.
+
+## T39 — Preview images
+- [ ] Compare 2D/section/3D element and favorite PNG previews with Archicad.
+- [ ] Compare zone plan images at different scale/offset values and confirm failures remain per target.
