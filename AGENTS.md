@@ -56,6 +56,8 @@ disk.
 - Lengths in meters, angles in radians.
 - When the fake Archicad learns a command, copy the response shape from a real Archicad.
   A wrong key in the fake once hid a bug (`propertyIds`, see CHANGELOG).
-- A new native command belongs in Tapir upstream first. `addon/` is only for proven gaps,
-  and needs a Graphisoft-issued MDID.
+- A missing native command may go straight into our own add-on in `addon/` (Vitor,
+  21/10/2026: "não quero ficar dependendo de update do Tapir"). Also send the same
+  command to Tapir upstream as a suggestion, so it can replace ours later. The add-on
+  needs a Graphisoft-issued MDID.
 - Never delete files on Vitor's computer.
