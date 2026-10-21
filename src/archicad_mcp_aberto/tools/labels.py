@@ -18,7 +18,7 @@ from archicad_mcp_aberto.tools import read, texts, write
 MAX_LABELS = 20
 
 
-class LabelCreate(write.InputModel):
+class LabelCreate(write._Favored):
     text: Annotated[str, Field(min_length=1, max_length=2000)]
     element_guid: str | None = None
     position: write.Point | None = None
@@ -85,8 +85,11 @@ async def _plan(client, labels, port, operation):
             payload["begCoordinate"] = label.position.model_dump()
         if label.height_mm is not None:
             payload["style"] = {"height": label.height_mm}
+        if label.favorite is not None:
+            payload["favoriteName"] = label.favorite
         item["parameters"] = payload
         items.append(item)
+    await write._resolve_favorites(client, port, "Label", labels, items)
     return {"operation": operation, "target": target, "items": items}
 
 

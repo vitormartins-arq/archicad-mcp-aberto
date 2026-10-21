@@ -183,8 +183,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Preview straight Basic walls (up to 20). All lengths are metres.
         Requires Tapir. Review the preview with the user, then repeat identical inputs
         with dry_run=false, explicit port and confirmation_token. New walls inherit the
-        default layer and building material. Returns per-wall results and local receipts;
-        verifies geometry after writing. Never saves the project."""
+        default layer and building material, or take everything from `favorite` (a Wall
+        favorite's name; height and thickness may then be left out, given fields override
+        it). Returns per-wall results and local receipts; verifies geometry after writing.
+        Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -205,9 +207,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Preview up to 20 simple polygon slabs. Metres; level is absolute project Z.
         Requires Tapir. Straight edges, no holes, top reference plane; layer/material
-        inherit defaults. Review before applying identical inputs with dry_run=false,
-        explicit port and single-use confirmation_token. Verifies each slab and returns
-        local receipts. Never saves the project."""
+        inherit defaults, or come from `favorite` (a Slab favorite; thickness may then be
+        left out). Review before applying identical inputs with dry_run=false, explicit
+        port and single-use confirmation_token. Verifies each slab and returns local
+        receipts. Never saves the project."""
         return await write.create_slabs(client_of(ctx), slabs, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
@@ -219,8 +222,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview up to 20 straight rectangular/circular columns, in metres.
-        base_level is absolute project Z. Requires Tapir; review then apply identical
-        inputs with explicit port and single-use token. Verifies each column; never saves."""
+        base_level is absolute project Z. With `favorite` (a Column favorite), height and
+        section may be left out. Requires Tapir; review then apply identical inputs with
+        explicit port and single-use token. Verifies each column; never saves."""
         return await write.create_columns(
             client_of(ctx), columns, port, dry_run, confirmation_token
         )
@@ -669,7 +673,8 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview straight rectangular beams, up to 20. Metres; level is absolute Z.
-        Requires Tapir, explicit port and single-use token to apply; never saves.
+        With `favorite` (a Beam favorite), width and height may be left out. Requires
+        Tapir, explicit port and single-use token to apply; never saves.
         """
         return await write.create_beams(client_of(ctx), beams, port, dry_run, confirmation_token)
 

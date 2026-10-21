@@ -353,6 +353,10 @@ class FakeArchicad:
     favorites: dict[str, list[str]] = field(
         default_factory=lambda: deepcopy({"Window": ["Janela padrão"], "Door": ["Porta padrão"]})
     )
+    # favoriteName on CreateWalls/Slabs/Columns/Beams (Tapir 1.7.0 source: the favorite
+    # is applied to the tool defaults, then the given fields override it). Not live.
+    # name -> {"defaults": payload fields it sets, "details": detail fields it sets}.
+    favorite_settings: dict[str, dict] = field(default_factory=dict)
     # Library part names CreateObjects can find; any other name fails that item.
     library_inventory: list[dict] | None = None
     library_skipped_count: int = 0
@@ -1670,6 +1674,10 @@ class FakeArchicad:
                 if index in self.create_errors:
                     rows.append(deepcopy(self.create_errors[index]))
                     continue
+                beam, extra = self._favored("Beam", beam)
+                if "error" in extra:
+                    rows.append(extra)
+                    continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Beam"
                 row = deepcopy(fixture["details"])
@@ -1679,6 +1687,7 @@ class FakeArchicad:
                     {k: deepcopy(v) for k, v in beam.items() if k != "floorIndex"}
                 )
                 row["details"]["level"] = beam["zCoordinate"] - story["level"]
+                row["details"].update(extra)
                 self.details[guid] = row
                 rows.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": rows}})
@@ -1687,6 +1696,10 @@ class FakeArchicad:
             for index, column in enumerate(args["columnsData"]):
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
+                    continue
+                column, extra = self._favored("Column", column)
+                if "error" in extra:
+                    out.append(extra)
                     continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Column"
@@ -1712,6 +1725,7 @@ class FakeArchicad:
                     axisRotationAngle=column["axisRotationAngle"],
                     coreAnchor=column["coreAnchor"],
                 )
+                row["details"].update(extra)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2147,6 +2161,10 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                mesh, extra = self._favored("Mesh", mesh)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Mesh"
                 row = deepcopy(MESHES_FIXTURE["mesh_details"])
@@ -2173,6 +2191,10 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                slab, extra = self._favored("Slab", slab)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Slab"
                 row = deepcopy(CREATE_SLABS_FIXTURE["slab_details"])
@@ -2187,6 +2209,7 @@ class FakeArchicad:
                     polygonOutline=points + [deepcopy(points[0])],
                     holes=deepcopy(slab["holes"]),
                 )
+                row["details"].update(extra)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2195,6 +2218,10 @@ class FakeArchicad:
             for index, wall in enumerate(args["wallsData"]):
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
+                    continue
+                wall, extra = self._favored("Wall", wall)
+                if "error" in extra:
+                    out.append(extra)
                     continue
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Wall"
@@ -2212,10 +2239,43 @@ class FakeArchicad:
                     offset=wall["offset"],
                     referenceLineLocation=wall["referenceLineLocation"],
                 )
+                row["details"].update(extra)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         return ok({"addOnCommandResponse": {"error": {"code": 1, "message": f"Unknown {name}"}}})
+
+    # Tool defaults for fields a favorite-based item leaves out; synthetic, not live.
+    TOOL_DEFAULTS = {
+        "Wall": {
+            "height": 3.0, "thickness": 0.3, "zCoordinate": 0.0, "offset": 0.0,
+            "referenceLineLocation": "Center",
+        },
+        "Slab": {"thickness": 0.2},
+        "Column": {
+            "height": 3.0, "width": 0.3, "depth": 0.3, "circleBased": False,
+            "isWidthAndHeightLinked": False,
+        },
+        "Beam": {"width": 0.2, "height": 0.4},
+        "Mesh": {
+            "skirtType": "SurfaceOnlyWithoutSkirt", "skirtLevel": 1.0, "ridges": "AllSharp",
+            "showLines": True,
+        },
+    }  # fmt: skip
+
+    def _favored(self, kind: str, data: dict) -> tuple[dict, dict]:
+        """The item as Tapir sees it after the favorite, and the favorite's details."""
+        name = data.get("favoriteName")
+        if name is None:
+            return data, {}
+        if name not in self.favorites.get(kind, []):
+            # Message from the Tapir 1.7.0 source; the code is synthetic.
+            message = f"Failed to apply favoriteName '{name}' to the {kind} defaults."
+            return {}, {"error": {"code": -2130313113, "message": message}}
+        favorite = self.favorite_settings.get(name, {})
+        merged = {**self.TOOL_DEFAULTS.get(kind, {}), **favorite.get("defaults", {}), **data}
+        merged.pop("favoriteName")
+        return merged, deepcopy(favorite.get("details", {}))
 
     def _floor(self, z: float) -> tuple[int, float]:
         """Tapir's GetFloorIndexAndOffset: the highest story at or below z."""

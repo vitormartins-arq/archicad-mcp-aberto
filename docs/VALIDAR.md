@@ -567,3 +567,19 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
   (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
   configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.
+
+## Lote do Claude C14: criar a partir de favorito
+
+- [ ] **Parede por favorito.** No projeto novo sem nome, com um favorito de parede
+  composta: "Crie uma parede de (0,0) a (4,0) com o favorito <nome>." Conferir que a
+  parede sai com a composição, o vegetal e a altura do favorito, e que o recibo dá
+  `verified`. Anotar se o Tapir aplica também a classificação e as propriedades do
+  favorito.
+- [ ] **Favorito com campo dado.** Repetir com altura 3,10: a altura dada vence a do
+  favorito.
+- [ ] **Laje, pilar e viga por favorito.** Um de cada, sem espessura nem seção: conferir
+  que vêm do favorito.
+- [ ] **Favorito errado.** Pedir uma parede com o nome de um favorito de laje: a prévia
+  recusa.
+- [ ] **Zona, texto, etiqueta e linha por favorito.** Um de cada com um favorito LAB:
+  conferir categoria da zona, estilo do texto e da etiqueta, e vegetal e tipo de linha.
