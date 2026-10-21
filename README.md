@@ -64,6 +64,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
 | `create_lamps` | Write | Up to 20 lamps by library part name, position and angle | yes |
+| `create_zone_categories` | Write | Up to 50 new zone categories with name, code and colour | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
 | `create_roofs` | Write | Up to 20 single- or multi-plane roofs from simple polygons | yes |
@@ -670,8 +671,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
 - `create_lamps` works like `create_objects` for Lamp library parts, by Tapir 1.7.0
   `CreateLamps`: the preview checks the name among the loaded Lamp parts (an Object
   part is refused, as Tapir's `CreateObjects` refuses lamps), and `favorite` takes a
-  Lamp favorite. Size and light stay the part's defaults. Registry: **102 tools (29
-  reads, 73 writes/interactions)**.
+  Lamp favorite. Size and light stay the part's defaults.
+- `create_zone_categories([{name, code?, color?: {red, green, blue}}], port?, dry_run?,
+  confirmation_token?)` adds up to 50 zone categories by Tapir 1.7.0
+  `CreateZoneCategories`. It never overwrites: a name the project already has, or a
+  repeated name, is refused in the preview. Colours go from 0 to 1. Tapir copies the
+  zone stamp from the project's first category. The read-back is `GetZoneCategories`
+  (name, code and colour). Registry: **103 tools (29 reads, 74 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

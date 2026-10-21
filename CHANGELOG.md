@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_zone_categories` (`tools/zone_categories.py`): new zone categories with
+  name, code and colour by Tapir 1.7.0 `CreateZoneCategories`, never overwriting an
+  existing one, read back with `GetZoneCategories`. Not tested live yet.
+
 - Add `create_lamps`: up to 20 Lamp library parts by name, like `create_objects`, by
   Tapir 1.7.0 `CreateLamps`, with `favorite`. Not tested live yet.
 

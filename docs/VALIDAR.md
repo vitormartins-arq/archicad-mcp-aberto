@@ -617,3 +617,10 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_lamps.** No projeto novo: "Ponha uma luminária <peça> em (1,2), a 2,60 m."
   Conferir na planta e no 3D, e que o recibo dá `verified`. Repetir com um favorito de
   luminária LAB, se houver.
+
+## Lote do Claude C17: categorias de zona
+
+- [ ] **create_zone_categories.** No projeto novo: "Crie a categoria de zona Varanda,
+  código VAR, cor verde." Conferir em Opções > Atributos de Elemento > Categorias de
+  Zona que ela aparece com o código, a cor e o carimbo da primeira categoria, e que o
+  recibo dá `verified`. Pedir de novo o mesmo nome: a prévia deve recusar.

@@ -44,6 +44,7 @@ from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -342,6 +343,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         back. Requires Tapir. Never saves."""
         return await layers_tool.create_layers(
             client_of(ctx), layers, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_zone_categories(
+        ctx: Context,
+        categories: list[zone_categories_tool.ZoneCategoryCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 zone categories: name, optional code and colour (red,
+        green, blue from 0 to 1). An existing name is refused, never overwritten; the stamp
+        comes from the first zone category. Apply with explicit port and single-use token;
+        each is read back. Requires Tapir. Never saves."""
+        return await zone_categories_tool.create_zone_categories(
+            client_of(ctx), categories, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

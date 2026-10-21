@@ -41,6 +41,7 @@ from archicad_mcp_aberto.tools import (
     voids,
     wall_dimensions,
     write,
+    zone_categories,
     zones,
 )
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
@@ -131,6 +132,7 @@ INPUTS = {
     "get_element_groups": {"element_guids": [GUID]},
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
+    "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
     "lock_elements": {"element_guids": [GUID]},
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
@@ -398,6 +400,7 @@ TARGETED = {
         wall_dimensions,
         write,
         zones,
+        zone_categories,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__

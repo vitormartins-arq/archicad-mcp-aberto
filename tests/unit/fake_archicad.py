@@ -368,6 +368,20 @@ class FakeArchicad:
     library_skipped_count: int = 0
     library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
     lamp_parts: set[str] = field(default_factory=lambda: {"Pendente 01"})  # Lamp parts
+    # Zone categories in the GetZoneCategories shape (Tapir 1.7.0 source); synthetic.
+    zone_categories: dict[str, dict] = field(
+        default_factory=lambda: {
+            "5C5C5C5C-0000-4000-8000-000000000001": {
+                "attributeId": {"guid": "5C5C5C5C-0000-4000-8000-000000000001"},
+                "index": "1",
+                "name": "Área",
+                "categoryCode": "AR",
+                "color": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                "stampName": "Carimbo de Zona 30",
+            }
+        }
+    )
+    zone_category_code_stored: str | None = None  # Archicad keeps this code instead
     lose_delete_response: bool = False
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
@@ -1421,6 +1435,48 @@ class FakeArchicad:
                 for i, n in self.surfaces.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetAttributesByType" and args["attributeType"] == "ZoneCategory":
+            rows = [
+                {k: deepcopy(r[k]) for k in ("attributeId", "index", "name")}
+                for r in self.zone_categories.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "CreateZoneCategories":
+            # Shapes from the Tapir 1.7.0 source (AttributeCommands.cpp); not live captured.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for index, data in enumerate(args["zoneCategoryDataArray"]):
+                assert set(data) <= {"name", "categoryCode", "color"}
+                taken = {r["name"] for r in self.zone_categories.values()}
+                if index in self.create_errors or data["name"] in taken:
+                    error = {"error": {"code": -2130313081, "message": "Already exists."}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                guid = str(uuid4()).upper()
+                first = next(iter(self.zone_categories.values()), {})
+                self.zone_categories[guid] = {
+                    "attributeId": {"guid": guid},
+                    "index": str(len(self.zone_categories) + 1),
+                    "name": data["name"],
+                    "categoryCode": data.get("categoryCode", ""),
+                    "color": dict(data.get("color", {"red": 1.0, "green": 1.0, "blue": 1.0})),
+                    "stampName": first.get("stampName", ""),
+                }
+                if self.zone_category_code_stored is not None:
+                    self.zone_categories[guid]["categoryCode"] = self.zone_category_code_stored
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetZoneCategories":
+            out = []
+            for item in args["attributeIds"]:
+                row = self.zone_categories.get(item["attributeId"]["guid"])
+                if row is None:
+                    error = {"code": -2130313100, "message": "Failed to retrieve attribute."}
+                    out.append({"error": error})
+                    continue
+                keys = {"attributeId", "index", "name", *args.get("fields", [])}
+                out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"zoneCategories": out}})
         if name == "GetAttributesByType" and args["attributeType"] == "Fill":
             return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":

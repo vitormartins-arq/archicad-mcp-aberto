@@ -865,3 +865,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   com `favorite`. 2328 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
   102 ferramentas. O export de favoritos do LAB Template (`lab_details.json`) não tem
   nenhum tipo de luminária; se houver favorito de luminária, ele está entre os 44 `Symb`.
+- C17: `create_zone_categories` em `tools/zone_categories.py`, pelo
+  `CreateZoneCategories` do Tapir 1.7.0, sempre com `overwriteExisting` falso; nome que
+  já existe é recusado na prévia. A conferência lê `GetZoneCategories` (nome, código e
+  cor). 2348 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 103
+  ferramentas. Falta levar as categorias do LAB Template ao `lab_apply_template`.

@@ -367,6 +367,12 @@ OPERATIONS = {
         "layer_receipt_id",
         "New layers are added; an existing name is never overwritten.",
     ),
+    "create_zone_categories": (
+        "zone category",
+        "zone_category_receipt_id",
+        "New zone categories are added; an existing name is never overwritten. The zone "
+        "stamp comes from the project's first zone category.",
+    ),
     "set_element_layers": (
         "layer change",
         "layer_change_receipt_id",
