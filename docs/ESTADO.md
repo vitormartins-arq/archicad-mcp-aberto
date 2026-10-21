@@ -890,3 +890,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   add-on "Archicad MCP Aberto": Developer ID 1110659426, Local ID 287719994. Viraram os padrões
   do `addon/CMakeLists.txt`, então o `.apx` do CI (PR #68) já carrega no ArchiCAD. Outro Local ID,
   3542434559 ("LAB Automação"), foi registrado no mesmo dia para comandos só do LAB; não usar aqui.
+
+- **Claude / teste ao vivo da câmera 3D, 21/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0,
+  notebook do Vitor, projeto WG Formosa_R04 com o ok dele (só a câmera 3D, nada salvo), add-on de
+  de83f14. Câmera e alvo voltam exatos; a captura funciona. O ArchiCAD guarda azimute e ângulo de
+  visão em graus: corrigido no add-on (radianos fora, graus dentro, padrões ao sair da paralela).
+  Falta retestar essa correção ao vivo. Detalhes em `addon/CAMERA.md`.

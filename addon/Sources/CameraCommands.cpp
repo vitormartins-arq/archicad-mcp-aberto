@@ -8,8 +8,23 @@
 
 #include <cmath>
 
-// Not tested live yet: the azimuth convention and the parallel projection fields below
-// follow the API reference only and must be checked in Archicad (addon/CAMERA.md).
+// Archicad keeps the view angles in degrees (live test, AC30 build 3001, 21/10/2026):
+// the perspective azimuth is atan2 (camera - target) in 0..360, the view cone is 60 by
+// default. The MCP speaks radians, so these commands convert at the edge. The roll
+// angle is assumed to be in degrees too; it was 0 in every test.
+
+static const double DefaultViewConeDeg = 60.0;
+static const double Pi = 3.14159265358979323846;
+
+static double ToRadians (double degrees)
+{
+    return degrees * Pi / 180.0;
+}
+
+static double ToDegrees (double radians)
+{
+    return radians * 180.0 / Pi;
+}
 
 static GS::ObjectState Point3D (const API_Coord& c, double z)
 {
@@ -34,14 +49,14 @@ static GS::ObjectState ProjectionToObjectState (const API_3DProjectionInfo& info
         const API_PerspPars& p = info.u.persp;
         os.Add ("camera", Point3D (p.pos, p.cameraZ));
         os.Add ("target", Point3D (p.target, p.targetZ));
-        os.Add ("viewCone", p.viewCone);
-        os.Add ("rollAngle", p.rollAngle);
+        os.Add ("viewCone", ToRadians (p.viewCone));
+        os.Add ("rollAngle", ToRadians (p.rollAngle));
         os.Add ("distance", p.distance);
-        os.Add ("azimuth", p.azimuth);
+        os.Add ("azimuth", ToRadians (p.azimuth));
         os.Add ("twoPointPerspective", p.isTwoPointPersp);
     } else {
         const API_AxonoPars& a = info.u.axono;
-        os.Add ("azimuth", a.azimuth);
+        os.Add ("azimuth", ToRadians (a.azimuth));
         os.Add ("projectionMode", static_cast<Int32> (a.projMod));
     }
     return os;
@@ -83,7 +98,7 @@ GS::Optional<GS::UniString> Set3DCameraCommand::GetInputParametersSchema () cons
         "properties": {
             "perspective": {
                 "type": "object",
-                "description": "Perspective camera, in metres; the view cone in radians.",
+                "description": "Perspective camera, in metres; the view cone in radians (converted to Archicad's degrees, default 60 degrees).",
                 "properties": {
                     "camera": {"type": "object", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "z": {"type": "number"}}, "required": ["x", "y", "z"]},
                     "target": {"type": "object", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "z": {"type": "number"}}, "required": ["x", "y", "z"]},
@@ -95,7 +110,7 @@ GS::Optional<GS::UniString> Set3DCameraCommand::GetInputParametersSchema () cons
             },
             "parallel": {
                 "type": "object",
-                "description": "Parallel projection: azimuth in radians and Archicad's projection mode number.",
+                "description": "Parallel projection: azimuth in radians (converted to Archicad's degrees) and Archicad's projection mode number.",
                 "properties": {
                     "azimuth": {"type": "number"},
                     "projectionMode": {"type": "integer"}
@@ -136,16 +151,32 @@ GS::ObjectState Set3DCameraCommand::Execute (const GS::ObjectState& parameters, 
         // A free camera, not tied to a floor plan Camera element.
         info.camGuid = APINULLGuid;
         info.actCamSet = APINULLGuid;
+        const bool wasPerspective = info.isPersp;
         info.isPersp = true;
         API_PerspPars& p = info.u.persp;
+        if (!wasPerspective) {
+            // u.persp still holds the parallel settings: start from sane defaults.
+            p = API_PerspPars {};
+            p.viewCone = DefaultViewConeDeg;
+            p.isTwoPointPersp = false;
+        }
         p.pos = camera;
         p.target = target;
         p.cameraZ = cameraZ;
         p.targetZ = targetZ;
         p.distance = distance;
-        p.azimuth = std::atan2 (camera.y - target.y, camera.x - target.x);
+        double azimuth = ToDegrees (std::atan2 (camera.y - target.y, camera.x - target.x));
+        if (azimuth < 0.0) {
+            azimuth += 360.0;
+        }
+        p.azimuth = azimuth;
         p.rollAngle = 0.0;
-        perspective->Get ("viewCone", p.viewCone);
+        double viewCone = 0.0;
+        if (perspective->Get ("viewCone", viewCone)) {
+            p.viewCone = ToDegrees (viewCone);
+        } else if (!(p.viewCone > 0.0 && p.viewCone < 180.0)) {
+            p.viewCone = DefaultViewConeDeg;
+        }
         perspective->Get ("twoPointPerspective", p.isTwoPointPersp);
     } else if (parallel != nullptr) {
         if (info.isPersp) {
@@ -162,7 +193,10 @@ GS::ObjectState Set3DCameraCommand::Execute (const GS::ObjectState& parameters, 
             }
         }
         API_AxonoPars& a = info.u.axono;
-        parallel->Get ("azimuth", a.azimuth);
+        double azimuth = 0.0;
+        if (parallel->Get ("azimuth", azimuth)) {
+            a.azimuth = ToDegrees (azimuth);
+        }
         Int32 mode = a.projMod;
         if (parallel->Get ("projectionMode", mode)) {
             a.projMod = static_cast<short> (mode);

@@ -37,4 +37,6 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
   `{"parallel": {azimuth?, projectionMode?}}`; answers with the projection read back.
 - `Get3DWindowImage` (Archicad 30 only): the 3D window as base64 PNG or JPG.
 
-None is tested live yet; see `CAMERA.md`.
+Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands
+convert. A perspective camera defaults to a 60 degree view cone. First live test
+(AC30 build 3001 BRA, 21/10/2026) in `CAMERA.md`.

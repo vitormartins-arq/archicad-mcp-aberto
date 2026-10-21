@@ -26,8 +26,24 @@ The MCP tool `create_3d_scenes` then reads the model's 3D box, picks angles (cor
 axonometrics, eye-level perspectives at 1.60 m), sets each camera, saves each scene with
 `CreateViewsInViewMap` into a View Map folder, and checks it with the image.
 
+## Live test, 21/10/2026
+
+Archicad 30 build 3001 BRA, Tapir 1.7.0, a real project opened read-only for elements
+(only the 3D camera changed, nothing saved), add-on built from de83f14.
+
+- `Set3DCamera` perspective: camera and target read back exactly as sent, three times.
+- Archicad stores the perspective azimuth in degrees, 0..360, equal to
+  atan2(camera.y - target.y, camera.x - target.x); it recomputes it from camera and target.
+- The view cone is in degrees too (60 by default). Sending 1.047 (60 degrees in radians)
+  gave a 1.047 degree cone and an almost black 3D window. The parallel azimuth is in
+  degrees as well.
+- Going from parallel back to perspective without a view cone read back viewCone 0 and
+  twoPointPerspective true: leftovers from the parallel settings in the union.
+- `Get3DWindowImage`: five 2378x1080 PNGs, all fine.
+
+Fixed after the test: radians at the MCP side, degrees inside, and default perspective
+settings when switching from parallel. Not yet retested live.
+
 ## Still needed
 
-- A Local ID for this add-on, generated in Graphisoft's developer portal with the same
-  Developer ID as LAB Blocos. The add-on must not reuse LAB Blocos's IDs.
-- Build on the office PC (Visual Studio Build Tools 2022, DevKit 29 and 30 already there).
+- Retest the angle fix live (view cone, parallel azimuth, parallel to perspective).
