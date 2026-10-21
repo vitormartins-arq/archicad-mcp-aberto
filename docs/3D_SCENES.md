@@ -55,7 +55,7 @@ Skip rooms where no good picture exists (storage, shafts, rooms smaller than abo
 
 - One general axonometric of the whole building from the most informative corner.
 - One cut axonometric per story to see inside: a horizontal 3D cutting plane about
-  1.20 m above that story's floor (`Set3DCutPlanes`), same angle as the general one.
+  1.50 m above that story's floor (`Set3DCutPlanes`), same angle as the general one.
   Read an existing cut with `Get3DCutPlanes` first if the project has one: the raw plane
   values must be confirmed live before they are computed.
 
