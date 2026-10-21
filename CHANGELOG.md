@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
+  `favorite` (Tapir 1.7.0 `favoriteName`): the favorite is applied to the tool first,
+  the given fields override it, and the size and structure it holds may be left out.
+  The preview checks the favorite exists for that element type. Not tested live yet.
+
 - Add `create_hotspots` to `tools/drafting.py`: up to 50 2D hotspots by Tapir 1.7.0
   `CreateHotspots`, with position, optional height, layer and pen. Read back by type,
   story, layer, position, height and pen. Not tested live yet.

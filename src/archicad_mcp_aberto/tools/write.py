@@ -60,12 +60,39 @@ class Point(InputModel):
     y: float
 
 
-class WallCreate(InputModel):
+FavoriteName = Annotated[str, Field(min_length=1, max_length=255)]
+
+
+class _Favored(InputModel):
+    """A create input that may start from a named favorite of the element's tool.
+
+    Tapir 1.7.0 applies the favorite to the tool defaults first, then the fields given
+    here override it. With a favorite, the settings it holds (size, structure, layer,
+    materials) may be left out and come from the favorite.
+    """
+
+    favorite: FavoriteName | None = None
+
+    @field_validator("favorite")
+    @classmethod
+    def not_blank(cls, value: str | None) -> str | None:
+        # Kept exactly: Archicad 30 BRA favorites can start with a space.
+        if value is not None and not value.strip():
+            raise ValueError("favorite must not be blank.")
+        return value
+
+    def _needs(self, *names: str) -> None:
+        missing = [n for n in names if getattr(self, n) is None]
+        if missing and self.favorite is None:
+            raise ValueError(f"{', '.join(missing)} required unless a favorite is given.")
+
+
+class WallCreate(_Favored):
     start: Point
     end: Point
     floor_index: int
-    height: Positive
-    thickness: Positive
+    height: Positive | None = None
+    thickness: Positive | None = None
     bottom_offset: float = 0.0
     offset: float = 0.0
     reference_line: Literal["Outside", "Center", "Inside"] = "Center"
@@ -74,28 +101,30 @@ class WallCreate(InputModel):
     def nonzero_length(self) -> WallCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A wall must have a reference line at least 0.000001 m long.")
+        self._needs("height", "thickness")
         return self
 
 
-class BeamCreate(InputModel):
+class BeamCreate(_Favored):
     start: Point
     end: Point
     floor_index: int
     level: float
-    width: Positive
-    height: Positive
+    width: Positive | None = None
+    height: Positive | None = None
 
     @model_validator(mode="after")
     def nonzero_length(self) -> BeamCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A beam must be at least 0.000001 m long.")
+        self._needs("width", "height")
         return self
 
 
-class ColumnCreate(InputModel):
+class ColumnCreate(_Favored):
     origin: Point
     floor_index: int
-    height: Positive
+    height: Positive | None = None
     base_level: float
     section: Literal["rectangular", "circular"] = "rectangular"
     width: Positive | None = None
@@ -104,12 +133,19 @@ class ColumnCreate(InputModel):
 
     @model_validator(mode="after")
     def valid_section(self) -> ColumnCreate:
+        self._needs("height")
+        if self.favorite is not None and self.size_from_favorite:
+            return self
         if self.section == "rectangular":
             if self.width is None or self.depth is None or self.diameter is not None:
                 raise ValueError("Rectangular columns require width/depth and no diameter.")
         elif self.diameter is None or self.width is not None or self.depth is not None:
             raise ValueError("Circular columns require diameter and no width/depth.")
         return self
+
+    @property
+    def size_from_favorite(self) -> bool:
+        return (self.width, self.depth, self.diameter) == (None, None, None)
 
 
 class ObjectCreate(InputModel):
@@ -127,10 +163,10 @@ class ObjectCreate(InputModel):
         return value
 
 
-class SlabCreate(InputModel):
+class SlabCreate(_Favored):
     outline: Annotated[list[Point], Field(min_length=3, max_length=200)]
     floor_index: int
-    thickness: Positive
+    thickness: Positive | None = None
     level: float
 
     @model_validator(mode="after")
@@ -164,6 +200,7 @@ class SlabCreate(InputModel):
                 if _segments_intersect(a, b, c, d):
                     raise ValueError("A slab polygon must not intersect or touch itself.")
         self.outline = points
+        self._needs("thickness")
         return self
 
 
@@ -591,8 +628,23 @@ async def _guard_sequential_context(client: ArchicadClient, receipt: dict, index
     return False
 
 
+def _favored(payload: dict, item: _Favored, settings: dict[str, str]) -> dict:
+    """With a favorite, drop the settings the caller left out; Tapir takes them from it.
+
+    ``settings`` maps payload keys to the input field that sets them ("" = always drop).
+    """
+    if item.favorite is None:
+        return payload
+    given = item.model_fields_set
+    for key, name in settings.items():
+        if not name or name not in given or payload.get(key) is None:
+            payload.pop(key, None)
+    payload["favoriteName"] = item.favorite
+    return payload
+
+
 def _create_payload(wall: WallCreate) -> dict:
-    return {
+    payload = {
         "begCoordinate": wall.start.model_dump(),
         "endCoordinate": wall.end.model_dump(),
         "floorIndex": wall.floor_index,
@@ -604,6 +656,18 @@ def _create_payload(wall: WallCreate) -> dict:
         "structureType": "Basic",
         "referenceLineLocation": wall.reference_line,
     }
+    return _favored(
+        payload,
+        wall,
+        {
+            "height": "height",
+            "thickness": "thickness",
+            "zCoordinate": "bottom_offset",
+            "offset": "offset",
+            "structureType": "",
+            "referenceLineLocation": "reference_line",
+        },
+    )
 
 
 async def _plan(
@@ -638,19 +702,24 @@ async def _plan(
                 )
             if len({row["guid"].upper() for row in candidates}) != 1:
                 raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
+    exact = await _favorite_names(client, port, kind, walls)
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
         payload = (
-            {
-                "polygonCoordinates": [p.model_dump() for p in wall.outline],
-                "floorIndex": wall.floor_index,
-                "thickness": wall.thickness,
-                "level": wall.level,
-                "referencePlaneLocation": "Top",
-                "polygonArcs": [],
-                "holes": [],
-            }
+            _favored(
+                {
+                    "polygonCoordinates": [p.model_dump() for p in wall.outline],
+                    "floorIndex": wall.floor_index,
+                    "thickness": wall.thickness,
+                    "level": wall.level,
+                    "referencePlaneLocation": "Top",
+                    "polygonArcs": [],
+                    "holes": [],
+                },
+                wall,
+                {"thickness": "thickness"},
+            )
             if slab
             else _column_payload(wall)
             if column
@@ -663,6 +732,8 @@ async def _plan(
             else _create_payload(wall)
         )
         item = {"index": index, "status": "ready", "parameters": payload}
+        if "favoriteName" in payload:
+            payload["favoriteName"] = item["favorite"] = exact[payload["favoriteName"]]
         if obj:
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
             if candidates:
@@ -677,26 +748,48 @@ async def _plan(
     return {"operation": operation, "target": target, "items": items}
 
 
+async def _favorite_names(client, port: int, kind: str, items: list) -> dict[str, str]:
+    """Wanted favorite name -> its exact name in the project; raises when missing."""
+    from archicad_mcp_aberto.tools.favorites import match
+
+    wanted = sorted({i.favorite for i in items if getattr(i, "favorite", None)})
+    if not wanted:
+        return {}
+    response = await client.tapir(port, "GetFavoritesByType", {"elementType": kind})
+    known = response.get("favorites")
+    if not isinstance(known, list):
+        raise ValueError(f"Cannot read the {kind} favorites ({response}).")
+    names = [n for n in known if isinstance(n, str)]
+    out = {}
+    for name in wanted:
+        found = match(names, name)
+        if found is None:
+            raise ValueError(f"No {kind} favorite named {name!r}.")
+        out[name] = found
+    return out
+
+
 def _expected(item: dict) -> dict:
     parameters = item["parameters"]
-    return {
-        "type": "Wall",
-        "floorIndex": parameters["floorIndex"],
-        "details": {
-            "geometryType": "Straight",
-            "structureType": "Basic",
-            "arcAngle": 0.0,
-            "relativeTopStory": 0.0,
-            "profileType": "Normal",
-            "bottomOffset": parameters["zCoordinate"],
-            "referenceLineLocation": parameters["referenceLineLocation"],
-            "begCoordinate": parameters["begCoordinate"],
-            "endCoordinate": parameters["endCoordinate"],
-            "height": parameters["height"],
-            "offset": parameters["offset"],
-            "begThickness": parameters["thickness"],
-        },
+    details = {
+        "geometryType": "Straight",
+        "arcAngle": 0.0,
+        "begCoordinate": parameters["begCoordinate"],
+        "endCoordinate": parameters["endCoordinate"],
     }
+    if "favoriteName" not in parameters:
+        # A favorite may hold a composite or profile and a top linked to a story.
+        details.update(structureType="Basic", relativeTopStory=0.0, profileType="Normal")
+    for key, detail in (
+        ("zCoordinate", "bottomOffset"),
+        ("referenceLineLocation", "referenceLineLocation"),
+        ("height", "height"),
+        ("offset", "offset"),
+        ("thickness", "begThickness"),
+    ):
+        if key in parameters:
+            details[detail] = parameters[key]
+    return {"type": "Wall", "floorIndex": parameters["floorIndex"], "details": details}
 
 
 def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
@@ -935,7 +1028,7 @@ def _slab_mismatches(item: dict, row: Any, target: dict) -> list[str]:
         "type": "Slab",
         "floorIndex": p["floorIndex"],
         "details": {
-            "thickness": p["thickness"],
+            **({"thickness": p["thickness"]} if "thickness" in p else {}),
             "level": p["level"] - story["level"],
             "zCoordinate": p["level"],
             "referencePlaneLocation": "Top",
@@ -972,7 +1065,7 @@ async def create_slabs(
 
 def _column_payload(column: ColumnCreate) -> dict:
     circular = column.section == "circular"
-    return {
+    payload = {
         "coordinates": {**column.origin.model_dump(), "z": column.base_level},
         "floorIndex": column.floor_index,
         "height": column.height,
@@ -983,32 +1076,33 @@ def _column_payload(column: ColumnCreate) -> dict:
         "axisRotationAngle": 0.0,
         "coreAnchor": "Center",
     }
+    settings = {"height": "height"}
+    if column.size_from_favorite:
+        settings |= dict.fromkeys(("width", "depth", "circleBased", "isWidthAndHeightLinked"), "")
+    return _favored(payload, column, settings)
 
 
 def _column_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     p = item["parameters"]
     coords = p["coordinates"]
     story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
-    expected = {
-        "type": "Column",
-        "floorIndex": p["floorIndex"],
-        "details": {
-            "origin": {"x": coords["x"], "y": coords["y"]},
-            "height": p["height"],
-            "zCoordinate": coords["z"],
-            "bottomOffset": coords["z"] - story["level"],
-            "axisRotationAngle": 0.0,
-            "coreAnchor": "Center",
-            "isSlanted": False,
-            "width": p["width"],
-            "depth": p["depth"],
-            "circleBased": p["circleBased"],
-            "isWidthAndHeightLinked": p["circleBased"],
-        },
+    details = {
+        "origin": {"x": coords["x"], "y": coords["y"]},
+        "zCoordinate": coords["z"],
+        "bottomOffset": coords["z"] - story["level"],
+        "axisRotationAngle": 0.0,
+        "coreAnchor": "Center",
+        "isSlanted": False,
     }
+    for key in ("height", "width", "depth", "circleBased"):
+        if key in p:
+            details[key] = p[key]
+    if "circleBased" in p:
+        details["isWidthAndHeightLinked"] = p["circleBased"]
+    expected = {"type": "Column", "floorIndex": p["floorIndex"], "details": details}
     differences = _mismatches(expected, row)
     details = row.get("details") if isinstance(row, dict) else None
-    if isinstance(details, dict) and "profileId" in details:
+    if "favoriteName" not in p and isinstance(details, dict) and "profileId" in details:
         differences.append("details.profileId")
     return differences
 
@@ -1685,7 +1779,7 @@ async def _preview_names(client: ArchicadClient, plan: dict) -> None:
 
 
 def _beam_payload(beam: BeamCreate) -> dict:
-    return {
+    payload = {
         "begCoordinate": beam.start.model_dump(),
         "endCoordinate": beam.end.model_dump(),
         "floorIndex": beam.floor_index,
@@ -1702,18 +1796,23 @@ def _beam_payload(beam: BeamCreate) -> dict:
         "circleBased": False,
         "isWidthAndHeightLinked": False,
     }
+    settings = {"width": "width", "height": "height"}
+    if beam.width is None and beam.height is None:
+        settings |= {"circleBased": "", "isWidthAndHeightLinked": ""}
+    return _favored(payload, beam, settings)
 
 
 def _beam_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     p = item["parameters"]
     story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
-    details = {key: value for key, value in p.items() if key != "floorIndex"}
+    details = {k: v for k, v in p.items() if k not in ("floorIndex", "favoriteName")}
     details.update(level=p["zCoordinate"] - story["level"], beamShape="Straight")
     differences = _mismatches(
         {"type": "Beam", "floorIndex": p["floorIndex"], "details": details}, row
     )
     if (
-        isinstance(row, dict)
+        "favoriteName" not in p
+        and isinstance(row, dict)
         and isinstance(row.get("details"), dict)
         and "profileId" in row["details"]
     ):
@@ -1809,21 +1908,28 @@ async def create_zones(
 
 
 OPERATIONS["add_comment_to_issue"] = (
-    "issue comment", "comment_receipt_id", "Adds comments only; each comment is one Undo step."
+    "issue comment",
+    "comment_receipt_id",
+    "Adds comments only; each comment is one Undo step.",
 )
 
-OPERATIONS.update({
-    "create_view_map_folders": (
-        "View Map folder", "folder_receipt_id",
-        "No guaranteed Navigator Undo; remove new folders manually."
-    ),
-    "clone_to_view_map": (
-        "View Map clone", "view_receipt_id",
-        "No guaranteed Navigator Undo; native settings are inherited."
-    ),
-})
+OPERATIONS.update(
+    {
+        "create_view_map_folders": (
+            "View Map folder",
+            "folder_receipt_id",
+            "No guaranteed Navigator Undo; remove new folders manually.",
+        ),
+        "clone_to_view_map": (
+            "View Map clone",
+            "view_receipt_id",
+            "No guaranteed Navigator Undo; native settings are inherited.",
+        ),
+    }
+)
 
 OPERATIONS["create_classification_items"] = (
-    "classification item", "classification_item_receipt_id",
-    "Creates only under existing parents; each item is one native Undo step."
+    "classification item",
+    "classification_item_receipt_id",
+    "Creates only under existing parents; each item is one native Undo step.",
 )

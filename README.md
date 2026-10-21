@@ -611,6 +611,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   Tapir returns no opening-specific details, so the read-back checks the new element's
   type and that the host lists it among its connected openings (`GetConnectedElements`).
   Fixtures come from the Tapir source, not a live capture.
+- `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
+  `favorite`: the name of a favorite of that tool in the open project (case and outer
+  spaces ignored; the preview refuses a name that is missing or of another type). Tapir
+  1.7.0 applies the favorite to the tool defaults first and the given fields override
+  it, so with a favorite the settings it holds may be left out: wall height and
+  thickness, slab thickness, column height and section, beam width and height. The
+  wall's structure (Basic, Composite or Profile) comes from the favorite too. The
+  read-back checks the geometry and the fields that were given. Fixtures come from the
+  Tapir source, not a live capture.
 - `create_splines([{points, closed?, floor_index, layer?, pen?}], port?, dry_run?,
   confirmation_token?)` draws up to 50 2D splines by Tapir 1.7.0 `CreateSplines`. Each
   goes through 3 to 500 points in metres; Archicad smooths the curve itself (the Bezier

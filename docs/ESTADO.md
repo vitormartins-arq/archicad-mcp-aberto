@@ -812,3 +812,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   (posição, altura opcional, vegetal e pena). Conferência por tipo, pavimento, vegetal,
   posição, altura e pena. 2231 testes simulados e Ruff passaram (Linux, Python 3.13).
   Registro: 98 ferramentas. Próximo: C11 `create_keynote_labels`.
+
+## 2026-10-21 — Claude / C14 criar a partir de favorito (lote 5)
+
+- Pedido do Vitor: com os dois MCPs, modelar já no padrão dele. Passo 1 no aberto:
+  `create_walls`, `create_slabs`, `create_columns` e `create_beams` aceitam `favorite`
+  (o `favoriteName` do Tapir 1.7.0, `CreateElementsCommandBase`). Com favorito, os
+  campos de configuração que ficaram de fora saem do payload (a parede não manda mais
+  `structureType` Basic, que sobrescreveria a composição) e a conferência só cobra a
+  geometria e o que foi dado. A prévia confere o favorito por `GetFavoritesByType`.
+  Lote `lote/claude-5`. Próximo: o mesmo em textos, etiquetas, zonas, objetos, malhas e
+  desenho 2D; depois, no Lab, o guia de qual favorito LAB usar para cada coisa.

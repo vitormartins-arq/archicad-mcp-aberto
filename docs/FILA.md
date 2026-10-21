@@ -61,6 +61,25 @@ fim das listas). (T23 a T27 já entraram na main; a T23 ficou bloqueada no AC30.
 - **T34 local e unidades do projeto, branch `codex/t34-project-location`.**
   `get_project_location` por `GetGeoLocation` e `GetCalculationUnits`, e
   `get_layout_settings` por `GetLayoutSettings`.
+- **T35 `create_layer_combinations`, branch `codex/t35-layer-combinations`.** Em
+  `tools/layer_settings.py`, pelo `CreateLayerCombinations` da JSON API oficial: nome e,
+  por vegetal (por nome), oculto, travado, aramado e grupo de interseção. Até 20.
+  Recuse nome existente e vegetal inexistente na prévia. Conferência por
+  `list_layer_combinations(include_layers=True)`. Sem mudar nem apagar combinações.
+- **T36 leituras de MEP, branch `codex/t36-mep-read`.** Arquivo `tools/mep.py`:
+  `list_mep_systems` (`GetMEPSystems`, `GetMEPDistributionSystems`), `get_mep_elements`
+  (`GetMEPElements`, `GetMEPRoutingElements`, `GetMEPPorts`) e
+  `get_mep_preference_tables` (`GetMEPPreferenceTables`).
+- **T37 estrutura dos elementos, branch `codex/t37-element-structure`.**
+  `get_subelements` (`GetSubelementsOfHierarchicalElements`), `get_element_trims`
+  (`GetElementTrims`), `get_solid_operation_links` (`GetSolidElementLinks`) e
+  `get_section_elements` (`GetSectionElements`). Até 100 elementos.
+- **T38 cotas, OVM e bibliotecas, branch `codex/t38-dimensions-mvo-libraries`.**
+  `get_dimension_data` (`GetDimensionData`), `get_model_view_options`
+  (`GetModelViewOptions`) e `list_libraries` (`GetLibraries`, `GetSpecialFolders`).
+- **T39 imagens de prévia, branch `codex/t39-preview-images`.** `get_element_preview`
+  (`GetElementPreviewImage`), `get_zone_image` (`GetRoomImage`) e
+  `get_favorite_preview` (`GetFavoritePreviewImage`) como imagem PNG do MCP, até 10.
 
 ## Tarefas do Claude (Codex: não pegue)
 
@@ -97,6 +116,11 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
 - **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
+- **C14 criar a partir de favorito.** (Paredes, lajes, pilares e vigas feitos no lote
+  `lote/claude-5`.) `favoriteName` do Tapir 1.7.0 nas ferramentas de criação. Falta:
+  textos, etiquetas, zonas, objetos, malhas, linhas, polilinhas, arcos, círculos,
+  hachuras, splines e pontos quentes.
+
 
 ## Integrado
 
