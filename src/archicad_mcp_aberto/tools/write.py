@@ -575,6 +575,14 @@ OPERATIONS["create_morphs"] = (
     "dialog that blocks the API until someone clicks it; show that story first.",
 )
 CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
+OPERATIONS["create_stairs"] = (
+    "stair",
+    "stair_receipt_id",
+    "Straight stairs; Stair tool defaults or the favorite for what is not given. "
+    "Create on the story Archicad shows: another story may open a dialog that blocks "
+    "the API until someone clicks it.",
+)
+CREATE_COMMANDS["create_stairs"] = ("CreateStairs", "stairsData")
 OPERATIONS["create_wall_thickness_dimensions"] = (
     "wall thickness dimension",
     "dimension_receipt_id",

@@ -384,6 +384,10 @@
       "description": "Safely create box morphs from absolute project coordinates, with preview and 3D box read-back."
     },
     {
+      "name": "create_stairs",
+      "description": "Safely create straight stairs along a baseline, with preview and 3D box read-back."
+    },
+    {
       "name": "create_wall_thickness_dimensions",
       "description": "Safely add associative thickness dimensions to existing walls, with preview and read-back."
     },

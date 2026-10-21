@@ -40,6 +40,7 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
+from archicad_mcp_aberto.tools import stairs as stairs_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
@@ -1523,6 +1524,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         one-use token and receipt; never saves."""
         return await morphs_tool.create_morphs(
             client_of(ctx), morphs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_stairs(
+        ctx: Context,
+        stairs: list[stairs_tool.StairCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 straight stairs: a start-end baseline in metres,
+        base_level (absolute Z) and explicit floor_index. Optional total_height,
+        flight_width, risers and `favorite` (a Stair favorite's name); what is left out
+        comes from the Stair tool defaults or the favorite. Create on the story Archicad
+        shows. Reads back type, story and 3D box. Explicit apply port, one-use token and
+        receipt; never saves."""
+        return await stairs_tool.create_stairs(
+            client_of(ctx), stairs, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

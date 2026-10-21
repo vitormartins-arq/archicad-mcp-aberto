@@ -879,3 +879,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   soma das camadas lidas no `GetComposites`). O `lab_find_favorite` do Lab já devolve a
   composição do favorito. O falso agora recusa parede sem altura ou espessura. 2353
   testes simulados e Ruff passaram (Linux, Python 3.13).
+- C16: `create_stairs` em `tools/stairs.py`, pelo `CreateStairs` do Tapir 1.7.0: escada
+  reta por linha de base, com altura total, largura do lance, número de espelhos e
+  `favorite` opcionais. O Tapir não devolve detalhes de escada (`Not yet supported
+  element type`), então a conferência é tipo, pavimento e caixa 3D. 2375 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Registro: 104 ferramentas. Próximo:
+  C18 compostos.

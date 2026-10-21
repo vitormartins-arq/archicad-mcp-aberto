@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_stairs` (`tools/stairs.py`): straight stairs by Tapir 1.7.0
+  `CreateStairs`, with `favorite`, read back by type, story and 3D box. Not tested live
+  yet.
+
 - Fix `create_walls` with `favorite`: Tapir 1.7.0 `CreateWalls` requires height and
   thickness even with a favorite, so a wall with only a favorite was refused live
   (Archicad 30 build 3001 BRA, 21/10/2026). Height and thickness are required again,

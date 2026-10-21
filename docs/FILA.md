@@ -119,7 +119,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C15 `create_lamps`.** (Feito no lote `lote/claude-7`.) `CreateLamps`: luminárias por nome de peça de biblioteca, no
   padrão de `create_objects`, com `favorite`. Conferência por tipo, pavimento, origem e
   peça.
-- **C16 `create_stairs`.** `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
+- **C16 `create_stairs`.** (Feito no lote `lote/claude-7`.) `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
   ele aceita): escada reta por linha de base e altura, com `favorite`, conferida pela
   leitura de tipo, pavimento e caixa 3D.
 - **C17 categorias de zona.** (Feito no lote `lote/claude-7`; falta o Lab.) `CreateZoneCategories`: categorias novas com nome, código

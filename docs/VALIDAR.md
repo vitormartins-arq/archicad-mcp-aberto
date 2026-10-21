@@ -633,3 +633,11 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   total dela, no vegetal do favorito, e que o recibo dá `verified`.
 - [ ] **Parede só com favorito.** A prévia deve pedir altura e espessura, e avisar que a
   composição do favorito se perde sem `composite`.
+
+## Lote do Claude C16: escadas
+
+- [ ] **create_stairs.** No projeto novo, no pavimento que aparece: "Faça uma escada reta
+  de (0,0) a (4,0), altura 2,88, largura 1,10, 16 espelhos." Conferir na planta e no 3D,
+  e que o recibo dá `verified`. Repetir só com um favorito de escada LAB, sem tamanhos.
+- [ ] Anotar onde a linha de base fica (borda ou meio do lance): a conferência só exige
+  que a caixa 3D cubra a linha.

@@ -64,6 +64,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
 | `create_lamps` | Write | Up to 20 lamps by library part name, position and angle | yes |
+| `create_stairs` | Write | Up to 20 straight stairs along a baseline, with `favorite` | yes |
 | `create_zone_categories` | Write | Up to 50 new zone categories with name, code and colour | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
@@ -684,7 +685,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `CreateZoneCategories`. It never overwrites: a name the project already has, or a
   repeated name, is refused in the preview. Colours go from 0 to 1. Tapir copies the
   zone stamp from the project's first category. The read-back is `GetZoneCategories`
-  (name, code and colour). Registry: **103 tools (29 reads, 74 writes/interactions)**.
+  (name, code and colour).
+- `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
+  risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
+  stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from
+  `base_level` (absolute Z). What is left out comes from the Stair tool defaults or the
+  favorite; Archicad's stair rules set riser and tread. Tapir returns no stair details,
+  so after type and story the read-back checks the 3D box: it covers the baseline, starts
+  at the base level and reaches the total height when one was given. Create on the story
+  Archicad shows. Registry: **104 tools (29 reads, 75 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

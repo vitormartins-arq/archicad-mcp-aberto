@@ -36,6 +36,7 @@ from archicad_mcp_aberto.tools import (
     roofs,
     sections,
     selection,
+    stairs,
     texts,
     views,
     voids,
@@ -264,6 +265,17 @@ INPUTS = {
             }
         ]
     },
+    "create_stairs": {
+        "stairs": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 3, "y": 0},
+                "floor_index": 0,
+                "base_level": 0,
+                "total_height": 2.8,
+            }
+        ]
+    },
     "create_morphs": {
         "morphs": [
             {
@@ -394,6 +406,7 @@ TARGETED = {
         roofs,
         sections,
         selection,
+        stairs,
         texts,
         views,
         voids,

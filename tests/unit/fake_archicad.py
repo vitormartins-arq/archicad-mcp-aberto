@@ -449,6 +449,7 @@ class FakeArchicad:
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
+    stair_box_drop: float = 0.0  # metres the created stair's 3D box sits below its base
     hosted_openings: dict[str, list[str]] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
     command_requests: list[dict] = field(default_factory=list)
@@ -2327,6 +2328,42 @@ class FakeArchicad:
                 )
                 rows.append({"elements": [self._id(g) for g in found]})
             return ok({"addOnCommandResponse": {"connectedElements": rows}})
+        if name == "CreateStairs":
+            # Tapir 1.7.0 source: GetDetailsOfElements has no Stair branch, so details hold
+            # only its "Not yet supported" error. The 3D box (flight centred on the
+            # baseline, tool default 1.2 m wide and 3.0 m high) is synthetic, not live.
+            out = []
+            for index, stair in enumerate(args["stairsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                stair, extra = self._favored("Stair", stair)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Stair"
+                self.details[guid] = {
+                    "type": "Stair",
+                    "floorIndex": stair["floorIndex"],
+                    "layerIndex": 1,
+                    "details": {"error": "Not yet supported element type"},
+                }
+                (a, b), half = stair["baseLinePoints"], stair.get("flightWidth", 1.2) / 2
+                length = math.hypot(b["x"] - a["x"], b["y"] - a["y"])
+                nx, ny = -(b["y"] - a["y"]) / length * half, (b["x"] - a["x"]) / length * half
+                xs = [p["x"] + d for p in (a, b) for d in (nx, -nx)]
+                ys = [p["y"] + d for p in (a, b) for d in (ny, -ny)]
+                z = stair["zCoordinate"] + self.stair_box_drop
+                self.bounding_boxes_3d[guid] = {
+                    "boundingBox3D": {
+                        "xMin": min(xs), "yMin": min(ys), "zMin": z,
+                        "xMax": max(xs), "yMax": max(ys),
+                        "zMax": z + stair.get("totalHeight", 3.0),
+                    }
+                }  # fmt: skip
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateMorphs":
             # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
             # morph_open_body copies the live AC30 result of the `size` box (20/10/2026):
