@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     project_info,
     property_definitions,
     read,
+    revisions,
     write,
 )
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
@@ -1342,7 +1343,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1361,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1378,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1486,6 +1484,29 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_document_revisions(ctx: Context, port: int | None = None) -> dict:
+        """List document revisions and their layout information; read-only."""
+        return await revisions.list_document_revisions(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_revision_issues(ctx: Context, port: int | None = None) -> dict:
+        """List revision issues and issuance state; never issues a revision."""
+        return await revisions.list_revision_issues(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_revision_changes(
+        ctx: Context,
+        element_guids: list[str] | None = None,
+        layout_database_guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """List revision changes and optionally aligned changes for up to 100 elements
+        and 100 layout databases. Read-only; never emits or modifies a revision."""
+        return await revisions.get_revision_changes(
+            client_of(ctx), element_guids, layout_database_guids, port
         )
 
     return mcp

@@ -633,3 +633,9 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `list_document_revisions(port?)`, `list_revision_issues(port?)` and
+  `get_revision_changes(element_guids?, layout_database_guids?, port?)` expose Tapir 1.7.0
+  revision data without emitting or changing revisions. Entity lists accept at most 100
+  GUIDs and preserve aligned errors. Fixtures are source-derived, not a live capture.
+  Registry: **101 tools (32 reads, 69 writes/interactions)**.

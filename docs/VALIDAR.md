@@ -567,3 +567,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_hotspots.** No pavimento que está na tela: "Ponha pontos quentes em
   (1,1) e (2,1), o segundo com altura 1,20 m." Conferir na planta os dois pontos e, nas
   configurações do segundo, a altura 1,20 em relação ao pavimento. Recibo `verified`.
+
+## T32 — Revisions
+- [ ] Compare document revisions, issue status and custom data with the Change Manager.
+- [ ] Confirm current changes for valid/invalid element and layout GUIDs stay row-aligned.

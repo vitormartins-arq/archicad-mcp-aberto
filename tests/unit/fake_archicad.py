@@ -801,6 +801,41 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in {
+            "GetDocumentRevisions",
+            "GetRevisionIssues",
+            "GetRevisionChanges",
+            "GetRevisionChangesOfElements",
+            "GetCurrentRevisionChangesOfLayouts",
+        }:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_revisions_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetDocumentRevisions":
+                key, rows = "documentRevisions", fixture["documentRevisions"]
+            elif name == "GetRevisionIssues":
+                key, rows = "revisionIssues", fixture["revisionIssues"]
+            elif name == "GetRevisionChanges":
+                key, rows = "revisionChanges", fixture["revisionChanges"]
+            else:
+                source_key = (
+                    "elements" if name == "GetRevisionChangesOfElements" else "layoutDatabaseIds"
+                )
+                id_key = "elementId" if name == "GetRevisionChangesOfElements" else "databaseId"
+                key = (
+                    "revisionChangesOfElements"
+                    if name == "GetRevisionChangesOfElements"
+                    else "currentRevisionChangesOfLayouts"
+                )
+                rows = [
+                    {"revisionChanges": deepcopy(fixture["revisionChanges"])}
+                    if row[id_key]["guid"] != "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD"
+                    else {"error": {"code": -2, "message": "Entity not found"}}
+                    for row in args[source_key]
+                ]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
         if name == "GetDesignOptionSets":
             return ok(
                 {
@@ -886,9 +921,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -2648,6 +2687,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )
