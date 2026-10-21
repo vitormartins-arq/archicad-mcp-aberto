@@ -367,3 +367,6 @@
 - Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
+
+### Zone boundaries and relations
+- Add read-only `get_zone_boundaries` and `get_zone_relations` tools from Tapir 1.7.0 source.

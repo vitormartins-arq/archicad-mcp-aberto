@@ -45,6 +45,7 @@ from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
+from archicad_mcp_aberto.tools import zones_read as zones_read_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -1312,7 +1313,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1331,7 +1331,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1349,7 +1348,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1456,6 +1454,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_boundaries(
+        ctx: Context, zone_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read Tapir boundary surfaces for up to 100 zones, in metres."""
+        return await zones_read_tool.get_zone_boundaries(client_of(ctx), zone_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_relations(
+        ctx: Context,
+        zone_guids: list[str],
+        other_element_type: str | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read type-specific relations for up to 100 zones; optional type filter."""
+        return await zones_read_tool.get_zone_relations(
+            client_of(ctx), zone_guids, other_element_type, port
         )
 
     return mcp

@@ -619,3 +619,9 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `get_zone_boundaries(zone_guids, port?)` reads Tapir 1.7.0 zone boundary surfaces for up
+  to 100 zones. `get_zone_relations(zone_guids, other_element_type?, port?)` reads their
+  type-specific relations. Both preserve an error row for each invalid zone. Coordinates,
+  lengths and areas use SI units. Fixtures are source-derived, not live captures. Registry:
+  **98 tools (31 reads, 67 writes/interactions)**.

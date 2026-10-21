@@ -798,3 +798,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Criar num pavimento que não está na tela abre um aviso modal no ArchiCAD que trava a
   API até alguém clicar. A prévia de `create_morphs` avisa disso. 2199 testes simulados e
   Ruff passaram (Linux, Python 3.13). Falta conferir ao vivo o morfo corrigido.
+
+## 2026-10-21 — T30 zone boundaries
+- Added bounded, read-only zone boundary and relation queries using Tapir 1.7.0 source schemas.
+- Fixtures are source-derived, not live captures; invalid zones remain aligned as error rows.

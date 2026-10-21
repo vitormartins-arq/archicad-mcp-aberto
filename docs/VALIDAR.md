@@ -550,3 +550,9 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [x] Morfo corrigido (commit bb25c5a), térreo em x 3 y 2 z 0: verified, caixa 3D exata,
   corpo relido Solid, isClosed true, 6 faces e 8 vértices.
 - [ ] Vitor: no 3D, ver que o morfo em x 3 tem fundo.
+
+## T30 — Zone boundaries and relations
+- [ ] In Archicad 28+, query adjacent and external zones and compare connected element,
+  external flag, neighbouring zone, area and polygon coordinates with the 3D model.
+- [ ] Query relations with and without an element-type filter and confirm invalid zone GUIDs
+  return an error for that row without failing the other zones.
