@@ -437,6 +437,8 @@ class FakeArchicad:
     morph_box_shift: float = 0.0
     morph_open_body: bool = False
     dimension_floor_shift: int = 0
+    dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
+    dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -2088,6 +2090,62 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateAssociativeDimensions":
+            # Shapes from Tapir 1.7.0 source (CreateAssociativeDimensions, GetDimensionData);
+            # not live. inIndex 1 and 2 are the wall reference line ends (Tapir example).
+            out = []
+            for index, data in enumerate(args["dimensionsData"]):
+                assert set(data) <= {"referencePoint", "direction", "floorIndex", "witnessPoints"}
+                walls = [w["elementId"]["guid"] for w in data["witnessPoints"]]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if any(self.elements.get(w) is None for w in walls):
+                    message = "Failed to load referenced element for associative dimension point."
+                    out.append({"error": {"code": -2130313112, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Dimension"
+                floor = data.get("floorIndex", self.details.get(walls[0], {}).get("floorIndex", 0))
+                self.details[guid] = {
+                    "type": "Dimension",
+                    "floorIndex": floor + self.dimension_floor_shift,
+                    "layerIndex": 1,
+                    "details": {},
+                }
+                points = []
+                for witness in data["witnessPoints"]:
+                    wall = witness["elementId"]["guid"]
+                    ends = self.details.get(wall, {}).get("details", {})
+                    key = "begCoordinate" if witness.get("inIndex") == 1 else "endCoordinate"
+                    at = dict(ends.get(key, {"x": 0.0, "y": 0.0}))
+                    at["x"] += self.dimension_witness_shift
+                    points.append(
+                        {
+                            "coordinate": at,
+                            "line": False,
+                            "inIndex": witness.get("inIndex", 0),
+                            "baseElementId": {"guid": wall},
+                        }
+                    )
+                self.dimension_data[guid] = {
+                    "elementId": {"guid": guid},
+                    "direction": dict(data["direction"]),
+                    "dimensionLinePosition": dict(data["referencePoint"]),
+                    "witnessPoints": points,
+                }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetDimensionData":
+            out = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                if guid in self.dimension_data:
+                    out.append(deepcopy(self.dimension_data[guid]))
+                else:
+                    error = {"code": -2130313100, "message": "Element is not a Dimension"}
+                    out.append({"error": error})
+            return ok({"addOnCommandResponse": {"dimensionsData": out}})
         if name == "CreateWallThicknessDimensions":
             # Shapes from Tapir 1.7.0 source (ExtendedElementCommands.cpp); not live.
             out = []

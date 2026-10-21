@@ -130,6 +130,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
+| `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 
 ### Reported live validation
@@ -655,8 +656,17 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   name. The read-back checks each changed field and the new box size within 1 mm.
   Moving and rotating stay with `move_elements` and `rotate_elements`: Tapir's
   `rotationDegreesZ` mixes the x and z rows of the transform in the 1.7.0 source, which
-  looks like a turn about Y, so it is not exposed until checked live. Registry: **100
-  tools (29 reads, 71 writes/interactions)**.
+  looks like a turn about Y, so it is not exposed until checked live.
+- `create_associative_dimensions([{points: [{wall_guid, end}], reference_point,
+  direction?}], port?, dry_run?, confirmation_token?)` adds up to 50 linear dimensions
+  between end points (`start` or `end`) of existing straight walls by Tapir 1.7.0
+  `CreateAssociativeDimensions`, 2 to 20 points each, all on one story. The dimension
+  stays linked to the walls. Its line passes through `reference_point`; `direction`
+  defaults to the first wall's direction. Tapir's own example gives `inIndex` 1 and 2 as
+  the two ends of the reference line. The read-back checks type and story, then reads
+  `GetDimensionData` and compares each witness point's wall and position within 1 mm. A
+  section or elevation window in front makes Tapir fail, so show a floor plan. Registry:
+  **101 tools (29 reads, 72 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

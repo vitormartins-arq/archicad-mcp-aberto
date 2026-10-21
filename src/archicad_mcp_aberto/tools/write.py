@@ -562,6 +562,16 @@ CREATE_COMMANDS["create_wall_thickness_dimensions"] = (
     "CreateWallThicknessDimensions",
     "dimensionsData",
 )
+OPERATIONS["create_associative_dimensions"] = (
+    "associative dimension",
+    "associative_dimension_receipt_id",
+    "Linked to the wall ends; Dimension tool defaults for display. Show a floor plan "
+    "window: Tapir cannot create it with a section window in front.",
+)
+CREATE_COMMANDS["create_associative_dimensions"] = (
+    "CreateAssociativeDimensions",
+    "dimensionsData",
+)
 OPERATIONS["create_openings"] = (
     "opening",
     "opening_receipt_id",

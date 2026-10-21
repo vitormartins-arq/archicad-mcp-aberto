@@ -232,6 +232,17 @@ INPUTS = {
             {"owner_guid": GUID, "base_point": {"x": 1, "y": 0, "z": 0.5}, "width": 1, "height": 1}
         ]
     },
+    "create_associative_dimensions": {
+        "dimensions": [
+            {
+                "points": [
+                    {"wall_guid": GUID, "end": "start"},
+                    {"wall_guid": GUID, "end": "end"},
+                ],
+                "reference_point": {"x": 0, "y": 1},
+            }
+        ]
+    },
     "create_wall_thickness_dimensions": {
         "dimensions": [
             {
@@ -454,7 +465,7 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
-    if name in {"modify_walls", "create_windows", "create_doors"}:
+    if name in {"modify_walls", "create_windows", "create_doors", "create_associative_dimensions"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
@@ -522,7 +533,7 @@ async def test_instance_inventory_tools_report_both_without_selecting(name):
 async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path / "receipts"))
     first, second = instances()
-    if name in {"create_windows", "create_doors"}:
+    if name in {"create_windows", "create_doors", "create_associative_dimensions"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name == "set_layer_settings":
         for instance in (first, second):

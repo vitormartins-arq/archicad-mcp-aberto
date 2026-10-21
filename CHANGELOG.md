@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_associative_dimensions` to `tools/wall_dimensions.py`: linear dimensions
+  between wall ends, linked to the walls, by Tapir 1.7.0 `CreateAssociativeDimensions`,
+  read back witness point by witness point with `GetDimensionData`. Not tested live yet.
+
 - Add `modify_morphs` to `tools/modify.py`: box size (box morphs only, corner kept),
   building material and surface by name, and shadows, by Tapir 1.7.0 `ModifyMorphs`,
   each read back. Not tested live yet.

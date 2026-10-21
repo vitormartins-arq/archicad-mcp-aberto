@@ -603,3 +603,11 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   tamanho mudou, e que continua sólido. Recibo `verified`.
 - [ ] **modify_morphs, material e sombras.** No mesmo morfo: material de construção e
   superfície por nome, e sem sombra. Conferir nas configurações do morfo.
+
+## Lote do Claude C13: cotas associativas
+
+- [ ] **create_associative_dimensions.** Com a planta na frente e duas paredes retas em
+  linha no projeto novo: "Cote do fim da primeira parede ao começo da segunda, com a
+  linha de cota 2 m acima." Conferir na planta que a cota pega as pontas certas (o
+  `inIndex` 1 e 2 é o começo e o fim da linha de referência?), que ela acompanha a
+  parede quando a parede é movida, e o recibo `verified`.

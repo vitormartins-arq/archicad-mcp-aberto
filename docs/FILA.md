@@ -114,7 +114,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.
 - **C12 `modify_morphs`.** (Feito no lote `lote/claude-7`.) `ModifyMorphs`: mudar morfos existentes e editáveis no que o
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
-- **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
+- **C13 cotas associativas.** (Feito no lote `lote/claude-7`, só pontas de parede.) `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,

@@ -852,3 +852,11 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   linhas x e z da matriz, o que parece giro em torno de Y; conferir ao vivo antes de
   expor. 2279 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 100
   ferramentas. Próximo: C13 cotas associativas.
+- C13: `create_associative_dimensions` em `tools/wall_dimensions.py`, por
+  `CreateAssociativeDimensions` do Tapir 1.7.0. Só pontas de paredes retas (começo e fim
+  da linha de referência, `inIndex` 1 e 2, como no exemplo do próprio Tapir); os outros
+  campos do ponto de cota (special, nodeType, nodeId) não são expostos porque o sentido
+  deles depende do tipo de elemento e não foi conferido ao vivo. A conferência lê o
+  `GetDimensionData` e compara parede e posição de cada ponto. 2304 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Registro: 101 ferramentas. Fila do Claude vazia:
+  reabastecer na próxima rodada.

@@ -380,6 +380,10 @@
       "description": "Safely add associative thickness dimensions to existing walls, with preview and read-back."
     },
     {
+      "name": "create_associative_dimensions",
+      "description": "Preview/create linear dimensions between wall ends, linked to the walls, read back point by point."
+    },
+    {
       "name": "create_openings",
       "description": "Safely cut rectangular Opening-tool openings into existing walls or slabs, with preview and host read-back."
     },

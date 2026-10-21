@@ -1509,6 +1509,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_associative_dimensions(
+        ctx: Context,
+        dimensions: list[wall_dimensions_tool.WallPointsDimension],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 linear dimensions between wall ends: points
+        [{wall_guid, end: start|end}] (2 to 20, straight walls on one story),
+        reference_point the line passes through, optional direction (default the first
+        wall's). Linked to the walls; read back point by point. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await wall_dimensions_tool.create_associative_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_openings(
         ctx: Context,
         openings: list[voids_tool.OpeningVoid],
