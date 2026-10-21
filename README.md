@@ -72,6 +72,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_polylines` | Write | Up to 50 straight-segment 2D polylines | yes |
 | `create_splines` | Write | Up to 50 auto-smoothed 2D splines | yes |
 | `create_hotspots` | Write | Up to 50 2D hotspots on a story | yes |
+| `create_keynote_labels` | Write | Up to 20 labels showing a keynote item's fields | yes |
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
@@ -635,8 +636,17 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   confirmation_token?)` places up to 50 2D hotspots by Tapir 1.7.0 `CreateHotspots`:
   position in metres, optional height (the hotspot's z on its story, metres), layer by
   name and pen index. The read-back compares type, story, layer, position, height and
-  pen. Fixtures come from the Tapir source, not a live capture. Registry: **98 tools
-  (29 reads, 69 writes/interactions)**.
+  pen. Fixtures come from the Tapir source, not a live capture.
+- `create_keynote_labels([{keynote_item_guid, position, content_fields?}], port?,
+  dry_run?, confirmation_token?)` places up to 20 keynote labels by Tapir 1.7.0
+  `CreateKeynoteLabels` (Archicad 28 or newer). The item GUID comes from
+  `list_keynotes`, and the preview refuses one that is not in the tree. The label text
+  is the item's autotext for `content_fields` (Key, Title, Description, Reference; all
+  by default). Tapir puts the label on the story Archicad shows and attaches it to
+  nothing; the receipt reports the story and the text read back. The read-back checks
+  type, class and position. The keynotes are never changed. Fixtures come from the
+  Tapir source, not a live capture. Registry: **99 tools (29 reads, 70
+  writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

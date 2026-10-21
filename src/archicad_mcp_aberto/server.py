@@ -992,6 +992,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_keynote_labels(
+        ctx: Context,
+        labels: list[labels_tool.KeynoteLabelCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 keynote labels: keynote_item_guid from list_keynotes and a
+        position in metres; content_fields picks Key/Title/Description/Reference (all by
+        default). Archicad 28+; the label goes on the story Archicad shows, attached to
+        nothing. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await labels_tool.create_keynote_labels(
+            client_of(ctx), labels, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def modify_roofs(
         ctx: Context,
         roofs: list[modify.RoofModify],

@@ -586,3 +586,12 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **Objeto por favorito.** Com um favorito de objeto LAB e a peça de biblioteca dele
   (o `lab_find_favorite` mostra qual é): conferir vegetal, penas e parâmetros do
   favorito. Anotar o que acontece se a peça dada for outra.
+
+
+## Lote do Claude C11: etiquetas de nota-chave
+
+- [ ] **create_keynote_labels.** No projeto novo sem nome, com uma nota-chave criada
+  antes (`create_keynote_items`) ou já existente: "Ponha uma etiqueta da nota-chave
+  <chave> em (2,3), só com chave e título." Conferir na planta o texto da etiqueta (a
+  nota-chave de verdade ou o código do autotexto?), o pavimento em que caiu e o recibo
+  `verified`. Anotar o texto que o recibo leu (`text_read`).

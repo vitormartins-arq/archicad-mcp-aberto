@@ -115,6 +115,9 @@ INPUTS = {
     },
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "create_keynote_labels": {
+        "labels": [{"keynote_item_guid": GUID, "position": {"x": 0, "y": 0}}]
+    },
     "list_classifications": {},
     "list_layers": {},
     "get_project_info_fields": {},
@@ -397,6 +400,9 @@ def instances(second_state="ready"):
         busy=second_state == "busy",
         tapir_version=None if second_state == "no_tapir" else "1.7.0",
     )
+    for instance in (first, second):
+        row = {"keynoteItemId": {"guid": GUID}, "key": "K-LABEL", "title": "Piso"}
+        instance.keynotes["itemsInRoot"].append(row)
     return first, second
 
 

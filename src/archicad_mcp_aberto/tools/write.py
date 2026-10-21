@@ -386,6 +386,12 @@ OPERATIONS = {
         "label_receipt_id",
         "New labels take font and style from the Label tool default.",
     ),
+    "create_keynote_labels": (
+        "keynote label",
+        "keynote_label_receipt_id",
+        "New keynote labels go on the story Archicad shows, attached to nothing, with the "
+        "Label tool's style. Keynotes are not changed.",
+    ),
     "lock_elements": (
         "lock",
         "lock_receipt_id",
@@ -494,6 +500,7 @@ CREATE_COMMANDS = {
     "create_roofs": ("CreateRoofs", "roofsData"),
     "create_texts": ("CreateTexts", "textsData"),
     "create_labels": ("CreateLabels", "labelsData"),
+    "create_keynote_labels": ("CreateKeynoteLabels", "labelsData"),
     "create_lines": ("CreateLineElements", "linesData"),
     "create_polylines": ("CreatePolylines", "polylinesData"),
     "create_splines": ("CreateSplines", "splinesData"),

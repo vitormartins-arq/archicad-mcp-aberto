@@ -464,6 +464,8 @@ class FakeArchicad:
     keynotes: dict = field(default_factory=lambda: {"foldersInRoot": [], "itemsInRoot": []})
     keynote_stored_title: str | None = None  # Archicad keeps this title instead
     lose_keynote_response: bool = False
+    shown_story: int = 0  # the story Archicad shows; keynote labels land there
+    keynote_label_shift: float = 0.0  # Archicad moves new keynote labels by this in x
 
     issue_comments: dict[str, list[dict]] = field(default_factory=dict)
 
@@ -629,6 +631,16 @@ class FakeArchicad:
         if command == "API.ExecuteAddOnCommand":
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
+
+    def _keynote_item(self, guid: str) -> dict | None:
+        stack = [self.keynotes]
+        while stack:
+            node = stack.pop()
+            for row in node.get("items", node.get("itemsInRoot", [])):
+                if row["keynoteItemId"]["guid"].upper() == guid.upper():
+                    return row
+            stack.extend(node.get("subFolders", node.get("foldersInRoot", [])))
+        return None
 
     def _keynote_folder(self, guid: str | None) -> dict | None:
         """The folder row with this GUID, the root for None, or None when missing."""
@@ -1983,6 +1995,35 @@ class FakeArchicad:
                     # Archicad 30 reads a circle back as a full Arc (live, 14/10/2026).
                     self.elements[guid] = self.details[guid]["type"] = "Arc"
                     details |= {"begAngle": 0.0, "endAngle": 0.0}
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateKeynoteLabels":
+            # Shape from the Tapir 1.7.0 source (KeynoteCommands.cpp); not live captured.
+            out = []
+            for index, label in enumerate(args["labelsData"]):
+                assert set(label) <= {"keynoteItemId", "position", "contentFields"}
+                item = self._keynote_item(label["keynoteItemId"]["guid"])
+                if index in self.create_errors or item is None:
+                    message = "Failed to get autotext tokens for the keynote item."
+                    error = {"error": {"code": -2130313112, "message": message}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Label"
+                row = deepcopy(LABELS_FIXTURE["label_details"])
+                row["floorIndex"] = self.shown_story
+                details = row["details"]
+                position = label["position"]
+                details["begCoordinate"] = {
+                    "x": position["x"] + self.keynote_label_shift,
+                    "y": position["y"],
+                }
+                details["midCoordinate"] = {"x": position["x"] + 1.0, "y": position["y"] + 0.5}
+                details["endCoordinate"] = {"x": position["x"] + 3.0, "y": position["y"] + 0.5}
+                fields = label.get("contentFields") or ["Key", "Title", "Description", "Reference"]
+                # Synthetic: what the autotext resolves to is not known from the source.
+                details["text"] = "\n".join(str(item.get(f.lower(), "")) for f in fields)
+                self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateLabels":

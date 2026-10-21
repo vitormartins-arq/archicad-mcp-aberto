@@ -834,3 +834,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   avisa para passar a peça do próprio favorito, que o `lab_find_favorite` do Lab mostra.
   O ângulo vem do favorito se não for dado. 2249 testes simulados e Ruff passaram
   (Linux, Python 3.13).
+
+
+## 2026-10-21 — Claude / C11 etiquetas de nota-chave (lote 7)
+
+- `create_keynote_labels` em `tools/labels.py`, por `CreateKeynoteLabels` do Tapir
+  1.7.0. O Tapir cria uma etiqueta de texto solta (sem elemento), no pavimento que o
+  ArchiCAD mostra, com o autotexto da nota-chave. Por isso a tarefa da FILA ("em
+  elemento existente") não dá: fica a etiqueta num ponto. A prévia confere o item por
+  `GetKeynoteTree`; a conferência cobra tipo, classe e posição e mostra o pavimento e
+  o texto lido. 2270 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  99 ferramentas. Próximo: C12 `modify_morphs`.

@@ -272,6 +272,10 @@
       "description": "Preview/create up to 20 text labels, free or attached to an element, with verification."
     },
     {
+      "name": "create_keynote_labels",
+      "description": "Preview/create up to 20 keynote labels showing a keynote item's fields, with verification."
+    },
+    {
       "name": "create_zones",
       "description": "Preview/create up to 20 manually bounded polygon zones, verified per item."
     },

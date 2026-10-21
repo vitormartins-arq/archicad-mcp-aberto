@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `create_keynote_labels` to `tools/labels.py`: up to 20 labels showing a keynote
+  item's fields as autotext, by Tapir 1.7.0 `CreateKeynoteLabels`. The preview refuses
+  an item that is not in the keynote tree; the read-back checks type, class and
+  position and reports the story and text. Not tested live yet.
+
 - `create_objects` takes an optional `favorite` too. Tapir still needs
   `libraryPartName` and cannot tell which part a favorite holds, so the preview notes
   that the favorite's own part must be given. The angle comes from the favorite unless
