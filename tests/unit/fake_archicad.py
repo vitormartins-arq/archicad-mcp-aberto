@@ -404,6 +404,7 @@ class FakeArchicad:
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
+    hosted_openings: dict[str, list[str]] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
     command_requests: list[dict] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
@@ -426,6 +427,11 @@ class FakeArchicad:
 
     lose_mesh_response: bool = False
     mesh_base_shift: float = 0.0
+    morph_box_shift: float = 0.0
+    morph_open_body: bool = False
+    dimension_floor_shift: int = 0
+    opening_unhosted: bool = False
+    connected_error: bool = False
 
     view_settings: dict[str, dict] = field(
         default_factory=lambda: deepcopy(VIEW_SETTINGS_FIXTURE["views"])
@@ -453,6 +459,10 @@ class FakeArchicad:
     attribute_property_refused: set[str] = field(default_factory=set)  # values refused
     attribute_property_stored: str | None = None  # Archicad keeps this text instead
     lose_attribute_property_response: bool = False
+    # Keynote tree in GetKeynoteTree shape (Tapir 1.7.0 source; not live captured).
+    keynotes: dict = field(default_factory=lambda: {"foldersInRoot": [], "itemsInRoot": []})
+    keynote_stored_title: str | None = None  # Archicad keeps this title instead
+    lose_keynote_response: bool = False
 
     issue_comments: dict[str, list[dict]] = field(default_factory=dict)
 
@@ -618,6 +628,18 @@ class FakeArchicad:
         if command == "API.ExecuteAddOnCommand":
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
+
+    def _keynote_folder(self, guid: str | None) -> dict | None:
+        """The folder row with this GUID, the root for None, or None when missing."""
+        if guid is None:
+            return self.keynotes
+        stack = list(self.keynotes["foldersInRoot"])
+        while stack:
+            row = stack.pop()
+            if row["keynoteFolderId"]["guid"] == guid:
+                return row
+            stack.extend(row["subFolders"])
+        return None
 
     def _nav_items(self, map_id: str) -> list[dict]:
         out, stack = [], [self.navigator_trees[map_id]]
@@ -975,6 +997,43 @@ class FakeArchicad:
                         self.details[guid]["layerIndex"] = self.favorite_layers[favorite]
                     out.append(deepcopy(PROJECT_INFO_FIXTURE["apply_ok"]))
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "GetKeynoteTree":
+            # Shapes from the Tapir 1.7.0 source (KeynoteCommands.cpp); not live captured.
+            return ok({"addOnCommandResponse": deepcopy(self.keynotes)})
+        if name in ("CreateKeynoteFolders", "CreateKeynoteItems"):
+            folder = name == "CreateKeynoteFolders"
+            key, answer = (
+                ("foldersData", "keynoteFolderIdsOrErrors")
+                if folder
+                else (
+                    "itemsData",
+                    "keynoteItemIdsOrErrors",
+                )
+            )
+            assert set(args) == {key}
+            out = []
+            for index, data in enumerate(args[key]):
+                allowed = {"parentFolderId", "key", "title"}
+                assert set(data) <= (allowed if folder else allowed | {"description", "reference"})
+                parent = self._keynote_folder(data.get("parentFolderId", {}).get("guid"))
+                if index in self.create_errors or parent is None:
+                    message = "Failed to find the parent folder."
+                    error = {"code": -2130313112, "message": message}
+                    out.append(deepcopy(self.create_errors.get(index, {"error": error})))
+                    continue
+                guid = str(uuid4()).upper()
+                title = self.keynote_stored_title or data.get("title", "")
+                row = {"key": data["key"], "title": title, "reference": data.get("reference", "")}
+                row["uiText"] = f"{data['key']} {title}".strip()
+                if folder:
+                    row = {"keynoteFolderId": {"guid": guid}, **row, "subFolders": [], "items": []}
+                    parent["subFolders" if "subFolders" in parent else "foldersInRoot"].append(row)
+                else:
+                    row = {"keynoteItemId": {"guid": guid}, **row}
+                    row["description"] = data.get("description", "")
+                    parent["items" if "items" in parent else "itemsInRoot"].append(row)
+                out.append({"keynoteFolderId" if folder else "keynoteItemId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {answer: out}})
         if name == "GetPropertyValuesOfAttributes":
             # Shapes from the Tapir 1.7.0 source (PropertyCommands.cpp); not live captured.
             assert set(args) == {"attributeIds", "properties"}
@@ -1964,6 +2023,125 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateWallThicknessDimensions":
+            # Shapes from Tapir 1.7.0 source (ExtendedElementCommands.cpp); not live.
+            out = []
+            for index, data in enumerate(args["dimensionsData"]):
+                wall = data["wallId"]["guid"]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if self.elements.get(wall) != "Wall":
+                    out.append(
+                        {
+                            "error": {
+                                "code": -2130313100,
+                                "message": "Failed to load wall for associative dimension.",
+                            }
+                        }
+                    )
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Dimension"
+                floor = self.details.get(wall, {}).get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "Dimension",
+                    "floorIndex": floor + self.dimension_floor_shift,
+                    "layerIndex": 1,
+                    "details": {},
+                }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateOpenings":
+            # Shapes from Tapir 1.7.0 source (CreateOpenings); not live.
+            out = []
+            for index, data in enumerate(args["openingsData"]):
+                owner = data["ownerElementId"]["guid"].upper()
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if self.elements.get(owner) is None:
+                    error = {"code": -2130313100, "message": "Failed to create opening."}
+                    out.append({"error": error})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Opening"
+                floor = self.details.get(owner, {}).get("floorIndex", 0)
+                self.details[guid] = {
+                    "type": "Opening",
+                    "floorIndex": floor,
+                    "layerIndex": 1,
+                    "details": {},
+                }
+                if not self.opening_unhosted:
+                    self.hosted_openings.setdefault(owner, []).append(guid)
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetConnectedElements":
+            # Shapes from Tapir 1.7.0 source (ConnectedElementsOrError); not live.
+            if self.connected_error:
+                return ok({"addOnCommandResponse": {"error": {"code": -1, "message": "failed"}}})
+            rows = []
+            for item in args["elements"]:
+                owner = item["elementId"]["guid"].upper()
+                found = (
+                    self.hosted_openings.get(owner, [])
+                    if args.get("connectedElementType") == "Opening"
+                    else []
+                )
+                rows.append({"elements": [self._id(g) for g in found]})
+            return ok({"addOnCommandResponse": {"connectedElements": rows}})
+        if name == "CreateMorphs":
+            # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
+            # morph_open_body copies the live AC30 result of the `size` box (20/10/2026):
+            # a Surface body with five faces and isClosed false.
+            out = []
+            for index, morph in enumerate(args["morphsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Morph"
+                base, body = morph["basePoint"], morph["body"]
+                size = {k: max(v[k] for v in body["vertices"]) for k in "xyz"}
+                polygons = deepcopy(body["polygons"])
+                closed = not self.morph_open_body
+                if self.morph_open_body:
+                    polygons = polygons[1:]
+                self.details[guid] = {
+                    "type": "Morph",
+                    "floorIndex": morph["floorIndex"],
+                    "layerIndex": 1,
+                    "details": {
+                        "origin": deepcopy(base),
+                        "xAxis": {"x": 1.0, "y": 0.0, "z": 0.0},
+                        "yAxis": {"x": 0.0, "y": 1.0, "z": 0.0},
+                        "zAxis": {"x": 0.0, "y": 0.0, "z": 1.0},
+                        "castShadow": True,
+                        "receiveShadow": True,
+                        "isAutoOnStoryVisibility": True,
+                        "body": {
+                            "bodyType": body["bodyType"] if closed else "Surface",
+                            "edgeDefault": "SoftHidden",
+                            "isClosed": closed,
+                            "vertices": deepcopy(body["vertices"]),
+                            "polygons": polygons,
+                        },
+                    },
+                }
+                shift = self.morph_box_shift
+                self.bounding_boxes_3d[guid] = {
+                    "boundingBox3D": {
+                        "xMin": base["x"] + shift,
+                        "yMin": base["y"],
+                        "zMin": base["z"],
+                        "xMax": base["x"] + size["x"] + shift,
+                        "yMax": base["y"] + size["y"],
+                        "zMax": base["z"] + size["z"],
+                    }
+                }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateMeshes":
             out = []
             for index, mesh in enumerate(args["meshesData"]):
@@ -2306,6 +2484,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost layer response", request=request)
         if instance.lose_project_info_response and command == "SetProjectInfoField":
             raise httpx.ReadTimeout("Injected lost project info response", request=request)
+        if instance.lose_keynote_response and str(command).startswith("CreateKeynote"):
+            raise httpx.ReadTimeout("Injected lost keynote response", request=request)
         if instance.lose_attribute_property_response and command == "SetPropertyValuesOfAttributes":
             raise httpx.ReadTimeout("Injected lost attribute property response", request=request)
         if instance.lose_favorite_create_response and command == "CreateFavoritesFromElements":

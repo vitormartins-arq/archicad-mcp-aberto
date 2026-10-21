@@ -455,6 +455,16 @@ CREATE_COMMANDS = {
 }
 CREATE_COMMANDS["create_meshes"] = ("CreateMeshes", "meshesData")
 CREATE_COMMANDS["create_sections"] = ("CreateSections", "sectionsData")
+OPERATIONS["create_keynote_folders"] = (
+    "keynote folder",
+    "keynote_receipt_id",
+    "New keynote folders only; existing keys are never changed.",
+)
+OPERATIONS["create_keynote_items"] = (
+    "keynote item",
+    "keynote_receipt_id",
+    "New keynote items only; existing keys are never changed.",
+)
 OPERATIONS["create_interior_elevations"] = (
     "interior elevation",
     "interior_elevation_receipt_id",
@@ -474,6 +484,29 @@ OPERATIONS["create_favorites_from_elements"] = (
     "favorite_receipt_id",
     "Each new favorite copies its element's settings; existing favorites are never changed.",
 )
+OPERATIONS["create_morphs"] = (
+    "morph",
+    "morph_receipt_id",
+    "Axis-aligned closed solid boxes in absolute project metres; Morph tool defaults for "
+    "the rest. A morph on a story that is not shown in Archicad makes Archicad open a "
+    "dialog that blocks the API until someone clicks it; show that story first.",
+)
+CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
+OPERATIONS["create_wall_thickness_dimensions"] = (
+    "wall thickness dimension",
+    "dimension_receipt_id",
+    "Associative dimension of both wall faces; Dimension tool defaults for display.",
+)
+CREATE_COMMANDS["create_wall_thickness_dimensions"] = (
+    "CreateWallThicknessDimensions",
+    "dimensionsData",
+)
+OPERATIONS["create_openings"] = (
+    "opening",
+    "opening_receipt_id",
+    "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
+)
+CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
 
 
 @dataclass

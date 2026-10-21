@@ -356,6 +356,18 @@
       "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
     },
     {
+      "name": "create_morphs",
+      "description": "Safely create box morphs from absolute project coordinates, with preview and 3D box read-back."
+    },
+    {
+      "name": "create_wall_thickness_dimensions",
+      "description": "Safely add associative thickness dimensions to existing walls, with preview and read-back."
+    },
+    {
+      "name": "create_openings",
+      "description": "Safely cut rectangular Opening-tool openings into existing walls or slabs, with preview and host read-back."
+    },
+    {
       "name": "modify_meshes",
       "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
     },
@@ -422,6 +434,18 @@
     {
       "name": "list_hotlinks",
       "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
+    },
+    {
+      "name": "list_keynotes",
+      "description": "Keynote folders and items with GUIDs and key paths."
+    },
+    {
+      "name": "create_keynote_folders",
+      "description": "Preview/create new keynote folders with new keys; only adds, read back by GUID."
+    },
+    {
+      "name": "create_keynote_items",
+      "description": "Preview/create new keynote items with new keys; only adds, read back by GUID."
     }
   ],
   "compatibility": {

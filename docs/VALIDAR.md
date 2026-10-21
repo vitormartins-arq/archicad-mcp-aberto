@@ -476,6 +476,33 @@ AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Und
   recibo deve dar `verified`.
 - [ ] **Recusa.** Outra vista interna chamada Sala deve ser recusada na prévia.
 
+## Lote do Claude C5: notas-chave
+
+- [ ] **list_keynotes.** Ler as notas-chave do projeto novo e anotar se a lista vem
+  vazia ou com as de fábrica do ArchiCAD.
+- [ ] **create_keynote_folders e create_keynote_items.** "Crie a pasta de notas-chave 90
+  Teste MCP e, dentro dela, o item 90.01 Alvenaria de vedação, com a referência Memorial
+  3.2." Conferir no ArchiCAD, em Documento > Notas-chave, que a pasta e o item aparecem
+  com esses textos. O recibo deve dar `verified`.
+- [ ] **Recusa.** Pedir de novo a chave 90.01 deve ser recusado na prévia.
+
+## Lote do Claude C6: morfos
+
+- [ ] **create_morphs.** No projeto novo sem nome: "Crie um morfo caixa com canto em
+  x 1, y 2, z 0, de 0,60 por 0,40 por 0,90 m, no térreo." Conferir no 3D que a caixa está
+  no lugar e com esse tamanho, e que o recibo dá `verified`.
+- [ ] **Pavimento.** Repetir com z 3 e floor_index 1 e ver se o morfo fica no pavimento 1
+  na planta.
+
+## Lote do Claude C7: cotas de espessura de parede
+
+- [ ] **create_wall_thickness_dimensions.** No projeto novo sem nome, com uma parede reta
+  criada antes: "Cote a espessura dessa parede." Conferir na planta que a cota aparece no
+  meio da parede, atravessando-a, e mede a espessura certa. O recibo deve dar `verified`.
+- [ ] **Associativa.** Mudar a espessura da parede e ver se a cota acompanha.
+- [ ] **Janela ativa.** Com um corte aberto como janela ativa, o Tapir avisa que a cota não
+  foi criada. Anotar a mensagem que aparece no recibo.
+
 ## Resultado complementar de 15/10/2026 — PR #61
 - [x] Corte com o padrão preparado pelo favorito Corte Técnico Marcador Simples: verified.
   Com o padrão inicial falhou APIERR_BADID; a ferramenta não troca o padrão automaticamente.
@@ -495,3 +522,40 @@ AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Un
   do nome e do caminho e paginação com `limit=1`.
 - [ ] Registrar Archicad/build/idioma/Tapir. A ferramenta é somente leitura; não
   atualizar, relincar, incorporar, excluir nem salvar.
+## Lote do Claude C8: aberturas (ferramenta Abertura)
+
+- [ ] **create_openings em parede.** No projeto novo sem nome, com uma parede reta ao
+  longo do eixo x: "Abra um vão de 0,90 por 1,20 m nessa parede, com o canto de baixo em
+  z 0,80." Conferir na planta e no 3D que o vão corta a parede no lugar pedido, se a
+  largura vai para o lado certo do ponto e que o recibo dá `verified`.
+- [ ] **Parede inclinada.** Repetir numa parede a 45 graus e anotar se o vão acompanha a
+  parede (o Tapir fixa o eixo do vão).
+- [ ] **create_openings em laje.** Repetir numa laje e anotar se o vão atravessa a laje ou
+  fica de pé; se não servir para lajes, a ferramenta passa a aceitar só paredes.
+- [ ] **Hospedeiro.** Conferir que `GetConnectedElements` com tipo Opening devolve o vão
+  novo da parede e da laje (é o que dá o `verified`).
+
+## Resultado do lote 3 ao vivo — 20/10/2026 (PR #63)
+
+AC30 build 3001 BRA, Tapir 1.7.0, Windows, projeto "Sem Nome" (arquivo em Downloads),
+porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
+
+- [x] list_keynotes: nenhuma pasta e 1 item já existente.
+- [x] Pasta 90 Teste MCP e item 90.01 Alvenaria de vedação (Memorial 3.2): verified.
+  Repetir 90.01 foi recusado na prévia.
+- [x] Morfo no térreo: verified, caixa 3D exata (x 1 a 1,6, y 2 a 2,4, z 0 a 0,9).
+- [x] Morfo no pavimento 1: criado no lugar certo, mas o ArchiCAD abriu o aviso
+  "Elementos foram criados nos Pisos atualmente invisíveis" e travou a API até o Vitor
+  clicar; recibo `unknown`. A prévia agora avisa disso.
+- [x] Os dois morfos vieram abertos (5 faces, Surface, isClosed false). Corrigido no
+  commit seguinte: a caixa vai como corpo sólido fechado e a conferência exige Solid
+  fechado com 6 faces. **Conferir de novo ao vivo.**
+- [x] Cota de espessura na parede reta: verified.
+- [x] Aberturas 0,90 x 1,20: parede reta, parede a 45° e laje, todas verified. A largura
+  fica centrada no ponto e acompanha a parede; na laje o vão fica deitado e a altura vai
+  para -y. Get3DBoundingBoxes devolve z 0 a 0 para aberturas.
+- [ ] Vitor: no 3D, vãos das paredes de 0,80 a 2,00; vão da laje atravessando a laje;
+  na planta, cota no meio da parede medindo 0,20.
+- [x] Morfo corrigido (commit bb25c5a), térreo em x 3 y 2 z 0: verified, caixa 3D exata,
+  corpo relido Solid, isClosed true, 6 faces e 8 vértices.
+- [ ] Vitor: no 3D, ver que o morfo em x 3 tem fundo.
