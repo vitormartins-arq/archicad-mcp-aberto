@@ -112,7 +112,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   dado, conferidos pela leitura de tipo, pavimento e posição.
 - **C11 `create_keynote_labels`.** (Feito no lote `lote/claude-7`.) `CreateKeynoteLabels`: etiqueta de nota-chave em
   elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.
-- **C12 `modify_morphs`.** `ModifyMorphs`: mudar morfos existentes e editáveis no que o
+- **C12 `modify_morphs`.** (Feito no lote `lote/claude-7`.) `ModifyMorphs`: mudar morfos existentes e editáveis no que o
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
 - **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.

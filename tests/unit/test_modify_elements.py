@@ -57,6 +57,34 @@ ROWS = {
         **ROOFS_TEXTS_FIXTURE["text_details"],
         "details": {**ROOFS_TEXTS_FIXTURE["text_details"]["details"], "text": "Sala"},
     },
+    # A create_morphs box in the GetDetailsOfElements shape (Tapir 1.7.0 source); synthetic.
+    "Morph": {
+        "type": "Morph",
+        "floorIndex": 0,
+        "layerIndex": 1,
+        "details": {
+            "origin": {"x": 1.0, "y": 2.0, "z": 0.0},
+            "castShadow": True,
+            "receiveShadow": True,
+            "body": {
+                "bodyType": "Solid",
+                "edgeDefault": "SoftHidden",
+                "isClosed": True,
+                "vertices": [
+                    {"x": x, "y": y, "z": z}
+                    for z in (0.0, 3.0)
+                    for x, y in ((0.0, 0.0), (2.0, 0.0), (2.0, 1.0), (0.0, 1.0))
+                ],
+                "polygons": [
+                    {"vertexIds": face}
+                    for face in (
+                        [0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4],
+                        [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7],
+                    )
+                ],
+            },
+        },
+    },  # fmt: skip
 }
 TOOLS = {
     "Label": (modify.modify_labels, "ModifyLabels", "labelsWithDetails"),

@@ -467,6 +467,11 @@ OPERATIONS["modify_meshes"] = (
     "mesh_edit_receipt_id",
     "Only level/skirt/display change; topology is preserved.",
 )
+OPERATIONS["modify_morphs"] = (
+    "morph edit",
+    "morph_edit_receipt_id",
+    "A new size rebuilds the box body from its corner; other fields keep the geometry.",
+)
 
 OPERATIONS["set_view_settings"] = (
     "view settings",
@@ -1747,6 +1752,7 @@ NAMED_PREVIEWS = {
     "modify_objects",
     "modify_roofs",
     "modify_texts",
+    "modify_morphs",
     "create_windows",
     "create_doors",
     "lock_elements",

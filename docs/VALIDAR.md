@@ -595,3 +595,11 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   <chave> em (2,3), só com chave e título." Conferir na planta o texto da etiqueta (a
   nota-chave de verdade ou o código do autotexto?), o pavimento em que caiu e o recibo
   `verified`. Anotar o texto que o recibo leu (`text_read`).
+
+## Lote do Claude C12: mudar morfos
+
+- [ ] **modify_morphs, tamanho.** Num morfo feito por `create_morphs` no projeto novo:
+  "Mude o morfo para 4 x 2 x 1,5 m." Conferir no 3D que o canto ficou no lugar e o
+  tamanho mudou, e que continua sólido. Recibo `verified`.
+- [ ] **modify_morphs, material e sombras.** No mesmo morfo: material de construção e
+  superfície por nome, e sem sombra. Conferir nas configurações do morfo.

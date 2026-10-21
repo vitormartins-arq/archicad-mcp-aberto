@@ -845,3 +845,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `GetKeynoteTree`; a conferência cobra tipo, classe e posição e mostra o pavimento e
   o texto lido. 2270 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
   99 ferramentas. Próximo: C12 `modify_morphs`.
+- C12: `modify_morphs` em `tools/modify.py`, por `ModifyMorphs` do Tapir 1.7.0:
+  tamanho (só caixas como as do `create_morphs`, porque o Tapir troca o corpo inteiro),
+  material de construção e superfície por nome, e sombras. Ficaram de fora a translação
+  (já existe `move_elements`) e o `rotationDegreesZ`: no código-fonte ele mistura as
+  linhas x e z da matriz, o que parece giro em torno de Y; conferir ao vivo antes de
+  expor. 2279 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 100
+  ferramentas. Próximo: C13 cotas associativas.

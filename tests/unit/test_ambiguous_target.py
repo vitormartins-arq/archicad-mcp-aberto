@@ -61,6 +61,7 @@ MODIFY_TYPES = {
     "modify_texts": "Text",
     "modify_labels": "Label",
     "modify_meshes": "Mesh",
+    "modify_morphs": "Morph",
 }
 INPUTS = {
     "list_design_options": {},
@@ -115,6 +116,7 @@ INPUTS = {
     },
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "modify_morphs": {"morphs": [{"guid": GUID, "castShadow": False}]},
     "create_keynote_labels": {
         "labels": [{"keynote_item_guid": GUID, "position": {"x": 0, "y": 0}}]
     },

@@ -272,6 +272,10 @@
       "description": "Preview/create up to 20 text labels, free or attached to an element, with verification."
     },
     {
+      "name": "modify_morphs",
+      "description": "Preview/edit up to 50 morphs: box size, building material, surface and shadows, read back."
+    },
+    {
       "name": "create_keynote_labels",
       "description": "Preview/create up to 20 keynote labels showing a keynote item's fields, with verification."
     },

@@ -73,6 +73,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_splines` | Write | Up to 50 auto-smoothed 2D splines | yes |
 | `create_hotspots` | Write | Up to 50 2D hotspots on a story | yes |
 | `create_keynote_labels` | Write | Up to 20 labels showing a keynote item's fields | yes |
+| `modify_morphs` | Write | Up to 50 morphs: box size, building material, surface, shadows | yes |
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
@@ -645,8 +646,17 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   by default). Tapir puts the label on the story Archicad shows and attaches it to
   nothing; the receipt reports the story and the text read back. The read-back checks
   type, class and position. The keynotes are never changed. Fixtures come from the
-  Tapir source, not a live capture. Registry: **99 tools (29 reads, 70
-  writes/interactions)**.
+  Tapir source, not a live capture.
+- `modify_morphs([{guid, size?, buildingMaterial?, surface?, castShadow?,
+  receiveShadow?}], port?, dry_run?, confirmation_token?)` edits up to 50 morphs by
+  Tapir 1.7.0 `ModifyMorphs`. Tapir rebuilds the whole body on a size change, so only a
+  box as `create_morphs` makes (corner at the origin) is resized, and the corner stays;
+  any other morph is refused in the preview. Building material and surface are given by
+  name. The read-back checks each changed field and the new box size within 1 mm.
+  Moving and rotating stay with `move_elements` and `rotate_elements`: Tapir's
+  `rotationDegreesZ` mixes the x and z rows of the transform in the 1.7.0 source, which
+  looks like a turn about Y, so it is not exposed until checked live. Registry: **100
+  tools (29 reads, 71 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

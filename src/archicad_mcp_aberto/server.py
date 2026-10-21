@@ -992,6 +992,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def modify_morphs(
+        ctx: Context,
+        morphs: list[modify.MorphModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview edits of up to 50 morphs: size {x, y, z} in metres (box morphs from
+        create_morphs only; the corner stays), buildingMaterial and surface by name,
+        castShadow, receiveShadow. Move or rotate with move_elements/rotate_elements.
+        Requires Tapir; apply with explicit port and token; read back. Never saves."""
+        return await modify.modify_morphs(client_of(ctx), morphs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
     async def create_keynote_labels(
         ctx: Context,
         labels: list[labels_tool.KeynoteLabelCreate],

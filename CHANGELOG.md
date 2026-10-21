@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `modify_morphs` to `tools/modify.py`: box size (box morphs only, corner kept),
+  building material and surface by name, and shadows, by Tapir 1.7.0 `ModifyMorphs`,
+  each read back. Not tested live yet.
+
 - Add `create_keynote_labels` to `tools/labels.py`: up to 20 labels showing a keynote
   item's fields as autotext, by Tapir 1.7.0 `CreateKeynoteLabels`. The preview refuses
   an item that is not in the keynote tree; the read-back checks type, class and

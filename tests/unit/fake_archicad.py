@@ -81,6 +81,12 @@ MODIFY_COMMANDS = {
     "ModifyTexts": ("Text", "textsWithDetails"),
     "ModifyLabels": ("Label", "labelsWithDetails"),
     "ModifyMeshes": ("Mesh", "meshesData"),
+    "ModifyMorphs": ("Morph", "morphsWithDetails"),
+}
+# Message from the Tapir 1.7.0 source (ModifyMorphs); the code is synthetic.
+MORPH_MODIFY_FAILURE = {
+    "success": False,
+    "error": {"code": -2130313112, "message": "Failed to modify morph."},
 }
 
 
@@ -2348,6 +2354,8 @@ class FakeArchicad:
                         if name == "ModifyMeshes"
                         else MODIFY_LABELS_FIXTURE["failure"]
                         if name == "ModifyLabels"
+                        else MORPH_MODIFY_FAILURE
+                        if name == "ModifyMorphs"
                         else MODIFY_ELEMENTS_FIXTURE["failures"][name]
                     )
                 )
@@ -2402,6 +2410,16 @@ class FakeArchicad:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}
+                if name == "ModifyMorphs" and "body" in changes:
+                    # Tapir 1.7.0 rebuilds the whole body (BuildMorphBodyFromGeometry).
+                    body = changes.pop("body")
+                    details["body"] = {
+                        "bodyType": body["bodyType"],
+                        "edgeDefault": details.get("body", {}).get("edgeDefault", "SoftHidden"),
+                        "isClosed": True,
+                        "vertices": deepcopy(body["vertices"]),
+                        "polygons": deepcopy(body["polygons"]),
+                    }
                 if name == "ModifyLabels":
                     if details.get("labelClass") != "Text":
                         rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))
