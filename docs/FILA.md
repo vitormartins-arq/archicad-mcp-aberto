@@ -116,6 +116,17 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
 - **C13 cotas associativas.** (Feito no lote `lote/claude-7`, só pontas de parede.) `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
+- **C15 `create_lamps`.** `CreateLamps`: luminárias por nome de peça de biblioteca, no
+  padrão de `create_objects`, com `favorite`. Conferência por tipo, pavimento, origem e
+  peça.
+- **C16 `create_stairs`.** `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
+  ele aceita): escada reta por linha de base e altura, com `favorite`, conferida pela
+  leitura de tipo, pavimento e caixa 3D.
+- **C17 categorias de zona.** `CreateZoneCategories`: categorias novas com nome, código
+  e cor, sem mudar nem apagar as que existem. Depois, no Lab, levar ao
+  `lab_apply_template` as categorias de zona do LAB Template.
+- **C18 compostos.** `CreateComposites`: compostos novos por camadas (material de
+  construção e espessura), sem sobrescrever. Depois, no Lab, os compostos do template.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
