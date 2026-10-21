@@ -35,8 +35,12 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
   parallel azimuth and projection mode).
 - `Set3DCamera`: `{"perspective": {camera, target, viewCone?}}` or
   `{"parallel": {azimuth?, projectionMode?}}`; answers with the projection read back.
+- `Save3DView`: `{"name", "folderPath"?}` saves the current 3D projection as a View
+  Map view, creating the folders it needs.
+- `Get3DCutPlanes` / `Set3DCutPlanes`: the 3D Cutting Planes dialog, planes passed raw.
 - `Get3DWindowImage` (Archicad 30 only): the 3D window as base64 PNG or JPG.
 
 Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands
 convert. A perspective camera defaults to a 60 degree view cone. First live test
-(AC30 build 3001 BRA, 21/10/2026) in `CAMERA.md`.
+(AC30 build 3001 BRA, 21/10/2026) in `CAMERA.md`; how to place cameras in
+`docs/3D_SCENES.md`.
