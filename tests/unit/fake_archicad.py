@@ -886,9 +886,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -1308,6 +1312,27 @@ class FakeArchicad:
                         }
                     )
                 out.append({"attributeId": {"guid": layer_guid(target)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "CreateLayerCombinations" and not args.get("overwriteExisting", False):
+            out = []
+            for data in args["layerCombinationDataArray"]:
+                if any(
+                    row["name"].casefold() == data["name"].casefold()
+                    for row in self.layer_combinations.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Layer combination exists"}})
+                    continue
+                index = max(self.layer_combinations, default=0) + 1
+                states = {}
+                for layer in data["layers"]:
+                    layer_index = next(
+                        (i for i in self.layers if layer_guid(i) == layer["attributeId"]["guid"]),
+                        None,
+                    )
+                    if layer_index is not None:
+                        states[layer_index] = {k: v for k, v in layer.items() if k != "attributeId"}
+                self.layer_combinations[index] = {"name": data["name"], "layers": states}
+                out.append({"attributeId": {"guid": combination_guid(index)}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
@@ -2648,6 +2673,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )

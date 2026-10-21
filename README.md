@@ -633,3 +633,10 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `create_layer_combinations([{name, layers: [{layer, visible?, locked?, wireframe?,
+  intersection_group?}]}], port?, dry_run?, confirmation_token?)` previews and creates
+  up to 20 new combinations from existing layers. Existing names and missing layers are
+  refused. Apply uses an explicit port and one-use token, then reads every requested state
+  back; it never overwrites, deletes or saves. The fake schema is source-derived, not a
+  live capture. Registry: **99 tools (29 reads, 70 writes/interactions)**.

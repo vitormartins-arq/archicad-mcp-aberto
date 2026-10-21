@@ -812,3 +812,6 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   (posição, altura opcional, vegetal e pena). Conferência por tipo, pavimento, vegetal,
   posição, altura e pena. 2231 testes simulados e Ruff passaram (Linux, Python 3.13).
   Registro: 98 ferramentas. Próximo: C11 `create_keynote_labels`.
+
+## 2026-10-21 — T35 layer combinations
+- Added creation of up to 20 new layer combinations with source-derived Tapir 1.7.0 fields, name/layer validation and full read-back. No overwrite, delete or save path.

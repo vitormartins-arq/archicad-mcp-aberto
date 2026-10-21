@@ -1342,7 +1342,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1361,7 +1360,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1379,7 +1377,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1486,6 +1483,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layer_combinations(
+        ctx: Context,
+        combinations: list[layer_settings_tool.LayerCombinationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 new layer combinations. Every named layer must
+        exist. Existing combination names are refused. Explicit apply port, one-use token,
+        receipt and read-back; never overwrites, deletes or saves."""
+        return await layer_settings_tool.create_layer_combinations(
+            client_of(ctx), combinations, port, dry_run, confirmation_token
         )
 
     return mcp
