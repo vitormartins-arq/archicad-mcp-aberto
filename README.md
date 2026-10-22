@@ -59,10 +59,13 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
 | `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
 | `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
-| `create_walls` | Write | Up to 20 straight Basic walls | yes |
+| `create_walls` | Write | Up to 20 straight walls, Basic or of a composite | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
+| `create_lamps` | Write | Up to 20 lamps by library part name, position and angle | yes |
+| `create_stairs` | Write | Up to 20 straight stairs along a baseline, with `favorite` | yes |
+| `create_zone_categories` | Write | Up to 50 new zone categories with name, code and colour | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
 | `create_roofs` | Write | Up to 20 single- or multi-plane roofs from simple polygons | yes |
@@ -72,6 +75,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_polylines` | Write | Up to 50 straight-segment 2D polylines | yes |
 | `create_splines` | Write | Up to 50 auto-smoothed 2D splines | yes |
 | `create_hotspots` | Write | Up to 50 2D hotspots on a story | yes |
+| `create_keynote_labels` | Write | Up to 20 labels showing a keynote item's fields | yes |
+| `modify_morphs` | Write | Up to 50 morphs: box size, building material, surface, shadows | yes |
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
@@ -128,6 +133,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
+| `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 
 ### Reported live validation
@@ -225,8 +231,9 @@ Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports
 ## Wall creation
 
 `create_walls` accepts `walls`, an optional `port`, `dry_run` (default `true`), and
-`confirmation_token`. This initial scope supports straight Basic walls only. Lengths
-are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`:
+`confirmation_token`. It creates straight walls, Basic or of a composite. Lengths
+are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`
+(or `composite`, below):
 
 ```json
 {
@@ -241,9 +248,12 @@ are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickne
 }
 ```
 
-Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`
-and `reference_line` (`Outside`, `Center` or `Inside`). New walls inherit Archicad's
-current default layer and building material.
+Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`,
+`reference_line` (`Outside`, `Center` or `Inside`), `composite` and `favorite`. New
+walls inherit Archicad's current default layer and building material. `composite` names
+a Composite attribute for walls: the preview reads its skins with `GetComposites`, the
+wall's thickness is their total (a different `thickness` is refused), and the read-back
+checks the structure and the composite.
 
 The default call only reads the target and returns a preview. After the user reviews
 it, repeat the same wall inputs with the preview's explicit port, `dry_run: false`
@@ -615,9 +625,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir
   1.7.0 applies the favorite to the tool defaults first and the given fields override
-  it, so with a favorite the settings it holds may be left out: wall height and
-  thickness, slab thickness, column height and section, beam width and height. The
-  wall's structure (Basic, Composite or Profile) comes from the favorite too. The
+  it, so with a favorite the settings it holds may be left out: slab thickness,
+  column height and section, beam width and height. Walls are the exception: Tapir
+  1.7.0 `CreateWalls` requires height and thickness even with a favorite (refused live
+  on 21/10/2026) and sets the structure to Basic, the reference line, the bottom and
+  an unlinked top over it, so a wall keeps only the favorite's layer, pens, materials
+  and the like. Pass the favorite's `composite` to keep a composite wall. The
   read-back checks the geometry and the fields that were given. `create_zones`,
   `create_texts`, `create_labels`, `create_meshes` and the 2D drafting tools (lines,
   polylines, splines, arcs, circles, fills and hotspots) take `favorite` the same way;
@@ -635,8 +648,52 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   confirmation_token?)` places up to 50 2D hotspots by Tapir 1.7.0 `CreateHotspots`:
   position in metres, optional height (the hotspot's z on its story, metres), layer by
   name and pen index. The read-back compares type, story, layer, position, height and
-  pen. Fixtures come from the Tapir source, not a live capture. Registry: **98 tools
-  (29 reads, 69 writes/interactions)**.
+  pen. Fixtures come from the Tapir source, not a live capture.
+- `create_keynote_labels([{keynote_item_guid, position, content_fields?}], port?,
+  dry_run?, confirmation_token?)` places up to 20 keynote labels by Tapir 1.7.0
+  `CreateKeynoteLabels` (Archicad 28 or newer). The item GUID comes from
+  `list_keynotes`, and the preview refuses one that is not in the tree. The label text
+  is the item's autotext for `content_fields` (Key, Title, Description, Reference; all
+  by default). Tapir puts the label on the story Archicad shows and attaches it to
+  nothing; the receipt reports the story and the text read back. The read-back checks
+  type, class and position. The keynotes are never changed. Fixtures come from the
+  Tapir source, not a live capture.
+- `modify_morphs([{guid, size?, buildingMaterial?, surface?, castShadow?,
+  receiveShadow?}], port?, dry_run?, confirmation_token?)` edits up to 50 morphs by
+  Tapir 1.7.0 `ModifyMorphs`. Tapir rebuilds the whole body on a size change, so only a
+  box as `create_morphs` makes (corner at the origin) is resized, and the corner stays;
+  any other morph is refused in the preview. Building material and surface are given by
+  name. The read-back checks each changed field and the new box size within 1 mm.
+  Moving and rotating stay with `move_elements` and `rotate_elements`: Tapir's
+  `rotationDegreesZ` mixes the x and z rows of the transform in the 1.7.0 source, which
+  looks like a turn about Y, so it is not exposed until checked live.
+- `create_associative_dimensions([{points: [{wall_guid, end}], reference_point,
+  direction?}], port?, dry_run?, confirmation_token?)` adds up to 50 linear dimensions
+  between end points (`start` or `end`) of existing straight walls by Tapir 1.7.0
+  `CreateAssociativeDimensions`, 2 to 20 points each, all on one story. The dimension
+  stays linked to the walls. Its line passes through `reference_point`; `direction`
+  defaults to the first wall's direction. Tapir's own example gives `inIndex` 1 and 2 as
+  the two ends of the reference line. The read-back checks type and story, then reads
+  `GetDimensionData` and compares each witness point's wall and position within 1 mm. A
+  section or elevation window in front makes Tapir fail, so show a floor plan.
+- `create_lamps` works like `create_objects` for Lamp library parts, by Tapir 1.7.0
+  `CreateLamps`: the preview checks the name among the loaded Lamp parts (an Object
+  part is refused, as Tapir's `CreateObjects` refuses lamps), and `favorite` takes a
+  Lamp favorite. Size and light stay the part's defaults.
+- `create_zone_categories([{name, code?, color?: {red, green, blue}}], port?, dry_run?,
+  confirmation_token?)` adds up to 50 zone categories by Tapir 1.7.0
+  `CreateZoneCategories`. It never overwrites: a name the project already has, or a
+  repeated name, is refused in the preview. Colours go from 0 to 1. Tapir copies the
+  zone stamp from the project's first category. The read-back is `GetZoneCategories`
+  (name, code and colour).
+- `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
+  risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
+  stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from
+  `base_level` (absolute Z). What is left out comes from the Stair tool defaults or the
+  favorite; Archicad's stair rules set riser and tread. Tapir returns no stair details,
+  so after type and story the read-back checks the 3D box: it covers the baseline, starts
+  at the base level and reaches the total height when one was given. Create on the story
+  Archicad shows. Registry: **104 tools (29 reads, 75 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,

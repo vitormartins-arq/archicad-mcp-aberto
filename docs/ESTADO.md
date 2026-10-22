@@ -834,3 +834,54 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   avisa para passar a peça do próprio favorito, que o `lab_find_favorite` do Lab mostra.
   O ângulo vem do favorito se não for dado. 2249 testes simulados e Ruff passaram
   (Linux, Python 3.13).
+
+
+## 2026-10-21 — Claude / C11 etiquetas de nota-chave (lote 7)
+
+- `create_keynote_labels` em `tools/labels.py`, por `CreateKeynoteLabels` do Tapir
+  1.7.0. O Tapir cria uma etiqueta de texto solta (sem elemento), no pavimento que o
+  ArchiCAD mostra, com o autotexto da nota-chave. Por isso a tarefa da FILA ("em
+  elemento existente") não dá: fica a etiqueta num ponto. A prévia confere o item por
+  `GetKeynoteTree`; a conferência cobra tipo, classe e posição e mostra o pavimento e
+  o texto lido. 2270 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  99 ferramentas. Próximo: C12 `modify_morphs`.
+- C12: `modify_morphs` em `tools/modify.py`, por `ModifyMorphs` do Tapir 1.7.0:
+  tamanho (só caixas como as do `create_morphs`, porque o Tapir troca o corpo inteiro),
+  material de construção e superfície por nome, e sombras. Ficaram de fora a translação
+  (já existe `move_elements`) e o `rotationDegreesZ`: no código-fonte ele mistura as
+  linhas x e z da matriz, o que parece giro em torno de Y; conferir ao vivo antes de
+  expor. 2279 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 100
+  ferramentas. Próximo: C13 cotas associativas.
+- C13: `create_associative_dimensions` em `tools/wall_dimensions.py`, por
+  `CreateAssociativeDimensions` do Tapir 1.7.0. Só pontas de paredes retas (começo e fim
+  da linha de referência, `inIndex` 1 e 2, como no exemplo do próprio Tapir); os outros
+  campos do ponto de cota (special, nodeType, nodeId) não são expostos porque o sentido
+  deles depende do tipo de elemento e não foi conferido ao vivo. A conferência lê o
+  `GetDimensionData` e compara parede e posição de cada ponto. 2314 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Registro: 101 ferramentas. Fila do Claude
+  reabastecida com C15 a C18.
+- C15: `create_lamps`, pelo `CreateLamps` do Tapir 1.7.0, no mesmo caminho do
+  `create_objects` (inventário filtrado pelo tipo `Lamp`, conferência pelo tipo `Lamp`),
+  com `favorite`. 2328 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  102 ferramentas. O export de favoritos do LAB Template (`lab_details.json`) não tem
+  nenhum tipo de luminária; se houver favorito de luminária, ele está entre os 44 `Symb`.
+- C17: `create_zone_categories` em `tools/zone_categories.py`, pelo
+  `CreateZoneCategories` do Tapir 1.7.0, sempre com `overwriteExisting` falso; nome que
+  já existe é recusado na prévia. A conferência lê `GetZoneCategories` (nome, código e
+  cor). 2348 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 103
+  ferramentas. Falta levar as categorias do LAB Template ao `lab_apply_template`.
+- Correção da parede por favorito (teste ao vivo de 21/10/2026, ArchiCAD 30 build 3001
+  BRA, Tapir 1.7.0): o `CreateWalls` do Tapir 1.7.0 exige altura e espessura mesmo com
+  favorito e, pelo código-fonte, força estrutura Basic, linha de referência, base e topo
+  solto por cima do favorito. Por isso a parede só com favorito foi recusada, e com
+  altura e espessura saiu Basic. Agora `create_walls` volta a exigir altura e espessura,
+  avisa na prévia, e ganhou `composite` (composição de parede por nome; a espessura é a
+  soma das camadas lidas no `GetComposites`). O `lab_find_favorite` do Lab já devolve a
+  composição do favorito. O falso agora recusa parede sem altura ou espessura. 2353
+  testes simulados e Ruff passaram (Linux, Python 3.13).
+- C16: `create_stairs` em `tools/stairs.py`, pelo `CreateStairs` do Tapir 1.7.0: escada
+  reta por linha de base, com altura total, largura do lance, número de espelhos e
+  `favorite` opcionais. O Tapir não devolve detalhes de escada (`Not yet supported
+  element type`), então a conferência é tipo, pavimento e caixa 3D. 2375 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Registro: 104 ferramentas. Próximo:
+  C18 compostos.

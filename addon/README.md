@@ -1,7 +1,8 @@
 # Native add-on
 
-Empty on purpose. Tapir is the engine inside Archicad. Code goes here only for a gap
-Tapir cannot cover and its maintainers do not want upstream, with an issue that shows it.
+Tapir is the main engine inside Archicad. Commands Tapir lacks go here, so the MCP does
+not wait for a Tapir release (Vitor, 21/10/2026). Each one is also offered to Tapir
+upstream; when Tapir ships it, the MCP moves to Tapir's and ours is retired.
 
 If an add-on is built:
 - Each Archicad major version needs its own build with the matching API DevKit

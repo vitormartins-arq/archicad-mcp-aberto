@@ -40,10 +40,12 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
+from archicad_mcp_aberto.tools import stairs as stairs_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -180,13 +182,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview straight Basic walls (up to 20). All lengths are metres.
+        """Preview straight walls (up to 20). All lengths are metres.
         Requires Tapir. Review the preview with the user, then repeat identical inputs
-        with dry_run=false, explicit port and confirmation_token. New walls inherit the
-        default layer and building material, or take everything from `favorite` (a Wall
-        favorite's name; height and thickness may then be left out, given fields override
-        it). Returns per-wall results and local receipts; verifies geometry after writing.
-        Never saves the project."""
+        with dry_run=false, explicit port and confirmation_token. Height is always needed,
+        thickness too unless `composite` (a wall Composite's name) is given; the wall then
+        takes the composite and its total thickness. New walls inherit the default layer
+        and building material, or those of `favorite` (a Wall favorite's name). Tapir 1.7.0
+        does not keep a favorite's structure, height or linked top: pass the favorite's
+        composite to keep it. Returns per-wall results and local receipts; verifies
+        geometry after writing. Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -246,6 +250,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await write.create_objects(
             client_of(ctx), objects, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_lamps(
+        ctx: Context,
+        lamps: list[write.ObjectCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 lamps (Lamp library parts) by exact name, in metres and
+        radians, like create_objects. base_level is absolute project Z. Optional Lamp
+        `favorite` (pass its own library part). Requires Tapir; apply with explicit port
+        and single-use token. Verifies each lamp; never saves."""
+        return await write.create_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
     async def move_elements(
@@ -328,6 +346,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         back. Requires Tapir. Never saves."""
         return await layers_tool.create_layers(
             client_of(ctx), layers, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_zone_categories(
+        ctx: Context,
+        categories: list[zone_categories_tool.ZoneCategoryCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 zone categories: name, optional code and colour (red,
+        green, blue from 0 to 1). An existing name is refused, never overwritten; the stamp
+        comes from the first zone category. Apply with explicit port and single-use token;
+        each is read back. Requires Tapir. Never saves."""
+        return await zone_categories_tool.create_zone_categories(
+            client_of(ctx), categories, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)
@@ -992,6 +1026,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def modify_morphs(
+        ctx: Context,
+        morphs: list[modify.MorphModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview edits of up to 50 morphs: size {x, y, z} in metres (box morphs from
+        create_morphs only; the corner stays), buildingMaterial and surface by name,
+        castShadow, receiveShadow. Move or rotate with move_elements/rotate_elements.
+        Requires Tapir; apply with explicit port and token; read back. Never saves."""
+        return await modify.modify_morphs(client_of(ctx), morphs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_labels(
+        ctx: Context,
+        labels: list[labels_tool.KeynoteLabelCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 keynote labels: keynote_item_guid from list_keynotes and a
+        position in metres; content_fields picks Key/Title/Description/Reference (all by
+        default). Archicad 28+; the label goes on the story Archicad shows, attached to
+        nothing. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await labels_tool.create_keynote_labels(
+            client_of(ctx), labels, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def modify_roofs(
         ctx: Context,
         roofs: list[modify.RoofModify],
@@ -1463,6 +1527,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_stairs(
+        ctx: Context,
+        stairs: list[stairs_tool.StairCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 straight stairs: a start-end baseline in metres,
+        base_level (absolute Z) and explicit floor_index. Optional total_height,
+        flight_width, risers and `favorite` (a Stair favorite's name); what is left out
+        comes from the Stair tool defaults or the favorite. Create on the story Archicad
+        shows. Reads back type, story and 3D box. Explicit apply port, one-use token and
+        receipt; never saves."""
+        return await stairs_tool.create_stairs(
+            client_of(ctx), stairs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_wall_thickness_dimensions(
         ctx: Context,
         dimensions: list[wall_dimensions_tool.WallThicknessDimension],
@@ -1475,6 +1557,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         direction in plan metres; default crosses the wall's middle. Explicit apply port,
         one-use token and receipt; never saves."""
         return await wall_dimensions_tool.create_wall_thickness_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_associative_dimensions(
+        ctx: Context,
+        dimensions: list[wall_dimensions_tool.WallPointsDimension],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 linear dimensions between wall ends: points
+        [{wall_guid, end: start|end}] (2 to 20, straight walls on one story),
+        reference_point the line passes through, optional direction (default the first
+        wall's). Linked to the walls; read back point by point. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await wall_dimensions_tool.create_associative_dimensions(
             client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 

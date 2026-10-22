@@ -81,6 +81,12 @@ MODIFY_COMMANDS = {
     "ModifyTexts": ("Text", "textsWithDetails"),
     "ModifyLabels": ("Label", "labelsWithDetails"),
     "ModifyMeshes": ("Mesh", "meshesData"),
+    "ModifyMorphs": ("Morph", "morphsWithDetails"),
+}
+# Message from the Tapir 1.7.0 source (ModifyMorphs); the code is synthetic.
+MORPH_MODIFY_FAILURE = {
+    "success": False,
+    "error": {"code": -2130313112, "message": "Failed to modify morph."},
 }
 
 
@@ -268,6 +274,29 @@ class FakeArchicad:
     create_errors: dict[int, dict] = field(default_factory=dict)
     lose_create_response: bool = False
     building_materials: dict[str, dict] = field(default_factory=dict)
+    # Composites in the GetComposites shape (Tapir 1.7.0 source); synthetic, not live.
+    composites: dict[str, dict] = field(
+        default_factory=lambda: {
+            "C0C0C0C0-0000-4000-8000-000000000001": {
+                "attributeId": {"guid": "C0C0C0C0-0000-4000-8000-000000000001"},
+                "index": 3,
+                "name": "Alvenaria 14cm com Reboco",
+                "useWith": ["Wall"],
+                "skins": [
+                    {"type": "Finish", "framePen": 1, "thickness": 0.02},
+                    {"type": "Core", "framePen": 1, "thickness": 0.1},
+                    {"type": "Finish", "framePen": 1, "thickness": 0.02},
+                ],
+            },
+            "C0C0C0C0-0000-4000-8000-000000000002": {
+                "attributeId": {"guid": "C0C0C0C0-0000-4000-8000-000000000002"},
+                "index": 4,
+                "name": "Laje Composta 20",
+                "useWith": ["Slab"],
+                "skins": [{"type": "Core", "framePen": 1, "thickness": 0.2}],
+            },
+        }
+    )
     surfaces: dict[int, str] = field(
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
@@ -361,6 +390,21 @@ class FakeArchicad:
     library_inventory: list[dict] | None = None
     library_skipped_count: int = 0
     library_parts: set[str] = field(default_factory=lambda: {"Mesa Retangular 30"})
+    lamp_parts: set[str] = field(default_factory=lambda: {"Pendente 01"})  # Lamp parts
+    # Zone categories in the GetZoneCategories shape (Tapir 1.7.0 source); synthetic.
+    zone_categories: dict[str, dict] = field(
+        default_factory=lambda: {
+            "5C5C5C5C-0000-4000-8000-000000000001": {
+                "attributeId": {"guid": "5C5C5C5C-0000-4000-8000-000000000001"},
+                "index": "1",
+                "name": "Área",
+                "categoryCode": "AR",
+                "color": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                "stampName": "Carimbo de Zona 30",
+            }
+        }
+    )
+    zone_category_code_stored: str | None = None  # Archicad keeps this code instead
     lose_delete_response: bool = False
     delete_ignored: bool = False
     delete_errors: dict[int, dict] = field(default_factory=dict)
@@ -405,6 +449,7 @@ class FakeArchicad:
     cut_fills: dict[str, list] = field(default_factory=dict)  # guid -> polygons
     bounding_boxes_2d: dict[str, dict] = field(default_factory=dict)
     bounding_boxes_3d: dict[str, dict] = field(default_factory=dict)
+    stair_box_drop: float = 0.0  # metres the created stair's 3D box sits below its base
     hosted_openings: dict[str, list[str]] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
     command_requests: list[dict] = field(default_factory=list)
@@ -431,6 +476,8 @@ class FakeArchicad:
     morph_box_shift: float = 0.0
     morph_open_body: bool = False
     dimension_floor_shift: int = 0
+    dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
+    dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -464,6 +511,8 @@ class FakeArchicad:
     keynotes: dict = field(default_factory=lambda: {"foldersInRoot": [], "itemsInRoot": []})
     keynote_stored_title: str | None = None  # Archicad keeps this title instead
     lose_keynote_response: bool = False
+    shown_story: int = 0  # the story Archicad shows; keynote labels land there
+    keynote_label_shift: float = 0.0  # Archicad moves new keynote labels by this in x
 
     issue_comments: dict[str, list[dict]] = field(default_factory=dict)
 
@@ -629,6 +678,16 @@ class FakeArchicad:
         if command == "API.ExecuteAddOnCommand":
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
+
+    def _keynote_item(self, guid: str) -> dict | None:
+        stack = [self.keynotes]
+        while stack:
+            node = stack.pop()
+            for row in node.get("items", node.get("itemsInRoot", [])):
+                if row["keynoteItemId"]["guid"].upper() == guid.upper():
+                    return row
+            stack.extend(node.get("subFolders", node.get("foldersInRoot", [])))
+        return None
 
     def _keynote_folder(self, guid: str | None) -> dict | None:
         """The folder row with this GUID, the root for None, or None when missing."""
@@ -1400,6 +1459,64 @@ class FakeArchicad:
                 for i, n in self.surfaces.items()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetAttributesByType" and args["attributeType"] == "ZoneCategory":
+            rows = [
+                {k: deepcopy(r[k]) for k in ("attributeId", "index", "name")}
+                for r in self.zone_categories.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "CreateZoneCategories":
+            # Shapes from the Tapir 1.7.0 source (AttributeCommands.cpp); not live captured.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for index, data in enumerate(args["zoneCategoryDataArray"]):
+                assert set(data) <= {"name", "categoryCode", "color"}
+                taken = {r["name"] for r in self.zone_categories.values()}
+                if index in self.create_errors or data["name"] in taken:
+                    error = {"error": {"code": -2130313081, "message": "Already exists."}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                guid = str(uuid4()).upper()
+                first = next(iter(self.zone_categories.values()), {})
+                self.zone_categories[guid] = {
+                    "attributeId": {"guid": guid},
+                    "index": str(len(self.zone_categories) + 1),
+                    "name": data["name"],
+                    "categoryCode": data.get("categoryCode", ""),
+                    "color": dict(data.get("color", {"red": 1.0, "green": 1.0, "blue": 1.0})),
+                    "stampName": first.get("stampName", ""),
+                }
+                if self.zone_category_code_stored is not None:
+                    self.zone_categories[guid]["categoryCode"] = self.zone_category_code_stored
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetZoneCategories":
+            out = []
+            for item in args["attributeIds"]:
+                row = self.zone_categories.get(item["attributeId"]["guid"])
+                if row is None:
+                    error = {"code": -2130313100, "message": "Failed to retrieve attribute."}
+                    out.append({"error": error})
+                    continue
+                keys = {"attributeId", "index", "name", *args.get("fields", [])}
+                out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"zoneCategories": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Composite":
+            rows = [
+                {k: deepcopy(r[k]) for k in ("attributeId", "index", "name")}
+                for r in self.composites.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetComposites":
+            out = []
+            for entry in args["attributeIds"]:
+                row = self.composites.get(entry["attributeId"]["guid"])
+                if row is None:
+                    out.append({"error": {"code": -2130313112, "message": "Not found."}})
+                    continue
+                keys = {"attributeId", "index", "name", *args.get("fields", ["useWith", "skins"])}
+                out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"composites": out}})
         if name == "GetAttributesByType" and args["attributeType"] == "Fill":
             return ok({"addOnCommandResponse": {"attributes": deepcopy(DRAFTING_FIXTURE["fills"])}})
         if name == "GetAttributesByType":
@@ -1726,6 +1843,8 @@ class FakeArchicad:
                     coreAnchor=column["coreAnchor"],
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -1752,6 +1871,17 @@ class FakeArchicad:
                     }
                     for index, name in enumerate(sorted(self.library_parts), 1)
                 ]
+                + [
+                    {
+                        **deepcopy(fixture["response"]["libraryParts"][0]),
+                        "guid": str(UUID(int=1000 + index)).upper(),
+                        "index": 1000 + index,
+                        "documentName": name,
+                        "fileName": f"{name}.gsm",
+                        "typeId": "Lamp",
+                    }
+                    for index, name in enumerate(sorted(self.lamp_parts), 1)
+                ]
             )
             return ok(
                 {
@@ -1762,27 +1892,31 @@ class FakeArchicad:
                     }
                 }
             )
-        if name == "CreateObjects":
-            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0.
+        if name in ("CreateObjects", "CreateLamps"):
+            # Shape and not-found error captured live on AC30 build 3001 BRA, Tapir 1.7.0
+            # (CreateObjects); CreateLamps shares that code in the Tapir source, not live.
+            lamp = name == "CreateLamps"
+            kind = "Lamp" if lamp else "Object"
             out = []
-            for index, obj in enumerate(args["objectsData"]):
+            for index, obj in enumerate(args["lampsData" if lamp else "objectsData"]):
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
-                obj, extra = self._favored("Object", obj)
+                obj, extra = self._favored(kind, obj)
                 if "error" in extra:
                     out.append(extra)
                     continue
-                lookup = {n.casefold(): n for n in self.library_parts}
+                parts = self.lamp_parts if lamp else self.library_parts
+                lookup = {n.casefold(): n for n in parts}
                 found = lookup.get(obj["libraryPartName"].casefold())
                 if found is None:
                     message = f"Not found library part with name '{obj['libraryPartName']}'"
                     out.append({"error": {"code": -2130313113, "message": message}})
                     continue
                 guid = str(uuid4()).upper()
-                self.elements[guid] = "Object"
+                self.elements[guid] = kind
                 self.details[guid] = {
-                    "type": "Object",
+                    "type": kind,
                     "floorIndex": obj["floorIndex"],
                     "layerIndex": 1,
                     "details": {
@@ -1985,6 +2119,35 @@ class FakeArchicad:
                     details |= {"begAngle": 0.0, "endAngle": 0.0}
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateKeynoteLabels":
+            # Shape from the Tapir 1.7.0 source (KeynoteCommands.cpp); not live captured.
+            out = []
+            for index, label in enumerate(args["labelsData"]):
+                assert set(label) <= {"keynoteItemId", "position", "contentFields"}
+                item = self._keynote_item(label["keynoteItemId"]["guid"])
+                if index in self.create_errors or item is None:
+                    message = "Failed to get autotext tokens for the keynote item."
+                    error = {"error": {"code": -2130313112, "message": message}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Label"
+                row = deepcopy(LABELS_FIXTURE["label_details"])
+                row["floorIndex"] = self.shown_story
+                details = row["details"]
+                position = label["position"]
+                details["begCoordinate"] = {
+                    "x": position["x"] + self.keynote_label_shift,
+                    "y": position["y"],
+                }
+                details["midCoordinate"] = {"x": position["x"] + 1.0, "y": position["y"] + 0.5}
+                details["endCoordinate"] = {"x": position["x"] + 3.0, "y": position["y"] + 0.5}
+                fields = label.get("contentFields") or ["Key", "Title", "Description", "Reference"]
+                # Synthetic: what the autotext resolves to is not known from the source.
+                details["text"] = "\n".join(str(item.get(f.lower(), "")) for f in fields)
+                self.details[guid] = row
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateLabels":
             out = []
             for index, label in enumerate(args["labelsData"]):
@@ -2041,6 +2204,62 @@ class FakeArchicad:
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "CreateAssociativeDimensions":
+            # Shapes from Tapir 1.7.0 source (CreateAssociativeDimensions, GetDimensionData);
+            # not live. inIndex 1 and 2 are the wall reference line ends (Tapir example).
+            out = []
+            for index, data in enumerate(args["dimensionsData"]):
+                assert set(data) <= {"referencePoint", "direction", "floorIndex", "witnessPoints"}
+                walls = [w["elementId"]["guid"] for w in data["witnessPoints"]]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                if any(self.elements.get(w) is None for w in walls):
+                    message = "Failed to load referenced element for associative dimension point."
+                    out.append({"error": {"code": -2130313112, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Dimension"
+                floor = data.get("floorIndex", self.details.get(walls[0], {}).get("floorIndex", 0))
+                self.details[guid] = {
+                    "type": "Dimension",
+                    "floorIndex": floor + self.dimension_floor_shift,
+                    "layerIndex": 1,
+                    "details": {},
+                }
+                points = []
+                for witness in data["witnessPoints"]:
+                    wall = witness["elementId"]["guid"]
+                    ends = self.details.get(wall, {}).get("details", {})
+                    key = "begCoordinate" if witness.get("inIndex") == 1 else "endCoordinate"
+                    at = dict(ends.get(key, {"x": 0.0, "y": 0.0}))
+                    at["x"] += self.dimension_witness_shift
+                    points.append(
+                        {
+                            "coordinate": at,
+                            "line": False,
+                            "inIndex": witness.get("inIndex", 0),
+                            "baseElementId": {"guid": wall},
+                        }
+                    )
+                self.dimension_data[guid] = {
+                    "elementId": {"guid": guid},
+                    "direction": dict(data["direction"]),
+                    "dimensionLinePosition": dict(data["referencePoint"]),
+                    "witnessPoints": points,
+                }
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetDimensionData":
+            out = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                if guid in self.dimension_data:
+                    out.append(deepcopy(self.dimension_data[guid]))
+                else:
+                    error = {"code": -2130313100, "message": "Element is not a Dimension"}
+                    out.append({"error": error})
+            return ok({"addOnCommandResponse": {"dimensionsData": out}})
         if name == "CreateWallThicknessDimensions":
             # Shapes from Tapir 1.7.0 source (ExtendedElementCommands.cpp); not live.
             out = []
@@ -2109,6 +2328,42 @@ class FakeArchicad:
                 )
                 rows.append({"elements": [self._id(g) for g in found]})
             return ok({"addOnCommandResponse": {"connectedElements": rows}})
+        if name == "CreateStairs":
+            # Tapir 1.7.0 source: GetDetailsOfElements has no Stair branch, so details hold
+            # only its "Not yet supported" error. The 3D box (flight centred on the
+            # baseline, tool default 1.2 m wide and 3.0 m high) is synthetic, not live.
+            out = []
+            for index, stair in enumerate(args["stairsData"]):
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                    continue
+                stair, extra = self._favored("Stair", stair)
+                if "error" in extra:
+                    out.append(extra)
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Stair"
+                self.details[guid] = {
+                    "type": "Stair",
+                    "floorIndex": stair["floorIndex"],
+                    "layerIndex": 1,
+                    "details": {"error": "Not yet supported element type"},
+                }
+                (a, b), half = stair["baseLinePoints"], stair.get("flightWidth", 1.2) / 2
+                length = math.hypot(b["x"] - a["x"], b["y"] - a["y"])
+                nx, ny = -(b["y"] - a["y"]) / length * half, (b["x"] - a["x"]) / length * half
+                xs = [p["x"] + d for p in (a, b) for d in (nx, -nx)]
+                ys = [p["y"] + d for p in (a, b) for d in (ny, -ny)]
+                z = stair["zCoordinate"] + self.stair_box_drop
+                self.bounding_boxes_3d[guid] = {
+                    "boundingBox3D": {
+                        "xMin": min(xs), "yMin": min(ys), "zMin": z,
+                        "xMax": max(xs), "yMax": max(ys),
+                        "zMax": z + stair.get("totalHeight", 3.0),
+                    }
+                }  # fmt: skip
+                out.append(self._id(guid))
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "CreateMorphs":
             # Shapes from Tapir 1.7.0 source (CreateMorphs, AddMorphBodyFromMemo); not live.
             # morph_open_body copies the live AC30 result of the `size` box (20/10/2026):
@@ -2215,6 +2470,8 @@ class FakeArchicad:
                     holes=deepcopy(slab["holes"]),
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2224,10 +2481,22 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                if not {"height", "thickness"} <= set(wall):
+                    # Tapir 1.7.0 refuses the whole command by its schema, favorite or
+                    # not (live 21/10/2026); this message and code are synthetic.
+                    error = {"code": 4001, "message": "Invalid command parameters: required"}
+                    return ok({"addOnCommandResponse": {"error": error}})
                 wall, extra = self._favored("Wall", wall)
                 if "error" in extra:
                     out.append(extra)
                     continue
+                # Tapir 1.7.0 sets the structure and an unlinked top over any favorite
+                # (CreateWallsCommand source; Basic seen live 21/10/2026).
+                for key in ("structureType", "compositeId", "buildingMaterialId"):
+                    extra.pop(key, None)
+                extra["relativeTopStory"] = 0
+                if "compositeId" in wall:
+                    extra.update(structureType="Composite", compositeId=wall["compositeId"])
                 guid = str(uuid4()).upper()
                 self.elements[guid] = "Wall"
                 row = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
@@ -2245,6 +2514,8 @@ class FakeArchicad:
                     referenceLineLocation=wall["referenceLineLocation"],
                 )
                 row["details"].update(extra)
+                if "compositeId" in extra:
+                    row["details"].pop("buildingMaterialId", None)
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
@@ -2263,6 +2534,7 @@ class FakeArchicad:
         },
         "Beam": {"width": 0.2, "height": 0.4},
         "Object": {"angle": 0.0},
+        "Lamp": {"angle": 0.0},
         "Mesh": {
             "skirtType": "SurfaceOnlyWithoutSkirt", "skirtLevel": 1.0, "ridges": "AllSharp",
             "showLines": True,
@@ -2307,6 +2579,8 @@ class FakeArchicad:
                         if name == "ModifyMeshes"
                         else MODIFY_LABELS_FIXTURE["failure"]
                         if name == "ModifyLabels"
+                        else MORPH_MODIFY_FAILURE
+                        if name == "ModifyMorphs"
                         else MODIFY_ELEMENTS_FIXTURE["failures"][name]
                     )
                 )
@@ -2361,6 +2635,16 @@ class FakeArchicad:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}
+                if name == "ModifyMorphs" and "body" in changes:
+                    # Tapir 1.7.0 rebuilds the whole body (BuildMorphBodyFromGeometry).
+                    body = changes.pop("body")
+                    details["body"] = {
+                        "bodyType": body["bodyType"],
+                        "edgeDefault": details.get("body", {}).get("edgeDefault", "SoftHidden"),
+                        "isClosed": True,
+                        "vertices": deepcopy(body["vertices"]),
+                        "polygons": deepcopy(body["polygons"]),
+                    }
                 if name == "ModifyLabels":
                     if details.get("labelClass") != "Text":
                         rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))

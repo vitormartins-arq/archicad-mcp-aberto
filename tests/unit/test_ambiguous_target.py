@@ -36,11 +36,13 @@ from archicad_mcp_aberto.tools import (
     roofs,
     sections,
     selection,
+    stairs,
     texts,
     views,
     voids,
     wall_dimensions,
     write,
+    zone_categories,
     zones,
 )
 from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
@@ -61,6 +63,7 @@ MODIFY_TYPES = {
     "modify_texts": "Text",
     "modify_labels": "Label",
     "modify_meshes": "Mesh",
+    "modify_morphs": "Morph",
 }
 INPUTS = {
     "list_design_options": {},
@@ -115,6 +118,10 @@ INPUTS = {
     },
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "modify_morphs": {"morphs": [{"guid": GUID, "castShadow": False}]},
+    "create_keynote_labels": {
+        "labels": [{"keynote_item_guid": GUID, "position": {"x": 0, "y": 0}}]
+    },
     "list_classifications": {},
     "list_layers": {},
     "get_project_info_fields": {},
@@ -126,6 +133,7 @@ INPUTS = {
     "get_element_groups": {"element_guids": [GUID]},
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
+    "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
     "lock_elements": {"element_guids": [GUID]},
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
@@ -218,6 +226,16 @@ INPUTS = {
             }
         ]
     },
+    "create_lamps": {
+        "lamps": [
+            {
+                "library_part_name": "Pendente 01",
+                "origin": {"x": 1, "y": 2},
+                "floor_index": 0,
+                "base_level": 2.5,
+            }
+        ]
+    },
     "get_bounding_boxes": {"element_ids": [GUID]},
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
@@ -227,12 +245,34 @@ INPUTS = {
             {"owner_guid": GUID, "base_point": {"x": 1, "y": 0, "z": 0.5}, "width": 1, "height": 1}
         ]
     },
+    "create_associative_dimensions": {
+        "dimensions": [
+            {
+                "points": [
+                    {"wall_guid": GUID, "end": "start"},
+                    {"wall_guid": GUID, "end": "end"},
+                ],
+                "reference_point": {"x": 0, "y": 1},
+            }
+        ]
+    },
     "create_wall_thickness_dimensions": {
         "dimensions": [
             {
                 "wall_guid": GUID,
                 "reference_point": {"x": 0, "y": 0},
                 "direction": {"x": 0, "y": 1},
+            }
+        ]
+    },
+    "create_stairs": {
+        "stairs": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 3, "y": 0},
+                "floor_index": 0,
+                "base_level": 0,
+                "total_height": 2.8,
             }
         ]
     },
@@ -366,12 +406,14 @@ TARGETED = {
         roofs,
         sections,
         selection,
+        stairs,
         texts,
         views,
         voids,
         wall_dimensions,
         write,
         zones,
+        zone_categories,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
@@ -397,6 +439,9 @@ def instances(second_state="ready"):
         busy=second_state == "busy",
         tapir_version=None if second_state == "no_tapir" else "1.7.0",
     )
+    for instance in (first, second):
+        row = {"keynoteItemId": {"guid": GUID}, "key": "K-LABEL", "title": "Piso"}
+        instance.keynotes["itemsInRoot"].append(row)
     return first, second
 
 
@@ -446,7 +491,7 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
-    if name in {"modify_walls", "create_windows", "create_doors"}:
+    if name in {"modify_walls", "create_windows", "create_doors", "create_associative_dimensions"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
@@ -514,7 +559,7 @@ async def test_instance_inventory_tools_report_both_without_selecting(name):
 async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path / "receipts"))
     first, second = instances()
-    if name in {"create_windows", "create_doors"}:
+    if name in {"create_windows", "create_doors", "create_associative_dimensions"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name == "set_layer_settings":
         for instance in (first, second):

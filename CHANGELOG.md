@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+- Add `create_stairs` (`tools/stairs.py`): straight stairs by Tapir 1.7.0
+  `CreateStairs`, with `favorite`, read back by type, story and 3D box. Not tested live
+  yet.
+
+- Fix `create_walls` with `favorite`: Tapir 1.7.0 `CreateWalls` requires height and
+  thickness even with a favorite, so a wall with only a favorite was refused live
+  (Archicad 30 build 3001 BRA, 21/10/2026). Height and thickness are required again,
+  and the read-back expects the Basic structure and unlinked top that Tapir 1.7.0 sets
+  over the favorite. New `composite` field: a wall Composite by name, whose skins set
+  the thickness, so a composite favorite's walls can keep their composite.
+
+- Add `create_zone_categories` (`tools/zone_categories.py`): new zone categories with
+  name, code and colour by Tapir 1.7.0 `CreateZoneCategories`, never overwriting an
+  existing one, read back with `GetZoneCategories`. Not tested live yet.
+
+- Add `create_lamps`: up to 20 Lamp library parts by name, like `create_objects`, by
+  Tapir 1.7.0 `CreateLamps`, with `favorite`. Not tested live yet.
+
+- Add `create_associative_dimensions` to `tools/wall_dimensions.py`: linear dimensions
+  between wall ends, linked to the walls, by Tapir 1.7.0 `CreateAssociativeDimensions`,
+  read back witness point by witness point with `GetDimensionData`. Not tested live yet.
+
+- Add `modify_morphs` to `tools/modify.py`: box size (box morphs only, corner kept),
+  building material and surface by name, and shadows, by Tapir 1.7.0 `ModifyMorphs`,
+  each read back. Not tested live yet.
+
+- Add `create_keynote_labels` to `tools/labels.py`: up to 20 labels showing a keynote
+  item's fields as autotext, by Tapir 1.7.0 `CreateKeynoteLabels`. The preview refuses
+  an item that is not in the keynote tree; the read-back checks type, class and
+  position and reports the story and text. Not tested live yet.
+
 - `create_objects` takes an optional `favorite` too. Tapir still needs
   `libraryPartName` and cannot tell which part a favorite holds, so the preview notes
   that the favorite's own part must be given. The angle comes from the favorite unless

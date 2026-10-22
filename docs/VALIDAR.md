@@ -586,3 +586,58 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **Objeto por favorito.** Com um favorito de objeto LAB e a peça de biblioteca dele
   (o `lab_find_favorite` mostra qual é): conferir vegetal, penas e parâmetros do
   favorito. Anotar o que acontece se a peça dada for outra.
+
+
+## Lote do Claude C11: etiquetas de nota-chave
+
+- [ ] **create_keynote_labels.** No projeto novo sem nome, com uma nota-chave criada
+  antes (`create_keynote_items`) ou já existente: "Ponha uma etiqueta da nota-chave
+  <chave> em (2,3), só com chave e título." Conferir na planta o texto da etiqueta (a
+  nota-chave de verdade ou o código do autotexto?), o pavimento em que caiu e o recibo
+  `verified`. Anotar o texto que o recibo leu (`text_read`).
+
+## Lote do Claude C12: mudar morfos
+
+- [ ] **modify_morphs, tamanho.** Num morfo feito por `create_morphs` no projeto novo:
+  "Mude o morfo para 4 x 2 x 1,5 m." Conferir no 3D que o canto ficou no lugar e o
+  tamanho mudou, e que continua sólido. Recibo `verified`.
+- [ ] **modify_morphs, material e sombras.** No mesmo morfo: material de construção e
+  superfície por nome, e sem sombra. Conferir nas configurações do morfo.
+
+## Lote do Claude C13: cotas associativas
+
+- [ ] **create_associative_dimensions.** Com a planta na frente e duas paredes retas em
+  linha no projeto novo: "Cote do fim da primeira parede ao começo da segunda, com a
+  linha de cota 2 m acima." Conferir na planta que a cota pega as pontas certas (o
+  `inIndex` 1 e 2 é o começo e o fim da linha de referência?), que ela acompanha a
+  parede quando a parede é movida, e o recibo `verified`.
+
+## Lote do Claude C15: luminárias
+
+- [ ] **create_lamps.** No projeto novo: "Ponha uma luminária <peça> em (1,2), a 2,60 m."
+  Conferir na planta e no 3D, e que o recibo dá `verified`. Repetir com um favorito de
+  luminária LAB, se houver.
+
+## Lote do Claude C17: categorias de zona
+
+- [ ] **create_zone_categories.** No projeto novo: "Crie a categoria de zona Varanda,
+  código VAR, cor verde." Conferir em Opções > Atributos de Elemento > Categorias de
+  Zona que ela aparece com o código, a cor e o carimbo da primeira categoria, e que o
+  recibo dá `verified`. Pedir de novo o mesmo nome: a prévia deve recusar.
+
+## Correção: parede por favorito e composição
+
+- [ ] **Parede com favorito e composição.** No projeto novo: "Faça uma parede de 4 m
+  com o favorito <favorito de parede composta>, altura 3, composição <a do favorito>."
+  Conferir na planta que a parede sai composta (camadas da composição), com a espessura
+  total dela, no vegetal do favorito, e que o recibo dá `verified`.
+- [ ] **Parede só com favorito.** A prévia deve pedir altura e espessura, e avisar que a
+  composição do favorito se perde sem `composite`.
+
+## Lote do Claude C16: escadas
+
+- [ ] **create_stairs.** No projeto novo, no pavimento que aparece: "Faça uma escada reta
+  de (0,0) a (4,0), altura 2,88, largura 1,10, 16 espelhos." Conferir na planta e no 3D,
+  e que o recibo dá `verified`. Repetir só com um favorito de escada LAB, sem tamanhos.
+- [ ] Anotar onde a linha de base fica (borda ou meio do lance): a conferência só exige
+  que a caixa 3D cubra a linha.

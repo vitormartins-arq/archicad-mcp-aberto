@@ -110,12 +110,34 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   metros, no padrão de `create_polylines`, conferidas pela leitura de tipo e pavimento.
 - **C10 `create_hotspots`.** (Feito no lote `lote/claude-4`.) `CreateHotspots`: pontos quentes 2D em metros, no pavimento
   dado, conferidos pela leitura de tipo, pavimento e posição.
-- **C11 `create_keynote_labels`.** `CreateKeynoteLabels`: etiqueta de nota-chave em
+- **C11 `create_keynote_labels`.** (Feito no lote `lote/claude-7`.) `CreateKeynoteLabels`: etiqueta de nota-chave em
   elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.
-- **C12 `modify_morphs`.** `ModifyMorphs`: mudar morfos existentes e editáveis no que o
+- **C12 `modify_morphs`.** (Feito no lote `lote/claude-7`.) `ModifyMorphs`: mudar morfos existentes e editáveis no que o
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
-- **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
+- **C13 cotas associativas.** (Feito no lote `lote/claude-7`, só pontas de parede.) `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
+- **C15 `create_lamps`.** (Feito no lote `lote/claude-7`.) `CreateLamps`: luminárias por nome de peça de biblioteca, no
+  padrão de `create_objects`, com `favorite`. Conferência por tipo, pavimento, origem e
+  peça.
+- **C16 `create_stairs`.** (Feito no lote `lote/claude-7`.) `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
+  ele aceita): escada reta por linha de base e altura, com `favorite`, conferida pela
+  leitura de tipo, pavimento e caixa 3D.
+- **C17 categorias de zona.** (Feito no lote `lote/claude-7`; falta o Lab.) `CreateZoneCategories`: categorias novas com nome, código
+  e cor, sem mudar nem apagar as que existem. Depois, no Lab, levar ao
+  `lab_apply_template` as categorias de zona do LAB Template.
+- **C18 compostos.** `CreateComposites`: compostos novos por camadas (material de
+  construção e espessura), sem sobrescrever. Depois, no Lab, os compostos do template.
+- **C19 salvar a vista 3D atual.** (Pedido do Vitor, 21/10/2026.) `CreateViewsInViewMap`
+  do Tapir 1.7.0 a partir da Perspectiva genérica do Mapa do projeto, com nome e pasta
+  do Mapa de vistas, conferida pela árvore do Navegador. O Tapir não move a câmera: o
+  Vitor acerta o ângulo na tela e o MCP salva. Conferir ao vivo se o ângulo fica gravado.
+- **C20 gerar cenas 3D.** (Pedido do Vitor, 21/10/2026: "gera várias vistas legais do meu
+  3D e salva no mapa de vistas".) Passo 1: investigar na API C++ do ArchiCAD o que lê e
+  define a câmera do 3D (posição, alvo, lente, axonometria) e propor ao Tapir um comando
+  para isso, pela regra de upstream primeiro. Passo 2: no MCP, `create_3d_scenes`, que lê
+  a caixa 3D do modelo, escolhe ângulos (axonometrias dos cantos, perspectivas na altura
+  dos olhos), põe a câmera, salva cada uma no Mapa de vistas com nome e pasta (C19) e
+  tira print para conferir. Até o Tapir ter o comando, só o passo 1.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
