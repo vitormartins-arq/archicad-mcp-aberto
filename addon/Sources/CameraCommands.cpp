@@ -177,6 +177,8 @@ GS::ObjectState Set3DCameraCommand::Execute (const GS::ObjectState& parameters, 
         } else if (!(p.viewCone > 0.0 && p.viewCone < 180.0)) {
             p.viewCone = DefaultViewConeDeg;
         }
+        // Not inherited from the previous camera: a level camera is the photographic default.
+        p.isTwoPointPersp = false;
         perspective->Get ("twoPointPerspective", p.isTwoPointPersp);
     } else if (parallel != nullptr) {
         if (info.isPersp) {
@@ -231,7 +233,7 @@ GS::Optional<GS::UniString> Save3DViewCommand::GetInputParametersSchema () const
             "name": {"type": "string", "minLength": 1, "maxLength": 200, "description": "Name of the new view."},
             "folderPath": {
                 "type": "array",
-                "description": "View Map folders from the top level down, e.g. [\"02 | MODELO 3D\", \"AMBIENTES\", \"RECEPCAO\"]; each is found by name or created.",
+                "description": "View Map folders, e.g. [\"02 | MODELO 3D\", \"AMBIENTES\", \"RECEPCAO\"]. The first is searched anywhere in the View Map, the others below it; missing ones are created (the first at the top level).",
                 "items": {"type": "string", "minLength": 1, "maxLength": 200},
                 "maxItems": 10
             }
@@ -275,6 +277,35 @@ static GSErrCode FindOrCreateFolder (const API_Guid& parentGuid, const GS::UniSt
     return err;
 }
 
+// Depth-first search of the View Map for a folder by name, so the first folder of a path
+// may sit below the project's own top folder (live test: "02 | MODELO 3D" was inside
+// "TEMPLATE LAB COCADA").
+static bool FindFolderAnywhere (const API_Guid& parentGuid, const GS::UniString& folder, API_Guid& folderGuid, int depth = 0)
+{
+    if (depth > 8) {
+        return false;
+    }
+    API_NavigatorItem parent {};
+    parent.guid = parentGuid;
+    parent.mapId = API_PublicViewMap;
+    GS::Array<API_NavigatorItem> children;
+    if (ACAPI_Navigator_GetNavigatorChildrenItems (&parent, &children) != NoError) {
+        return false;
+    }
+    for (const API_NavigatorItem& child : children) {
+        if (child.itemType == API_FolderNavItem && GS::UniString (child.uName) == folder) {
+            folderGuid = child.guid;
+            return true;
+        }
+    }
+    for (const API_NavigatorItem& child : children) {
+        if (child.itemType == API_FolderNavItem && FindFolderAnywhere (child.guid, folder, folderGuid, depth + 1)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
     GS::UniString name;
@@ -313,7 +344,14 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
         return CreateErrorResponse (err, "Failed to read the View Map.");
     }
     API_Guid parentGuid = viewMap.rootGuid;
+    bool first = true;
     for (const GS::UniString& folder : folderPath) {
+        if (first) {
+            first = false;
+            if (FindFolderAnywhere (viewMap.rootGuid, folder, parentGuid)) {
+                continue;
+            }
+        }
         err = FindOrCreateFolder (parentGuid, folder, parentGuid);
         if (err != NoError) {
             return CreateErrorResponse (err, "Failed to find or create the View Map folder " + folder + ".");
@@ -344,8 +382,8 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
     return response;
 }
 
-// The meaning of pa..pd is not documented clearly (the reference calls them section
-// line ends); they are passed through raw until a live read of a known cut shows it.
+// pa..pd are passed raw. Live read (AC30, 22/10/2026): a horizontal cut at height h is
+// cutStatus 8, pc 1, pd h (metres); the other combinations are not mapped yet.
 static GS::ObjectState CutPlanesToObjectState (const API_3DCutPlanesInfo& info)
 {
     GS::ObjectState os ("enabled", info.isCutPlanes);
@@ -432,6 +470,11 @@ GS::ObjectState Set3DCutPlanesCommand::Execute (const GS::ObjectState& parameter
 
     GS::Array<GS::ObjectState> planes;
     if (parameters.Get ("planes", planes)) {
+        // A plane without cutPen keeps the pen of the plane it replaces.
+        GS::Array<short> oldPens;
+        for (short i = 0; i < info.nShapes && info.shapes != nullptr; ++i) {
+            oldPens.Push ((*info.shapes)[i].cutPen);
+        }
         if (info.shapes != nullptr) {
             BMKillHandle (reinterpret_cast<GSHandle*> (&info.shapes));
         }
@@ -447,7 +490,7 @@ GS::ObjectState Set3DCutPlanesCommand::Execute (const GS::ObjectState& parameter
                 Int32 value = 0;
                 plane.Get ("cutStatus", value);
                 shape.cutStatus = static_cast<short> (value);
-                value = 1;
+                value = i < static_cast<short> (oldPens.GetSize ()) ? oldPens[i] : 0;
                 plane.Get ("cutPen", value);
                 shape.cutPen = static_cast<short> (value);
                 plane.Get ("pa", shape.pa);

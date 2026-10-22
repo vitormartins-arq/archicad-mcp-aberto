@@ -56,8 +56,8 @@ Skip rooms where no good picture exists (storage, shafts, rooms smaller than abo
 - One general axonometric of the whole building from the most informative corner.
 - One cut axonometric per story to see inside: a horizontal 3D cutting plane about
   1.50 m above that story's floor (`Set3DCutPlanes`), same angle as the general one.
-  Read an existing cut with `Get3DCutPlanes` first if the project has one: the raw plane
-  values must be confirmed live before they are computed.
+  A horizontal cut at height h is the plane `{"cutStatus": 8, "pa": 0, "pb": 0, "pc": 1,
+  "pd": h}` (read live on Archicad 30). Turn the cut off before the next perspective.
 
 ## Names and folders
 

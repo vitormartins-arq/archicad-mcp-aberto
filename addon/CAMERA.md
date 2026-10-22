@@ -51,6 +51,13 @@ loaded). `Save3DView` into `["02 | MODELO 3D", "AMBIENTES", "04 PESO LIVRE E
 ARTICULADO"]` created the nested folders, and opening the saved view with the 3D camera
 elsewhere restored the view's own camera (checked by Vitor).
 
+Same run, 18 scenes saved (perspectives, a general axonometric, one cut axonometric):
+40 `Get3DWindowImage` calls at 1619x865, no failure; `Show3DAll` worked. A horizontal
+cut at height h reads back as cutStatus 8, pc 1, pd h. Three faults, fixed afterwards
+and not yet retested: `twoPointPerspective` carried over from the previous camera;
+`folderPath` needed the project's top folder ("TEMPLATE LAB COCADA") first, now the first
+folder is searched anywhere; a plane sent without `cutPen` got pen 1 instead of keeping 0.
+
 ## Still needed
 
 - Retest the angle fix live (view cone, parallel azimuth, parallel to perspective).

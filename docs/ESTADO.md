@@ -896,3 +896,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   de83f14. Câmera e alvo voltam exatos; a captura funciona. O ArchiCAD guarda azimute e ângulo de
   visão em graus: corrigido no add-on (radianos fora, graus dentro, padrões ao sair da paralela).
   Falta retestar essa correção ao vivo. Detalhes em `addon/CAMERA.md`.
+
+- **Claude / cenas 3D no WG Formosa, 22/10/2026:** AC30 build 3001 BRA no PC ESC, sem Tapir,
+  add-on de 07210e2. 18 vistas salvas em 02 | MODELO 3D > AMBIENTES (uma pasta por ambiente),
+  projeto não salvo. `Save3DView` guarda a câmera (conferido pelo Vitor). Corrigidos depois:
+  2 pontos de fuga herdado, pasta inicial fora da raiz do Mapa de Vistas e caneta do corte.
+  Falta o Vitor conferir se a ISOMETRICA TERREO guardou o corte.
