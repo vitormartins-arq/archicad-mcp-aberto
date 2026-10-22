@@ -917,3 +917,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   ADD-ON, para o Vitor apagar). As 3 correções passaram, menos a caneta 0 do corte, que o
   ArchiCAD grava como 1 (pendência). `read_scene_model`, `shoot_3d_scenes` e
   `save_3d_scenes` funcionaram ao vivo. PR #68 pronto para merge depois do #67.
+
+- **Claude / "gera as cenas 3D" ao vivo, 22/10/2026:** AC30 build 3001 BRA, PC ESC, sem
+  Tapir, main depois do #69. 17 vistas salvas em 02 | MODELO 3D > DELETAR (pasta de teste
+  que o Vitor apaga), projeto não salvo. Sugestões automáticas: cerca de 1 em 3 boas.
+  Branch `claude/scene-suggestions`: câmeras checadas contra paredes, pilares e ambientes
+  menores dentro da caixa; depósitos e DML pulados; nome repetido ganha o número da zona;
+  espera de 60 s para imagem e vista. Falta retestar ao vivo.

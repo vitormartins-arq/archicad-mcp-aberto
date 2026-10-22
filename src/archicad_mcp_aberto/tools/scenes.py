@@ -20,7 +20,9 @@ from __future__ import annotations
 import base64
 import binascii
 import math
+import re
 import time
+import unicodedata
 from typing import Annotated, Any
 from uuid import uuid4
 from weakref import WeakKeyDictionary
@@ -45,6 +47,13 @@ ZONE_PROPERTIES = ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea")
 EYE_HEIGHT = 1.30
 WALL_INSET = 0.5
 MIN_ROOM_AREA = 6.0
+CAMERA_CLEARANCE = 0.3  # metres between a camera and a wall or column box
+SIGHT_END_MARGIN = 0.4  # the last stretch of a sight line may touch the far wall
+BLOCKING_TYPES = ("Wall", "Column", "CurtainWall", "Object")
+# Rooms not worth a photograph (docs/3D_SCENES.md), matched as whole words, no accents.
+SKIP_NAME_WORDS = {"DML", "DEPOSITO", "DEP", "ALMOXARIFADO", "SHAFT", "DESPENSA", "STORAGE"}
+# Grabbing or saving a view waits on a full 3D redraw; a big model took over 12 s live.
+SLOW_COMMAND_TIMEOUT = 60.0
 DEFAULT_VIEW_CONE = math.radians(60)
 ADDON_MISSING = (
     "The ArchicadMcpAberto add-on is not loaded in this Archicad. Install the .apx of "
@@ -164,48 +173,178 @@ async def _zones(client, port) -> list[dict]:
     return out
 
 
-def suggest_cameras(zone: dict) -> dict:
-    """First cameras for a room from its box: a one-point view along the longer side and,
-    in big rooms, a two-point view from a corner. Boxes hide L shapes and furniture:
-    the images decide."""
+def _plain(text: str) -> str:
+    folded = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
+    return folded.upper()
+
+
+def _skip_by_name(name: str | None) -> str | None:
+    words = set(re.findall(r"[A-Z]+", _plain(name or "")))
+    hit = words & SKIP_NAME_WORDS
+    return f"service room ({sorted(hit)[0]})" if hit else None
+
+
+def _inside(x: float, y: float, rect: tuple, margin: float = 0.0) -> bool:
+    x0, y0, x1, y1 = rect
+    return x0 - margin <= x <= x1 + margin and y0 - margin <= y <= y1 + margin
+
+
+def _crosses(a: dict, b: dict, rect: tuple) -> bool:
+    """Whether the 2D segment a-b passes through rect (Liang-Barsky)."""
+    x0, y0, x1, y1 = rect
+    dx, dy = b["x"] - a["x"], b["y"] - a["y"]
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, a["x"] - x0), (dx, x1 - a["x"]), (-dy, a["y"] - y0), (dy, y1 - a["y"])):
+        if p == 0:
+            if q < 0:
+                return False
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return False
+    return True
+
+
+def _blockers(camera: dict, target: dict, obstacles: list[tuple]) -> int:
+    # Stop short of the target: the far wall itself is what the photo looks at.
+    length = math.dist((camera["x"], camera["y"]), (target["x"], target["y"]))
+    keep = max(0.0, (length - SIGHT_END_MARGIN) / length) if length else 0.0
+    end = {
+        "x": camera["x"] + (target["x"] - camera["x"]) * keep,
+        "y": camera["y"] + (target["y"] - camera["y"]) * keep,
+    }
+    return sum(_crosses(camera, end, rect) for rect in obstacles)
+
+
+def _free(camera: dict, obstacles: list[tuple], rooms_inside: list[tuple]) -> bool:
+    x, y = camera["x"], camera["y"]
+    return not any(_inside(x, y, r, CAMERA_CLEARANCE) for r in obstacles) and not any(
+        _inside(x, y, r) for r in rooms_inside
+    )
+
+
+def _pick(candidates: list[tuple[dict, dict]], obstacles, rooms_inside) -> tuple | None:
+    """First candidate with a free camera and a clear sight line, else the least blocked."""
+    scored = [
+        (_blockers(cam, tgt, obstacles), i, cam, tgt)
+        for i, (cam, tgt) in enumerate(candidates)
+        if _free(cam, obstacles, rooms_inside)
+    ]
+    if not scored:
+        return None
+    blocked, _, camera, target = min(scored, key=lambda row: (row[0], row[1]))
+    return camera, target, blocked
+
+
+def suggest_cameras(
+    zone: dict, obstacles: list[tuple] | None = None, rooms_inside: list[tuple] | None = None
+) -> dict:
+    """First cameras for a room from its box, checked against walls and columns.
+
+    A one-point view along the longer side and, in big rooms, a two-point view from a
+    corner. Each camera must stand clear of walls, columns and smaller rooms inside this
+    room's box, and its sight line should cross none of them. obstacles and rooms_inside
+    are [xMin, yMin, xMax, yMax] at eye height. Boxes still hide L shapes and furniture:
+    the images decide.
+    """
+    obstacles = [tuple(r) for r in obstacles or []]
+    rooms_inside = [tuple(r) for r in rooms_inside or []]
     box, area = zone.get("box"), zone.get("area")
     if box is None:
         return {"skip": "no 3D box"}
-    width, depth = box["xMax"] - box["xMin"], box["yMax"] - box["yMin"]
+    service = _skip_by_name(zone.get("name"))
+    if service:
+        return {"skip": service}
+    x0, y0, x1, y1 = box["xMin"], box["yMin"], box["xMax"], box["yMax"]
+    width, depth = x1 - x0, y1 - y0
     area = area if area is not None else width * depth
     if area < MIN_ROOM_AREA:
         return {"skip": f"smaller than {MIN_ROOM_AREA:g} m2"}
-    z = round(box["zMin"] + EYE_HEIGHT, 2)
-    along_x = width >= depth
-    long_side, short_side = (width, depth) if along_x else (depth, width)
-    if long_side < 2 * WALL_INSET + 1:
+    if max(width, depth) < 2 * WALL_INSET + 1:
         return {"skip": "too narrow for a camera"}
-    lateral = short_side / 2 + short_side / 6  # a third off the axis
-    if along_x:
-        camera = {"x": box["xMin"] + WALL_INSET, "y": box["yMin"] + lateral, "z": z}
-        target = {"x": box["xMax"], "y": camera["y"]}
+    z = round(box["zMin"] + EYE_HEIGHT, 2)
+
+    def point(x, y, level=True):
+        return {"x": round(x, 3), "y": round(y, 3), **({"z": z} if level else {})}
+
+    # One point: along the longer side first, from either end, a third off the axis.
+    candidates = []
+    axes = ("x", "y") if width >= depth else ("y", "x")
+    for axis in axes:
+        for third in (2 / 3, 1 / 3):
+            for forward in (True, False):
+                if axis == "x":
+                    y = y0 + depth * third
+                    start, end = (x0 + WALL_INSET, x1) if forward else (x1 - WALL_INSET, x0)
+                    candidates.append((point(start, y), point(end, y, False)))
+                else:
+                    x = x0 + width * third
+                    start, end = (y0 + WALL_INSET, y1) if forward else (y1 - WALL_INSET, y0)
+                    candidates.append((point(x, start), point(x, end, False)))
+    shots, notes = [], []
+    picked = _pick(candidates, obstacles, rooms_inside)
+    cone = round(math.radians(60 if area >= 15 else 70), 4)
+    if picked is None:
+        notes.append("no free spot for a one-point camera")
     else:
-        camera = {"x": box["xMin"] + lateral, "y": box["yMin"] + WALL_INSET, "z": z}
-        target = {"x": camera["x"], "y": box["yMax"]}
-    cone = math.radians(60 if area >= 15 else 70)
-    shots = [{"kind": "1P", "camera": camera, "target": target, "view_cone": round(cone, 4)}]
+        camera, target, blocked = picked
+        shots.append({"kind": "1P", "camera": camera, "target": target, "view_cone": cone})
+        if blocked:
+            notes.append(f"1P sight line crosses {blocked} wall or column box(es)")
     if area >= 40:
-        corner = {"x": box["xMax"] - WALL_INSET, "y": box["yMax"] - WALL_INSET, "z": z}
-        # Aim so one wall takes about two thirds of the frame.
-        aim = (
-            {"x": box["xMin"], "y": box["yMin"] + depth / 3}
-            if along_x
-            else {"x": box["xMin"] + width / 3, "y": box["yMin"]}
-        )
-        shots.append(
-            {
-                "kind": "2P",
-                "camera": corner,
-                "target": aim,
-                "view_cone": round(DEFAULT_VIEW_CONE, 4),
-            }
-        )
-    return {"shots": shots}
+        # Two point: from a corner, aimed so one wall takes about two thirds of the frame.
+        corners = []
+        for cx, cy, fx, fy in (
+            (x1, y1, x0, y0),
+            (x0, y0, x1, y1),
+            (x1, y0, x0, y1),
+            (x0, y1, x1, y0),
+        ):
+            sx = WALL_INSET if fx > cx else -WALL_INSET
+            sy = WALL_INSET if fy > cy else -WALL_INSET
+            aim = (fx, cy + (fy - cy) * 2 / 3) if width >= depth else (cx + (fx - cx) * 2 / 3, fy)
+            corners.append((point(cx + sx, cy + sy), point(*aim, level=False)))
+        picked = _pick(corners, obstacles, rooms_inside)
+        if picked is not None:
+            camera, target, blocked = picked
+            two = round(DEFAULT_VIEW_CONE, 4)
+            shots.append({"kind": "2P", "camera": camera, "target": target, "view_cone": two})
+            if blocked:
+                notes.append(f"2P sight line crosses {blocked} wall or column box(es)")
+    if not shots:
+        return {"skip": "no free spot for a camera"}
+    result: dict[str, Any] = {"shots": shots}
+    if notes:
+        result["warnings"] = notes
+    return result
+
+
+def _label_rooms(zones: list[dict]) -> None:
+    """A unique scene label per room: the zone name, plus its number when names repeat."""
+    counts: dict[str, int] = {}
+    for zone in zones:
+        key = _plain(zone.get("name") or "")
+        counts[key] = counts.get(key, 0) + 1
+    used: set[str] = set()
+    for index, zone in enumerate(zones):
+        name = zone.get("name") or f"ZONA {index + 1}"
+        label = name
+        if counts.get(_plain(zone.get("name") or ""), 0) > 1:
+            label = f"{name} {zone.get('number') or ''}".strip()
+        copy = 1
+        while _plain(label) in used:
+            copy += 1
+            label = f"{name} {copy}"
+        used.add(_plain(label))
+        zone["label"] = label
+
+
+def _band(rows: list[list[float]], z: float) -> list[tuple]:
+    return [(r[0], r[1], r[2], r[3]) for r in rows if r[4] < z < r[5]]
 
 
 async def read_scene_model(
@@ -220,8 +359,6 @@ async def read_scene_model(
     """
     port = await resolve_port(client, port)
     zones = await _zones(client, port)
-    for zone in zones:
-        zone["suggested"] = suggest_cameras(zone)
     elements: dict[str, list] = {}
     truncated = []
     for kind in ELEMENT_TYPES:
@@ -241,13 +378,35 @@ async def read_scene_model(
                 continue
             rows.append([box[k] for k in ("xMin", "yMin", "xMax", "yMax", "zMin", "zMax")])
         elements[kind] = rows
+    _label_rooms(zones)
+    blocking = [row for kind in BLOCKING_TYPES for row in elements.get(kind, [])]
+    for zone in zones:
+        box = zone["box"]
+        if box is None:
+            zone["suggested"] = suggest_cameras(zone)
+            continue
+        z = box["zMin"] + EYE_HEIGHT
+        rect = (box["xMin"], box["yMin"], box["xMax"], box["yMax"])
+        nested = [
+            (o["xMin"], o["yMin"], o["xMax"], o["yMax"])
+            for o in (other["box"] for other in zones if other is not zone)
+            if o is not None
+            and o["zMin"] < z < o["zMax"]
+            and _inside(o["xMin"], o["yMin"], rect)
+            and _inside(o["xMax"], o["yMax"], rect)
+        ]
+        zone["suggested"] = suggest_cameras(zone, _band(blocking, z), nested)
+        for shot in zone["suggested"].get("shots", []):
+            shot["name"] = f"{zone['label']} - {shot['kind']} 01"
+            shot["folder"] = zone["label"]
     result: dict[str, Any] = {
         "port": port,
         "zones": zones,
         "element_boxes": elements,
         "box_order": ["xMin", "yMin", "xMax", "yMax", "zMin", "zMax"],
         "note": (
-            "Suggested cameras come from room boxes only. Shoot them with shoot_3d_scenes, "
+            "Suggested cameras come from room boxes checked against wall and column boxes; "
+            "L-shaped rooms and furniture still fool them. Shoot them with shoot_3d_scenes, "
             "look at every image, move or drop the bad ones. Rules: docs/3D_SCENES.md."
         ),
     }
@@ -257,8 +416,9 @@ async def read_scene_model(
 
 
 async def _addon(client, port, name, parameters=None):
+    timeout = SLOW_COMMAND_TIMEOUT if name in {"Get3DWindowImage", "Save3DView"} else None
     try:
-        return await client.own_addon(port, name, parameters)
+        return await client.own_addon(port, name, parameters, timeout=timeout)
     except CommandNotRegistered as exc:
         raise AddOnError(ADDON_MISSING, exc.code, exc.detail) from exc
 
@@ -334,7 +494,10 @@ def _scenes(values, limit) -> list[Scene]:
         raise ValueError(f"Pass between 1 and {limit} scenes.")
     scenes = [v if isinstance(v, Scene) else Scene.model_validate(v) for v in values]
     if len({s.name for s in scenes}) != len(scenes):
-        raise ValueError("Each scene name may appear only once per call.")
+        raise ValueError(
+            "Each scene name may appear only once per call. Rooms with the same name: use "
+            "the zone label from read_scene_model, which adds the zone number."
+        )
     return scenes
 
 

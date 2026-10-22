@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
+  about one suggestion in three was usable. Cameras now stand clear of walls, columns
+  and smaller rooms inside the room's box, and their sight line avoids wall and column
+  boxes at eye height. Service rooms (DML, depósito, almoxarifado, shaft) are skipped.
+  Each room gets a unique label: rooms with the same name get the zone number, and the
+  suggested shots carry ready scene names and folders. `Get3DWindowImage` and
+  `Save3DView` wait up to 60 s, because a big model took over 12 s live.
+
 - Add 3D scene tools (`tools/scenes.py`) on this project's own add-on (`addon/`):
   `read_scene_model` (rooms, element boxes and suggested cameras, official API only),
   `shoot_3d_scenes` (sets cameras and 3D cuts, returns the images, puts the 3D window
