@@ -135,6 +135,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 | `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
+| `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
+| `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
+| `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
 
 ### Reported live validation
 
@@ -621,6 +624,17 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   Tapir returns no opening-specific details, so the read-back checks the new element's
   type and that the host lists it among its connected openings (`GetConnectedElements`).
   Fixtures come from the Tapir source, not a live capture.
+- 3D scenes ("generate the 3D scenes"): `read_scene_model(port?, min_z?, max_z?)` reads
+  zone name, number, area and 3D box with the official API, plus element boxes, and
+  suggests a level one-point camera per room (and a two-point one in big rooms).
+  `shoot_3d_scenes(scenes, port?, image_format?)` sets up to 8 scenes and returns their
+  images; a scene is `{name, folder?, camera, target, view_cone?, two_point?}` or
+  `{name, folder?, parallel: {azimuth?}, cut_height?}` (a horizontal 3D cut, absolute
+  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?)`
+  saves up to 60 as View Map views in `folder_path + [folder]`, creating missing folders;
+  the first folder name is found at any depth. Both put the 3D camera and cut back. They
+  need this project's own add-on (`addon/`); the photographer rules are in
+  `docs/3D_SCENES.md`.
 - `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir

@@ -400,6 +400,18 @@
       "description": "Safely cut rectangular Opening-tool openings into existing walls or slabs, with preview and host read-back."
     },
     {
+      "name": "read_scene_model",
+      "description": "Read rooms and element boxes with suggested cameras to plan 3D scenes."
+    },
+    {
+      "name": "shoot_3d_scenes",
+      "description": "Set cameras and 3D cuts and return the 3D window images to judge; puts the 3D window back."
+    },
+    {
+      "name": "save_3d_scenes",
+      "description": "Preview/save 3D scenes as View Map views, one folder per room; never saves the project."
+    },
+    {
       "name": "modify_meshes",
       "description": "Safely edit terrain base level, skirt and ridge display while preserving topology."
     },

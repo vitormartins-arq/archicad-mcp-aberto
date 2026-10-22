@@ -22,9 +22,10 @@ Namespace `ArchicadMcpAberto`, called through `API.ExecuteAddOnCommand` like Tap
 3. `Get3DWindowImage`: the 3D window as a PNG file in a given folder, so the model can
    check the scene before saving it.
 
-The MCP tool `create_3d_scenes` then reads the model's 3D box, picks angles (corner
-axonometrics, eye-level perspectives at 1.60 m), sets each camera, saves each scene with
-`CreateViewsInViewMap` into a View Map folder, and checks it with the image.
+The MCP tools in `tools/scenes.py` use them: `read_scene_model` reads the rooms and
+suggests cameras, `shoot_3d_scenes` sets cameras and cuts and returns the images, and
+`save_3d_scenes` saves the kept scenes with `Save3DView`, one folder per room. The rules
+are in `docs/3D_SCENES.md`.
 
 ## Live test, 21/10/2026
 
@@ -57,6 +58,8 @@ cut at height h reads back as cutStatus 8, pc 1, pd h. Three faults, fixed after
 and not yet retested: `twoPointPerspective` carried over from the previous camera;
 `folderPath` needed the project's top folder ("TEMPLATE LAB COCADA") first, now the first
 folder is searched anywhere; a plane sent without `cutPen` got pen 1 instead of keeping 0.
+Vitor then opened ISOMETRICA TERREO: the view kept its 3D cut at 1.50 m. He saved the
+project himself.
 
 ## Still needed
 

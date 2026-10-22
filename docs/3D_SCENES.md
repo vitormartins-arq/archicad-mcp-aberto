@@ -7,6 +7,10 @@ metres, angles in radians at the MCP side.
 
 ## Workflow
 
+The MCP tools: `read_scene_model` (step 1, with a suggested first camera per room),
+`shoot_3d_scenes` (step 3, up to 8 scenes per call, images back) and `save_3d_scenes`
+(step 4, dry run first). Both shooting and saving put the 3D window back as it was.
+
 1. Read the zones (name, number, story, polygon) and the walls, columns and furniture of
    each story, so cameras are planned from the model, not by trial and error.
 2. Plan every camera first, in one pass, with the rules below.

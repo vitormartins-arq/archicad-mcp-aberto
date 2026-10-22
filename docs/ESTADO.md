@@ -902,3 +902,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   projeto não salvo. `Save3DView` guarda a câmera (conferido pelo Vitor). Corrigidos depois:
   2 pontos de fuga herdado, pasta inicial fora da raiz do Mapa de Vistas e caneta do corte.
   Falta o Vitor conferir se a ISOMETRICA TERREO guardou o corte.
+
+- **Claude / cenas 3D viram ferramentas do MCP, 22/10/2026:** o Vitor conferiu que a
+  ISOMETRICA TERREO guardou o corte de 1,50 m e salvou o WG Formosa_R04 ele mesmo. O gerador
+  usado ao vivo está em `examples/scene_generator/` na branch `claude/scene-generator`.
+  Em `lote/claude-8`: `read_scene_model`, `shoot_3d_scenes` e `save_3d_scenes`
+  (`tools/scenes.py`), `ArchicadClient.own_addon`, `AddOnError` e o add-on no ArchiCAD
+  simulado. 2416 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 107
+  ferramentas. Falta testar as ferramentas ao vivo (docs/VALIDAR.md, C20) e retestar as 3
+  correções do add-on.

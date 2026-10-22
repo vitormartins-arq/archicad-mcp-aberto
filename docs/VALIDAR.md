@@ -641,3 +641,14 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   e que o recibo dá `verified`. Repetir só com um favorito de escada LAB, sem tamanhos.
 - [ ] Anotar onde a linha de base fica (borda ou meio do lance): a conferência só exige
   que a caixa 3D cubra a linha.
+
+## Lote do Claude C20: cenas 3D pelo MCP
+
+- [ ] **read_scene_model.** Num projeto com zonas: "Leia o modelo para cenas 3D." Conferir
+  se os nomes e as áreas dos ambientes estão certos e se os ambientes pequenos foram
+  pulados.
+- [ ] **shoot_3d_scenes.** "Gere as cenas 3D do <ambiente>." As imagens voltam no chat, e
+  no fim a janela 3D volta à câmera e ao corte de antes.
+- [ ] **save_3d_scenes.** A prévia lista as vistas e as pastas. Depois de aplicar, as
+  vistas ficam em uma pasta por ambiente, e a isométrica cortada guarda o corte. Não
+  salvar o projeto.
