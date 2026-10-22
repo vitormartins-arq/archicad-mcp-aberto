@@ -911,3 +911,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   simulado. 2416 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 107
   ferramentas. Falta testar as ferramentas ao vivo (docs/VALIDAR.md, C20) e retestar as 3
   correções do add-on.
+
+- **Claude / teste ao vivo de 8eff234, 22/10/2026 à tarde:** AC30 build 3001 BRA, PC ESC,
+  sem Tapir, WG Formosa_R04 (só câmera, corte e 2 vistas de teste em AMBIENTES > _TESTE
+  ADD-ON, para o Vitor apagar). As 3 correções passaram, menos a caneta 0 do corte, que o
+  ArchiCAD grava como 1 (pendência). `read_scene_model`, `shoot_3d_scenes` e
+  `save_3d_scenes` funcionaram ao vivo. PR #68 pronto para merge depois do #67.

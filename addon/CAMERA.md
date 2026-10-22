@@ -61,6 +61,20 @@ folder is searched anywhere; a plane sent without `cutPen` got pen 1 instead of 
 Vitor then opened ISOMETRICA TERREO: the view kept its 3D cut at 1.50 m. He saved the
 project himself.
 
+## Live test, 22/10/2026 afternoon
+
+Archicad 30 build 3001 BRA, office PC, WG Formosa_R04, Tapir not loaded, add-on from
+8eff234. Only the 3D camera, the cut and two test views changed; Claude did not save.
+
+- `twoPointPerspective` stays off when not sent: fixed.
+- `Save3DView` found "02 | MODELO 3D" anywhere in the View Map, without the top folder: fixed.
+- A plane sent without `cutPen` keeps the current pen (5 stayed 5): fixed. Sending pen 0
+  still reads back 1 although the project's cut showed 0 before, so Archicad seems to
+  refuse pen 0 on write. Open: after a run, a cut with pen 0 ends with pen 1.
+- MCP tools: `read_scene_model` read 24 zones and skipped those under 6 m2;
+  `shoot_3d_scenes` shot one perspective and one isometric cut at 1.50 m, images right;
+  `save_3d_scenes` previewed, then saved one view; the 3D window came back as it was.
+
 ## Still needed
 
 - Retest the angle fix live (view cone, parallel azimuth, parallel to perspective).
