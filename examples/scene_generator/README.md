@@ -45,7 +45,7 @@ single-storey gym project, only camera, cut and new views changed, project not s
   of their folder, so a folder lists them in reverse order.
 - `Get3DCutPlanes` / `Set3DCutPlanes`: a horizontal cut is `pa 0, pb 0, pc 1,
   pd = height`, `cutStatus 8`. `Set3DCutPlanes {"enabled": false}` changed `cutPen`
-  from 0 to 1, and setting `cutPen 0` back did not stick. Whether a saved axonometric
-  keeps its cut is still to be checked in Archicad.
+  from 0 to 1, and setting `cutPen 0` back did not stick. A saved axonometric keeps its
+  cut (checked by the user in Archicad).
 - `Show3DAll {"fitInWindow": true}`: fine.
 - Planning from boxes plus one look per camera took about 33 shots for 18 kept views.
