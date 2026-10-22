@@ -4,7 +4,9 @@ Scripts used on 22/10/2026 to generate interior, exterior and axonometric 3D vie
 real project and save them in the View Map, following `docs/3D_SCENES.md`. They call the
 official JSON API and the `ArchicadMcpAberto` add-on commands directly (`Get3DCamera`,
 `Set3DCamera`, `Get3DWindowImage`, `Save3DView`, `Get3DCutPlanes`, `Set3DCutPlanes`,
-`Show3DAll`), so they are also the reference for a future `create_3d_scenes` MCP tool.
+`Show3DAll`). The MCP server now has the same flow as tools (`read_scene_model`,
+`shoot_3d_scenes`, `save_3d_scenes`); these scripts stay as a standalone version and a
+record of how the flow was worked out.
 
 Needs Python 3.11+, `matplotlib` and `Pillow`. Set `ARCHICAD_PORT` when the project is
 not on 19723.
@@ -23,8 +25,9 @@ not on 19723.
    1.50 m above each floor.
 6. Put the kept shots in `views.json` and save ONE first: save it, move the camera
    elsewhere, ask the user to open the view. Then save the rest with
-   `python save_views.py views.json <full View Map path>`. The script restores the 3D
-   camera and the cut it found.
+   `python save_views.py views.json <View Map path>`. The first folder of the path may
+   sit at any depth of the View Map. The script restores the 3D camera and the cut it
+   found.
 7. Show the user a contact sheet with the view names. Never save the project.
 
 `shots.example.json` and `views.example.json` show the formats.
@@ -49,3 +52,9 @@ single-storey gym project, only camera, cut and new views changed, project not s
   cut (checked by the user in Archicad).
 - `Show3DAll {"fitInWindow": true}`: fine.
 - Planning from boxes plus one look per camera took about 33 shots for 18 kept views.
+
+Retest the same day with the add-on from 8eff234 (fixes in 53f7a8c):
+`twoPointPerspective` left out is now false; `Save3DView` found `"02 | MODELO 3D"` inside
+the template folder on its own; a plane sent without `cutPen` keeps the current pen (5
+stayed 5). Writing `cutPen 0` still reads back 1, while a project can hold pen 0, so a
+cut with pen 0 ends with pen 1 after a run. Open item.
