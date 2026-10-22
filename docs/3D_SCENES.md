@@ -3,7 +3,8 @@
 Guide for the model when it is asked to "generate nice 3D views" of a project and save
 them in the View Map. It uses the add-on commands in `addon/` (`Set3DCamera`,
 `Get3DWindowImage`, `Save3DView`, `Get3DCutPlanes`, `Set3DCutPlanes`). Lengths in
-metres, angles in radians at the MCP side.
+metres, angles in radians at the MCP side. Working scripts and the live-test findings:
+`examples/scene_generator/`.
 
 ## Workflow
 
