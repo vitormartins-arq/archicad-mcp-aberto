@@ -44,6 +44,13 @@ Archicad 30 build 3001 BRA, Tapir 1.7.0, a real project opened read-only for ele
 Fixed after the test: radians at the MCP side, degrees inside, and default perspective
 settings when switching from parallel. Not yet retested live.
 
+## Live test, 22/10/2026
+
+Archicad 30 build 3001 BRA, office PC, same project, add-on from 07210e2 (Tapir not
+loaded). `Save3DView` into `["02 | MODELO 3D", "AMBIENTES", "04 PESO LIVRE E
+ARTICULADO"]` created the nested folders, and opening the saved view with the 3D camera
+elsewhere restored the view's own camera (checked by Vitor).
+
 ## Still needed
 
 - Retest the angle fix live (view cone, parallel azimuth, parallel to perspective).
