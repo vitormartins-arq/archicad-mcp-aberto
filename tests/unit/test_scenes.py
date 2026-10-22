@@ -46,7 +46,7 @@ def model(**extra):
         **extra,
     )
     fake.builtin_property_ids["Zone_CalculatedArea"] = AREA
-    values = {ZONE: ("PESO LIVRE", "04", 72.0), SMALL: ("DML", "05", 4.0)}
+    values = {ZONE: ("PESO LIVRE", "04", 72.0), SMALL: ("COPA", "05", 4.0)}
     for guid, (name, number, area) in values.items():
         fake.property_values[(guid, NAME)] = {"type": "string", "status": "normal", "value": name}
         fake.property_values[(guid, NUMBER)] = {
@@ -75,9 +75,75 @@ async def test_read_scene_model_names_rooms_and_suggests_cameras():
     # Level, along the longer side, 0.5 m from the wall and off the axis.
     assert one["camera"] == {"x": 0.5, "y": 4.0, "z": 1.3}
     assert one["target"] == {"x": 12, "y": 4.0}
-    assert rooms["DML"]["suggested"] == {"skip": "smaller than 6 m2"}
+    assert one["name"] == "PESO LIVRE - 1P 01" and one["folder"] == "PESO LIVRE"
+    assert rooms["COPA"]["suggested"] == {"skip": "smaller than 6 m2"}
     assert result["element_boxes"]["Wall"] == [[0, -0.2, 12, 0, 0, 3]]
     assert fake.tapir_calls == [] and fake.own_addon_calls == []
+
+
+ROOM = {
+    "name": "SALA",
+    "area": 72.0,
+    "box": {"xMin": 0, "yMin": 0, "zMin": 0, "xMax": 12, "yMax": 6, "zMax": 3},
+}
+
+
+@pytest.mark.parametrize("name", ["DML", "Depósito 2", "DEP. LIMPEZA", "Almoxarifado"])
+def test_service_rooms_are_skipped(name):
+    result = scenes.suggest_cameras({**ROOM, "name": name})
+    assert result["skip"].startswith("service room")
+
+
+def test_camera_moves_when_a_wall_blocks_the_view():
+    # A partition across the room at x 6 hides the far wall for every view along x.
+    wall = (5.9, 0, 6.1, 6)
+    shots = scenes.suggest_cameras(ROOM, [wall])["shots"]
+    one = shots[0]
+    assert one["camera"]["x"] == one["target"]["x"]  # looks along y instead
+    assert not scenes._blockers(one["camera"], one["target"], [wall])
+
+
+def test_camera_never_stands_in_a_room_nested_in_this_box():
+    nested = (9, 3, 12, 6)  # a smaller room in the far corner, like the gym in the parking
+    result = scenes.suggest_cameras(ROOM, [], [nested])
+    for shot in result["shots"]:
+        assert not scenes._inside(shot["camera"]["x"], shot["camera"]["y"], nested)
+
+
+def test_blocked_everywhere_says_so():
+    walls = [(5.9, 0, 6.1, 6), (0, 2.9, 12, 3.1)]
+    result = scenes.suggest_cameras(ROOM, walls)
+    assert any("crosses" in w for w in result["warnings"])
+
+
+def test_same_room_names_get_the_zone_number():
+    zones = [
+        {"name": "BAN FEM", "number": "12"},
+        {"name": "BAN FEM", "number": "13"},
+        {"name": "RECEPCAO", "number": "01"},
+        {"name": "WC", "number": None},
+        {"name": "WC", "number": None},
+    ]
+    scenes._label_rooms(zones)
+    labels = [z["label"] for z in zones]
+    assert labels[:3] == ["BAN FEM 12", "BAN FEM 13", "RECEPCAO"]
+    assert len(set(labels)) == len(labels)
+
+
+async def test_image_and_save_wait_longer_than_other_calls():
+    fake = model()
+    seen = {}
+    async with client(fake) as c:
+        original = c.own_addon
+
+        async def spy(port, name, parameters=None, *, timeout=None):
+            seen[name] = timeout
+            return await original(port, name, parameters, timeout=timeout)
+
+        c.own_addon = spy
+        await scenes.shoot_3d_scenes(c, [ONE_POINT])
+    assert seen["Get3DWindowImage"] == scenes.SLOW_COMMAND_TIMEOUT
+    assert seen["Set3DCamera"] is None
 
 
 async def test_height_band_keeps_one_story():
