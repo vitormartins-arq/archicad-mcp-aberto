@@ -516,6 +516,30 @@ class FakeArchicad:
 
     issue_comments: dict[str, list[dict]] = field(default_factory=dict)
 
+    # Built-in property ids for API.GetPropertyIds, by nonLocalizedName.
+    builtin_property_ids: dict[str, str] = field(default_factory=dict)
+    # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
+    # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
+    own_addon_loaded: bool = True
+    own_addon_calls: list[str] = field(default_factory=list)
+    own_addon_requests: list[dict] = field(default_factory=list)
+    own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
+    camera_3d: dict = field(
+        default_factory=lambda: {
+            "isPerspective": True,
+            "linkedToCamera": False,
+            "camera": {"x": 0.0, "y": -10.0, "z": 1.6},
+            "target": {"x": 0.0, "y": 0.0, "z": 1.6},
+            "viewCone": math.radians(60),
+            "rollAngle": 0.0,
+            "distance": 10.0,
+            "azimuth": math.pi / 2,
+            "twoPointPerspective": False,
+        }
+    )
+    cut_3d: dict = field(default_factory=lambda: {"enabled": False, "planes": []})
+    saved_3d_views: list[dict] = field(default_factory=list)
+
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
         for map_id, tree in NAVIGATOR_FIXTURE["trees"].items():
@@ -675,7 +699,19 @@ class FakeArchicad:
                             self.classifications.pop((g, system), None)
                     results.append({"success": True})
             return ok({"executionResults": results})
+        if command == "API.GetPropertyIds":
+            # Shape from the official JSON API documentation; built-in names seen live.
+            rows = []
+            for p in params["properties"]:
+                guid = self.builtin_property_ids.get(p.get("nonLocalizedName", ""))
+                if guid is None:
+                    rows.append({"error": {"code": 4006, "message": "Property not found"}})
+                else:
+                    rows.append({"propertyId": {"guid": guid}})
+            return ok({"properties": rows})
         if command == "API.ExecuteAddOnCommand":
+            if params["addOnCommandId"]["commandNamespace"] == "ArchicadMcpAberto":
+                return self._own_addon(params)
             return self._tapir(params)
         return fail(4000, f"Unknown command {command}")
 
@@ -856,6 +892,78 @@ class FakeArchicad:
         if name not in self.issue_ignored:
             self.issue_attachments.setdefault(guid, set()).update(guids)
         return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_elements"])})
+
+    def _own_addon(self, params: dict) -> dict:
+        if not self.own_addon_loaded:
+            return fail(4010, "Add-On command is not registered")
+        name = params["addOnCommandId"]["commandName"]
+        args = params.get("addOnCommandParameters", {})
+        self.own_addon_calls.append(name)
+        self.own_addon_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name in self.own_addon_errors:
+            error = {"code": -2130312312, "message": f"{name} failed."}
+            return ok({"addOnCommandResponse": {"error": error}})
+        if name == "Get3DCamera":
+            return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
+        if name == "Set3DCamera":
+            if "perspective" in args:
+                p = args["perspective"]
+                was = self.camera_3d
+                cone = p.get("viewCone", was.get("viewCone") or math.radians(60))
+                self.camera_3d = {
+                    "isPerspective": True,
+                    "linkedToCamera": False,
+                    "camera": deepcopy(p.get("camera", was.get("camera"))),
+                    "target": deepcopy(p.get("target", was.get("target"))),
+                    "viewCone": cone,
+                    "rollAngle": 0.0,
+                    "distance": 10.0,
+                    "azimuth": 0.0,
+                    "twoPointPerspective": p.get("twoPointPerspective", False),
+                }
+            else:
+                p = args["parallel"]
+                self.camera_3d = {
+                    "isPerspective": False,
+                    "linkedToCamera": False,
+                    "azimuth": p.get("azimuth", self.camera_3d.get("azimuth", 0.0)),
+                    "projectionMode": p.get("projectionMode", 3),
+                }
+            return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
+        if name == "Get3DCutPlanes":
+            return ok({"addOnCommandResponse": deepcopy(self.cut_3d)})
+        if name == "Set3DCutPlanes":
+            self.cut_3d["enabled"] = args["enabled"]
+            if "planes" in args:
+                self.cut_3d["planes"] = [{"cutPen": 0, **deepcopy(p)} for p in args["planes"]]
+            return ok({"addOnCommandResponse": deepcopy(self.cut_3d)})
+        if name == "Show3DAll":
+            return ok({"addOnCommandResponse": {}})
+        if name == "Get3DWindowImage":
+            # A tiny stand-in, not a real 3D window grab.
+            image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
+            return ok({"addOnCommandResponse": {"image": image}})
+        if name == "Save3DView":
+            guid = str(uuid4()).upper()
+            self.saved_3d_views.append(
+                {
+                    "viewGuid": guid,
+                    "name": args["name"],
+                    "folderPath": list(args.get("folderPath", [])),
+                    "camera": deepcopy(self.camera_3d),
+                    "cut": deepcopy(self.cut_3d),
+                }
+            )
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "viewGuid": guid,
+                        "name": args["name"],
+                        "isPerspective": self.camera_3d["isPerspective"],
+                    }
+                }
+            )
+        return fail(4010, "Add-On command is not registered")
 
     def _tapir(self, params: dict) -> dict:
         if self.tapir_version is None:

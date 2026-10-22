@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, Literal
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp import Context, FastMCP, Image
+from mcp.types import TextContent
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
@@ -38,6 +40,7 @@ from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import stairs as stairs_tool
@@ -61,6 +64,10 @@ Archicad MCP (read tools and safe wall and slab creation).
 - Wall and slab writes dry-run by default. Show the plan to the user before applying, then
   repeat the same inputs with dry_run=false, the explicit port and confirmation_token.
   Tokens expire after ten minutes, work only in this session and can be consumed once.
+- "Generate the 3D scenes": read_scene_model, then shoot_3d_scenes (look at every image,
+  move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
+  level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
+  above each story. These need the ArchicadMcpAberto add-on (addon/).
 - Receipts are local. No tool saves the Archicad project. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
@@ -1592,6 +1599,55 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def read_scene_model(
+        ctx: Context,
+        port: int | None = None,
+        min_z: float | None = None,
+        max_z: float | None = None,
+    ) -> dict:
+        """Plan 3D scenes: rooms (zone name, number, area, 3D box, suggested cameras) and
+        boxes of walls, columns, objects, doors, windows and curtain walls; min_z/max_z
+        keep one height band. Official API only. Rules in docs/3D_SCENES.md."""
+        return await scenes_tool.read_scene_model(client_of(ctx), port, min_z, max_z)
+
+    @mcp.tool(annotations=VIEW, structured_output=False)
+    async def shoot_3d_scenes(
+        ctx: Context,
+        scenes: list[scenes_tool.Scene],
+        port: int | None = None,
+        image_format: Literal["jpg", "png"] = "jpg",
+    ) -> list:
+        """Set up to 8 scenes in the 3D window and return their images to judge: name,
+        then perspective (camera, target, view_cone in radians, two_point; target.z left
+        out keeps it level) or parallel (azimuth) with optional cut_height. Puts the 3D
+        camera and cut back. Changes no element. Needs the ArchicadMcpAberto add-on."""
+        report, images = await scenes_tool.shoot_3d_scenes(
+            client_of(ctx), scenes, port, image_format
+        )
+        content: list = [TextContent(type="text", text=json.dumps(report, ensure_ascii=False))]
+        for name, data in images:
+            content.append(TextContent(type="text", text=name))
+            content.append(Image(data=data, format="jpeg" if image_format == "jpg" else "png"))
+        return content
+
+    @mcp.tool(annotations=WRITE)
+    async def save_3d_scenes(
+        ctx: Context,
+        scenes: list[scenes_tool.Scene],
+        folder_path: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/save up to 60 scenes (shoot_3d_scenes shape) as View Map views in
+        folder_path + each scene's folder (one per room); folders are created when missing.
+        Apply identical inputs with explicit port and one-use token. Puts the 3D window
+        back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
+        return await scenes_tool.save_3d_scenes(
+            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
         )
 
     return mcp

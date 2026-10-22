@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add 3D scene tools (`tools/scenes.py`) on this project's own add-on (`addon/`):
+  `read_scene_model` (rooms, element boxes and suggested cameras, official API only),
+  `shoot_3d_scenes` (sets cameras and 3D cuts, returns the images, puts the 3D window
+  back) and `save_3d_scenes` (View Map views, one folder per room, preview and one-use
+  token). New `ArchicadClient.own_addon` and `AddOnError`. The add-on commands were tested
+  live on Archicad 30 build 3001 BRA (22/10/2026, 18 views); the MCP tools themselves are
+  not tested live yet.
+
 - Add `create_stairs` (`tools/stairs.py`): straight stairs by Tapir 1.7.0
   `CreateStairs`, with `favorite`, read back by type, story and 3D box. Not tested live
   yet.

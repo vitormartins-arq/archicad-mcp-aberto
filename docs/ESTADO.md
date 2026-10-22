@@ -885,3 +885,35 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   element type`), então a conferência é tipo, pavimento e caixa 3D. 2375 testes
   simulados e Ruff passaram (Linux, Python 3.13). Registro: 104 ferramentas. Próximo:
   C18 compostos.
+
+- **Claude / MDID do add-on próprio, 21/10/2026:** o Vitor registrou no portal da Graphisoft o
+  add-on "Archicad MCP Aberto": Developer ID 1110659426, Local ID 287719994. Viraram os padrões
+  do `addon/CMakeLists.txt`, então o `.apx` do CI (PR #68) já carrega no ArchiCAD. Outro Local ID,
+  3542434559 ("LAB Automação"), foi registrado no mesmo dia para comandos só do LAB; não usar aqui.
+
+- **Claude / teste ao vivo da câmera 3D, 21/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0,
+  notebook do Vitor, projeto WG Formosa_R04 com o ok dele (só a câmera 3D, nada salvo), add-on de
+  de83f14. Câmera e alvo voltam exatos; a captura funciona. O ArchiCAD guarda azimute e ângulo de
+  visão em graus: corrigido no add-on (radianos fora, graus dentro, padrões ao sair da paralela).
+  Falta retestar essa correção ao vivo. Detalhes em `addon/CAMERA.md`.
+
+- **Claude / cenas 3D no WG Formosa, 22/10/2026:** AC30 build 3001 BRA no PC ESC, sem Tapir,
+  add-on de 07210e2. 18 vistas salvas em 02 | MODELO 3D > AMBIENTES (uma pasta por ambiente),
+  projeto não salvo. `Save3DView` guarda a câmera (conferido pelo Vitor). Corrigidos depois:
+  2 pontos de fuga herdado, pasta inicial fora da raiz do Mapa de Vistas e caneta do corte.
+  Falta o Vitor conferir se a ISOMETRICA TERREO guardou o corte.
+
+- **Claude / cenas 3D viram ferramentas do MCP, 22/10/2026:** o Vitor conferiu que a
+  ISOMETRICA TERREO guardou o corte de 1,50 m e salvou o WG Formosa_R04 ele mesmo. O gerador
+  usado ao vivo está em `examples/scene_generator/` na branch `claude/scene-generator`.
+  Em `lote/claude-8`: `read_scene_model`, `shoot_3d_scenes` e `save_3d_scenes`
+  (`tools/scenes.py`), `ArchicadClient.own_addon`, `AddOnError` e o add-on no ArchiCAD
+  simulado. 2416 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 107
+  ferramentas. Falta testar as ferramentas ao vivo (docs/VALIDAR.md, C20) e retestar as 3
+  correções do add-on.
+
+- **Claude / teste ao vivo de 8eff234, 22/10/2026 à tarde:** AC30 build 3001 BRA, PC ESC,
+  sem Tapir, WG Formosa_R04 (só câmera, corte e 2 vistas de teste em AMBIENTES > _TESTE
+  ADD-ON, para o Vitor apagar). As 3 correções passaram, menos a caneta 0 do corte, que o
+  ArchiCAD grava como 1 (pendência). `read_scene_model`, `shoot_3d_scenes` e
+  `save_3d_scenes` funcionaram ao vivo. PR #68 pronto para merge depois do #67.
