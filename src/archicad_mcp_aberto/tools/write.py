@@ -676,6 +676,12 @@ OPERATIONS["move_navigator_items"] = (
     "navigator_move_receipt_id",
     "Each item goes to the start of its new folder, one move at a time; nothing else changes.",
 )
+OPERATIONS["update_favorites_from_elements"] = (
+    "favorite update",
+    "favorite_update_receipt_id",
+    "Each favorite is overwritten with its element's settings; the old settings are not "
+    "kept. Make a copy first with create_favorites_from_elements if they matter.",
+)
 OPERATIONS["create_layout_subsets"] = (
     "layout subset",
     "layout_subset_receipt_id",

@@ -574,6 +574,7 @@ class FakeArchicad:
     section_stored_name: str | None = None  # Project Map shows this name instead
     section_wrong_floor: bool = False
     lose_section_response: bool = False
+    updated_favorites: list[dict] = field(default_factory=list)
     # CreateFavoritesFromElements: names Archicad refuses, and a name listed back instead.
     favorite_create_refused: set[str] = field(default_factory=set)
     favorite_stored_name: str | None = None
@@ -1603,6 +1604,18 @@ class FakeArchicad:
                     stored = self.favorite_stored_name or row["favorite"]
                     self.favorites.setdefault(kind, []).append(stored)
                     self.created_favorites.append(deepcopy(row))
+                    out.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "UpdateFavoritesFromElements":
+            # Tapir 1.7.0 source (FavoritesCommands.cpp); not live captured.
+            out = []
+            for row in args["favoritesFromElements"]:
+                kind = self.elements.get(row["elementId"]["guid"])
+                if kind is None or row["favorite"] not in self.favorites.get(kind, []):
+                    error = {"code": -2130313112, "message": "Failed to update the favorite"}
+                    out.append({"success": False, "error": error})
+                else:
+                    self.updated_favorites.append(deepcopy(row))
                     out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "ChangeSelectionOfElements":

@@ -1900,6 +1900,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def update_favorites_from_elements(
+        ctx: Context,
+        favorites_to_update: list[favorites.FavoriteUpdate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview overwriting up to 50 EXISTING favorites, each with the settings,
+        classifications and property values of one element of the favorite's type
+        (element_guid, favorite). The old settings are not kept: copy them first with
+        create_favorites_from_elements if they matter. Apply with explicit port and
+        single-use token. Tapir cannot read a favorite's settings, so the receipt stays
+        unverified. Requires Tapir. Never saves."""
+        return await favorites.update_favorites_from_elements(
+            client_of(ctx), favorites_to_update, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_layout_subsets(
         ctx: Context,
         subsets: list[layout_book_tool.SubsetCreate],

@@ -126,6 +126,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 | `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
+| `update_favorites_from_elements` | Write | Overwrites existing favorites from elements of their type | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
 | `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
@@ -577,6 +578,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   existing favorite is never overwritten; locked elements are fine, since they are only
   read. Each new name is read back with GetFavoritesByType. Fixtures come from the Tapir
   source, not a live capture. Registry: **81 tools (25 reads, 56 writes/interactions)**.
+- `update_favorites_from_elements([{element_guid, favorite}], port?, dry_run?,
+  confirmation_token?)` overwrites up to 50 existing favorites through Tapir 1.7.0
+  `UpdateFavoritesFromElements`, each from one element of the favorite's type. The old
+  settings are not kept, so the preview says to copy them first with
+  `create_favorites_from_elements` when they matter. Tapir cannot read a favorite's
+  settings, so a successful receipt stays `unverified`.
 
 - `set_attribute_property_values([{attribute_guid, property_guid, value}], port?,
   dry_run?, confirmation_token?)` writes up to 100 custom property values on attributes

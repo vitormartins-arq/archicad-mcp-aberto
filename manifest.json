@@ -550,6 +550,10 @@
     {
       "name": "move_navigator_items",
       "description": "Preview or move View Map and Layout Book items into other folders. Read back after."
+    },
+    {
+      "name": "update_favorites_from_elements",
+      "description": "Preview or overwrite existing favorites from elements of their type."
     }
   ],
   "compatibility": {

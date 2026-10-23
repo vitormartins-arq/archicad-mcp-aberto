@@ -355,6 +355,9 @@ INPUTS = {
     "set_attribute_property_values": {
         "changes": [{"attribute_guid": GUID, "property_guid": PROP, "value": "Fornecedor A"}]
     },
+    "update_favorites_from_elements": {
+        "favorites": [{"element_guid": GUID, "favorite": "Parede padrão"}]
+    },
     "create_favorites_from_elements": {
         "favorites": [{"element_guid": GUID, "favorite": "Parede nova"}]
     },
@@ -599,7 +602,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
         for instance in (first, second):
             row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
             instance.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
-    if name == "apply_favorites":
+    if name in ("apply_favorites", "update_favorites_from_elements"):
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]
     if name == "unlock_elements":

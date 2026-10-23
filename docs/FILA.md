@@ -181,6 +181,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C36 organizar o Mapa de Vistas.** (Feito na branch `claude/project-thread-pvslgt`.)
   `move_navigator_items` (`MoveNavigatorItem`): vistas e pastas do Mapa de Vistas, e
   pranchas e subconjuntos do Book, para outra pasta.
+- **C37 atualizar favoritos.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `update_favorites_from_elements` (`UpdateFavoritesFromElements`): sobrescreve um
+  favorito existente com os ajustes de um elemento do mesmo tipo. Fica `unverified`.
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
   1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)

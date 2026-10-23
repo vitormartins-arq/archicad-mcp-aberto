@@ -788,3 +788,10 @@ projeto novo, sem salvar.
   vai para o começo dela e que o recibo dá `verified`. Anotar se o Desfazer volta.
 - [ ] **move_navigator_items (Book).** "Mova a prancha Planta baixa para o subconjunto
   Executivo." Conferir que a numeração da prancha passa a usar o prefixo do subconjunto.
+
+## Lote do Claude C37: atualizar favoritos
+
+- [ ] **update_favorites_from_elements.** No projeto novo, com um favorito de parede de
+  teste: mudar a espessura de uma parede e pedir "atualize o favorito <nome> com esta
+  parede". Conferir na paleta de Favoritos que o favorito passou a ter a espessura nova.
+  O recibo fica `unverified`. Anotar se o Desfazer volta o favorito antigo.

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `update_favorites_from_elements`: overwrite existing favorites from elements by
+  Tapir 1.7.0 `UpdateFavoritesFromElements`. The receipt stays unverified, because
+  Tapir cannot read a favorite's settings. Not tested live yet.
+
 - Add `move_navigator_items` (`tools/navigator_moves.py`): move View Map and Layout Book
   items into other folders by Tapir 1.7.0 `MoveNavigatorItem`, read back in the tree.
   Not tested live yet.
