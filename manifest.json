@@ -494,6 +494,10 @@
     {
       "name": "create_drawings",
       "description": "Preview or place views on existing layouts as Drawings, found on the layout after."
+    },
+    {
+      "name": "add_stories",
+      "description": "Preview or add stories above the top or below the bottom; existing stories are kept. Read back after."
     }
   ],
   "compatibility": {

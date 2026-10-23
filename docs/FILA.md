@@ -141,6 +141,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C21 `create_drawings`.** (Feito na branch `claude/project-thread-pvslgt`.)
   `CreateDrawings` do Tapir 1.7.0: vista do Mapa de vistas (ou GUID do Navegador) numa
   prancha existente, na posição em metros de papel, conferida na base da prancha.
+- **C22 `add_stories`.** (Feito na branch `claude/project-thread-pvslgt`.) `SetStories`
+  do Tapir 1.7.0 só para acrescentar pavimentos acima do topo ou abaixo do primeiro,
+  devolvendo os existentes sem mudança. Conferência por `GetStories`.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

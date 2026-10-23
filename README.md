@@ -140,6 +140,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
+| `add_stories` | Write | New stories above the top or below the bottom; existing stories kept | yes |
 
 ### Reported live validation
 
@@ -723,6 +724,16 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   sets a custom title; scale, title and frame come from the Drawing tool defaults, with
   the view's full extent. Tapir switches the window to the layout. The read-back finds
   the new Drawing on its layout (`GetElementsByType` with the layout database).
+- `add_stories([{name, level, show_on_sections?}], port?, dry_run?,
+  confirmation_token?)` adds up to 20 stories by Tapir 1.7.0 `SetStories`, which takes
+  the whole story structure and would delete stories (and their elements) missing from
+  it. The MCP sends every existing story back exactly as `GetStories` reads it, so the
+  structure only grows. Each new story goes above the top story or below the bottom one
+  (basements get negative indices); a level between two stories is refused, because it
+  would renumber the stories the elements sit on. Names must be new and stories at
+  least 1 cm apart. `structure_after` in the preview shows every story with its height
+  after the change (the old top story's height becomes the gap to the first new one).
+  The read-back checks the new stories and that the existing ones kept name and level.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from

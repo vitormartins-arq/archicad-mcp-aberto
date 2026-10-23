@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `add_stories` (`tools/stories.py`): new stories above the top or below the bottom
+  by Tapir 1.7.0 `SetStories`, sending the existing stories back unchanged; read back by
+  `GetStories`. Not tested live yet.
+
 - Add `create_drawings` (`tools/drawings.py`): views on existing layouts by Tapir 1.7.0
   `CreateDrawings`, by View Map name or Navigator GUID, read back on the layout's
   database. Not tested live yet.

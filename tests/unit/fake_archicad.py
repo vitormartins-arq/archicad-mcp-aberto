@@ -309,6 +309,9 @@ class FakeArchicad:
              "name": "Linha Contínua"},
         ]
     )  # fmt: skip
+    # SetStories (Tapir 1.7.0 ProjectCommands.cpp): refuse it, or keep a story off level.
+    set_stories_error: dict | None = None
+    set_stories_level_drift: float = 0.0
     # CreateDrawings: layout database guid -> Drawing guids on it (Tapir 1.7.0 source).
     layout_drawings: dict[str, list[str]] = field(default_factory=dict)
     drawing_lost: bool = False  # CreateDrawings answers a GUID the layout does not list
@@ -1738,6 +1741,24 @@ class FakeArchicad:
                     keys = {"attributeId", "index", "name", *args["fields"]}
                     out.append({key: deepcopy(value) for key, value in row.items() if key in keys})
             return ok({"addOnCommandResponse": {"buildingMaterials": out}})
+        if name == "SetStories":
+            # Shapes from the Tapir 1.7.0 source (ProjectCommands.cpp); not live captured.
+            if self.set_stories_error is not None:
+                result = {"success": False, "error": deepcopy(self.set_stories_error)}
+                return ok({"addOnCommandResponse": result})
+            rows = args["stories"]
+            assert rows and all(set(r) <= {"index", "name", "level", "dispOnSections"}
+                                and {"name", "level", "dispOnSections"} <= set(r)
+                                for r in rows)  # fmt: skip
+            first = rows[0].get("index", min(r["index"] for r in self.stories))
+            self.stories = [
+                {"index": first + n, "floorId": first + n + 1,
+                 "dispOnSections": r["dispOnSections"], "level": r["level"], "name": r["name"]}
+                for n, r in enumerate(rows)
+            ]  # fmt: skip
+            if self.set_stories_level_drift:
+                self.stories[-1]["level"] += self.set_stories_level_drift
+            return ok({"addOnCommandResponse": {"success": True}})
         if name == "GetStories":
             return ok({"addOnCommandResponse": {"stories": self.stories}})
         if name == "GetDetailsOfElements":

@@ -614,6 +614,13 @@ OPERATIONS["create_drawings"] = (
     "Each view is placed on its layout with its centre at the position (metres of paper); "
     "the rest comes from the Drawing tool defaults. Archicad shows the layout after.",
 )
+OPERATIONS["add_stories"] = (
+    "story",
+    "story_receipt_id",
+    "Only adds stories above the top or below the bottom; the existing ones are sent back "
+    "unchanged. Check structure_after: the old top story's height changes when stories "
+    "are added above it.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

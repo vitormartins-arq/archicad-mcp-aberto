@@ -46,6 +46,7 @@ from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import stairs as stairs_tool
+from archicad_mcp_aberto.tools import stories as stories_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
@@ -1683,6 +1684,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Requires Tapir. Never saves."""
         return await drawings_tool.create_drawings(
             client_of(ctx), drawings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def add_stories(
+        ctx: Context,
+        stories: list[stories_tool.StoryCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 stories: name, absolute level in metres and optional
+        show_on_sections. Each goes above the top story or below the bottom one
+        (basements); levels between stories are refused. Existing stories are kept as
+        they are; structure_after shows every height. Apply with explicit port and
+        single-use token; read back by GetStories. Requires Tapir. Never saves."""
+        return await stories_tool.add_stories(
+            client_of(ctx), stories, port, dry_run, confirmation_token
         )
 
     return mcp

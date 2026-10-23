@@ -677,3 +677,20 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] Anotar o que veio dos padrões da ferramenta Desenho: escala, título e moldura.
   Conferir também se o ArchiCAD fica mostrando a prancha depois (o Tapir troca a janela).
 - [ ] Com `name`, conferir que o título do desenho usa o nome dado.
+
+## Lote do Claude C22: pavimentos novos
+
+Cuidado: o `SetStories` do Tapir mexe na estrutura toda de pavimentos. Testar só no
+projeto novo, sem salvar.
+
+- [ ] **add_stories acima.** No projeto novo: "Acrescente os pavimentos 1º Pavimento a
+  3 m e Cobertura a 6 m." Conferir em Projeto > Configurações de Pavimento que os dois
+  aparecem com os níveis pedidos, que o Térreo não mudou de nome nem de nível, e que o
+  recibo dá `verified`. Conferir na prévia (`structure_after`) a altura que o Térreo
+  passa a ter.
+- [ ] **add_stories abaixo.** "Acrescente o Subsolo a -3 m." Conferir que ele entra com
+  índice -1 e que os elementos do Térreo continuam no Térreo.
+- [ ] Pedir um nível entre dois pavimentos: a prévia deve recusar.
+- [ ] Anotar a altura que o ArchiCAD dá ao novo pavimento do topo (o Tapir não deixa
+  escolher).
+- [ ] Ctrl+Z: conferir se um Desfazer volta a estrutura de pavimentos.

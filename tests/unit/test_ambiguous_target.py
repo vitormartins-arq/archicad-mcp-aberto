@@ -40,6 +40,7 @@ from archicad_mcp_aberto.tools import (
     sections,
     selection,
     stairs,
+    stories,
     texts,
     views,
     voids,
@@ -146,6 +147,7 @@ INPUTS = {
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
+    "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "create_drawings": {
         "drawings": [
             {"view": "Ground floor", "layout": "Planta baixa", "position": {"x": 0.2, "y": 0.15}}
@@ -439,6 +441,7 @@ TARGETED = {
         sections,
         selection,
         stairs,
+        stories,
         texts,
         views,
         voids,
