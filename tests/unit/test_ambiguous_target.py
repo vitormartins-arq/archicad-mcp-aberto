@@ -34,6 +34,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     morphs,
     navigator,
+    navigator_moves,
     openings,
     project_info,
     property_definitions,
@@ -168,6 +169,10 @@ INPUTS = {
     "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "update_drawings": {"layouts": ["Planta baixa"]},
+    "move_navigator_items": {
+        "map": "view_map",
+        "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
     "create_surfaces": {"surfaces": [{"name": "Pintura Azul", "based_on": "Pintura Branca"}]},
     "create_drawings": {
         "drawings": [
@@ -461,6 +466,7 @@ TARGETED = {
         modify,
         morphs,
         navigator,
+        navigator_moves,
         openings,
         project_info,
         property_definitions,

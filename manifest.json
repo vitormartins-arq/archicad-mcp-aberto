@@ -546,6 +546,10 @@
     {
       "name": "create_surfaces",
       "description": "Preview or add surfaces copied from an existing one, with a new colour or transparency. Read back after."
+    },
+    {
+      "name": "move_navigator_items",
+      "description": "Preview or move View Map and Layout Book items into other folders. Read back after."
     }
   ],
   "compatibility": {

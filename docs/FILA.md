@@ -178,8 +178,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   `create_surfaces` (`CreateSurfaces`): cópia de uma superfície existente com cor,
   transparência, tipo ou sem textura. O Tapir 1.7.0 começa a superfície zerada, por isso
   a cópia.
-- **C36 organizar o Mapa de Vistas.** `MoveNavigatorItem` do Tapir 1.7.0: mover vistas
-  e pastas para outra pasta.
+- **C36 organizar o Mapa de Vistas.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `move_navigator_items` (`MoveNavigatorItem`): vistas e pastas do Mapa de Vistas, e
+  pranchas e subconjuntos do Book, para outra pasta.
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
   1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)

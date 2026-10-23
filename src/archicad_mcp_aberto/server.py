@@ -44,6 +44,7 @@ from archicad_mcp_aberto.tools import layout_book as layout_book_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
+from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
@@ -1877,6 +1878,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Tapir. Never saves."""
         return await surfaces_tool.create_surfaces(
             client_of(ctx), surfaces, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def move_navigator_items(
+        ctx: Context,
+        map: Literal["view_map", "layout_book"],
+        moves: list[navigator_moves_tool.Move],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview moving up to 50 items: in the View Map, views and folders into a folder;
+        in the Layout Book, layouts and subsets into a subset or the top of the book.
+        item and folder are names or GUIDs (a repeated name needs the GUID). An item
+        already in the folder, or a folder into itself, is refused. Apply with explicit
+        port and single-use token; one move at a time, each read back. Requires Tapir.
+        Never saves."""
+        return await navigator_moves_tool.move_navigator_items(
+            client_of(ctx), map, moves, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

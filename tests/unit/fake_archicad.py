@@ -431,6 +431,7 @@ class FakeArchicad:
     property_create_errors: dict[int, dict] = field(default_factory=dict)
     property_drops_availability: bool = False  # store without availability (mismatch test)
     lose_property_definition_response: bool = False
+    navigator_move_ignored: bool = False
     navigator_trees: dict[str, dict] = field(
         default_factory=lambda: deepcopy(DOCUMENTS_FIXTURE["trees"])
     )
@@ -1326,6 +1327,29 @@ class FakeArchicad:
                         self.do_members[element] = option
                 results.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "MoveNavigatorItem":
+            # Tapir 1.7.0 source (NavigatorCommands.cpp): one ExecutionResult; not live.
+            guid = args["navigatorItemIdToMove"]["guid"]
+            parent_guid = args["parentNavigatorItemId"]["guid"]
+            for tree in self.navigator_trees.values():
+                holder = next((n for n in self._nav_items_of(tree) if any(
+                    c["navigatorItem"]["navigatorItemId"]["guid"] == guid
+                    for c in n.get("children", []))), None)  # fmt: skip
+                parent = _view_map_node(tree, parent_guid)
+                if holder is not None and parent is not None:
+                    break
+            else:
+                message = "Failed to move navigator item."
+                return ok({"addOnCommandResponse": {"success": False, "error": {
+                    "code": -2130313112, "message": message}}})  # fmt: skip
+            if not self.navigator_move_ignored:
+                wrapper = next(
+                    c for c in holder["children"]
+                    if c["navigatorItem"]["navigatorItemId"]["guid"] == guid
+                )  # fmt: skip
+                holder["children"].remove(wrapper)
+                parent.setdefault("children", []).insert(0, wrapper)
+            return ok({"addOnCommandResponse": {"success": True}})
         if name == "CreateClassificationSystems":
             # Tapir 1.7.0 source (ClassificationCommands.cpp); not live. A system without
             # items gets no result, and an error in a child item is not reported.

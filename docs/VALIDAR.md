@@ -780,3 +780,11 @@ projeto novo, sem salvar.
   recibo dá `verified`.
 - [ ] `keep_texture` falso: conferir que a superfície nova fica sem textura e que a base
   não mudou (no teste de renomear de 14/10 a textura mudou).
+
+## Lote do Claude C36: mover itens do Navegador
+
+- [ ] **move_navigator_items (Mapa de Vistas).** No projeto novo, com duas pastas no Mapa
+  de Vistas: "Mova a vista <nome> para a pasta <pasta>." Conferir que ela muda de pasta,
+  vai para o começo dela e que o recibo dá `verified`. Anotar se o Desfazer volta.
+- [ ] **move_navigator_items (Book).** "Mova a prancha Planta baixa para o subconjunto
+  Executivo." Conferir que a numeração da prancha passa a usar o prefixo do subconjunto.

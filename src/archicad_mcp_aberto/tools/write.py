@@ -671,6 +671,11 @@ OPERATIONS["create_surfaces"] = (
     "surface_receipt_id",
     "Each surface is a copy of its base surface with the asked changes; nothing is overwritten.",
 )
+OPERATIONS["move_navigator_items"] = (
+    "Navigator move",
+    "navigator_move_receipt_id",
+    "Each item goes to the start of its new folder, one move at a time; nothing else changes.",
+)
 OPERATIONS["create_layout_subsets"] = (
     "layout subset",
     "layout_subset_receipt_id",

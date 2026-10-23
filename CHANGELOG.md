@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `move_navigator_items` (`tools/navigator_moves.py`): move View Map and Layout Book
+  items into other folders by Tapir 1.7.0 `MoveNavigatorItem`, read back in the tree.
+  Not tested live yet.
+
 - Add `create_surfaces` (`tools/surfaces.py`): new surfaces copied from an existing one
   by Tapir 1.7.0 `CreateSurfaces`, with colour, transparency, type or no texture;
   read back by `GetSurfaces`. Not tested live yet.
