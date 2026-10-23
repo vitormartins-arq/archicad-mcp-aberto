@@ -175,6 +175,31 @@ def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
 
 
+# GetSurfaces fields (Tapir 1.7.0 source, AttributeCommands.cpp); the values are synthetic.
+SURFACE_NUMBERS = (
+    "ambientReflection", "diffuseReflection", "specularReflection", "transparency", "shine",
+    "transparencyAttenuation", "emissionAttenuation",
+)  # fmt: skip
+SURFACE_COLORS = ("surfaceColor", "specularColor", "emissionColor")
+SURFACE_DEFAULT = {
+    "materialType": "Matte",
+    "ambientReflection": 50.0, "diffuseReflection": 80.0, "specularReflection": 10.0,
+    "transparency": 0.0, "shine": 1600.0, "transparencyAttenuation": 0.0,
+    "emissionAttenuation": 0.0,
+    "surfaceColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+    "specularColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+    "emissionColor": {"red": 0.0, "green": 0.0, "blue": 0.0},
+    "texture": {"name": "", "rotationAngle": 0.0, "xSize": 1.0, "ySize": 1.0,
+                "FillRectangle": False, "FitPicture": False, "mirrorX": False,
+                "mirrorY": False, "useAlphaChannel": False,
+                "alphaChannelChangesTransparency": False,
+                "alphaChannelChangesSurfaceColor": False,
+                "alphaChannelChangesAmbientColor": False,
+                "alphaChannelChangesSpecularColor": False,
+                "alphaChannelChangesDiffuseColor": False},
+}  # fmt: skip
+
+
 def surface_guid(index: int) -> str:
     return f"45454545-4545-4545-8545-{index:012d}"
 
@@ -301,6 +326,8 @@ class FakeArchicad:
     surfaces: dict[int, str] = field(
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
+    surface_details: dict[str, dict] = field(default_factory=dict)  # GUID -> GetSurfaces row
+    surface_type_ignored: bool = False
     # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
     line_types: list[dict] = field(
         default_factory=lambda: [
@@ -1811,6 +1838,38 @@ class FakeArchicad:
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
         ):
             return self._rename(name, args)
+        if name == "CreateSurfaces":
+            # Tapir 1.7.0 source (CreateAttributesCommandBase, CreateSurfaces); not live.
+            # A new surface starts zeroed: fields not sent stay 0.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for data in args["surfaceDataArray"]:
+                if data["name"].casefold() in {n.casefold() for n in self.surfaces.values()}:
+                    out.append({"error": {"code": -2130313094, "message": "Already exists."}})
+                    continue
+                index = max(self.surfaces, default=0) + 1
+                self.surfaces[index] = data["name"]
+                row = {k: 0.0 for k in SURFACE_NUMBERS} | {"materialType": "General"}
+                row |= {k: {"red": 0.0, "green": 0.0, "blue": 0.0} for k in SURFACE_COLORS}
+                row |= {k: deepcopy(v) for k, v in data.items() if k != "name"}
+                if self.surface_type_ignored:
+                    row["materialType"] = "General"
+                self.surface_details[surface_guid(index)] = row
+                out.append({"attributeId": {"guid": surface_guid(index)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetSurfaces":
+            out = []
+            for entry in args["attributeIds"]:
+                guid = entry["attributeId"]["guid"]
+                index = next((i for i in self.surfaces if surface_guid(i) == guid), None)
+                if index is None:
+                    out.append({"error": {"code": -2130313112,
+                                "message": "Failed to retrieve attribute."}})  # fmt: skip
+                    continue
+                details = self.surface_details.get(guid, SURFACE_DEFAULT)
+                out.append({"attributeId": {"guid": guid}, "index": index,
+                            "name": self.surfaces[index], **deepcopy(details)})  # fmt: skip
+            return ok({"addOnCommandResponse": {"surfaces": out}})
         if name == "CreateLayers":
             assert args.get("overwriteExisting") is False
             out = []

@@ -666,6 +666,11 @@ OPERATIONS["create_classification_systems"] = (
     "classification_system_receipt_id",
     "Each system is added with its whole item tree; the existing systems are not touched.",
 )
+OPERATIONS["create_surfaces"] = (
+    "surface",
+    "surface_receipt_id",
+    "Each surface is a copy of its base surface with the asked changes; nothing is overwritten.",
+)
 OPERATIONS["create_layout_subsets"] = (
     "layout subset",
     "layout_subset_receipt_id",

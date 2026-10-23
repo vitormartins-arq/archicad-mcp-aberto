@@ -52,6 +52,7 @@ from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import solids as solids_tool
 from archicad_mcp_aberto.tools import stairs as stairs_tool
 from archicad_mcp_aberto.tools import stories as stories_tool
+from archicad_mcp_aberto.tools import surfaces as surfaces_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
@@ -1858,6 +1859,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         unverified. Requires Tapir. Never saves."""
         return await drawings_tool.update_drawings(
             client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_surfaces(
+        ctx: Context,
+        surfaces: list[surfaces_tool.SurfaceCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 surfaces, each a copy of an existing surface
+        (based_on, by name) with a new name and optional color {red, green, blue} 0..1,
+        transparency 0..100, material_type (General, Simple, Matte, Metal, Plastic,
+        Glass, Glowing, Constant) and keep_texture. An existing name is refused. Apply
+        with explicit port and single-use token; every field is read back. Requires
+        Tapir. Never saves."""
+        return await surfaces_tool.create_surfaces(
+            client_of(ctx), surfaces, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

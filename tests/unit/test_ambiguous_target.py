@@ -46,6 +46,7 @@ from archicad_mcp_aberto.tools import (
     solids,
     stairs,
     stories,
+    surfaces,
     texts,
     views,
     voids,
@@ -167,6 +168,7 @@ INPUTS = {
     "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "update_drawings": {"layouts": ["Planta baixa"]},
+    "create_surfaces": {"surfaces": [{"name": "Pintura Azul", "based_on": "Pintura Branca"}]},
     "create_drawings": {
         "drawings": [
             {"view": "Ground floor", "layout": "Planta baixa", "position": {"x": 0.2, "y": 0.15}}
@@ -468,6 +470,7 @@ TARGETED = {
         sections,
         selection,
         solids,
+        surfaces,
         stairs,
         stories,
         texts,

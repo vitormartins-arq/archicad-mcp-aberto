@@ -174,6 +174,12 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   árvore de itens. Depois, no Lab, a classificação do template.
 - **C33 propriedades IFC: não fazer.** No Tapir 1.7.0 o `SetIFCPropertiesOfElements`
   responde "not supported in Archicad 28 and newer" (a escrita só existe até o 27).
+- **C35 superfícies novas.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_surfaces` (`CreateSurfaces`): cópia de uma superfície existente com cor,
+  transparência, tipo ou sem textura. O Tapir 1.7.0 começa a superfície zerada, por isso
+  a cópia.
+- **C36 organizar o Mapa de Vistas.** `MoveNavigatorItem` do Tapir 1.7.0: mover vistas
+  e pastas para outra pasta.
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
   1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)

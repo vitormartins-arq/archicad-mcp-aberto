@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_surfaces` (`tools/surfaces.py`): new surfaces copied from an existing one
+  by Tapir 1.7.0 `CreateSurfaces`, with colour, transparency, type or no texture;
+  read back by `GetSurfaces`. Not tested live yet.
+
 - Add `update_drawings` (`tools/drawings.py`): update every Drawing on layouts by Tapir
   1.7.0 `UpdateDrawings`. Tapir answers only success, so the receipt stays unverified.
   Not tested live yet.

@@ -770,3 +770,13 @@ projeto novo, sem salvar.
   pedir "atualize os desenhos da prancha Planta baixa". Conferir que o desenho mostra a
   mudança. O recibo fica `unverified` (o ArchiCAD não diz se atualizou). Anotar se
   funciona com a prancha fechada (o desenho fica em outro banco de dados).
+
+## Lote do Claude C35: superfícies novas
+
+- [ ] **create_surfaces.** No projeto novo: "Crie a superfície Pintura Azul a partir de
+  <uma superfície de pintura>, com a cor azul, e Vidro Fumê a partir de <um vidro> com
+  transparência 60." Conferir em Opções > Atributos de Elemento > Superfícies que as duas
+  aparecem com a cor, a transparência e a textura da base, no 3D e no render, e que o
+  recibo dá `verified`.
+- [ ] `keep_texture` falso: conferir que a superfície nova fica sem textura e que a base
+  não mudou (no teste de renomear de 14/10 a textura mudou).
