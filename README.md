@@ -722,3 +722,9 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+- `create_profiles` also accepts caller-authored `skins` on Archicad 27 or later. Each
+  skin names an existing building material and supplies one or more local-coordinate
+  contours in metres; the first contour is the outer boundary and later contours are
+  holes. A source profile is optional and, when supplied, the new skins are added to its
+  copied geometry. New names only, at most 20 profiles per call; never overwrites or saves.

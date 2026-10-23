@@ -664,3 +664,11 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **create_profiles.** Copy one existing complex profile under a new name in an
   unsaved test project. Compare its cross-section and wall/beam/column availability in
   Profile Manager. Confirm that the source stayed unchanged and the project was not saved.
+
+## Codex: caller-authored complex profile
+
+- [ ] **create_profiles with skins.** In an unsaved Archicad 30 test project, create a
+  profile named `MCP TESTE PERFIL VAZADO` with one rectangular skin 0.20 m x 0.40 m,
+  a rectangular hole 0.10 m x 0.30 m and an existing concrete building material.
+  Open Profile Manager and confirm the outer size, hole, material and requested wall/beam
+  availability. Confirm the receipt is `verified` and that the project was not saved.

@@ -1653,16 +1653,38 @@ class FakeArchicad:
             assert args.get("overwriteExisting") is False
             out = []
             for data in args["profileDataArray"]:
-                source = data["sourceAttributeId"]["attributeId"]["guid"]
-                if source not in self.profiles or any(
+                source = data.get("sourceAttributeId", {}).get("attributeId", {}).get("guid")
+                if (source is not None and source not in self.profiles) or any(
                     row["name"] == data["name"] for row in self.profiles.values()
                 ):
                     out.append({"error": {"code": -1, "message": "Profile create failed."}})
                     continue
                 guid = str(uuid4()).upper()
-                row = deepcopy(self.profiles[source])
+                row = deepcopy(self.profiles[source]) if source is not None else {}
                 row.update(data)
                 row.pop("sourceAttributeId", None)
+                new_skins = row.pop("newSkins", [])
+                if new_skins:
+                    row.setdefault("skins", [])
+                    for skin_index, skin in enumerate(new_skins):
+                        contours = skin.pop("contours")
+                        outline = [{"x": 0.0, "y": 0.0}]
+                        ends = [0]
+                        for contour in contours:
+                            points = contour["polygonCoordinates"]
+                            outline.extend(points)
+                            outline.append(points[0])
+                            ends.append(len(outline) - 1)
+                        row["skins"].append(
+                            {
+                                "skinId": f"source-derived-{skin_index}",
+                                **skin,
+                                "outlineCoords": outline,
+                                "outlineSubPolyEnds": ends,
+                                "outlineArcs": [],
+                                "edges": [],
+                            }
+                        )
                 row.update(attributeId={"guid": guid}, index=str(len(self.profiles) + 1))
                 self.profiles[guid] = row
                 out.append({"attributeId": {"guid": guid}})

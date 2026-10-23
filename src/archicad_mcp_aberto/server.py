@@ -655,9 +655,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview creating up to 20 complex profiles by copying the geometry of an
-        existing profile. Optionally control wall/beam/column/handrail/object use.
-        Existing names are refused. Explicit apply port and single-use token; read-back
+        """Preview creating up to 20 complex profiles from an existing profile and/or
+        caller-authored polygon skins. Skin contours use local metres; later contours
+        are holes. Optionally control wall/beam/column/handrail/object use. Existing
+        names are refused. Explicit apply port and single-use token; read-back
         verification; never overwrites or saves. Requires Tapir 1.7.0."""
         return await profiles.create_profiles(
             client_of(ctx), profile_data, port, dry_run, confirmation_token

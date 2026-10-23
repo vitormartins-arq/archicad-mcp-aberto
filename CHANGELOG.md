@@ -438,3 +438,9 @@
 - Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
+
+### Complex profile polygons — 2026-10-23
+- Extend `create_profiles` with Tapir 1.7.0 `newSkins`: new profiles can be built from
+  local-coordinate polygon contours and holes with named building materials, optionally
+  combined with copied profile geometry. Read back skin count, material data and outlines;
+  keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.

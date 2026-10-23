@@ -938,3 +938,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   changes its wall/beam/column/handrail/object availability. It never overwrites and
   reads the new scalar settings back. Simulated only; compare geometry live in Profile
   Manager. Creating arbitrary new skin polygons remains a later extension.
+- **Codex / caller-authored profile skins, 23/10/2026:** `create_profiles` now also
+  sends Tapir 1.7.0 `newSkins` with arbitrary polygon contours and holes in profile-local
+  metres. Each skin resolves an existing building material by name; a copied source is
+  optional and can be combined with the new geometry. The fake shape is source-derived,
+  not a live capture. Simulated tests pass; live Profile Manager comparison is pending.
