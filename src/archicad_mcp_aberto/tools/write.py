@@ -656,6 +656,11 @@ OPERATIONS["remove_trims"] = (
     "untrim_receipt_id",
     "The roof or shell stops trimming each element; the elements stay in the model.",
 )
+OPERATIONS["create_classification_systems"] = (
+    "classification system",
+    "classification_system_receipt_id",
+    "Each system is added with its whole item tree; the existing systems are not touched.",
+)
 OPERATIONS["create_layout_subsets"] = (
     "layout subset",
     "layout_subset_receipt_id",

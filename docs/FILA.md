@@ -168,7 +168,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C31 `modify_lamps`.** (Feito na branch `claude/project-thread-pvslgt`.) `ModifyLamps`
   do Tapir 1.7.0: os campos do `modify_objects` e `lightIsOn`. A cor da luz ficou de fora
   (o código do Tapir diz que o ArchiCAD descarta).
-- **C32 sistemas de classificação.** `CreateClassificationSystems` do Tapir 1.7.0.
+- **C32 sistemas de classificação.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_classification_systems` (`CreateClassificationSystems`): sistema novo com a
+  árvore de itens. Depois, no Lab, a classificação do template.
 - **C33 propriedades IFC.** `SetIFCPropertiesOfElements` do Tapir 1.7.0.
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
   1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.

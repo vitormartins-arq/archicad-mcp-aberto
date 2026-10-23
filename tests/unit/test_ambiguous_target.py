@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    classification_systems,
     classifications,
     composites,
     design_option_create,
@@ -415,6 +416,9 @@ INPUTS = {
             }
         ]
     },
+    "create_classification_systems": {
+        "systems": [{"name": "LAB", "version": "1", "items": [{"id": "01", "name": "A"}]}]
+    },
     "create_classification_items": {
         "items": [
             {
@@ -432,6 +436,7 @@ TARGETED = {
     for module in (
         attribute_properties,
         attributes,
+        classification_systems,
         classifications,
         design_options,
         documents,

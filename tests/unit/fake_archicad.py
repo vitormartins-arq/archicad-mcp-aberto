@@ -477,6 +477,7 @@ class FakeArchicad:
     classification_set_errors: dict[int, dict] = field(default_factory=dict)
     classification_ignored: bool = False
     lose_classification_response: bool = False
+    classification_children_dropped: bool = False  # nested items silently not made
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -1285,6 +1286,37 @@ class FakeArchicad:
                         self.do_members.pop(element, None)
                     else:
                         self.do_members[element] = option
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "CreateClassificationSystems":
+            # Tapir 1.7.0 source (ClassificationCommands.cpp); not live. A system without
+            # items gets no result, and an error in a child item is not reported.
+            results = []
+
+            def build(rows, depth):
+                out = []
+                for row in rows:
+                    children = row.get("children", [])
+                    if self.classification_children_dropped:
+                        children = []
+                    item = {"classificationItemId": {"guid": str(uuid4()).upper()},
+                            **{k: row[k] for k in ("id", "name", "description")}}  # fmt: skip
+                    if children:
+                        item["children"] = build(children, depth + 1)
+                    out.append({"classificationItem": item})
+                return out
+
+            for entry in args["classificationSystemsWithItems"]:
+                data = entry["classificationSystem"]
+                guid = str(uuid4()).upper()
+                self.classification_data["systems"]["classificationSystems"].append(
+                    {"classificationSystemId": {"guid": guid}, **deepcopy(data)}
+                )
+                self.classification_data["items"][guid] = {"classificationItems": []}
+                if not entry["classificationItems"]:
+                    continue
+                tree = build(entry["classificationItems"], 0)
+                self.classification_data["items"][guid]["classificationItems"] = tree
                 results.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": results}})
         if name == "CreateClassificationItems":

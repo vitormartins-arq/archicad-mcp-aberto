@@ -30,6 +30,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
 from archicad_mcp_aberto.tools import composites as composites_tool
 from archicad_mcp_aberto.tools import design_option_create as design_option_create_tool
 from archicad_mcp_aberto.tools import drawings as drawings_tool
@@ -1823,6 +1824,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         story, locked and hotlinked lamps; verifies fields and never saves. Requires
         Tapir."""
         return await modify.modify_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_classification_systems(
+        ctx: Context,
+        systems: list[classification_systems_tool.SystemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 10 classification systems: name, version, description,
+        source, date (YYYY-MM-DD, today if omitted) and items, a tree of {id, name,
+        description, children} with at least one item. A name and version already used is
+        refused. Apply with explicit port and single-use token; the system and its whole
+        tree are read back. create_classification_items adds items to an existing system.
+        Requires Tapir. Never saves."""
+        return await classification_systems_tool.create_classification_systems(
+            client_of(ctx), systems, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=WRITE)
     async def create_layout_subsets(

@@ -534,6 +534,10 @@
     {
       "name": "modify_lamps",
       "description": "Preview or edit lamps: position, level, size, light on or off. Read back after."
+    },
+    {
+      "name": "create_classification_systems",
+      "description": "Preview or add classification systems with their item trees. Read back after."
     }
   ],
   "compatibility": {

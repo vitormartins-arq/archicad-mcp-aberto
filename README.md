@@ -148,6 +148,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `remove_solid_operations` | Write | Removes solid element operation links; the elements stay | yes |
 | `modify_lamps` | Write | Edits lamps: position, level, size, light on or off | yes |
 | `remove_trims` | Write | Removes a roof or shell trim from elements; the elements stay | yes |
+| `create_classification_systems` | Write | New classification systems with their item trees | yes |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
@@ -778,6 +779,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   confirmation_token?)` undo the two tools above by Tapir 1.7.0
   `RemoveSolidElementLinks` and `RemoveElementTrims`. The link or trim must exist; the
   elements stay. The preview shows what is removed, and the read-back checks it is gone.
+- `create_classification_systems([{name, version, description?, source?, date?, items}],
+  port?, dry_run?, confirmation_token?)` adds up to 10 systems by Tapir 1.7.0
+  `CreateClassificationSystems`, each with a tree of up to 500 items (`id`, `name`,
+  `description`, `children`). At least one item is required, because Tapir 1.7.0 gives
+  no result for a system without items. A name and version already used is refused.
+  Tapir does not report an error in a child item, so the read-back compares the whole
+  tree, and the system's description, source and date.
 - `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
   confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
   `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`

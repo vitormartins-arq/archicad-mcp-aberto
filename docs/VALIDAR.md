@@ -755,3 +755,11 @@ projeto novo, sem salvar.
   luminária para (2, 3), mude a altura para 0,6 m e desligue a luz." Conferir na planta e
   na caixa de configurações que posição, altura e "luz ligada" mudaram, e que o recibo dá
   `verified`.
+
+## Lote do Claude C32: sistemas de classificação
+
+- [ ] **create_classification_systems.** No projeto novo: "Crie o sistema LAB Teste
+  versão 1 com 01 Vedações (01.01 Alvenaria, 01.02 Drywall) e 02 Estrutura." Conferir em
+  Opções > Gerenciador de Classificações que o sistema e os quatro itens aparecem no
+  lugar certo, com a data, e que o recibo dá `verified`.
+- [ ] Sem `date`: anotar a data que o ArchiCAD mostra.

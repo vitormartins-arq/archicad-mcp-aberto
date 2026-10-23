@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_classification_systems` (`tools/classification_systems.py`): new systems
+  with item trees by Tapir 1.7.0 `CreateClassificationSystems`, read back by
+  `GetAllClassificationSystems` and the whole tree. Not tested live yet.
+
 - Add `modify_lamps`: origin, level, size (height through ZZYZX) and `lightIsOn` of
   lamps by Tapir 1.7.0 `ModifyLamps`, the same code as `ModifyObjects`; read back like
   `modify_objects`. The light colour is left out: the Tapir source says Archicad
