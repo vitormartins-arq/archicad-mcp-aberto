@@ -935,3 +935,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   `create_layouts` (C27), `place_hotlinks` (C28). C24 descartada (`CreateProjectInfoFields`
   não migrado no AC30). 2589 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
   116 ferramentas. Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C18 a C28.
+
+- **Claude / segunda rodada sem ArchiCAD, 23/10/2026 (mesmo PR #71):** o Vitor pediu para
+  continuar. Novas: `remove_solid_operations` e `remove_trims` (C30), `modify_lamps` (C31),
+  `create_classification_systems` (C32), `update_drawings` (C29), `create_surfaces` (C35,
+  cópia de uma superfície existente porque o Tapir começa a nova zerada),
+  `move_navigator_items` (C36) e `update_favorites_from_elements` (C37). C33 descartada: o
+  Tapir 1.7.0 não grava IFC no ArchiCAD 28+. C34 (eixos) só existe no Tapir depois da 1.7.2.
+  2690 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 124 ferramentas.
+  Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C29 a C37.
