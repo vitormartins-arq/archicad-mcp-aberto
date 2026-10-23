@@ -149,6 +149,7 @@ INPUTS = {
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
     "create_design_options": {"sets": ["Cobertura"]},
+    "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "create_drawings": {
         "drawings": [

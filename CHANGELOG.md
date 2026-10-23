@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `move_to_design_options`: elements into a design option or back to the main model
+  by Tapir 1.7.0 `MoveElementsToDesignOptions`, read back per element. Not tested live
+  yet.
+
 - Add `create_design_options` (`tools/design_option_create.py`): new design option sets,
   options and combinations in one call (Tapir 1.7.0, Archicad 29+), read back by the
   three inventories. Not tested live yet.

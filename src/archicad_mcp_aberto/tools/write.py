@@ -627,6 +627,12 @@ OPERATIONS["create_design_options"] = (
     "Sets, then options, then combinations are added; nothing existing changes and no "
     "element is moved into an option. Archicad 29 or newer.",
 )
+OPERATIONS["move_to_design_options"] = (
+    "design option move",
+    "design_option_move_receipt_id",
+    "Each element is linked to its design option, or back to the main model, and read "
+    "back. Archicad 29 or newer.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

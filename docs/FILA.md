@@ -146,8 +146,8 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   devolvendo os existentes sem mudança. Conferência por `GetStories`.
 - **C23 opções de design.** (Feito na branch `claude/project-thread-pvslgt`.)
   `create_design_options`: conjuntos, opções e combinações novos numa chamada
-  (ArchiCAD 29+), sem mudar os existentes nem mover elementos. Falta, numa próxima:
-  `MoveElementsToDesignOptions` para pôr elementos numa opção.
+  (ArchiCAD 29+), sem mudar os existentes nem mover elementos. `move_to_design_options` (`MoveElementsToDesignOptions`) põe elementos numa opção
+  ou de volta no modelo principal.
 - **C24 `CreateProjectInfoFields`: não fazer.** No Tapir 1.7.0 o comando responde "not
   migrated to AC30" no ArchiCAD 30; só serviria no 28/29.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)

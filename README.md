@@ -142,6 +142,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
 | `add_stories` | Write | New stories above the top or below the bottom; existing stories kept | yes |
 | `create_design_options` | Write | New design option sets, options and combinations (Archicad 29+); only adds | yes |
+| `move_to_design_options` | Write | Puts elements in a design option or back in the main model (Archicad 29+) | yes |
 
 ### Reported live validation
 
@@ -744,6 +745,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   option ids and combination names are refused in the preview. Tapir does not report
   whether a combination's active options were set, so the read-back compares them, as
   well as each option's name, id and set. Elements are not moved into options.
+- `move_to_design_options([{element_guid, option}], port?, dry_run?,
+  confirmation_token?)` puts up to 100 elements in a design option by Tapir 1.7.0
+  `MoveElementsToDesignOptions` (Archicad 29+). `option` is the option's string id from
+  `list_design_options`; `null` takes the element back to the main model. The preview
+  shows each element's current option and refuses missing elements and unknown ids. The
+  read-back is `GetDesignOptionForElements`.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from

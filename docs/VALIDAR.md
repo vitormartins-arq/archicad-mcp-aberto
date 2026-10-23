@@ -704,3 +704,7 @@ projeto novo, sem salvar.
 - [ ] Pedir de novo a mesma id de opção: a prévia deve recusar.
 - [ ] Ctrl+Z: anotar se um Desfazer volta tudo ou se são três passos (o Tapir faz três
   comandos).
+- [ ] **move_to_design_options.** Com uma parede e a opção L-02 criadas: "Ponha a parede
+  <GUID> na opção L-02." Conferir que ela some do modelo principal e aparece só quando a
+  L-02 está ativa, e que o recibo dá `verified`. Depois "volte a parede para o modelo
+  principal" (`option` nulo).

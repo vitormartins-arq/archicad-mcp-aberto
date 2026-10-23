@@ -502,6 +502,10 @@
     {
       "name": "create_design_options",
       "description": "Preview or add design option sets, options and combinations; only adds. Read back after."
+    },
+    {
+      "name": "move_to_design_options",
+      "description": "Preview or put elements in a design option, or back in the main model. Read back after."
     }
   ],
   "compatibility": {

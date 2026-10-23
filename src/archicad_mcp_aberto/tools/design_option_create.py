@@ -17,9 +17,11 @@ from typing import Annotated, Any
 from pydantic import Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError, TapirError
-from archicad_mcp_aberto.tools import write
+from archicad_mcp_aberto.tools import design_options, write
 
 MAX_EACH = 20
+MAX_MOVES = 100
+NULL_GUID = "00000000-0000-0000-0000-000000000000"
 KINDS = ("set", "option", "combination")
 Name = Annotated[str, Field(min_length=1, max_length=255)]
 
@@ -294,4 +296,107 @@ async def create_design_options(
         "create_design_options",
         planner_override=_plan,
         dispatcher_override=_dispatch,
+    )
+
+
+class OptionMove(write.InputModel):
+    element_guid: Annotated[str, Field(min_length=36, max_length=36)]
+    option: Name | None  # a design option's string id; None moves it to the main model
+
+    @field_validator("element_guid")
+    @classmethod
+    def valid_guid(cls, value: str) -> str:
+        return design_options._guid(value, "element")
+
+
+async def _move_plan(client, moves, port, operation):
+    port, target, _ = await write._context(client, port)
+    _, options, _ = await _inventory(client, port)
+    by_id = {str(o.get("id")): o for o in options if isinstance(o, dict)}
+    guids = [m.element_guid for m in moves]
+    if len(set(guids)) != len(guids):
+        raise ValueError("An element appears twice in this call.")
+    current = await design_options.get_design_options_for_elements(client, guids, port)
+    items = []
+    for index, (move, now) in enumerate(zip(moves, current["items"], strict=True)):
+        if now["status"] in ("NotExistingElement", "MissingDesignOption"):
+            raise ValueError(f"Element {move.element_guid}: {now['status']}.")
+        if move.option is not None and move.option not in by_id:
+            raise ValueError(f"Element {move.element_guid}: no design option {move.option!r}.")
+        option = by_id.get(move.option)
+        option_guid = _guid(option, "designOptionId") if option else NULL_GUID
+        before = now.get("design_option")
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": move.element_guid,
+                "from": before["id"] if before else None,
+                "to": move.option,
+                "to_name": option.get("name") if option else "main model",
+                "parameters": {
+                    "elementId": {"guid": move.element_guid},
+                    "designOptionId": {"guid": option_guid},
+                },
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _move_dispatch(client, receipt):
+    items, port = receipt["items"], receipt["target"]["port"]
+    timeout = receipt["write_timeout_seconds"]
+    payload = {"elementDesignOptionPairs": [i["parameters"] for i in items]}
+    error = await _created(
+        client, port, "MoveElementsToDesignOptions", "executionResults", payload, items, None,
+        timeout,
+    )  # fmt: skip
+    if error is not None:
+        _unknown(items, error)
+        receipt["warning"] = "Outcome is unknown. Inspect Archicad; do not retry this plan."
+        return
+    moved = [i for i in items if i["status"] == "unverified"]
+    if not moved:
+        return
+    try:
+        after = await design_options.get_design_options_for_elements(
+            client, [i["element_guid"] for i in moved], port
+        )
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+        return
+    for item, row in zip(moved, after["items"], strict=True):
+        item["after"] = row
+        found = row.get("design_option", {}).get("id") if row.get("design_option") else None
+        ok = found == item["to"] and (
+            row["status"] == "LinkedToDesignOption"
+            if item["to"]
+            else row["status"] == "NotLinkedToAnyDesignOption"
+        )
+        item["status"] = "verified" if ok else "verification_failed"
+        if not ok:
+            item["mismatches"] = ["design option"]
+
+
+async def move_to_design_options(
+    client: ArchicadClient,
+    moves: list[dict | OptionMove],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply putting up to 100 elements in a design option (by its string id) or
+    back in the main model (option None). Archicad 29+."""
+    if not 1 <= len(moves) <= MAX_MOVES:
+        raise ValueError(f"Pass between 1 and {MAX_MOVES} moves.")
+    validated = [m if isinstance(m, OptionMove) else OptionMove.model_validate(m) for m in moves]
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "move_to_design_options",
+        planner_override=_move_plan,
+        dispatcher_override=_move_dispatch,
     )

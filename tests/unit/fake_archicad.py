@@ -317,6 +317,15 @@ class FakeArchicad:
     do_combinations: list[dict] = field(
         default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
     )
+    # element guid -> design option guid (GetDesignOptionForElements / MoveElements...).
+    do_members: dict[str, str] = field(
+        default_factory=lambda: {
+            element: option
+            for option, elements in DESIGN_OPTIONS_FIXTURE["elements_by_option"].items()
+            for element in elements
+        }
+    )
+    move_to_option_ignored: bool = False  # answers success without relinking
     design_option_errors: dict[str, dict] = field(default_factory=dict)  # name -> error row
     combination_drops_options: bool = False  # Tapir ignores SetActiveOptionsInCombination
     # SetStories (Tapir 1.7.0 ProjectCommands.cpp): refuse it, or keep a story off level.
@@ -1098,40 +1107,56 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {"designOptionCombinationIdsOrErrors": rows}})
         if name == "GetElementsOfDesignOptions":
             rows = []
-            mapping = DESIGN_OPTIONS_FIXTURE["elements_by_option"]
             for item in args["designOptions"]:
                 guid = item["designOptionId"]["guid"]
                 if guid not in {r["designOptionId"]["guid"] for r in self.do_options}:
                     rows.append({"error": {"code": -2, "message": "Not found design option"}})
                 else:
+                    members = [e for e, o in self.do_members.items() if o == guid]
                     rows.append(
                         {
                             "designOptionId": {"guid": guid},
-                            "elements": [self._id(g) for g in mapping.get(guid, [])],
+                            "elements": [self._id(g) for g in members],
                         }
                     )
             return ok({"addOnCommandResponse": {"elementsOfDesignOptions": rows}})
         if name == "GetDesignOptionForElements":
-            linked = DESIGN_OPTIONS_FIXTURE["options"][0]
-            members = set(
-                DESIGN_OPTIONS_FIXTURE["elements_by_option"][linked["designOptionId"]["guid"]]
-            )
+            options = {r["designOptionId"]["guid"]: r for r in self.do_options}
             rows = []
             for item in args["elements"]:
                 guid = item["elementId"]["guid"]
                 if guid not in self.elements:
                     rows.append({"elementId": {"guid": guid}, "type": "NotExistingElement"})
-                elif guid in members:
+                elif guid in self.do_members:
                     rows.append(
                         {
                             "elementId": {"guid": guid},
                             "type": "LinkedToDesignOption",
-                            "designOption": deepcopy(linked),
+                            "designOption": deepcopy(options[self.do_members[guid]]),
                         }
                     )
                 else:
                     rows.append({"elementId": {"guid": guid}, "type": "NotLinkedToAnyDesignOption"})
             return ok({"addOnCommandResponse": {"designOptionForElements": rows}})
+        if name == "MoveElementsToDesignOptions":
+            # Shapes from the Tapir 1.7.0 source (DesignOptionCommands.cpp); not live.
+            results = []
+            known = {r["designOptionId"]["guid"] for r in self.do_options}
+            for pair in args["elementDesignOptionPairs"]:
+                element = pair["elementId"]["guid"]
+                option = pair["designOptionId"]["guid"]
+                null = option == "00000000-0000-0000-0000-000000000000"
+                if not null and option not in known:
+                    results.append({"success": False, "error": {"code": -2130313110,
+                                    "message": "Not found design option"}})  # fmt: skip
+                    continue
+                if not self.move_to_option_ignored:
+                    if null:
+                        self.do_members.pop(element, None)
+                    else:
+                        self.do_members[element] = option
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
         if name == "CreateClassificationItems":
             results = []
             for entry in args["newClassificationItems"]:

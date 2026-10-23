@@ -1723,6 +1723,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sets, options, combinations, port, dry_run, confirmation_token
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def move_to_design_options(
+        ctx: Context,
+        moves: list[design_option_create_tool.OptionMove],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview putting up to 100 elements in a design option: {element_guid, option}
+        with the option's string id (list_design_options), or option null for the main
+        model. The preview shows from and to. Apply with explicit port and single-use
+        token; each is read back. Requires Tapir and Archicad 29+. Never saves."""
+        return await design_option_create_tool.move_to_design_options(
+            client_of(ctx), moves, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 
