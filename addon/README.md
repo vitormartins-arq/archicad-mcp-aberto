@@ -41,6 +41,10 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
 - `Show3DAll`: Show All in 3D and, optionally, Fit in Window, for when the model
   disappears from the 3D window.
 - `Get3DWindowImage` (Archicad 30 only): the 3D window as base64 PNG or JPG.
+- `GetGridElementDefaults`, `GetGridElements`, `CreateGridElements`: grid lines (Grid
+  Tool elements), ported from Tapir's commands added after 1.7.2 (MIT). Coordinates in
+  metres; `CreateGridElements` takes `begCoordinate`, `endCoordinate` and optional
+  `floorIndex`, `layerIndex`, `lengthMode` and GDL `parameters`, all in one Undo step.
 
 Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands
 convert. A perspective camera defaults to a 60 degree view cone. First live test
