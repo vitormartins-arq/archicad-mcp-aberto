@@ -633,6 +633,18 @@ OPERATIONS["move_to_design_options"] = (
     "Each element is linked to its design option, or back to the main model, and read "
     "back. Archicad 29 or newer.",
 )
+OPERATIONS["create_solid_operations"] = (
+    "solid operation",
+    "solid_operation_receipt_id",
+    "Each operator acts on its target as Design > Solid Element Operations does; check "
+    "the result in 3D.",
+)
+OPERATIONS["trim_to_roof"] = (
+    "trim",
+    "trim_receipt_id",
+    "Each element is trimmed by the roof or shell, as Design > Trim to Roof/Shell does; "
+    "check the result in 3D and section.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

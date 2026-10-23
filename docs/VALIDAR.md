@@ -708,3 +708,13 @@ projeto novo, sem salvar.
   <GUID> na opção L-02." Conferir que ela some do modelo principal e aparece só quando a
   L-02 está ativa, e que o recibo dá `verified`. Depois "volte a parede para o modelo
   principal" (`option` nulo).
+
+## Lote do Claude C26: operações de sólidos e cortar pelo telhado
+
+- [ ] **create_solid_operations.** No projeto novo, com uma parede e um morfo (caixa) que
+  a atravessa: "Subtraia o morfo da parede." Conferir no 3D que a parede fica com o
+  buraco, em Projeto > Operações de Elementos Sólidos que o vínculo aparece, e que o
+  recibo dá `verified`. Pedir de novo: a prévia deve recusar.
+- [ ] **trim_to_roof.** Com duas paredes e um telhado em cima: "Corte as paredes pelo
+  telhado." Conferir no 3D e num corte que as paredes param na face de baixo do telhado
+  (`KeepInside`), e que o recibo dá `verified`. Anotar o que `KeepAll` faz.

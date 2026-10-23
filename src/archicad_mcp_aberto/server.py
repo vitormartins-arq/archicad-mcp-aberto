@@ -46,6 +46,7 @@ from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
+from archicad_mcp_aberto.tools import solids as solids_tool
 from archicad_mcp_aberto.tools import stairs as stairs_tool
 from archicad_mcp_aberto.tools import stories as stories_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
@@ -1737,6 +1738,41 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         token; each is read back. Requires Tapir and Archicad 29+. Never saves."""
         return await design_option_create_tool.move_to_design_options(
             client_of(ctx), moves, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_solid_operations(
+        ctx: Context,
+        links: list[solids_tool.SolidLink],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 solid element operations: target_guid, operator_guid,
+        operation (Subtraction, SubtractionUpwards, SubtractionDownwards, Intersection,
+        Addition), inherit_operator_attributes, skip_polygon_holes. Both elements must be
+        editable; an existing link is refused. Apply with explicit port and single-use
+        token; each link is read back. Requires Tapir. Never saves."""
+        return await solids_tool.create_solid_operations(
+            client_of(ctx), links, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def trim_to_roof(
+        ctx: Context,
+        element_guids: list[str],
+        roof_guid: str,
+        keep: Literal["KeepInside", "KeepOutside", "KeepAll"] = "KeepInside",
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview trimming up to 100 editable elements (walls, columns, beams...) with
+        one roof or shell, keeping the part inside (below), outside or all. An existing
+        trim by that roof is refused. Apply with explicit port and single-use token; each
+        trim is read back. Requires Tapir. Never saves."""
+        return await solids_tool.trim_to_roof(
+            client_of(ctx), element_guids, roof_guid, keep, port, dry_run, confirmation_token
         )
 
     return mcp

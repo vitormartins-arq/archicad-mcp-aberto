@@ -40,6 +40,7 @@ from archicad_mcp_aberto.tools import (
     scenes,
     sections,
     selection,
+    solids,
     stairs,
     stories,
     texts,
@@ -149,6 +150,8 @@ INPUTS = {
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
     "create_design_options": {"sets": ["Cobertura"]},
+    "create_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
+    "trim_to_roof": {"element_guids": [GUID], "roof_guid": PROP},
     "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "create_drawings": {
@@ -443,6 +446,7 @@ TARGETED = {
         scenes,
         sections,
         selection,
+        solids,
         stairs,
         stories,
         texts,
@@ -551,6 +555,9 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "set_attribute_property_values":
         for instance in (first, second):
             instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
+    if name in ("create_solid_operations", "trim_to_roof"):
+        for instance in (first, second):
+            instance.elements[PROP] = "Roof"
     if name == "create_composites":
         for instance in (first, second):
             row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
@@ -578,7 +585,12 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
-    extra = {"create_groups": {PROP: "Wall"}, "update_zones": {PROP: "Zone"}}.get(name, {})
+    extra = {
+        "create_groups": {PROP: "Wall"},
+        "update_zones": {PROP: "Zone"},
+        "create_solid_operations": {PROP: "Roof"},
+        "trim_to_roof": {PROP: "Roof"},
+    }.get(name, {})
     assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 
@@ -613,6 +625,8 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             instance.layers[2] = "Editable"
     if name == "create_groups":
         second.elements[PROP] = "Wall"
+    if name in ("create_solid_operations", "trim_to_roof"):
+        second.elements[PROP] = "Roof"
     if name == "create_composites":
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)

@@ -506,6 +506,14 @@
     {
       "name": "move_to_design_options",
       "description": "Preview or put elements in a design option, or back in the main model. Read back after."
+    },
+    {
+      "name": "create_solid_operations",
+      "description": "Preview or add solid element operations (subtract, intersect, add) between elements. Read back after."
+    },
+    {
+      "name": "trim_to_roof",
+      "description": "Preview or trim elements with a roof or shell. Read back after."
     }
   ],
   "compatibility": {

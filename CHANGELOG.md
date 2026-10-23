@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_solid_operations` and `trim_to_roof` (`tools/solids.py`): solid element
+  operation links and trims to a roof or shell by Tapir 1.7.0, read back by
+  `GetSolidElementLinks` and `GetElementTrims`. Not tested live yet.
+
 - Add `move_to_design_options`: elements into a design option or back to the main model
   by Tapir 1.7.0 `MoveElementsToDesignOptions`, read back per element. Not tested live
   yet.

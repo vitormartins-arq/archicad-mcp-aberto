@@ -150,6 +150,10 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   ou de volta no modelo principal.
 - **C24 `CreateProjectInfoFields`: não fazer.** No Tapir 1.7.0 o comando responde "not
   migrated to AC30" no ArchiCAD 30; só serviria no 28/29.
+- **C26 sólidos e corte por telhado.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_solid_operations` (`CreateSolidElementLinks`) e `trim_to_roof`
+  (`TrimElements`). O fake já responde `GetSolidElementLinks` e `GetElementTrims`, que a
+  T37 do Codex vai ler: reaproveitar esses handlers, sem duplicar.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

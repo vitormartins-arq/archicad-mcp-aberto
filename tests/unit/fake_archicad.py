@@ -317,6 +317,11 @@ class FakeArchicad:
     do_combinations: list[dict] = field(
         default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
     )
+    # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
+    solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
+    element_trims: dict[tuple[str, str], str] = field(default_factory=dict)  # (elem, roof)
+    solid_link_flags_ignored: bool = False  # links created without the flags
+    trim_refused: bool = False
     # element guid -> design option guid (GetDesignOptionForElements / MoveElements...).
     do_members: dict[str, str] = field(
         default_factory=lambda: {
@@ -1057,6 +1062,58 @@ class FakeArchicad:
                     }
                 }
             )
+        if name == "CreateSolidElementLinks":
+            results = []
+            for link in args["solidLinks"]:
+                target, operator = link["targetId"]["guid"], link["operatorId"]["guid"]
+                if target not in self.elements or operator not in self.elements:
+                    error = {"code": -2130313112, "message": "Failed to create the link."}
+                    results.append({"success": False, "error": error})
+                    continue
+                flags = {"inheritOperatorAttributes": False, "skipPolygonHoles": False}
+                if not self.solid_link_flags_ignored:
+                    flags = dict(link.get("linkFlags", flags))
+                operation = link.get("operation", "Subtraction")
+                self.solid_links[(target, operator)] = {"operation": operation, "linkFlags": flags}
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "GetSolidElementLinks":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                rows.append({
+                    "solidLinksWithTheGivenTarget": [
+                        {"operatorId": {"guid": o}, **deepcopy(v)}
+                        for (t, o), v in self.solid_links.items() if t == guid],
+                    "solidLinksWithTheGivenOperator": [
+                        {"targetId": {"guid": t}, **deepcopy(v)}
+                        for (t, o), v in self.solid_links.items() if o == guid],
+                })  # fmt: skip
+            return ok({"addOnCommandResponse": {"solidLinks": rows}})
+        if name == "TrimElements":
+            guids = [e["elementId"]["guid"] for e in args["elements"]]
+            roof = args["trimmingElement"]["guid"]
+            if self.trim_refused or self.elements.get(roof) not in ("Roof", "Shell"):
+                message = "Failed to trim the elements."
+                return ok({"addOnCommandResponse": {"success": False,
+                           "error": {"code": -2130313112, "message": message}}})  # fmt: skip
+            for guid in guids:
+                self.element_trims[(guid, roof)] = args.get("trimType", "KeepInside")
+            return ok({"addOnCommandResponse": {"success": True}})
+        if name == "GetElementTrims":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                if guid not in self.elements:
+                    rows.append({"error": {"code": -2130313112, "message": "Not found."}})
+                    continue
+                rows.append({
+                    "trimmedBy": [{"elementId": {"guid": r}, "trimType": t}
+                                  for (e, r), t in self.element_trims.items() if e == guid],
+                    "trims": [{"elementId": {"guid": e}}
+                              for (e, r) in self.element_trims if r == guid],
+                })  # fmt: skip
+            return ok({"addOnCommandResponse": {"elementTrims": rows}})
         if name == "CreateDesignOptionSets":
             # Shapes from the Tapir 1.7.0 source (DesignOptionCommands.cpp); not live.
             results = []
