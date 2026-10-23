@@ -138,6 +138,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
 | `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 
 ### Reported live validation
 
@@ -700,6 +701,18 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   repeated name, is refused in the preview. Colours go from 0 to 1. Tapir copies the
   zone stamp from the project's first category. The read-back is `GetZoneCategories`
   (name, code and colour).
+- `create_composites([{name, use_with, skins: [{building_material, thickness, type?,
+  pen?}], separator_line?, separator_pen?}], port?, dry_run?, confirmation_token?)` adds
+  up to 20 composites by Tapir 1.7.0 `CreateComposites`. `use_with` lists Wall, Slab,
+  Roof or Shell; each of up to 20 skins takes a building material by name, a thickness
+  in metres, a type (Core by default, Finish or Other) and a frame pen (1 by default).
+  Every separator line gets `separator_line` (default: the project's first line type,
+  the solid line) and `separator_pen`. A name the project already has, a repeated name,
+  or a building material or line type that does not exist is refused in the preview,
+  because Tapir would silently keep the default material for a GUID it cannot find.
+  The read-back is `GetComposites`: use, skins (type, pen, thickness, material GUID) and
+  separators (pen, line type GUID). Fixtures come from the Tapir source, not a live
+  capture.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from

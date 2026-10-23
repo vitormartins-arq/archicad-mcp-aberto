@@ -486,6 +486,10 @@
     {
       "name": "create_keynote_items",
       "description": "Preview/create new keynote items with new keys; only adds, read back by GUID."
+    },
+    {
+      "name": "create_composites",
+      "description": "Preview or add composites by skins (building material, thickness, type, pen); existing names are refused. Read back after."
     }
   ],
   "compatibility": {

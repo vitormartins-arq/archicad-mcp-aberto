@@ -654,3 +654,16 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   salvar o projeto.
 - Conferido em 22/10/2026 à tarde (AC30 build 3001 BRA, sem Tapir, add-on de 8eff234,
   WG Formosa_R04). Pendente: a caneta 0 do corte volta como 1.
+
+## Lote do Claude C18: compostos
+
+- [ ] **create_composites.** No projeto novo: "Crie o composto Parede Teste 25 para
+  parede, com reboco 2 cm, tijolo 21 cm e reboco 2 cm" (usar nomes de materiais de
+  construção que existem no projeto). Conferir em Opções > Atributos de Elemento >
+  Compostos as três camadas, as espessuras (total 25 cm), os materiais, o tipo
+  (núcleo/acabamento) e as linhas separadoras contínuas, e que o recibo dá `verified`.
+  Depois fazer uma parede com `composite` "Parede Teste 25": ela deve sair com 0,25 m.
+- [ ] Pedir de novo o mesmo nome: a prévia deve recusar. Pedir um material que não
+  existe: a prévia deve recusar.
+- [ ] Anotar se a linha separadora padrão (o primeiro tipo de linha do projeto) é mesmo a
+  contínua no template do Vitor.

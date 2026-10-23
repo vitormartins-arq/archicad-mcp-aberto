@@ -30,6 +30,7 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import composites as composites_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -1420,7 +1421,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1439,7 +1439,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1457,7 +1456,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1648,6 +1646,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
         return await scenes_tool.save_3d_scenes(
             client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_composites(
+        ctx: Context,
+        composites: list[composites_tool.CompositeCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 composites: name, use_with (Wall, Slab, Roof, Shell)
+        and up to 20 skins, each a building material by name, thickness in metres, type
+        (Core, Finish, Other) and frame pen. Separators use separator_line (default: the
+        first line type) and separator_pen. An existing name is refused, never
+        overwritten. Apply with explicit port and single-use token; each is read back.
+        Requires Tapir. Never saves."""
+        return await composites_tool.create_composites(
+            client_of(ctx), composites, port, dry_run, confirmation_token
         )
 
     return mcp

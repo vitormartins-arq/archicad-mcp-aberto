@@ -125,7 +125,7 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C17 categorias de zona.** (Feito no lote `lote/claude-7`; falta o Lab.) `CreateZoneCategories`: categorias novas com nome, código
   e cor, sem mudar nem apagar as que existem. Depois, no Lab, levar ao
   `lab_apply_template` as categorias de zona do LAB Template.
-- **C18 compostos.** `CreateComposites`: compostos novos por camadas (material de
+- **C18 compostos.** (Feito na branch `claude/project-thread-pvslgt`; falta o Lab.) `CreateComposites`: compostos novos por camadas (material de
   construção e espessura), sem sobrescrever. Depois, no Lab, os compostos do template.
 - **C19 salvar a vista 3D atual.** (Pedido do Vitor, 21/10/2026.) `CreateViewsInViewMap`
   do Tapir 1.7.0 a partir da Perspectiva genérica do Mapa do projeto, com nome e pasta

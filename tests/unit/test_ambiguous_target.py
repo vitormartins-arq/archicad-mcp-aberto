@@ -11,6 +11,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     classifications,
+    composites,
     design_options,
     documents,
     drafting,
@@ -46,7 +47,12 @@ from archicad_mcp_aberto.tools import (
     zone_categories,
     zones,
 )
-from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
+from tests.unit.fake_archicad import (
+    BUILDING_MATERIALS_FIXTURE,
+    CREATE_WALLS_FIXTURE,
+    FakeArchicad,
+    fake_transport,
+)
 from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
 
 pytestmark = pytest.mark.anyio
@@ -139,6 +145,15 @@ INPUTS = {
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
+    "create_composites": {
+        "composites": [
+            {
+                "name": "Parede 15",
+                "use_with": ["Wall"],
+                "skins": [{"building_material": "Insulation", "thickness": 0.15}],
+            }
+        ]
+    },
     "lock_elements": {"element_guids": [GUID]},
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
@@ -367,17 +382,22 @@ INPUTS = {
         "folders": [{"parent_guid": "77777777-7777-4777-8777-000000000002", "name": "New"}]
     },
     "clone_to_view_map": {
-        "views": [{
-            "parent_guid": "77777777-7777-4777-8777-000000000002",
-            "source_guid": "88888888-8888-4888-8888-000000000002"
-        }]
+        "views": [
+            {
+                "parent_guid": "77777777-7777-4777-8777-000000000002",
+                "source_guid": "88888888-8888-4888-8888-000000000002",
+            }
+        ]
     },
     "create_classification_items": {
-        "items": [{
-            "system_guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11",
-            "parent_guid": "A1000000-0000-4000-8000-000000000003",
-            "id": "LAB-01", "name": "LAB item"
-        }]
+        "items": [
+            {
+                "system_guid": "1C4E9A10-3B7F-4D2A-9E61-0A5B7C3D2E11",
+                "parent_guid": "A1000000-0000-4000-8000-000000000003",
+                "id": "LAB-01",
+                "name": "LAB item",
+            }
+        ]
     },
 }
 TARGETED = {
@@ -420,6 +440,7 @@ TARGETED = {
         write,
         zones,
         zone_categories,
+        composites,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
@@ -516,6 +537,10 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "set_attribute_property_values":
         for instance in (first, second):
             instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
+    if name == "create_composites":
+        for instance in (first, second):
+            row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
+            instance.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
     if name == "apply_favorites":
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]
@@ -574,6 +599,9 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             instance.layers[2] = "Editable"
     if name == "create_groups":
         second.elements[PROP] = "Wall"
+    if name == "create_composites":
+        row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
+        second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
     arguments = deepcopy(INPUTS[name])
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)

@@ -300,6 +300,17 @@ class FakeArchicad:
     surfaces: dict[int, str] = field(
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
+    # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
+    line_types: list[dict] = field(
+        default_factory=lambda: [
+            {"attributeId": {"guid": "11E11E11-0000-4000-8000-000000000002"}, "index": 2,
+             "name": "Tracejada"},
+            {"attributeId": {"guid": "11E11E11-0000-4000-8000-000000000001"}, "index": 1,
+             "name": "Linha Contínua"},
+        ]
+    )  # fmt: skip
+    # CreateComposites: Archicad keeps this skin thickness instead (verification test).
+    composite_thickness_stored: float | None = None
     classification_data: dict = field(default_factory=lambda: deepcopy(CLASSIFICATIONS_FIXTURE))
     # Renames (rename_items): refuse items by position, answer success without renaming,
     # or lose the answer after renaming.
@@ -1057,9 +1068,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -1615,6 +1630,38 @@ class FakeArchicad:
                 for r in self.composites.values()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Line":
+            return ok({"addOnCommandResponse": {"attributes": deepcopy(self.line_types)}})
+        if name == "CreateComposites":
+            # Shapes from the Tapir 1.7.0 source (AttributeCommands.cpp); not live captured.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for index, data in enumerate(args["compositeDataArray"]):
+                assert set(data) <= {"name", "useWith", "skins", "separators"}
+                taken = {r["name"] for r in self.composites.values()}
+                if index in self.create_errors or data["name"] in taken:
+                    error = {"error": {"code": -2130313081, "message": "Composite already exists."}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                if len(data["separators"]) != len(data["skins"]) + 1:
+                    out.append({"error": {"code": -1, "message": "Invalid separator count."}})
+                    continue
+                skins = deepcopy(data["skins"])
+                for skin in skins:
+                    assert set(skin) == {"type", "buildingMaterialId", "framePen", "thickness"}
+                    if self.composite_thickness_stored is not None:
+                        skin["thickness"] = self.composite_thickness_stored
+                guid = str(uuid4()).upper()
+                self.composites[guid] = {
+                    "attributeId": {"guid": guid},
+                    "index": len(self.composites) + 3,
+                    "name": data["name"],
+                    "useWith": list(data.get("useWith", [])),
+                    "skins": skins,
+                    "separators": deepcopy(data["separators"]),
+                }
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name == "GetComposites":
             out = []
             for entry in args["attributeIds"]:
@@ -3106,6 +3153,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `create_composites` (`tools/composites.py`): new composites by Tapir 1.7.0
+  `CreateComposites`, skins by building material name, thickness, type and pen, one
+  separator line type and pen. Existing names, unknown materials and line types are
+  refused in the preview; the read-back compares every skin and separator. Not tested
+  live yet.
+
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
   about one suggestion in three was usable. Cameras now stand clear of walls, columns
   and smaller rooms inside the room's box, and their sight line avoids wall and column

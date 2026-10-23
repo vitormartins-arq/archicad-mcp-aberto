@@ -608,6 +608,12 @@ OPERATIONS["create_openings"] = (
     "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
 )
 CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
+OPERATIONS["create_composites"] = (
+    "composite",
+    "composite_receipt_id",
+    "New composites are added; an existing name is never overwritten. Each skin's "
+    "building material and every separator's line type are read back by GUID.",
+)
 
 
 @dataclass
