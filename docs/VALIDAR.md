@@ -654,3 +654,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   salvar o projeto.
 - Conferido em 22/10/2026 à tarde (AC30 build 3001 BRA, sem Tapir, add-on de 8eff234,
   WG Formosa_R04). Pendente: a caneta 0 do corte volta como 1.
+- [ ] **create_drawings.** In an unsaved test project, create a layout and use an
+  existing View Map view. Preview one drawing with a custom name, position in metres,
+  drawing scale and angle; apply it, confirm the source view, layout, visible position,
+  scale, rotation and custom name. Confirm that the project was not saved.

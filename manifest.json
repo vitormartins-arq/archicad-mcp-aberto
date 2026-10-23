@@ -220,6 +220,10 @@
       "description": "Preview or add layouts on an existing master layout; never creates a master."
     },
     {
+      "name": "create_drawings",
+      "description": "Preview or place existing View Map views as drawings on existing layouts."
+    },
+    {
       "name": "rename_items",
       "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes, layer combinations, folders); read back."
     },

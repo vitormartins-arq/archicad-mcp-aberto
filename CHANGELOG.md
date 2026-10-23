@@ -1,5 +1,7 @@
 # Changelog
 
+- Add safe `create_drawings` previews for placing existing View Map views on existing layouts through Tapir 1.7.0 `CreateDrawings`, with explicit destinations, single-use tokens, receipts and type verification.
+
 ## Unreleased
 
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where

@@ -14,6 +14,7 @@ from archicad_mcp_aberto.tools import (
     design_options,
     documents,
     drafting,
+    drawings,
     edit,
     favorites,
     gateway,
@@ -146,6 +147,11 @@ INPUTS = {
     "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
     "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
     "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
+    "create_drawings": {
+        "drawings": [
+            {"view_name": "Ground floor", "layout_name": "Planta baixa", "x": 0, "y": 0}
+        ]
+    },
     "rename_items": {"kind": "layers", "find": "Walls", "replace": "Paredes"},
     "create_property_groups": {"groups": [{"name": "Obra"}]},
     "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
@@ -389,6 +395,7 @@ TARGETED = {
         design_options,
         documents,
         drafting,
+        drawings,
         renames,
         edit,
         favorites,

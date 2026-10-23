@@ -18,6 +18,7 @@ from archicad_mcp_aberto.tools import (
     design_options,
     documents,
     drafting,
+    drawings,
     edit,
     favorites,
     gateway,
@@ -627,6 +628,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         is found back in the Navigator. Requires Tapir. Never saves."""
         return await documents.create_layouts(
             client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_drawings(
+        ctx: Context,
+        drawings_data: list[drawings.DrawingCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview placing up to 20 existing View Map views on existing layouts.
+        Positions are layout metres and angles radians. Apply identical inputs with an
+        explicit port and single-use token; every result is read back as a Drawing.
+        Requires Tapir 1.7.0. Never saves."""
+        return await drawings.create_drawings(
+            client_of(ctx), drawings_data, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

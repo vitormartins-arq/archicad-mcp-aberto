@@ -924,3 +924,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Branch `claude/scene-suggestions`: câmeras checadas contra paredes, pilares e ambientes
   menores dentro da caixa; depósitos e DML pulados; nome repetido ganha o número da zona;
   espera de 60 s para imagem e vista. Falta retestar ao vivo.
+- **Codex / drawings on layouts, 23/10/2026:** `create_drawings` uses Tapir 1.7.0
+  `CreateDrawings` to place existing View Map views on existing layouts. It resolves
+  names to Navigator/database GUIDs during preview, uses the common single-use token
+  and receipt flow, and reads every result back as type Drawing. Simulated only; live
+  placement, scale, rotation and positioning still need visual confirmation.

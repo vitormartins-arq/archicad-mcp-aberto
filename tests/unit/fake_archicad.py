@@ -1365,6 +1365,15 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {"databases": out}})
         if name in ("CreateWorksheets", "CreateDetails", "CreateLayout"):
             return ok({"addOnCommandResponse": {"databases": self._create_documents(name, args)}})
+        if name == "CreateDrawings":
+            # Source-derived from Tapir 1.7.0 DocumentCreationCommands.cpp; not a live capture.
+            out = []
+            for data in args["drawingsData"]:
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Drawing"
+                self.details[guid] = {"type": "Drawing", "details": deepcopy(data)}
+                out.append({"elementId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "GetAllProperties":
             return ok(
                 {
