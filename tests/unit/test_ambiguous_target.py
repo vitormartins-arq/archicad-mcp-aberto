@@ -21,6 +21,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    grids,
     hotlinks,
     interior_elevations,
     issues,
@@ -172,6 +173,10 @@ INPUTS = {
     "move_navigator_items": {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_grid_elements": {},
+    "create_grid_elements": {
+        "grids": [{"start": {"x": 0, "y": 0}, "end": {"x": 0, "y": 9}, "floor_index": 0}]
     },
     "create_surfaces": {"surfaces": [{"name": "Pintura Azul", "based_on": "Pintura Branca"}]},
     "create_drawings": {
@@ -469,6 +474,7 @@ TARGETED = {
         modify,
         morphs,
         navigator,
+        grids,
         navigator_moves,
         openings,
         project_info,

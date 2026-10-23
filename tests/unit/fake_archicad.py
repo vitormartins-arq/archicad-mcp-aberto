@@ -281,6 +281,40 @@ def fail(code: int, message: str) -> dict:
     return {"succeeded": False, "error": {"code": code, "message": message}}
 
 
+# Not live: the GetGridElementDefaults shape of addon/Sources/GridCommands.cpp, with a
+# made-up parameter list (no grid default was read from a real Archicad yet).
+GRID_DEFAULTS = {
+    "elementId": {"guid": "00000000-0000-0000-0000-000000000000"},
+    "variation": "GREL",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "pos": {"x": 0.0, "y": 0.0},
+    "angle": 0.0,
+    "length": 1.0,
+    "xRatio": 1.0,
+    "yRatio": 1.0,
+    "useXYFixSize": False,
+    "level": 0.0,
+    "libInd": 12,
+    "libraryPartName": "Grid Element",
+    "parameters": [
+        {"name": "A", "displayName": "Width", "type": "Length", "value": 1.0},
+        {"name": "AC_Length", "displayName": "Length", "type": "Length", "value": 1.0},
+        {"name": "AC_MarkerText", "displayName": "Marker Text", "type": "String", "value": "1"},
+        {"name": "AC_BubbleBoth", "displayName": "Both Ends", "type": "Boolean", "value": 0.0},
+        {"name": "AC_BubbleSize", "displayName": "Bubble Size", "type": "Length", "value": 0.01},
+        {
+            "name": "AC_Points",
+            "displayName": "Points",
+            "type": "Length",
+            "dimension1": 2,
+            "dimension2": 2,
+        },
+        {"name": "AC_Pen", "displayName": "Pen", "type": "Dictionary"},
+    ],
+}
+
+
 @dataclass
 class FakeArchicad:
     port: int
@@ -602,6 +636,9 @@ class FakeArchicad:
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
+    grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
+    grid_ignored: set[str] = field(default_factory=set)  # parameters CreateGridElements drops
+    grid_create_errors: dict[int, dict] = field(default_factory=dict)  # item -> error
     camera_3d: dict = field(
         default_factory=lambda: {
             "isPerspective": True,
@@ -977,6 +1014,45 @@ class FakeArchicad:
             self.issue_attachments.setdefault(guid, set()).update(guids)
         return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_elements"])})
 
+    def _grid(self, name: str, args: dict) -> dict:
+        # Not live: shaped from addon/Sources/GridCommands.cpp (Tapir's port).
+        if name == "GetGridElementDefaults":
+            return deepcopy(GRID_DEFAULTS)
+        if name == "GetGridElements":
+            rows = deepcopy(list(self.grid_elements.values()))
+            if not args.get("includeParameters"):
+                for row in rows:
+                    row.pop("parameters", None)
+            return {"gridElements": rows}
+        elements = []
+        for index, item in enumerate(args["gridElements"]):
+            if index in self.grid_create_errors:
+                elements.append({"error": deepcopy(self.grid_create_errors[index])})
+                continue
+            beg, end = item["begCoordinate"], item["endCoordinate"]
+            dx, dy = end["x"] - beg["x"], end["y"] - beg["y"]
+            row = deepcopy(GRID_DEFAULTS)
+            guid = str(uuid4()).upper()
+            row.update(
+                elementId={"guid": guid},
+                pos={"x": beg["x"], "y": beg["y"]},
+                angle=math.atan2(dy, dx),
+                length=math.hypot(dx, dy),
+                floorIndex=item.get("floorIndex", row["floorIndex"]),
+            )
+            if item.get("layerIndex", 0) > 0:
+                row["layerIndex"] = item["layerIndex"]
+            values = {p["name"]: p["value"] for p in item.get("parameters", [])}
+            for param in row["parameters"]:
+                if param["name"] == "AC_Length":
+                    param["value"] = row["length"]
+                elif param["name"] in values and param["name"] not in self.grid_ignored:
+                    value = values[param["name"]]
+                    param["value"] = float(value) if isinstance(value, bool) else value
+            self.grid_elements[guid] = row
+            elements.append({"elementId": {"guid": guid}})
+        return {"elements": elements, "warnings": []}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -1023,6 +1099,8 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": deepcopy(self.cut_3d)})
         if name == "Show3DAll":
             return ok({"addOnCommandResponse": {}})
+        if name in {"GetGridElementDefaults", "GetGridElements", "CreateGridElements"}:
+            return ok({"addOnCommandResponse": self._grid(name, args)})
         if name == "Get3DWindowImage":
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="

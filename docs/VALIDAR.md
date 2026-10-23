@@ -789,6 +789,19 @@ projeto novo, sem salvar.
 - [ ] **move_navigator_items (Book).** "Mova a prancha Planta baixa para o subconjunto
   Executivo." Conferir que a numeração da prancha passa a usar o prefixo do subconjunto.
 
+## Lote do Claude C34: eixos pelo add-on próprio
+
+Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` deste PR) instalado no
+ArchiCAD de teste.
+
+- [ ] **list_grid_elements.** Num projeto com eixos desenhados pela ferramenta Eixo:
+  "liste os eixos com parâmetros". Conferir início, fim, pavimento e o texto da bolha, e
+  anotar os nomes reais dos parâmetros (o simulado inventou `AC_MarkerText`).
+- [ ] **create_grid_elements.** No projeto novo: "desenhe os eixos A, B e C na vertical a
+  cada 6 m, com 20 m, e 1, 2, 3 na horizontal". Conferir posição, comprimento, o texto da
+  bolha, que o recibo dá `verified` e que um Desfazer apaga os seis. Comparar a aparência
+  com um eixo feito à mão (o Tapir avisa que os padrões da ferramenta podem diferir).
+
 ## Lote do Claude C37: atualizar favoritos
 
 - [ ] **update_favorites_from_elements.** No projeto novo, com um favorito de parede de

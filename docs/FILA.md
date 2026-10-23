@@ -184,8 +184,10 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C37 atualizar favoritos.** (Feito na branch `claude/project-thread-pvslgt`.)
   `update_favorites_from_elements` (`UpdateFavoritesFromElements`): sobrescreve um
   favorito existente com os ajustes de um elemento do mesmo tipo. Fica `unverified`.
-- **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
-  1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
+- **C34 eixos (malha estrutural).** (Feito na branch `claude/project-thread-pvslgt`.)
+  O Tapir só tem os comandos depois da 1.7.2, então foram portados para o nosso add-on
+  (`addon/Sources/GridCommands.cpp`): `list_grid_elements` e `create_grid_elements`.
+  Precisa do `.apx` novo do add-on no ArchiCAD.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

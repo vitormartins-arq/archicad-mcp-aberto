@@ -153,6 +153,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_classification_systems` | Write | New classification systems with their item trees | yes |
 | `create_surfaces` | Write | New surfaces copied from an existing one, with a new colour, transparency or type | yes |
 | `move_navigator_items` | Write | Moves View Map views and folders, or layouts and subsets, into other folders | yes |
+| `list_grid_elements` | Read | Grid lines with start, end, story, layer and GDL parameters | no (own add-on) |
+| `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
@@ -813,6 +815,13 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   subset or the top of the book. Names or GUIDs; a repeated name needs the GUID. An item
   already in the folder, or a folder into itself, is refused. One move per native call,
   each read back in the tree. The item goes to the start of the folder.
+- `list_grid_elements(port?, include_parameters?)` and `create_grid_elements([{start,
+  end, floor_index, layer?, parameters?: [{name, value}]}], port?, dry_run?,
+  confirmation_token?)` read and draw grid lines through our add-on (`addon/`), as Tapir
+  has grid commands only after 1.7.2. The length comes from the two points; the GDL
+  parameters (the bubble text, for example) are checked by name and type against the
+  Grid Tool defaults, which `include_parameters` lists. One Undo step for the batch,
+  every line read back.
 - `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
   confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
   `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`

@@ -34,6 +34,7 @@ from archicad_mcp_aberto.tools import classification_systems as classification_s
 from archicad_mcp_aberto.tools import composites as composites_tool
 from archicad_mcp_aberto.tools import design_option_create as design_option_create_tool
 from archicad_mcp_aberto.tools import drawings as drawings_tool
+from archicad_mcp_aberto.tools import grids as grids_tool
 from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
@@ -1878,6 +1879,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Tapir. Never saves."""
         return await surfaces_tool.create_surfaces(
             client_of(ctx), surfaces, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_grid_elements(
+        ctx: Context, port: int | None = None, include_parameters: bool = False
+    ) -> dict:
+        """List every grid line (Grid Tool element): start, end, angle, length, story,
+        layer index and library part; include_parameters adds the GDL parameters and the
+        Grid Tool defaults. Needs the ArchicadMcpAberto add-on."""
+        return await grids_tool.list_grid_elements(client_of(ctx), port, include_parameters)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_grid_elements(
+        ctx: Context,
+        grids: list[grids_tool.GridCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview drawing up to 50 grid lines, each from start to end {x, y} on
+        floor_index, with optional layer (name) and GDL parameters [{name, value}] such as
+        the bubble text (names from list_grid_elements with include_parameters). The
+        length comes from the points. Apply with explicit port and single-use token; one
+        Undo step, every line read back. Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await grids_tool.create_grid_elements(
+            client_of(ctx), grids, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

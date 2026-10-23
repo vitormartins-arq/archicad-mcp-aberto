@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
+  (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
+  `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,
+  MIT). The preview checks GDL parameter names and value types against the tool
+  defaults; the batch is one Undo step and every line is read back. Not tested live yet.
+
 - Add `update_favorites_from_elements`: overwrite existing favorites from elements by
   Tapir 1.7.0 `UpdateFavoritesFromElements`. The receipt stays unverified, because
   Tapir cannot read a favorite's settings. Not tested live yet.

@@ -944,3 +944,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Tapir 1.7.0 não grava IFC no ArchiCAD 28+. C34 (eixos) só existe no Tapir depois da 1.7.2.
   2690 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 124 ferramentas.
   Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C29 a C37.
+  Depois, a pedido do coordenador (regra do Vitor de não depender do Tapir): C34 feito no
+  add-on próprio. `GetGridElementDefaults`, `GetGridElements` e `CreateGridElements`
+  portados do Tapir (main, depois da 1.7.2) para `addon/Sources/GridCommands.cpp`, com as
+  ferramentas `list_grid_elements` e `create_grid_elements` (`tools/grids.py`). 2715 testes
+  simulados e Ruff passaram. Registro: 126 ferramentas. IFC (C33) continua fora: o
+  Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
+  (vale também para add-on próprio; conferir no DevKit 29 quando der).
