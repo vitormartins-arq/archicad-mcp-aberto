@@ -1277,10 +1277,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/set drawing_scale denominator and/or existing layer_combination by
-        name/GUID for up to 100 PublicViewMap views. Read-back checks settings unchanged
-        except requested fields. No guaranteed Navigator Undo; previous values retained.
-        Explicit apply port, single-use token and receipt; never saves or publishes.
+        """Preview/set drawing_scale, layer_combination, zoom box in model metres and/or
+        rotation in radians for up to 100 PublicViewMap views. Read-back checks settings
+        unchanged except requested fields. No guaranteed Navigator Undo; previous values
+        retained. Explicit apply port, single-use token and receipt; never saves/publishes.
         """
         return await views_tool.set_view_settings(
             client_of(ctx), changes, port, dry_run, confirmation_token

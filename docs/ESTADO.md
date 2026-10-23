@@ -929,3 +929,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   names to Navigator/database GUIDs during preview, uses the common single-use token
   and receipt flow, and reads every result back as type Drawing. Simulated only; live
   placement, scale, rotation and positioning still need visual confirmation.
+- **Codex / exact floor-plan framing, 23/10/2026:** `set_view_settings` now exposes
+  Tapir 1.7.0's stored zoom box in model metres and view rotation in radians. This is
+  the missing generic step for framing each room enlargement without moving the user's
+  current window. Simulated only; framing and rotation still need live visual checks.

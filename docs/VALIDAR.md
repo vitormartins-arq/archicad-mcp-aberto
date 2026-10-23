@@ -658,3 +658,6 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   existing View Map view. Preview one drawing with a custom name, position in metres,
   drawing scale and angle; apply it, confirm the source view, layout, visible position,
   scale, rotation and custom name. Confirm that the project was not saved.
+- [ ] **set_view_settings zoom.** Clone a floor-plan view, apply a small zoom box around
+  one room and a nonzero rotation, then open the saved view. Confirm its framing and
+  rotation and that the previously open window did not change.

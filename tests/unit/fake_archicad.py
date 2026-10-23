@@ -1335,6 +1335,10 @@ class FakeArchicad:
                     continue
                 if not self.view_settings_ignored:
                     self.view_settings[guid].update(deepcopy(entry["viewSettings"]))
+                    # Tapir 1.7.0 sets saveZoom=true when all zoom bounds are present;
+                    # source-derived behavior, not a live capture.
+                    if "zoom" in entry["viewSettings"]:
+                        self.view_settings[guid]["saveZoom"] = True
                     if self.view_settings_reset_pen_set:
                         self.view_settings[guid]["penSetName"] = "Unexpected side effect"
                     if (

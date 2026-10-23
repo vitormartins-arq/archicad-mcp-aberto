@@ -1,6 +1,7 @@
 # Changelog
 
 - Add safe `create_drawings` previews for placing existing View Map views on existing layouts through Tapir 1.7.0 `CreateDrawings`, with explicit destinations, single-use tokens, receipts and type verification.
+- Extend `set_view_settings` with stored 2D zoom boxes and rotation, both read back after applying.
 
 ## Unreleased
 
