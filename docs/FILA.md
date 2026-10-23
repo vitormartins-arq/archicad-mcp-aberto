@@ -159,6 +159,17 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C28 módulos (hotlinks).** (Feito na branch `claude/project-thread-pvslgt`.)
   `place_hotlinks` (`CreateHotlinkNodes` e `CreateHotlinkInstances`): um nó por
   arquivo `.mod`/`.pln`, reaproveitando o que já aponta para o mesmo arquivo.
+- **C29 `update_drawings`.** `UpdateDrawings` do Tapir 1.7.0: atualizar os desenhos de
+  pranchas (por nome da prancha). O Tapir só devolve sucesso; não há como ler se o
+  desenho foi atualizado, então o recibo fica `unverified`.
+- **C30 desfazer sólidos e cortes.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `remove_solid_operations` (`RemoveSolidElementLinks`) e `remove_trims`
+  (`RemoveElementTrims`).
+- **C31 `modify_lamps`.** `ModifyLamps` do Tapir 1.7.0 (ver no código-fonte o que muda).
+- **C32 sistemas de classificação.** `CreateClassificationSystems` do Tapir 1.7.0.
+- **C33 propriedades IFC.** `SetIFCPropertiesOfElements` do Tapir 1.7.0.
+- **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
+  1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

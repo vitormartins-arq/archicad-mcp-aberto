@@ -145,6 +145,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `move_to_design_options` | Write | Puts elements in a design option or back in the main model (Archicad 29+) | yes |
 | `create_solid_operations` | Write | Solid element operations between existing elements | yes |
 | `trim_to_roof` | Write | Trims elements with a roof or shell | yes |
+| `remove_solid_operations` | Write | Removes solid element operation links; the elements stay | yes |
+| `remove_trims` | Write | Removes a roof or shell trim from elements; the elements stay | yes |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
@@ -767,6 +769,11 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `TrimElements`, as Design > Trim to Roof/Shell; `keep` is `KeepInside` (default),
   `KeepOutside` or `KeepAll`. The preview refuses a trimmer that is not a roof or shell
   and elements it already trims. The read-back is `GetElementTrims`.
+- `remove_solid_operations([{target_guid, operator_guid}], port?, dry_run?,
+  confirmation_token?)` and `remove_trims(element_guids, roof_guid, port?, dry_run?,
+  confirmation_token?)` undo the two tools above by Tapir 1.7.0
+  `RemoveSolidElementLinks` and `RemoveElementTrims`. The link or trim must exist; the
+  elements stay. The preview shows what is removed, and the read-back checks it is gone.
 - `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
   confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
   `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`

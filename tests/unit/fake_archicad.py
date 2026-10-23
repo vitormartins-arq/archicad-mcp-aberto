@@ -325,6 +325,7 @@ class FakeArchicad:
     element_trims: dict[tuple[str, str], str] = field(default_factory=dict)  # (elem, roof)
     solid_link_flags_ignored: bool = False  # links created without the flags
     trim_refused: bool = False
+    remove_ignored: bool = False  # Remove* answers success but keeps the link or trim
     # element guid -> design option guid (GetDesignOptionForElements / MoveElements...).
     do_members: dict[str, str] = field(
         default_factory=lambda: {
@@ -1120,6 +1121,32 @@ class FakeArchicad:
                     flags = dict(link.get("linkFlags", flags))
                 operation = link.get("operation", "Subtraction")
                 self.solid_links[(target, operator)] = {"operation": operation, "linkFlags": flags}
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "RemoveSolidElementLinks":
+            # Shapes from the Tapir 1.7.0 source (SolidElementOperationCommands.cpp); not live.
+            results = []
+            for link in args["solidLinks"]:
+                key = (link["targetId"]["guid"], link["operatorId"]["guid"])
+                if key not in self.solid_links:
+                    message = "Failed to remove solid element link."
+                    results.append({"success": False, "error": {"code": -2130312312,
+                                    "message": message}})  # fmt: skip
+                    continue
+                if not self.remove_ignored:
+                    del self.solid_links[key]
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "RemoveElementTrims":
+            results = []
+            for pair in args["elementPairs"]:
+                key = (pair["elementId"]["guid"], pair["trimmingElementId"]["guid"])
+                if key not in self.element_trims:
+                    results.append({"success": False, "error": {"code": -2130312312,
+                                    "message": "Failed to remove the trim."}})  # fmt: skip
+                    continue
+                if not self.remove_ignored:
+                    del self.element_trims[key]
                 results.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": results}})
         if name == "GetSolidElementLinks":

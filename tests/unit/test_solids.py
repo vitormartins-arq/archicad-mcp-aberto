@@ -131,3 +131,59 @@ def test_trim_input_is_checked():
         solids.Trim.model_validate({"element_guids": [WALL, WALL.lower()], "roof_guid": ROOF})
     with pytest.raises(ValidationError):
         solids.Trim.model_validate({"element_guids": [WALL], "roof_guid": ROOF, "keep": "No"})
+
+
+async def test_link_removed_and_read_back():
+    fake = model()
+    fake.solid_links[(WALL, MORPH)] = {"operation": "Subtraction", "linkFlags": {}}
+    fake.solid_links[(WALL, ROOF)] = {"operation": "Subtraction", "linkFlags": {}}
+    links = [{"target_guid": WALL, "operator_guid": MORPH.lower()}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(solids.remove_solid_operations, c, links)
+    assert preview["items"][0]["before"]["operatorId"] == {"guid": MORPH}
+    request = next(r for r in fake.tapir_requests if r["command"] == "RemoveSolidElementLinks")
+    assert request["parameters"] == {
+        "solidLinks": [{"targetId": {"guid": WALL}, "operatorId": {"guid": MORPH}}]
+    }
+    assert result["status"] == "verified"
+    assert list(fake.solid_links) == [(WALL, ROOF)]
+
+
+async def test_missing_link_is_refused_and_ignored_removal_is_caught():
+    fake = model(remove_ignored=True)
+    fake.solid_links[(WALL, MORPH)] = {"operation": "Subtraction", "linkFlags": {}}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="does not act on the target"):
+            await solids.remove_solid_operations(
+                c, [{"target_guid": WALL2, "operator_guid": MORPH}], port=19723
+            )
+        _, result = await apply(
+            solids.remove_solid_operations, c, [{"target_guid": WALL, "operator_guid": MORPH}]
+        )
+    assert result["items"][0]["status"] == "verification_failed"
+    assert result["items"][0]["mismatches"] == ["still linked"]
+
+
+async def test_trims_removed_and_read_back():
+    fake = model()
+    fake.element_trims[(WALL, ROOF)] = "KeepInside"
+    fake.element_trims[(WALL2, ROOF)] = "KeepAll"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="is not trimmed by"):
+            await solids.remove_trims(c, [WALL, MORPH], ROOF, port=19723)
+        preview, result = await apply(solids.remove_trims, c, [WALL, WALL2], ROOF)
+    assert [i["before"]["trimType"] for i in preview["items"]] == ["KeepInside", "KeepAll"]
+    request = next(r for r in fake.tapir_requests if r["command"] == "RemoveElementTrims")
+    assert request["parameters"]["elementPairs"][1] == {
+        "elementId": {"guid": WALL2},
+        "trimmingElementId": {"guid": ROOF},
+    }
+    assert result["status"] == "verified" and fake.element_trims == {}
+
+
+async def test_trim_removal_ignored_is_caught():
+    fake = model(remove_ignored=True)
+    fake.element_trims[(WALL, ROOF)] = "KeepInside"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        _, result = await apply(solids.remove_trims, c, [WALL], ROOF)
+    assert result["items"][0]["mismatches"] == ["still trimmed"]

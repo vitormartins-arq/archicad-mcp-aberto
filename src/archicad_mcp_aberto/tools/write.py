@@ -645,6 +645,16 @@ OPERATIONS["trim_to_roof"] = (
     "Each element is trimmed by the roof or shell, as Design > Trim to Roof/Shell does; "
     "check the result in 3D and section.",
 )
+OPERATIONS["remove_solid_operations"] = (
+    "solid link removal",
+    "solid_unlink_receipt_id",
+    "Each operator stops acting on its target; both elements stay in the model.",
+)
+OPERATIONS["remove_trims"] = (
+    "trim removal",
+    "untrim_receipt_id",
+    "The roof or shell stops trimming each element; the elements stay in the model.",
+)
 OPERATIONS["create_layout_subsets"] = (
     "layout subset",
     "layout_subset_receipt_id",

@@ -5,7 +5,9 @@ subtraction, subtraction upwards or downwards, intersection or addition, as in D
 Solid Element Operations. trim_to_roof trims construction elements with one roof or shell
 (TrimElements with trimmingElement), as Design > Trim to Roof/Shell. Both need editable,
 non-hotlinked elements, refuse a link or trim that already exists, and read the result
-back (GetSolidElementLinks, GetElementTrims). Never saves.
+back (GetSolidElementLinks, GetElementTrims). remove_solid_operations and remove_trims
+undo them (RemoveSolidElementLinks, RemoveElementTrims): each link or trim must exist, and
+the read-back checks it is gone. Never saves.
 """
 
 from __future__ import annotations
@@ -47,6 +49,16 @@ class SolidLink(write.InputModel):
         if self.target_guid == self.operator_guid:
             raise ValueError("An element cannot operate on itself.")
         return self
+
+
+class LinkPair(write.InputModel):
+    target_guid: Guid
+    operator_guid: Guid
+
+    @field_validator("target_guid", "operator_guid")
+    @classmethod
+    def valid_guid(cls, value: str) -> str:
+        return _guid(value)
 
 
 class Trim(write.InputModel):
@@ -321,4 +333,182 @@ async def trim_to_roof(
         "trim_to_roof",
         planner_override=_trim_plan,
         dispatcher_override=_trim_dispatch,
+    )
+
+
+def _pair_results(receipt: dict, raw) -> list[dict] | None:
+    """Mark each item by its execution result; return the ones to read back."""
+    items = receipt["items"]
+    rows = raw.get("executionResults") if isinstance(raw, dict) else None
+    if not isinstance(rows, list) or len(rows) != len(items):
+        _unknown(receipt, raw if isinstance(raw, str) else "Unexpected response.")
+        return None
+    receipt["raw_response"] = raw
+    done = []
+    for item, row in zip(items, rows, strict=True):
+        item["write_response"] = row
+        if isinstance(row, dict) and row.get("success") is True:
+            item["status"] = "unverified"
+            done.append(item)
+        else:
+            item.update(
+                status="failed", error=row.get("error", row) if isinstance(row, dict) else row
+            )
+    return done
+
+
+async def _unlink_plan(client, links, port, operation):
+    guids = list(dict.fromkeys(g for link in links for g in (link.target_guid, link.operator_guid)))
+    port, target, rows = await edit._editable(client, guids, port)
+    types = {g: r.get("type") for g, r in zip(guids, rows, strict=True)}
+    existing = await _links(client, port, list(dict.fromkeys(x.target_guid for x in links)))
+    seen = set()
+    items = []
+    for index, link in enumerate(links):
+        pair = (link.target_guid, link.operator_guid)
+        if pair in seen:
+            raise ValueError(f"Link {index}: the same link appears twice.")
+        seen.add(pair)
+        found = [x for x in existing[link.target_guid] if _operator(x) == link.operator_guid]
+        if not found:
+            raise ValueError(f"Link {index}: this operator does not act on the target.")
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "target_type": types[link.target_guid],
+                "operator_type": types[link.operator_guid],
+                "before": found[0],
+                "parameters": {
+                    "targetId": {"guid": link.target_guid},
+                    "operatorId": {"guid": link.operator_guid},
+                },
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _unlink_dispatch(client, receipt):
+    items, port = receipt["items"], receipt["target"]["port"]
+    timeout = receipt["write_timeout_seconds"]
+    raw = await _results(
+        client, port, "RemoveSolidElementLinks",
+        {"solidLinks": [i["parameters"] for i in items]}, timeout,
+    )  # fmt: skip
+    removed = _pair_results(receipt, raw)
+    if not removed:
+        return
+    targets = list(dict.fromkeys(i["parameters"]["targetId"]["guid"] for i in removed))
+    try:
+        after = await _links(client, port, targets, timeout)
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+        return
+    for item in removed:
+        p = item["parameters"]
+        left = any(_operator(x) == p["operatorId"]["guid"] for x in after[p["targetId"]["guid"]])
+        item["status"] = "verification_failed" if left else "verified"
+        if left:
+            item["mismatches"] = ["still linked"]
+
+
+async def remove_solid_operations(
+    client: ArchicadClient,
+    links: list[dict | LinkPair],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply removing up to 50 existing solid element operation links (target,
+    operator) between editable elements. The elements stay."""
+    if not 1 <= len(links) <= MAX_LINKS:
+        raise ValueError(f"Pass between 1 and {MAX_LINKS} links.")
+    validated = [x if isinstance(x, LinkPair) else LinkPair.model_validate(x) for x in links]
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "remove_solid_operations",
+        planner_override=_unlink_plan,
+        dispatcher_override=_unlink_dispatch,
+    )
+
+
+async def _untrim_plan(client, trims, port, operation):
+    (trim,) = trims
+    guids = [*trim.element_guids, trim.roof_guid]
+    port, target, rows = await edit._editable(client, guids, port)
+    types = {g: r.get("type") for g, r in zip(guids, rows, strict=True)}
+    current = await _trims(client, port, trim.element_guids)
+    items = []
+    for index, guid in enumerate(trim.element_guids):
+        found = [e for e in current[guid] if _trimmer(e) == trim.roof_guid]
+        if not found:
+            raise ValueError(f"Element {guid} is not trimmed by {trim.roof_guid}.")
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": guid,
+                "type": types[guid],
+                "before": found[0],
+                "parameters": {
+                    "elementId": {"guid": guid},
+                    "trimmingElementId": {"guid": trim.roof_guid},
+                },
+            }
+        )
+    return {
+        "operation": operation,
+        "target": target,
+        "roof_guid": trim.roof_guid,
+        "roof_type": types[trim.roof_guid],
+        "items": items,
+    }
+
+
+async def _untrim_dispatch(client, receipt):
+    items, port = receipt["items"], receipt["target"]["port"]
+    timeout = receipt["write_timeout_seconds"]
+    raw = await _results(
+        client, port, "RemoveElementTrims",
+        {"elementPairs": [i["parameters"] for i in items]}, timeout,
+    )  # fmt: skip
+    removed = _pair_results(receipt, raw)
+    if not removed:
+        return
+    try:
+        after = await _trims(client, port, [i["element_guid"] for i in removed], timeout)
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+        return
+    for item in removed:
+        left = any(_trimmer(e) == receipt["roof_guid"] for e in after[item["element_guid"]])
+        item["status"] = "verification_failed" if left else "verified"
+        if left:
+            item["mismatches"] = ["still trimmed"]
+
+
+async def remove_trims(
+    client: ArchicadClient,
+    element_guids: list[str],
+    roof_guid: str,
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply removing the trim of one roof or shell from up to 100 elements it
+    trims. The elements stay."""
+    trim = Trim.model_validate({"element_guids": element_guids, "roof_guid": roof_guid})
+    return await write._write(
+        client,
+        [trim],
+        port,
+        dry_run,
+        confirmation_token,
+        "remove_trims",
+        planner_override=_untrim_plan,
+        dispatcher_override=_untrim_dispatch,
     )

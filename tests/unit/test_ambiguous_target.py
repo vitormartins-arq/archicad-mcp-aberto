@@ -160,6 +160,8 @@ INPUTS = {
     "create_layout_subsets": {"subsets": [{"name": "Executivo"}]},
     "create_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
     "trim_to_roof": {"element_guids": [GUID], "roof_guid": PROP},
+    "remove_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
+    "remove_trims": {"element_guids": [GUID], "roof_guid": PROP},
     "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "create_drawings": {
@@ -422,6 +424,7 @@ INPUTS = {
         ]
     },
 }
+REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
@@ -565,9 +568,12 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "set_attribute_property_values":
         for instance in (first, second):
             instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
-    if name in ("create_solid_operations", "trim_to_roof"):
+    if name in ("create_solid_operations", "trim_to_roof", *REMOVALS):
         for instance in (first, second):
             instance.elements[PROP] = "Roof"
+            if name in REMOVALS:
+                instance.solid_links[(GUID, PROP)] = {"operation": "Subtraction", "linkFlags": {}}
+                instance.element_trims[(GUID, PROP)] = "KeepInside"
     if name == "create_composites":
         for instance in (first, second):
             row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
@@ -600,6 +606,8 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
         "update_zones": {PROP: "Zone"},
         "create_solid_operations": {PROP: "Roof"},
         "trim_to_roof": {PROP: "Roof"},
+        "remove_solid_operations": {PROP: "Roof"},
+        "remove_trims": {PROP: "Roof"},
     }.get(name, {})
     assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)

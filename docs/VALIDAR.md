@@ -740,3 +740,11 @@ projeto novo, sem salvar.
 - [ ] Caminho que não existe: anotar a mensagem do Tapir e conferir que só aquele item
   dá `failed`.
 - [ ] Um `.pln` com `single_story`: conferir que só aquele pavimento do arquivo entra.
+
+## Lote do Claude C30: desfazer sólidos e cortes
+
+- [ ] **remove_solid_operations.** Depois do teste do C26: "Tire a subtração do morfo na
+  parede." Conferir no 3D que a parede volta inteira, que os dois elementos continuam no
+  modelo e que o recibo dá `verified`.
+- [ ] **remove_trims.** "Tire o corte do telhado das paredes." Conferir no 3D e no corte
+  que as paredes voltam à altura original e que o recibo dá `verified`.

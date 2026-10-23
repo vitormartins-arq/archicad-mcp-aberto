@@ -522,6 +522,14 @@
     {
       "name": "place_hotlinks",
       "description": "Preview or place hotlink modules from .mod or .pln files. Read back after."
+    },
+    {
+      "name": "remove_solid_operations",
+      "description": "Preview or remove solid element operation links. Read back after."
+    },
+    {
+      "name": "remove_trims",
+      "description": "Preview or remove roof or shell trims from elements. Read back after."
     }
   ],
   "compatibility": {

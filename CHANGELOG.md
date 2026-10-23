@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `remove_solid_operations` and `remove_trims` (`tools/solids.py`): remove solid
+  element operation links and roof or shell trims by Tapir 1.7.0
+  `RemoveSolidElementLinks` and `RemoveElementTrims`, read back as gone. Not tested
+  live yet.
+
 - Add `place_hotlinks` (`tools/hotlinks.py`): hotlink modules from .mod or .pln files by
   Tapir 1.7.0 `CreateHotlinkNodes` and `CreateHotlinkInstances`, read back by type,
   story and `GetHotlinks`. Not tested live yet.

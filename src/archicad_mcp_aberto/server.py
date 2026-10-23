@@ -1779,6 +1779,38 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def remove_solid_operations(
+        ctx: Context,
+        links: list[solids_tool.LinkPair],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview removing up to 50 existing solid element operations: target_guid and
+        operator_guid. Both elements must be editable and the link must exist; the
+        elements stay. Apply with explicit port and single-use token; each removal is
+        read back. Requires Tapir. Never saves."""
+        return await solids_tool.remove_solid_operations(
+            client_of(ctx), links, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def remove_trims(
+        ctx: Context,
+        element_guids: list[str],
+        roof_guid: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview removing the trim of one roof or shell from up to 100 editable elements
+        it trims; the elements stay. Apply with explicit port and single-use token; each
+        removal is read back. Requires Tapir. Never saves."""
+        return await solids_tool.remove_trims(
+            client_of(ctx), element_guids, roof_guid, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_layout_subsets(
         ctx: Context,
         subsets: list[layout_book_tool.SubsetCreate],
