@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_layout_subsets` (`tools/layout_book.py`): Layout Book subsets by Tapir
+  1.7.0 `CreateLayoutSubset`, read back under their parent. `create_layouts` takes an
+  optional `subset`. Not tested live yet.
+
 - Add `create_solid_operations` and `trim_to_roof` (`tools/solids.py`): solid element
   operation links and trims to a roof or shell by Tapir 1.7.0, read back by
   `GetSolidElementLinks` and `GetElementTrims`. Not tested live yet.

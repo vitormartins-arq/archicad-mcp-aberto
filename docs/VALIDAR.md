@@ -718,3 +718,13 @@ projeto novo, sem salvar.
 - [ ] **trim_to_roof.** Com duas paredes e um telhado em cima: "Corte as paredes pelo
   telhado." Conferir no 3D e num corte que as paredes param na face de baixo do telhado
   (`KeepInside`), e que o recibo dá `verified`. Anotar o que `KeepAll` faz.
+
+## Lote do Claude C27: subconjuntos do Book de Layouts
+
+- [ ] **create_layout_subsets.** No projeto novo: "Crie o subconjunto Executivo com
+  prefixo EX e numeração 01, e dentro dele o subconjunto Plantas." Conferir no Book de
+  Layouts que os dois aparecem no lugar certo, com o prefixo, e que o recibo dá
+  `verified`.
+- [ ] **create_layouts com subset.** "Crie a prancha Planta térreo no master <nome>,
+  dentro de Plantas." Conferir que ela entra no subconjunto e que a numeração usa o
+  prefixo EX.

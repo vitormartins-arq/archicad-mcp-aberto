@@ -810,7 +810,13 @@ class FakeArchicad:
                     out.append(deepcopy(DOCUMENTS_FIXTURE["layout_failed"]))
                     continue
             nav, database = str(uuid4()).upper(), str(uuid4()).upper()
-            self.navigator_trees[map_id].setdefault("children", []).append(
+            parent = self.navigator_trees[map_id]
+            if "parentNavigatorItemId" in data:
+                wanted = data["parentNavigatorItemId"]["guid"]
+                parent = next(
+                    n for n in self._nav_items_of(parent) if n["navigatorItemId"]["guid"] == wanted
+                )
+            parent.setdefault("children", []).append(
                 {
                     "navigatorItem": {
                         "navigatorItemId": {"guid": nav},
@@ -1547,6 +1553,33 @@ class FakeArchicad:
                 else:
                     out.append({"databaseId": {"guid": database}})
             return ok({"addOnCommandResponse": {"databases": out}})
+        if name == "CreateLayoutSubset":
+            # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
+            book = self.navigator_trees["LayoutBook"]
+            out = []
+            for data in args["subsetsData"]:
+                parent = book
+                if "parentNavigatorItemId" in data:
+                    wanted = data["parentNavigatorItemId"]["guid"]
+                    parent = next(
+                        n
+                        for n in self._nav_items_of(book)
+                        if n["navigatorItemId"]["guid"] == wanted
+                    )
+                guid = str(uuid4()).upper()
+                parent.setdefault("children", []).append(
+                    {
+                        "navigatorItem": {
+                            "navigatorItemId": {"guid": guid},
+                            "type": "SubSetItem",
+                            "name": data["name"],
+                            "prefix": data.get("ownPrefix", ""),
+                            "uiId": "",
+                        }
+                    }
+                )
+                out.append({"navigatorItemId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"navigatorItems": out}})
         if name in ("CreateWorksheets", "CreateDetails", "CreateLayout"):
             return ok({"addOnCommandResponse": {"databases": self._create_documents(name, args)}})
         if name == "GetAllProperties":

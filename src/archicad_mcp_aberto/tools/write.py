@@ -645,6 +645,12 @@ OPERATIONS["trim_to_roof"] = (
     "Each element is trimmed by the roof or shell, as Design > Trim to Roof/Shell does; "
     "check the result in 3D and section.",
 )
+OPERATIONS["create_layout_subsets"] = (
+    "layout subset",
+    "layout_subset_receipt_id",
+    "New subsets go in the Layout Book under their parent; the rest of their settings "
+    "comes from Archicad's subset defaults.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

@@ -38,6 +38,7 @@ from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import layout_book as layout_book_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
@@ -625,9 +626,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview adding up to 20 layouts to the Layout Book: name and master (an
-        existing master layout's name; a missing master is refused, never created).
-        Size and margins come from the master. A layout name already in the book is
+        """Preview adding up to 20 layouts to the Layout Book: name, master (an
+        existing master layout's name; a missing master is refused, never created) and
+        optional subset (an existing subset by name or GUID; default the top of the
+        book). Size and margins come from the master. A layout name already in the book is
         refused. Apply identical inputs with explicit port and single-use token; each
         is found back in the Navigator. Requires Tapir. Never saves."""
         return await documents.create_layouts(
@@ -1773,6 +1775,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         trim is read back. Requires Tapir. Never saves."""
         return await solids_tool.trim_to_roof(
             client_of(ctx), element_guids, roof_guid, keep, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layout_subsets(
+        ctx: Context,
+        subsets: list[layout_book_tool.SubsetCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 Layout Book subsets: name, parent (an existing subset
+        by name or GUID; omitted for the top of the book), optional own ID prefix and
+        numbering (abc, ABC, 1, 01, 001, 0001, noID). A name already under that parent
+        is refused. Apply with explicit port and single-use token; each is read back in
+        the Layout Book. create_layouts takes the subset to put layouts in. Requires
+        Tapir. Never saves."""
+        return await layout_book_tool.create_layout_subsets(
+            client_of(ctx), subsets, port, dry_run, confirmation_token
         )
 
     return mcp

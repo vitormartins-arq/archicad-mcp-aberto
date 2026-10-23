@@ -514,6 +514,10 @@
     {
       "name": "trim_to_roof",
       "description": "Preview or trim elements with a roof or shell. Read back after."
+    },
+    {
+      "name": "create_layout_subsets",
+      "description": "Preview or add Layout Book subsets with prefix and numbering. Read back after."
     }
   ],
   "compatibility": {

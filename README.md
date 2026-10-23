@@ -145,6 +145,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `move_to_design_options` | Write | Puts elements in a design option or back in the main model (Archicad 29+) | yes |
 | `create_solid_operations` | Write | Solid element operations between existing elements | yes |
 | `trim_to_roof` | Write | Trims elements with a roof or shell | yes |
+| `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 
 ### Reported live validation
 
@@ -765,6 +766,14 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `TrimElements`, as Design > Trim to Roof/Shell; `keep` is `KeepInside` (default),
   `KeepOutside` or `KeepAll`. The preview refuses a trimmer that is not a roof or shell
   and elements it already trims. The read-back is `GetElementTrims`.
+- `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
+  confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
+  `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`
+  by name or GUID). `prefix` turns on the subset's own ID prefix; `numbering` is one of
+  `abc`, `ABC`, `1`, `01`, `001`, `0001`, `noID`. The rest comes from Archicad's subset
+  defaults. A name already used under the same parent is refused. The read-back finds
+  each subset in the Layout Book under its parent. `create_layouts` now takes an
+  optional `subset` to put the new layouts in.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from
