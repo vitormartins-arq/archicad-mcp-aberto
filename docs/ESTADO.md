@@ -924,3 +924,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Branch `claude/scene-suggestions`: câmeras checadas contra paredes, pilares e ambientes
   menores dentro da caixa; depósitos e DML pulados; nome repetido ganha o número da zona;
   espera de 60 s para imagem e vista. Falta retestar ao vivo.
+
+- **Claude / ferramentas novas sem ArchiCAD, 23/10/2026 (PR #71, branch
+  `claude/project-thread-pvslgt`):** o Vitor não conseguiu a assistência remota, então tudo
+  foi feito na nuvem, contra o ArchiCAD simulado, com formatos de pedido e resposta tirados do
+  código do Tapir 1.7.0 (não capturados ao vivo). Novas: `create_composites` (C18),
+  `create_drawings` (C21), `add_stories` (C22, só acima do último ou abaixo do primeiro
+  pavimento), `create_design_options` e `move_to_design_options` (C23),
+  `create_solid_operations` e `trim_to_roof` (C26), `create_layout_subsets` e `subset` em
+  `create_layouts` (C27), `place_hotlinks` (C28). C24 descartada (`CreateProjectInfoFields`
+  não migrado no AC30). 2589 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  116 ferramentas. Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C18 a C28.
