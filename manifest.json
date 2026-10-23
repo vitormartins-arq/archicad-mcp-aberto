@@ -490,6 +490,10 @@
     {
       "name": "create_composites",
       "description": "Preview or add composites by skins (building material, thickness, type, pen); existing names are refused. Read back after."
+    },
+    {
+      "name": "create_drawings",
+      "description": "Preview or place views on existing layouts as Drawings, found on the layout after."
     }
   ],
   "compatibility": {

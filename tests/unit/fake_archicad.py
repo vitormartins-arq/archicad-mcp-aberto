@@ -309,6 +309,9 @@ class FakeArchicad:
              "name": "Linha Contínua"},
         ]
     )  # fmt: skip
+    # CreateDrawings: layout database guid -> Drawing guids on it (Tapir 1.7.0 source).
+    layout_drawings: dict[str, list[str]] = field(default_factory=dict)
+    drawing_lost: bool = False  # CreateDrawings answers a GUID the layout does not list
     # CreateComposites: Archicad keeps this skin thickness instead (verification test).
     composite_thickness_stored: float | None = None
     classification_data: dict = field(default_factory=lambda: deepcopy(CLASSIFICATIONS_FIXTURE))
@@ -983,6 +986,43 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "CreateDrawings":
+            # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
+            placeable = {"StoryItem", "ScheduleItem", "WorksheetDrawingItem"}
+            nodes = {
+                n["navigatorItemId"]["guid"]: n
+                for tree in self.navigator_trees.values()
+                for n in self._nav_items_of(tree)
+            }
+            out = []
+            for index, data in enumerate(args["drawingsData"]):
+                assert set(data) <= {"navigatorItemId", "layoutDatabaseId", "position", "name",
+                                     "angle"}  # fmt: skip
+                source = nodes.get(data["navigatorItemId"]["guid"])
+                database = data["layoutDatabaseId"]["guid"]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                elif source is None or source["type"] not in placeable:
+                    message = "navigatorItemId is not a view or viewpoint that can be placed."
+                    out.append({"error": {"code": -2130313112, "message": message}})
+                elif database not in self.nav_databases.values():
+                    out.append({"error": {"code": -1, "message": "Failed to activate the "
+                                "layout database."}})  # fmt: skip
+                else:
+                    guid = str(uuid4()).upper()
+                    if not self.drawing_lost:
+                        self.layout_drawings.setdefault(database, []).append(guid)
+                    out.append({"elementId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "GetElementsByType" and "databases" in args:
+            assert args["elementType"] == "Drawing" and len(args["databases"]) == 1
+            database = args["databases"][0]["databaseId"]["guid"]
+            known = database in self.nav_databases.values()
+            result = {"success": True} if known else {
+                "success": False, "error": {"code": -1, "message": "Bad database."}}  # fmt: skip
+            rows = [{"elementId": {"guid": g}} for g in self.layout_drawings.get(database, [])]
+            return ok({"addOnCommandResponse": {"elements": rows,
+                       "executionResultForDatabases": [result]}})  # fmt: skip
         if name == "GetDesignOptionSets":
             return ok(
                 {

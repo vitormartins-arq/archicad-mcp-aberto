@@ -608,6 +608,12 @@ OPERATIONS["create_openings"] = (
     "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
 )
 CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
+OPERATIONS["create_drawings"] = (
+    "drawing",
+    "drawing_receipt_id",
+    "Each view is placed on its layout with its centre at the position (metres of paper); "
+    "the rest comes from the Drawing tool defaults. Archicad shows the layout after.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

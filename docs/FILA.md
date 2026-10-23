@@ -138,6 +138,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   a caixa 3D do modelo, escolhe ângulos (axonometrias dos cantos, perspectivas na altura
   dos olhos), põe a câmera, salva cada uma no Mapa de vistas com nome e pasta (C19) e
   tira print para conferir. Até o Tapir ter o comando, só o passo 1.
+- **C21 `create_drawings`.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `CreateDrawings` do Tapir 1.7.0: vista do Mapa de vistas (ou GUID do Navegador) numa
+  prancha existente, na posição em metros de papel, conferida na base da prancha.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_drawings` (`tools/drawings.py`): views on existing layouts by Tapir 1.7.0
+  `CreateDrawings`, by View Map name or Navigator GUID, read back on the layout's
+  database. Not tested live yet.
+
 - Add `create_composites` (`tools/composites.py`): new composites by Tapir 1.7.0
   `CreateComposites`, skins by building material name, thickness, type and pen, one
   separator line type and pen. Existing names, unknown materials and line types are

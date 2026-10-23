@@ -31,6 +31,7 @@ from archicad_mcp_aberto.tools import (
     write,
 )
 from archicad_mcp_aberto.tools import composites as composites_tool
+from archicad_mcp_aberto.tools import drawings as drawings_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -1664,6 +1665,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Requires Tapir. Never saves."""
         return await composites_tool.create_composites(
             client_of(ctx), composites, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_drawings(
+        ctx: Context,
+        drawings: list[drawings_tool.DrawingCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview placing up to 20 views on layouts as Drawings: view (a View Map view
+        name, or a Navigator item GUID from get_navigator_tree), layout (a Layout Book
+        layout name or GUID), position (the Drawing's centre on the layout, metres of
+        paper), optional name and angle. Folders, layouts and placed Drawings are refused.
+        Apply with explicit port and single-use token; each is found on its layout after.
+        Requires Tapir. Never saves."""
+        return await drawings_tool.create_drawings(
+            client_of(ctx), drawings, port, dry_run, confirmation_token
         )
 
     return mcp

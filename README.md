@@ -139,6 +139,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
 | `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
+| `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
 
 ### Reported live validation
 
@@ -713,6 +714,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   The read-back is `GetComposites`: use, skins (type, pen, thickness, material GUID) and
   separators (pen, line type GUID). Fixtures come from the Tapir source, not a live
   capture.
+- `create_drawings([{view, layout, position: {x, y}, name?, angle?}], port?, dry_run?,
+  confirmation_token?)` places up to 20 views on layouts by Tapir 1.7.0
+  `CreateDrawings`. `view` is a View Map view name or any Navigator item GUID from
+  `get_navigator_tree`; `layout` is a Layout Book layout name or GUID. The preview
+  refuses folders, layouts, master layouts and placed Drawings, which Tapir cannot use as
+  a source. `position` is the Drawing's centre on the layout in metres of paper; `name`
+  sets a custom title; scale, title and frame come from the Drawing tool defaults, with
+  the view's full extent. Tapir switches the window to the layout. The read-back finds
+  the new Drawing on its layout (`GetElementsByType` with the layout database).
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from

@@ -667,3 +667,13 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   existe: a prévia deve recusar.
 - [ ] Anotar se a linha separadora padrão (o primeiro tipo de linha do projeto) é mesmo a
   contínua no template do Vitor.
+
+## Lote do Claude C21: vistas nas pranchas
+
+- [ ] **create_drawings.** No projeto novo, com uma prancha criada (`create_layouts`) e a
+  planta do térreo salva no Mapa de vistas: "Ponha a vista <nome> na prancha <nome>, no
+  meio da folha." Conferir que o desenho aparece na prancha, com o centro no ponto pedido
+  (em metros de papel), e que o recibo dá `verified`.
+- [ ] Anotar o que veio dos padrões da ferramenta Desenho: escala, título e moldura.
+  Conferir também se o ArchiCAD fica mostrando a prancha depois (o Tapir troca a janela).
+- [ ] Com `name`, conferir que o título do desenho usa o nome dado.
