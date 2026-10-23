@@ -140,6 +140,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
+| `update_drawings` | Write | Updates every Drawing on layouts from its source view | yes |
 | `add_stories` | Write | New stories above the top or below the bottom; existing stories kept | yes |
 | `create_design_options` | Write | New design option sets, options and combinations (Archicad 29+); only adds | yes |
 | `move_to_design_options` | Write | Puts elements in a design option or back in the main model (Archicad 29+) | yes |
@@ -737,6 +738,11 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   sets a custom title; scale, title and frame come from the Drawing tool defaults, with
   the view's full extent. Tapir switches the window to the layout. The read-back finds
   the new Drawing on its layout (`GetElementsByType` with the layout database).
+- `update_drawings(layouts, port?, dry_run?, confirmation_token?)` updates every Drawing
+  on up to 20 layouts (name or GUID) by Tapir 1.7.0 `UpdateDrawings` (Archicad 27+). The
+  preview lists the Drawings found on each layout. Tapir answers only success or
+  failure, and Archicad has no read-back of a Drawing's update state, so a successful
+  receipt stays `unverified`.
 - `add_stories([{name, level, show_on_sections?}], port?, dry_run?,
   confirmation_token?)` adds up to 20 stories by Tapir 1.7.0 `SetStories`, which takes
   the whole story structure and would delete stories (and their elements) missing from

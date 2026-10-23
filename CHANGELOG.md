@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `update_drawings` (`tools/drawings.py`): update every Drawing on layouts by Tapir
+  1.7.0 `UpdateDrawings`. Tapir answers only success, so the receipt stays unverified.
+  Not tested live yet.
+
 - Add `create_classification_systems` (`tools/classification_systems.py`): new systems
   with item trees by Tapir 1.7.0 `CreateClassificationSystems`, read back by
   `GetAllClassificationSystems` and the whole tree. Not tested live yet.

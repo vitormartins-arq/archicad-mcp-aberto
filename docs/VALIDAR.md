@@ -763,3 +763,10 @@ projeto novo, sem salvar.
   Opções > Gerenciador de Classificações que o sistema e os quatro itens aparecem no
   lugar certo, com a data, e que o recibo dá `verified`.
 - [ ] Sem `date`: anotar a data que o ArchiCAD mostra.
+
+## Lote do Claude C29: atualizar desenhos
+
+- [ ] **update_drawings.** Numa prancha com um desenho do C21, mudar algo no modelo e
+  pedir "atualize os desenhos da prancha Planta baixa". Conferir que o desenho mostra a
+  mudança. O recibo fica `unverified` (o ArchiCAD não diz se atualizou). Anotar se
+  funciona com a prancha fechada (o desenho fica em outro banco de dados).

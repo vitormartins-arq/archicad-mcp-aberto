@@ -1844,6 +1844,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def update_drawings(
+        ctx: Context,
+        layouts: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview updating every Drawing on up to 20 layouts (name or GUID) from its
+        source view, as Update Drawing does (Archicad 27+). The preview lists the
+        Drawings; a layout without Drawings is refused. Apply with explicit port and
+        single-use token. Archicad has no read-back of the update, so the receipt stays
+        unverified. Requires Tapir. Never saves."""
+        return await drawings_tool.update_drawings(
+            client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_layout_subsets(
         ctx: Context,
         subsets: list[layout_book_tool.SubsetCreate],

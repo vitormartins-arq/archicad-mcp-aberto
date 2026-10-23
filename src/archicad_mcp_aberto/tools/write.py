@@ -615,6 +615,11 @@ OPERATIONS["create_drawings"] = (
     "Each view is placed on its layout with its centre at the position (metres of paper); "
     "the rest comes from the Drawing tool defaults. Archicad shows the layout after.",
 )
+OPERATIONS["update_drawings"] = (
+    "drawing update",
+    "drawing_update_receipt_id",
+    "Every Drawing on the layouts is updated from its source view; nothing else changes.",
+)
 OPERATIONS["add_stories"] = (
     "story",
     "story_receipt_id",

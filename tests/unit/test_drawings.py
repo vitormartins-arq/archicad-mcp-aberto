@@ -110,3 +110,31 @@ async def test_count_limits():
     async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as c:
         with pytest.raises(ValueError, match="between 1 and 20"):
             await drawings.create_drawings(c, [])
+
+
+async def test_update_drawings_of_a_layout():
+    fake = FakeArchicad(19723)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="no Drawings"):
+            await drawings.update_drawings(c, ["Planta baixa"], 19723)
+        fake.layout_drawings[LAYOUT_DB] = ["D2000000-0000-4000-8000-000000000002"]
+        preview = await drawings.update_drawings(c, ["planta baixa"], 19723)
+        result = await drawings.update_drawings(
+            c, ["planta baixa"], 19723, False, preview["confirmation_token"]
+        )
+    assert preview["items"][0]["layout_name"] == "Planta baixa"
+    assert fake.updated_drawings == ["D2000000-0000-4000-8000-000000000002"]
+    assert result["items"][0]["status"] == "unverified"
+    assert "no read-back" in result["verification_note"]
+
+
+async def test_update_drawings_refused_by_tapir_is_failed():
+    fake = FakeArchicad(19723, update_drawings_refused=True)
+    fake.layout_drawings[LAYOUT_DB] = ["D2000000-0000-4000-8000-000000000002"]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await drawings.update_drawings(c, ["Planta baixa"], 19723)
+        result = await drawings.update_drawings(
+            c, ["Planta baixa"], 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["status"] == "failed"
+    assert result["items"][0]["error"]["message"] == "Failed to update drawings."

@@ -159,7 +159,8 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C28 módulos (hotlinks).** (Feito na branch `claude/project-thread-pvslgt`.)
   `place_hotlinks` (`CreateHotlinkNodes` e `CreateHotlinkInstances`): um nó por
   arquivo `.mod`/`.pln`, reaproveitando o que já aponta para o mesmo arquivo.
-- **C29 `update_drawings`.** `UpdateDrawings` do Tapir 1.7.0: atualizar os desenhos de
+- **C29 `update_drawings`.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `UpdateDrawings` do Tapir 1.7.0: atualizar os desenhos de
   pranchas (por nome da prancha). O Tapir só devolve sucesso; não há como ler se o
   desenho foi atualizado, então o recibo fica `unverified`.
 - **C30 desfazer sólidos e cortes.** (Feito na branch `claude/project-thread-pvslgt`.)
@@ -171,7 +172,8 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C32 sistemas de classificação.** (Feito na branch `claude/project-thread-pvslgt`.)
   `create_classification_systems` (`CreateClassificationSystems`): sistema novo com a
   árvore de itens. Depois, no Lab, a classificação do template.
-- **C33 propriedades IFC.** `SetIFCPropertiesOfElements` do Tapir 1.7.0.
+- **C33 propriedades IFC: não fazer.** No Tapir 1.7.0 o `SetIFCPropertiesOfElements`
+  responde "not supported in Archicad 28 and newer" (a escrita só existe até o 27).
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da
   1.7.2. Quando o Vitor atualizar o Tapir, ou pelo add-on próprio.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)

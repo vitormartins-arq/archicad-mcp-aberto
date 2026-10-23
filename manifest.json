@@ -538,6 +538,10 @@
     {
       "name": "create_classification_systems",
       "description": "Preview or add classification systems with their item trees. Read back after."
+    },
+    {
+      "name": "update_drawings",
+      "description": "Preview or update every Drawing on layouts from its source view."
     }
   ],
   "compatibility": {

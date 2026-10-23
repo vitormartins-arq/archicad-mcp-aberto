@@ -166,6 +166,7 @@ INPUTS = {
     "remove_trims": {"element_guids": [GUID], "roof_guid": PROP},
     "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
+    "update_drawings": {"layouts": ["Planta baixa"]},
     "create_drawings": {
         "drawings": [
             {"view": "Ground floor", "layout": "Planta baixa", "position": {"x": 0.2, "y": 0.15}}
@@ -581,6 +582,10 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             if name in REMOVALS:
                 instance.solid_links[(GUID, PROP)] = {"operation": "Subtraction", "linkFlags": {}}
                 instance.element_trims[(GUID, PROP)] = "KeepInside"
+    if name == "update_drawings":
+        for instance in (first, second):
+            database = instance.nav_databases["88888888-8888-4888-8888-000000000013"]
+            instance.layout_drawings[database] = ["D2000000-0000-4000-8000-000000000002"]
     if name == "create_composites":
         for instance in (first, second):
             row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]

@@ -343,6 +343,8 @@ class FakeArchicad:
     set_stories_level_drift: float = 0.0
     # CreateDrawings: layout database guid -> Drawing guids on it (Tapir 1.7.0 source).
     layout_drawings: dict[str, list[str]] = field(default_factory=dict)
+    updated_drawings: list[str] = field(default_factory=list)
+    update_drawings_refused: bool = False
     drawing_lost: bool = False  # CreateDrawings answers a GUID the layout does not list
     # CreateComposites: Archicad keeps this skin thickness instead (verification test).
     composite_thickness_stored: float | None = None
@@ -1053,6 +1055,15 @@ class FakeArchicad:
                         self.layout_drawings.setdefault(database, []).append(guid)
                     out.append({"elementId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "UpdateDrawings":
+            # Tapir 1.7.0 source (NavigatorCommands.cpp): one ExecutionResult; not live.
+            placed = {g for guids in self.layout_drawings.values() for g in guids}
+            missing = any(e["elementId"]["guid"] not in placed for e in args["elements"])
+            if missing or self.update_drawings_refused:
+                return ok({"addOnCommandResponse": {"success": False, "error": {
+                    "code": -2130313112, "message": "Failed to update drawings."}}})  # fmt: skip
+            self.updated_drawings += [e["elementId"]["guid"] for e in args["elements"]]
+            return ok({"addOnCommandResponse": {"success": True}})
         if name == "GetElementsByType" and "databases" in args:
             assert args["elementType"] == "Drawing" and len(args["databases"]) == 1
             database = args["databases"][0]["databaseId"]["guid"]

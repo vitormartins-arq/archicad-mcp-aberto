@@ -6,8 +6,10 @@ Navigator and refuses what Tapir cannot place: folders, layouts, master layouts 
 already placed Drawings (Tapir checks this too, because such a source terminates
 Archicad inside element creation). The position is the Drawing's centre on the layout,
 in metres of paper. The read-back lists the Drawings of the layout's database
-(GetElementsByType with databases). Tapir switches the window to the layout. Never
-saves.
+(GetElementsByType with databases). Tapir switches the window to the layout.
+update_drawings updates every Drawing on the given layouts (UpdateDrawings, Archicad 27
+and later). Tapir answers only success or failure and Archicad has no read-back of a
+Drawing's update state, so a successful update stays unverified. Never saves.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ from uuid import UUID
 from pydantic import Field, field_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
-from archicad_mcp_aberto.tools import documents, write
+from archicad_mcp_aberto.tools import documents, solids, write
 
 MAX_DRAWINGS = 20
 Text = Annotated[str, Field(min_length=1, max_length=255)]
@@ -211,4 +213,82 @@ async def create_drawings(
         "create_drawings",
         planner_override=_plan,
         dispatcher_override=_dispatch,
+    )
+
+
+class LayoutsUpdate(write.InputModel):
+    layouts: Annotated[list[Text], Field(min_length=1, max_length=MAX_DRAWINGS)]
+
+
+async def _update_plan(client, requests, port, operation):
+    (request,) = requests
+    port, target, _ = await write._context(client, port)
+    tree = await documents._tree(client, port, "LayoutBook")
+    layouts = []
+    for index, wanted in enumerate(request.layouts):
+        layout = _find(tree, wanted, {"LayoutItem"}, "layout", index)
+        if any(row["navigator_guid"] == layout["navigator_guid"] for row in layouts):
+            raise ValueError(f"Drawing {index}: layout {wanted!r} appears twice.")
+        layouts.append(layout)
+    databases = await documents._databases(client, port, [r["navigator_guid"] for r in layouts])
+    items = []
+    for layout in layouts:
+        database = databases.get(layout["navigator_guid"])
+        if database is None:
+            raise ValueError(f"Cannot find the database of {layout['name']!r}.")
+        guids = sorted(g for g in await _layout_drawings(client, port, database, None) if g)
+        if not guids:
+            raise ValueError(f"Layout {layout['name']!r} has no Drawings.")
+        items += [
+            {
+                "index": len(items) + offset,
+                "status": "ready",
+                "layout_name": layout["name"],
+                "layout_database": database,
+                "drawing_guid": guid,
+            }
+            for offset, guid in enumerate(guids)
+        ]
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _update_dispatch(client, receipt):
+    items, port = receipt["items"], receipt["target"]["port"]
+    raw = await solids._results(
+        client, port, "UpdateDrawings",
+        {"elements": [{"elementId": {"guid": i["drawing_guid"]}} for i in items]},
+        receipt["write_timeout_seconds"],
+    )  # fmt: skip
+    if not isinstance(raw, dict) or not isinstance(raw.get("success"), bool):
+        return solids._unknown(receipt, raw if isinstance(raw, str) else "Unexpected response.")
+    receipt["raw_response"] = raw
+    for item in items:
+        if raw["success"]:
+            item["status"] = "unverified"
+        else:
+            item.update(status="failed", error=raw.get("error", raw))
+    if raw["success"]:
+        receipt["verification_note"] = (
+            "Archicad has no read-back of a Drawing's update state; look at the layouts."
+        )
+
+
+async def update_drawings(
+    client: ArchicadClient,
+    layouts: list[str],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply updating every Drawing on up to 20 layouts (name or GUID)."""
+    request = LayoutsUpdate.model_validate({"layouts": layouts})
+    return await write._write(
+        client,
+        [request],
+        port,
+        dry_run,
+        confirmation_token,
+        "update_drawings",
+        planner_override=_update_plan,
+        dispatcher_override=_update_dispatch,
     )
