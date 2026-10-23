@@ -77,6 +77,7 @@ MODIFY_COMMANDS = {
     "ModifyWindows": ("Window", "windowsWithDetails"),
     "ModifyDoors": ("Door", "doorsWithDetails"),
     "ModifyObjects": ("Object", "objectsWithDetails"),
+    "ModifyLamps": ("Lamp", "lampsWithDetails"),  # same code as ModifyObjects in Tapir 1.7.0
     "ModifyRoofs": ("Roof", "roofsWithDetails"),
     "ModifyTexts": ("Text", "textsWithDetails"),
     "ModifyLabels": ("Label", "labelsWithDetails"),
@@ -2083,7 +2084,7 @@ class FakeArchicad:
                 rows = []
                 for element in args["elements"]:
                     guid = element["elementId"]["guid"]
-                    if self.elements.get(guid) != "Object":
+                    if self.elements.get(guid) not in ("Object", "Lamp"):  # Tapir 1.7.0 source
                         rows.append({"error": {"code": -1, "message": "Not an Object"}})
                     else:
                         parameters = self.gdl_parameters.setdefault(
@@ -3072,7 +3073,7 @@ class FakeArchicad:
                     details["relativeTopStory"] = 0
                 if name == "ModifyBeams" and "level" in changes:
                     details["zCoordinate"] = story["level"] + changes["level"]
-                if name == "ModifyObjects" and "dimensions" in changes:
+                if name in ("ModifyObjects", "ModifyLamps") and "dimensions" in changes:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}

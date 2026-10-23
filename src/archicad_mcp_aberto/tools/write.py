@@ -283,6 +283,7 @@ OPERATIONS = {
         "object_edit_receipt_id",
         "Only requested fields are modified.",
     ),
+    "modify_lamps": ("lamp edit", "lamp_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
@@ -1931,6 +1932,7 @@ NAMED_PREVIEWS = {
     "modify_windows",
     "modify_doors",
     "modify_objects",
+    "modify_lamps",
     "modify_roofs",
     "modify_texts",
     "modify_morphs",

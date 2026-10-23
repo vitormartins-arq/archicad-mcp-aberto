@@ -748,3 +748,10 @@ projeto novo, sem salvar.
   modelo e que o recibo dá `verified`.
 - [ ] **remove_trims.** "Tire o corte do telhado das paredes." Conferir no 3D e no corte
   que as paredes voltam à altura original e que o recibo dá `verified`.
+
+## Lote do Claude C31: editar luminárias
+
+- [ ] **modify_lamps.** No projeto novo, com uma luminária do `create_lamps`: "Mova a
+  luminária para (2, 3), mude a altura para 0,6 m e desligue a luz." Conferir na planta e
+  na caixa de configurações que posição, altura e "luz ligada" mudaram, e que o recibo dá
+  `verified`.

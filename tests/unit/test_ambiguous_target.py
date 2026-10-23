@@ -72,6 +72,7 @@ MODIFY_TYPES = {
     "modify_windows": "Window",
     "modify_doors": "Door",
     "modify_objects": "Object",
+    "modify_lamps": "Lamp",
     "modify_roofs": "Roof",
     "modify_texts": "Text",
     "modify_labels": "Label",
@@ -226,6 +227,7 @@ INPUTS = {
     "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
     "modify_doors": {"doors": [{"guid": GUID, "width": 1.0}]},
     "modify_objects": {"objects": [{"guid": GUID, "origin": {"x": 0, "y": 0}}]},
+    "modify_lamps": {"lamps": [{"guid": GUID, "lightIsOn": False}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {

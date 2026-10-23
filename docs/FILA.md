@@ -165,7 +165,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
 - **C30 desfazer sólidos e cortes.** (Feito na branch `claude/project-thread-pvslgt`.)
   `remove_solid_operations` (`RemoveSolidElementLinks`) e `remove_trims`
   (`RemoveElementTrims`).
-- **C31 `modify_lamps`.** `ModifyLamps` do Tapir 1.7.0 (ver no código-fonte o que muda).
+- **C31 `modify_lamps`.** (Feito na branch `claude/project-thread-pvslgt`.) `ModifyLamps`
+  do Tapir 1.7.0: os campos do `modify_objects` e `lightIsOn`. A cor da luz ficou de fora
+  (o código do Tapir diz que o ArchiCAD descarta).
 - **C32 sistemas de classificação.** `CreateClassificationSystems` do Tapir 1.7.0.
 - **C33 propriedades IFC.** `SetIFCPropertiesOfElements` do Tapir 1.7.0.
 - **C34 eixos (malha estrutural).** `CreateGridElements` só existe no Tapir depois da

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `modify_lamps`: origin, level, size (height through ZZYZX) and `lightIsOn` of
+  lamps by Tapir 1.7.0 `ModifyLamps`, the same code as `ModifyObjects`; read back like
+  `modify_objects`. The light colour is left out: the Tapir source says Archicad
+  discards it. Not tested live yet.
+
 - Add `remove_solid_operations` and `remove_trims` (`tools/solids.py`): remove solid
   element operation links and roof or shell trims by Tapir 1.7.0
   `RemoveSolidElementLinks` and `RemoveElementTrims`, read back as gone. Not tested

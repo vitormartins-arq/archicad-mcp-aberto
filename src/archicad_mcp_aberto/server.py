@@ -1811,6 +1811,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def modify_lamps(
+        ctx: Context,
+        lamps: list[modify.LampModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 lamps: origin {x, y}, level from its story, dimensions
+        {x, y, z} in metres (z through ZZYZX) and lightIsOn. Refuses a level that changes
+        story, locked and hotlinked lamps; verifies fields and never saves. Requires
+        Tapir."""
+        return await modify.modify_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
     async def create_layout_subsets(
         ctx: Context,
         subsets: list[layout_book_tool.SubsetCreate],

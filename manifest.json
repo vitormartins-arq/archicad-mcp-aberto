@@ -530,6 +530,10 @@
     {
       "name": "remove_trims",
       "description": "Preview or remove roof or shell trims from elements. Read back after."
+    },
+    {
+      "name": "modify_lamps",
+      "description": "Preview or edit lamps: position, level, size, light on or off. Read back after."
     }
   ],
   "compatibility": {
