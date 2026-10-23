@@ -31,6 +31,7 @@ from archicad_mcp_aberto.tools import (
     write,
 )
 from archicad_mcp_aberto.tools import composites as composites_tool
+from archicad_mcp_aberto.tools import design_option_create as design_option_create_tool
 from archicad_mcp_aberto.tools import drawings as drawings_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
@@ -1701,6 +1702,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         single-use token; read back by GetStories. Requires Tapir. Never saves."""
         return await stories_tool.add_stories(
             client_of(ctx), stories, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_design_options(
+        ctx: Context,
+        sets: list[str] | None = None,
+        options: list[design_option_create_tool.OptionCreate] | None = None,
+        combinations: list[design_option_create_tool.CombinationCreate] | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding design option sets (names), options ({name, id, set}: an
+        existing set or one of sets) and combinations ({name, options: option ids}), up
+        to 20 of each, in that order. Existing names and ids are refused; nothing is
+        changed and no element is moved. Apply with explicit port and single-use token;
+        all read back. Requires Tapir and Archicad 29+. Never saves."""
+        return await design_option_create_tool.create_design_options(
+            client_of(ctx), sets, options, combinations, port, dry_run, confirmation_token
         )
 
     return mcp

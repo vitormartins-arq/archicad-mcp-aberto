@@ -309,6 +309,16 @@ class FakeArchicad:
              "name": "Linha Contínua"},
         ]
     )  # fmt: skip
+    # Design options, mutable copies of the documented fixture (Tapir 1.7.0 source).
+    do_sets: list[dict] = field(default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["sets"]))
+    do_options: list[dict] = field(
+        default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
+    )
+    do_combinations: list[dict] = field(
+        default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+    )
+    design_option_errors: dict[str, dict] = field(default_factory=dict)  # name -> error row
+    combination_drops_options: bool = False  # Tapir ignores SetActiveOptionsInCombination
     # SetStories (Tapir 1.7.0 ProjectCommands.cpp): refuse it, or keep a story off level.
     set_stories_error: dict | None = None
     set_stories_level_drift: float = 0.0
@@ -1027,37 +1037,71 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {"elements": rows,
                        "executionResultForDatabases": [result]}})  # fmt: skip
         if name == "GetDesignOptionSets":
-            return ok(
-                {
-                    "addOnCommandResponse": {
-                        "designOptionSets": deepcopy(DESIGN_OPTIONS_FIXTURE["sets"])
-                    }
-                }
-            )
+            return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":
-            return ok(
-                {
-                    "addOnCommandResponse": {
-                        "designOptions": deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
-                    }
-                }
-            )
+            return ok({"addOnCommandResponse": {"designOptions": deepcopy(self.do_options)}})
         if name == "GetDesignOptionCombinations":
             return ok(
                 {
                     "addOnCommandResponse": {
-                        "designOptionCombinations": deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+                        "designOptionCombinations": deepcopy(self.do_combinations)
                     }
                 }
             )
+        if name == "CreateDesignOptionSets":
+            # Shapes from the Tapir 1.7.0 source (DesignOptionCommands.cpp); not live.
+            results = []
+            for set_name in args["designOptionSets"]:
+                if set_name in self.design_option_errors:
+                    results.append({"success": False, "error": self.design_option_errors[set_name]})
+                    continue
+                guid = str(uuid4()).upper()
+                self.do_sets.append({"designOptionSetId": {"guid": guid}, "name": set_name,
+                                     "designOptions": []})  # fmt: skip
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "CreateDesignOptions":
+            rows = []
+            for data in args["designOptions"]:
+                assert set(data) == {"name", "id", "ownerSetName"}
+                owner = next((x for x in self.do_sets if x["name"] == data["ownerSetName"]), None)
+                if data["name"] in self.design_option_errors:
+                    rows.append({"error": self.design_option_errors[data["name"]]})
+                elif owner is None:
+                    message = "Not found design option set with the given 'ownerSetName'"
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                else:
+                    guid = str(uuid4()).upper()
+                    self.do_options.append({"designOptionId": {"guid": guid}, **data})
+                    owner["designOptions"].append({"designOptionId": {"guid": guid}})
+                    rows.append({"designOptionId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"designOptionIdsOrErrors": rows}})
+        if name == "CreateDesignOptionCombinations":
+            rows = []
+            known = {r["designOptionId"]["guid"] for r in self.do_options}
+            for data in args["designOptionCombinations"]:
+                active = [a["designOptionId"]["guid"] for a in data["activeDesignOptions"]]
+                missing = [g for g in active if g not in known]
+                if missing:
+                    message = (
+                        f"Not found design option with the given 'designOptionId' {missing[0]}"
+                    )
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                kept = [] if self.combination_drops_options else active
+                active_rows = [{"designOptionId": {"guid": g}} for g in kept]
+                self.do_combinations.append({"designOptionCombinationId": {"guid": guid},
+                                             "name": data["name"],
+                                             "activeDesignOptions": active_rows})  # fmt: skip
+                rows.append({"designOptionCombinationId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"designOptionCombinationIdsOrErrors": rows}})
         if name == "GetElementsOfDesignOptions":
             rows = []
             mapping = DESIGN_OPTIONS_FIXTURE["elements_by_option"]
             for item in args["designOptions"]:
                 guid = item["designOptionId"]["guid"]
-                if guid not in {
-                    r["designOptionId"]["guid"] for r in DESIGN_OPTIONS_FIXTURE["options"]
-                }:
+                if guid not in {r["designOptionId"]["guid"] for r in self.do_options}:
                     rows.append({"error": {"code": -2, "message": "Not found design option"}})
                 else:
                     rows.append(

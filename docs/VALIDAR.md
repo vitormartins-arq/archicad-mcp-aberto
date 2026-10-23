@@ -694,3 +694,13 @@ projeto novo, sem salvar.
 - [ ] Anotar a altura que o ArchiCAD dá ao novo pavimento do topo (o Tapir não deixa
   escolher).
 - [ ] Ctrl+Z: conferir se um Desfazer volta a estrutura de pavimentos.
+
+## Lote do Claude C23: opções de design (ArchiCAD 29+)
+
+- [ ] **create_design_options.** No projeto novo: "Crie o conjunto de opções Layout com
+  as opções Cozinha aberta (L-01) e Cozinha fechada (L-02), e a combinação Aberta com a
+  L-01." Conferir no Gerenciador de Opções de Design que o conjunto, as duas opções e a
+  combinação aparecem, que a combinação tem a L-01 ativa, e que o recibo dá `verified`.
+- [ ] Pedir de novo a mesma id de opção: a prévia deve recusar.
+- [ ] Ctrl+Z: anotar se um Desfazer volta tudo ou se são três passos (o Tapir faz três
+  comandos).

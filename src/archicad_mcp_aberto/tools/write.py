@@ -621,6 +621,12 @@ OPERATIONS["add_stories"] = (
     "unchanged. Check structure_after: the old top story's height changes when stories "
     "are added above it.",
 )
+OPERATIONS["create_design_options"] = (
+    "design option item",
+    "design_option_receipt_id",
+    "Sets, then options, then combinations are added; nothing existing changes and no "
+    "element is moved into an option. Archicad 29 or newer.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

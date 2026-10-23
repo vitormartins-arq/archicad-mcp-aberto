@@ -12,6 +12,7 @@ from archicad_mcp_aberto.tools import (
     attributes,
     classifications,
     composites,
+    design_option_create,
     design_options,
     documents,
     drafting,
@@ -147,6 +148,7 @@ INPUTS = {
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
+    "create_design_options": {"sets": ["Cobertura"]},
     "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
     "create_drawings": {
         "drawings": [
@@ -450,6 +452,7 @@ TARGETED = {
         zones,
         zone_categories,
         composites,
+        design_option_create,
         drawings,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)

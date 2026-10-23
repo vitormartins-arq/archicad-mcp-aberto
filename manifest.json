@@ -498,6 +498,10 @@
     {
       "name": "add_stories",
       "description": "Preview or add stories above the top or below the bottom; existing stories are kept. Read back after."
+    },
+    {
+      "name": "create_design_options",
+      "description": "Preview or add design option sets, options and combinations; only adds. Read back after."
     }
   ],
   "compatibility": {

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `create_design_options` (`tools/design_option_create.py`): new design option sets,
+  options and combinations in one call (Tapir 1.7.0, Archicad 29+), read back by the
+  three inventories. Not tested live yet.
+
 - Add `add_stories` (`tools/stories.py`): new stories above the top or below the bottom
   by Tapir 1.7.0 `SetStories`, sending the existing stories back unchanged; read back by
   `GetStories`. Not tested live yet.

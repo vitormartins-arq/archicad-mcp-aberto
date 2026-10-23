@@ -141,6 +141,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
 | `add_stories` | Write | New stories above the top or below the bottom; existing stories kept | yes |
+| `create_design_options` | Write | New design option sets, options and combinations (Archicad 29+); only adds | yes |
 
 ### Reported live validation
 
@@ -734,6 +735,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   least 1 cm apart. `structure_after` in the preview shows every story with its height
   after the change (the old top story's height becomes the gap to the first new one).
   The read-back checks the new stories and that the existing ones kept name and level.
+- `create_design_options(sets?, options?: [{name, id, set}], combinations?: [{name,
+  options}], port?, dry_run?, confirmation_token?)` adds design option sets, options and
+  combinations by Tapir 1.7.0 (`CreateDesignOptionSets`, `CreateDesignOptions`,
+  `CreateDesignOptionCombinations`; Archicad 29+), up to 20 of each, in that order, so an
+  option can go in a set made in the same call and a combination can use new options.
+  A combination names its active options by their string id. Existing set names,
+  option ids and combination names are refused in the preview. Tapir does not report
+  whether a combination's active options were set, so the read-back compares them, as
+  well as each option's name, id and set. Elements are not moved into options.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from
