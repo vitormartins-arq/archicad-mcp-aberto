@@ -76,7 +76,9 @@ async def _plan(client, items, port, operation):
             }
         )
     return {
-        "operation": operation, "target": target, "items": planned,
+        "operation": operation,
+        "target": target,
+        "items": planned,
         "warning": "Section markers inherit the Section tool defaults. If creation returns "
         "APIERR_BADID, initialize a valid Section marker in this test project or explicitly "
         "apply a Section favorite, then prepare a new preview. "

@@ -171,8 +171,9 @@ async def test_scalar_numeric_formatting_is_verified_without_rewriting(
 
 def test_live_number_capture_matches_value_without_changing_receipt_text():
     fixture = json.loads(
-        (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_attribute_number_live.json")
-        .read_text(encoding="utf-8")
+        (
+            Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_attribute_number_live.json"
+        ).read_text(encoding="utf-8")
     )
     definition = fixture["number_definition"]["propertyDefinitions"][0]["propertyDefinition"]
     actual = fixture["number_readback"]["propertyValuesForAttributes"][0]["propertyValues"][0]

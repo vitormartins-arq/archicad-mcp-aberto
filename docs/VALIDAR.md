@@ -654,3 +654,157 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   salvar o projeto.
 - Conferido em 22/10/2026 à tarde (AC30 build 3001 BRA, sem Tapir, add-on de 8eff234,
   WG Formosa_R04). Pendente: a caneta 0 do corte volta como 1.
+
+## Lote do Claude C18: compostos
+
+- [ ] **create_composites.** No projeto novo: "Crie o composto Parede Teste 25 para
+  parede, com reboco 2 cm, tijolo 21 cm e reboco 2 cm" (usar nomes de materiais de
+  construção que existem no projeto). Conferir em Opções > Atributos de Elemento >
+  Compostos as três camadas, as espessuras (total 25 cm), os materiais, o tipo
+  (núcleo/acabamento) e as linhas separadoras contínuas, e que o recibo dá `verified`.
+  Depois fazer uma parede com `composite` "Parede Teste 25": ela deve sair com 0,25 m.
+- [ ] Pedir de novo o mesmo nome: a prévia deve recusar. Pedir um material que não
+  existe: a prévia deve recusar.
+- [ ] Anotar se a linha separadora padrão (o primeiro tipo de linha do projeto) é mesmo a
+  contínua no template do Vitor.
+
+## Lote do Claude C21: vistas nas pranchas
+
+- [ ] **create_drawings.** No projeto novo, com uma prancha criada (`create_layouts`) e a
+  planta do térreo salva no Mapa de vistas: "Ponha a vista <nome> na prancha <nome>, no
+  meio da folha." Conferir que o desenho aparece na prancha, com o centro no ponto pedido
+  (em metros de papel), e que o recibo dá `verified`.
+- [ ] Anotar o que veio dos padrões da ferramenta Desenho: escala, título e moldura.
+  Conferir também se o ArchiCAD fica mostrando a prancha depois (o Tapir troca a janela).
+- [ ] Com `name`, conferir que o título do desenho usa o nome dado.
+
+## Lote do Claude C22: pavimentos novos
+
+Cuidado: o `SetStories` do Tapir mexe na estrutura toda de pavimentos. Testar só no
+projeto novo, sem salvar.
+
+- [ ] **add_stories acima.** No projeto novo: "Acrescente os pavimentos 1º Pavimento a
+  3 m e Cobertura a 6 m." Conferir em Projeto > Configurações de Pavimento que os dois
+  aparecem com os níveis pedidos, que o Térreo não mudou de nome nem de nível, e que o
+  recibo dá `verified`. Conferir na prévia (`structure_after`) a altura que o Térreo
+  passa a ter.
+- [ ] **add_stories abaixo.** "Acrescente o Subsolo a -3 m." Conferir que ele entra com
+  índice -1 e que os elementos do Térreo continuam no Térreo.
+- [ ] Pedir um nível entre dois pavimentos: a prévia deve recusar.
+- [ ] Anotar a altura que o ArchiCAD dá ao novo pavimento do topo (o Tapir não deixa
+  escolher).
+- [ ] Ctrl+Z: conferir se um Desfazer volta a estrutura de pavimentos.
+
+## Lote do Claude C23: opções de design (ArchiCAD 29+)
+
+- [ ] **create_design_options.** No projeto novo: "Crie o conjunto de opções Layout com
+  as opções Cozinha aberta (L-01) e Cozinha fechada (L-02), e a combinação Aberta com a
+  L-01." Conferir no Gerenciador de Opções de Design que o conjunto, as duas opções e a
+  combinação aparecem, que a combinação tem a L-01 ativa, e que o recibo dá `verified`.
+- [ ] Pedir de novo a mesma id de opção: a prévia deve recusar.
+- [ ] Ctrl+Z: anotar se um Desfazer volta tudo ou se são três passos (o Tapir faz três
+  comandos).
+- [ ] **move_to_design_options.** Com uma parede e a opção L-02 criadas: "Ponha a parede
+  <GUID> na opção L-02." Conferir que ela some do modelo principal e aparece só quando a
+  L-02 está ativa, e que o recibo dá `verified`. Depois "volte a parede para o modelo
+  principal" (`option` nulo).
+
+## Lote do Claude C26: operações de sólidos e cortar pelo telhado
+
+- [ ] **create_solid_operations.** No projeto novo, com uma parede e um morfo (caixa) que
+  a atravessa: "Subtraia o morfo da parede." Conferir no 3D que a parede fica com o
+  buraco, em Projeto > Operações de Elementos Sólidos que o vínculo aparece, e que o
+  recibo dá `verified`. Pedir de novo: a prévia deve recusar.
+- [ ] **trim_to_roof.** Com duas paredes e um telhado em cima: "Corte as paredes pelo
+  telhado." Conferir no 3D e num corte que as paredes param na face de baixo do telhado
+  (`KeepInside`), e que o recibo dá `verified`. Anotar o que `KeepAll` faz.
+
+## Lote do Claude C27: subconjuntos do Book de Layouts
+
+- [ ] **create_layout_subsets.** No projeto novo: "Crie o subconjunto Executivo com
+  prefixo EX e numeração 01, e dentro dele o subconjunto Plantas." Conferir no Book de
+  Layouts que os dois aparecem no lugar certo, com o prefixo, e que o recibo dá
+  `verified`.
+- [ ] **create_layouts com subset.** "Crie a prancha Planta térreo no master <nome>,
+  dentro de Plantas." Conferir que ela entra no subconjunto e que a numeração usa o
+  prefixo EX.
+
+## Lote do Claude C28: módulos (hotlinks)
+
+- [ ] **place_hotlinks.** No projeto novo, com um `.mod` de teste salvo no PC: "Coloque o
+  módulo <caminho> em (0, 0) no térreo e outro igual em (5, 0) girado 90° e espelhado."
+  Conferir no Gerenciador de Hotlinks que só um nó aparece, que as duas instâncias estão
+  no lugar, giro e espelhamento pedidos e no pavimento certo, e que o recibo dá
+  `verified`.
+- [ ] Pedir de novo o mesmo arquivo: a prévia deve dizer que o nó já existe e reaproveitá-lo.
+- [ ] Caminho que não existe: anotar a mensagem do Tapir e conferir que só aquele item
+  dá `failed`.
+- [ ] Um `.pln` com `single_story`: conferir que só aquele pavimento do arquivo entra.
+
+## Lote do Claude C30: desfazer sólidos e cortes
+
+- [ ] **remove_solid_operations.** Depois do teste do C26: "Tire a subtração do morfo na
+  parede." Conferir no 3D que a parede volta inteira, que os dois elementos continuam no
+  modelo e que o recibo dá `verified`.
+- [ ] **remove_trims.** "Tire o corte do telhado das paredes." Conferir no 3D e no corte
+  que as paredes voltam à altura original e que o recibo dá `verified`.
+
+## Lote do Claude C31: editar luminárias
+
+- [ ] **modify_lamps.** No projeto novo, com uma luminária do `create_lamps`: "Mova a
+  luminária para (2, 3), mude a altura para 0,6 m e desligue a luz." Conferir na planta e
+  na caixa de configurações que posição, altura e "luz ligada" mudaram, e que o recibo dá
+  `verified`.
+
+## Lote do Claude C32: sistemas de classificação
+
+- [ ] **create_classification_systems.** No projeto novo: "Crie o sistema LAB Teste
+  versão 1 com 01 Vedações (01.01 Alvenaria, 01.02 Drywall) e 02 Estrutura." Conferir em
+  Opções > Gerenciador de Classificações que o sistema e os quatro itens aparecem no
+  lugar certo, com a data, e que o recibo dá `verified`.
+- [ ] Sem `date`: anotar a data que o ArchiCAD mostra.
+
+## Lote do Claude C29: atualizar desenhos
+
+- [ ] **update_drawings.** Numa prancha com um desenho do C21, mudar algo no modelo e
+  pedir "atualize os desenhos da prancha Planta baixa". Conferir que o desenho mostra a
+  mudança. O recibo fica `unverified` (o ArchiCAD não diz se atualizou). Anotar se
+  funciona com a prancha fechada (o desenho fica em outro banco de dados).
+
+## Lote do Claude C35: superfícies novas
+
+- [ ] **create_surfaces.** No projeto novo: "Crie a superfície Pintura Azul a partir de
+  <uma superfície de pintura>, com a cor azul, e Vidro Fumê a partir de <um vidro> com
+  transparência 60." Conferir em Opções > Atributos de Elemento > Superfícies que as duas
+  aparecem com a cor, a transparência e a textura da base, no 3D e no render, e que o
+  recibo dá `verified`.
+- [ ] `keep_texture` falso: conferir que a superfície nova fica sem textura e que a base
+  não mudou (no teste de renomear de 14/10 a textura mudou).
+
+## Lote do Claude C36: mover itens do Navegador
+
+- [ ] **move_navigator_items (Mapa de Vistas).** No projeto novo, com duas pastas no Mapa
+  de Vistas: "Mova a vista <nome> para a pasta <pasta>." Conferir que ela muda de pasta,
+  vai para o começo dela e que o recibo dá `verified`. Anotar se o Desfazer volta.
+- [ ] **move_navigator_items (Book).** "Mova a prancha Planta baixa para o subconjunto
+  Executivo." Conferir que a numeração da prancha passa a usar o prefixo do subconjunto.
+
+## Lote do Claude C34: eixos pelo add-on próprio
+
+Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` deste PR) instalado no
+ArchiCAD de teste.
+
+- [ ] **list_grid_elements.** Num projeto com eixos desenhados pela ferramenta Eixo:
+  "liste os eixos com parâmetros". Conferir início, fim, pavimento e o texto da bolha, e
+  anotar os nomes reais dos parâmetros (o simulado inventou `AC_MarkerText`).
+- [ ] **create_grid_elements.** No projeto novo: "desenhe os eixos A, B e C na vertical a
+  cada 6 m, com 20 m, e 1, 2, 3 na horizontal". Conferir posição, comprimento, o texto da
+  bolha, que o recibo dá `verified` e que um Desfazer apaga os seis. Comparar a aparência
+  com um eixo feito à mão (o Tapir avisa que os padrões da ferramenta podem diferir).
+
+## Lote do Claude C37: atualizar favoritos
+
+- [ ] **update_favorites_from_elements.** No projeto novo, com um favorito de parede de
+  teste: mudar a espessura de uma parede e pedir "atualize o favorito <nome> com esta
+  parede". Conferir na paleta de Favoritos que o favorito passou a ter a espessura nova.
+  O recibo fica `unverified`. Anotar se o Desfazer volta o favorito antigo.

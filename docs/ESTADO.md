@@ -924,3 +924,30 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Branch `claude/scene-suggestions`: câmeras checadas contra paredes, pilares e ambientes
   menores dentro da caixa; depósitos e DML pulados; nome repetido ganha o número da zona;
   espera de 60 s para imagem e vista. Falta retestar ao vivo.
+
+- **Claude / ferramentas novas sem ArchiCAD, 23/10/2026 (PR #71, branch
+  `claude/project-thread-pvslgt`):** o Vitor não conseguiu a assistência remota, então tudo
+  foi feito na nuvem, contra o ArchiCAD simulado, com formatos de pedido e resposta tirados do
+  código do Tapir 1.7.0 (não capturados ao vivo). Novas: `create_composites` (C18),
+  `create_drawings` (C21), `add_stories` (C22, só acima do último ou abaixo do primeiro
+  pavimento), `create_design_options` e `move_to_design_options` (C23),
+  `create_solid_operations` e `trim_to_roof` (C26), `create_layout_subsets` e `subset` em
+  `create_layouts` (C27), `place_hotlinks` (C28). C24 descartada (`CreateProjectInfoFields`
+  não migrado no AC30). 2589 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  116 ferramentas. Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C18 a C28.
+
+- **Claude / segunda rodada sem ArchiCAD, 23/10/2026 (mesmo PR #71):** o Vitor pediu para
+  continuar. Novas: `remove_solid_operations` e `remove_trims` (C30), `modify_lamps` (C31),
+  `create_classification_systems` (C32), `update_drawings` (C29), `create_surfaces` (C35,
+  cópia de uma superfície existente porque o Tapir começa a nova zerada),
+  `move_navigator_items` (C36) e `update_favorites_from_elements` (C37). C33 descartada: o
+  Tapir 1.7.0 não grava IFC no ArchiCAD 28+. C34 (eixos) só existe no Tapir depois da 1.7.2.
+  2690 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 124 ferramentas.
+  Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C29 a C37.
+  Depois, a pedido do coordenador (regra do Vitor de não depender do Tapir): C34 feito no
+  add-on próprio. `GetGridElementDefaults`, `GetGridElements` e `CreateGridElements`
+  portados do Tapir (main, depois da 1.7.2) para `addon/Sources/GridCommands.cpp`, com as
+  ferramentas `list_grid_elements` e `create_grid_elements` (`tools/grids.py`). 2715 testes
+  simulados e Ruff passaram. Registro: 126 ferramentas. IFC (C33) continua fora: o
+  Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
+  (vale também para add-on próprio; conferir no DevKit 29 quando der).
