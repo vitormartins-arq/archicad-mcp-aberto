@@ -30,6 +30,7 @@ from archicad_mcp_aberto.tools import (
     morphs,
     navigator,
     openings,
+    profiles,
     project_info,
     property_definitions,
     read,
@@ -147,6 +148,9 @@ INPUTS = {
     "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
     "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
     "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
+    "create_profiles": {
+        "profiles": [{"name": "New profile", "source_profile": "Rectangular 20x40"}]
+    },
     "create_drawings": {
         "drawings": [
             {"view_name": "Ground floor", "layout_name": "Planta baixa", "x": 0, "y": 0}
@@ -413,6 +417,7 @@ TARGETED = {
         navigator,
         openings,
         project_info,
+        profiles,
         property_definitions,
         read,
         roofs,

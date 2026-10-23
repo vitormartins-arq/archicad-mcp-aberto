@@ -661,3 +661,6 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
 - [ ] **set_view_settings zoom.** Clone a floor-plan view, apply a small zoom box around
   one room and a nonzero rotation, then open the saved view. Confirm its framing and
   rotation and that the previously open window did not change.
+- [ ] **create_profiles.** Copy one existing complex profile under a new name in an
+  unsaved test project. Compare its cross-section and wall/beam/column availability in
+  Profile Manager. Confirm that the source stayed unchanged and the project was not saved.

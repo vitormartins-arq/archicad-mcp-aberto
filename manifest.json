@@ -224,6 +224,10 @@
       "description": "Preview or place existing View Map views as drawings on existing layouts."
     },
     {
+      "name": "create_profiles",
+      "description": "Preview or create complex profiles by copying existing profile geometry."
+    },
+    {
       "name": "rename_items",
       "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes, layer combinations, folders); read back."
     },

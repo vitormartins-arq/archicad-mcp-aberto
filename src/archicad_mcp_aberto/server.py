@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     modify,
     openings,
+    profiles,
     project_info,
     property_definitions,
     read,
@@ -644,6 +645,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Requires Tapir 1.7.0. Never saves."""
         return await drawings.create_drawings(
             client_of(ctx), drawings_data, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_profiles(
+        ctx: Context,
+        profile_data: list[profiles.ProfileCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview creating up to 20 complex profiles by copying the geometry of an
+        existing profile. Optionally control wall/beam/column/handrail/object use.
+        Existing names are refused. Explicit apply port and single-use token; read-back
+        verification; never overwrites or saves. Requires Tapir 1.7.0."""
+        return await profiles.create_profiles(
+            client_of(ctx), profile_data, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

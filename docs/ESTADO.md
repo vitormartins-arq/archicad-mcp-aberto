@@ -933,3 +933,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Tapir 1.7.0's stored zoom box in model metres and view rotation in radians. This is
   the missing generic step for framing each room enlargement without moving the user's
   current window. Simulated only; framing and rotation still need live visual checks.
+- **Codex / complex profile copies, 23/10/2026:** `create_profiles` copies the complete
+  geometry of an existing profile into a new, uniquely named profile and optionally
+  changes its wall/beam/column/handrail/object availability. It never overwrites and
+  reads the new scalar settings back. Simulated only; compare geometry live in Profile
+  Manager. Creating arbitrary new skin polygons remains a later extension.
