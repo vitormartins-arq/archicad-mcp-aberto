@@ -317,6 +317,9 @@ class FakeArchicad:
     do_combinations: list[dict] = field(
         default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
     )
+    # Hotlink nodes in the GetHotlinks shape (Tapir 1.7.0 ProjectCommands.cpp); synthetic.
+    hotlink_nodes: list[dict] = field(default_factory=list)
+    missing_hotlink_files: set[str] = field(default_factory=set)
     # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
     solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
     element_trims: dict[tuple[str, str], str] = field(default_factory=dict)  # (elem, roof)
@@ -1068,6 +1071,42 @@ class FakeArchicad:
                     }
                 }
             )
+        if name == "GetHotlinks":
+            return ok({"addOnCommandResponse": {"hotlinks": deepcopy(self.hotlink_nodes)}})
+        if name == "CreateHotlinkNodes":
+            rows = []
+            for data in args["hotlinkNodes"]:
+                path = data["sourceLocation"]
+                known = next((n for n in self.hotlink_nodes
+                              if n["location"].casefold() == path.casefold()), None)  # fmt: skip
+                if known is not None:
+                    rows.append(
+                        {"hotlinkNodeId": deepcopy(known["hotlinkNodeId"]), "existing": True}
+                    )
+                elif path in self.missing_hotlink_files:
+                    message = "Failed to create the hotlink node from " + path
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                else:
+                    guid = str(uuid4()).upper()
+                    name = data.get("name") or path.replace("\\", "/").rsplit("/", 1)[-1]
+                    self.hotlink_nodes.append({"location": path, "hotlinkNodeId": {"guid": guid},
+                                               "name": name, "type": "Module"})  # fmt: skip
+                    rows.append({"hotlinkNodeId": {"guid": guid}, "existing": False})
+            return ok({"addOnCommandResponse": {"hotlinkNodes": rows}})
+        if name == "CreateHotlinkInstances":
+            rows = []
+            nodes = {n["hotlinkNodeId"]["guid"] for n in self.hotlink_nodes}
+            for data in args["hotlinkInstances"]:
+                assert {"hotlinkNodeId", "origin"} <= set(data)
+                if data["hotlinkNodeId"]["guid"] not in nodes:
+                    message = "hotlinkNodeId is not a hotlink node"
+                    rows.append({"error": {"code": -2130313111, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Hotlink"
+                self.details[guid] = {"type": "Hotlink", "floorIndex": data.get("floorIndex", 0)}
+                rows.append({"elementId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"elements": rows}})
         if name == "CreateSolidElementLinks":
             results = []
             for link in args["solidLinks"]:

@@ -156,6 +156,9 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   T37 do Codex vai ler: reaproveitar esses handlers, sem duplicar.
 - **C27 subconjuntos do Book.** (Feito na branch `claude/project-thread-pvslgt`.)
   `create_layout_subsets` (`CreateLayoutSubset`) e `subset` em `create_layouts`.
+- **C28 módulos (hotlinks).** (Feito na branch `claude/project-thread-pvslgt`.)
+  `place_hotlinks` (`CreateHotlinkNodes` e `CreateHotlinkInstances`): um nó por
+  arquivo `.mod`/`.pln`, reaproveitando o que já aponta para o mesmo arquivo.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de

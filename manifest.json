@@ -518,6 +518,10 @@
     {
       "name": "create_layout_subsets",
       "description": "Preview or add Layout Book subsets with prefix and numbering. Read back after."
+    },
+    {
+      "name": "place_hotlinks",
+      "description": "Preview or place hotlink modules from .mod or .pln files. Read back after."
     }
   ],
   "compatibility": {

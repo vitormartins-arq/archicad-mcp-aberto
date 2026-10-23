@@ -728,3 +728,15 @@ projeto novo, sem salvar.
 - [ ] **create_layouts com subset.** "Crie a prancha Planta térreo no master <nome>,
   dentro de Plantas." Conferir que ela entra no subconjunto e que a numeração usa o
   prefixo EX.
+
+## Lote do Claude C28: módulos (hotlinks)
+
+- [ ] **place_hotlinks.** No projeto novo, com um `.mod` de teste salvo no PC: "Coloque o
+  módulo <caminho> em (0, 0) no térreo e outro igual em (5, 0) girado 90° e espelhado."
+  Conferir no Gerenciador de Hotlinks que só um nó aparece, que as duas instâncias estão
+  no lugar, giro e espelhamento pedidos e no pavimento certo, e que o recibo dá
+  `verified`.
+- [ ] Pedir de novo o mesmo arquivo: a prévia deve dizer que o nó já existe e reaproveitá-lo.
+- [ ] Caminho que não existe: anotar a mensagem do Tapir e conferir que só aquele item
+  dá `failed`.
+- [ ] Um `.pln` com `single_story`: conferir que só aquele pavimento do arquivo entra.

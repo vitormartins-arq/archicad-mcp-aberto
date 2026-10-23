@@ -20,6 +20,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    hotlinks,
     interior_elevations,
     issues,
     keynotes,
@@ -151,6 +152,11 @@ INPUTS = {
     "create_layers": {"layers": [{"name": "Cotas"}]},
     "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
     "create_design_options": {"sets": ["Cobertura"]},
+    "place_hotlinks": {
+        "placements": [
+            {"source_path": "C:/m/banho.mod", "origin": {"x": 0, "y": 0}, "floor_index": 0}
+        ]
+    },
     "create_layout_subsets": {"subsets": [{"name": "Executivo"}]},
     "create_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
     "trim_to_roof": {"element_guids": [GUID], "roof_guid": PROP},
@@ -429,6 +435,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        hotlinks,
         interior_elevations,
         issues,
         keynotes,

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `place_hotlinks` (`tools/hotlinks.py`): hotlink modules from .mod or .pln files by
+  Tapir 1.7.0 `CreateHotlinkNodes` and `CreateHotlinkInstances`, read back by type,
+  story and `GetHotlinks`. Not tested live yet.
+
 - Add `create_layout_subsets` (`tools/layout_book.py`): Layout Book subsets by Tapir
   1.7.0 `CreateLayoutSubset`, read back under their parent. `create_layouts` takes an
   optional `subset`. Not tested live yet.

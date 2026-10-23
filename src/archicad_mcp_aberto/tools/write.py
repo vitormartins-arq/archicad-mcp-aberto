@@ -651,6 +651,13 @@ OPERATIONS["create_layout_subsets"] = (
     "New subsets go in the Layout Book under their parent; the rest of their settings "
     "comes from Archicad's subset defaults.",
 )
+OPERATIONS["place_hotlinks"] = (
+    "hotlink",
+    "hotlink_receipt_id",
+    "One node per file (an existing node for the same file is reused), then each "
+    "instance at its origin, angle and mirroring; the other options keep the Hotlink "
+    "tool defaults. The files must exist on the computer Archicad runs on.",
+)
 OPERATIONS["create_composites"] = (
     "composite",
     "composite_receipt_id",

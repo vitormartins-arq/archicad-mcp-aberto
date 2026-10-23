@@ -146,6 +146,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_solid_operations` | Write | Solid element operations between existing elements | yes |
 | `trim_to_roof` | Write | Trims elements with a roof or shell | yes |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
+| `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
 ### Reported live validation
 
@@ -774,6 +775,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   defaults. A name already used under the same parent is refused. The read-back finds
   each subset in the Layout Book under its parent. `create_layouts` now takes an
   optional `subset` to put the new layouts in.
+- `place_hotlinks([{source_path, origin: {x, y, z?}, floor_index, angle?, mirrored?,
+  name?, single_story?}], port?, dry_run?, confirmation_token?)` places up to 20 hotlink
+  modules by Tapir 1.7.0: one node per file (`CreateHotlinkNodes`, which reuses a node
+  that already points at the same file, keeping its name and story settings) and then
+  the instances (`CreateHotlinkInstances`). `source_path` is an absolute `.mod` or
+  `.pln` path on the computer Archicad runs on; the MCP cannot check that it exists.
+  `single_story` places only that story of the source. Other placement options keep the
+  Hotlink tool defaults. The read-back checks each new element's type and story, and
+  that its node is listed by `GetHotlinks`.
 - `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
   risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
   stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from

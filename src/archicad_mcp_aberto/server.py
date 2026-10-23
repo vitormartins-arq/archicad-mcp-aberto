@@ -33,6 +33,7 @@ from archicad_mcp_aberto.tools import (
 from archicad_mcp_aberto.tools import composites as composites_tool
 from archicad_mcp_aberto.tools import design_option_create as design_option_create_tool
 from archicad_mcp_aberto.tools import drawings as drawings_tool
+from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -1793,6 +1794,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Tapir. Never saves."""
         return await layout_book_tool.create_layout_subsets(
             client_of(ctx), subsets, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def place_hotlinks(
+        ctx: Context,
+        placements: list[hotlinks_tool.HotlinkPlace],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview placing up to 20 hotlink modules: source_path (absolute .mod or .pln
+        path on the Archicad computer), origin {x, y, z?} in metres, floor_index, angle
+        (radians), mirrored, optional node name and single_story (one source story).
+        A node for the same file is reused. Apply with explicit port and single-use
+        token; each instance is read back. Requires Tapir. Never saves."""
+        return await hotlinks_tool.place_hotlinks(
+            client_of(ctx), placements, port, dry_run, confirmation_token
         )
 
     return mcp
