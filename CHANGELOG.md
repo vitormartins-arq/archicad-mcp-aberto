@@ -71,6 +71,17 @@
   separator line type and pen. Existing names, unknown materials and line types are
   refused in the preview; the read-back compares every skin and separator. Not tested
   live yet.
+- Reject invalid `ARCHICAD_MCP_PORTS` entries before discovery: out-of-range TCP
+  ports, malformed entries and descending ranges now raise a configuration error.
+  Validate endpoints before expanding ranges so a typo such as `1-1000000000`
+  cannot allocate a huge list. Custom valid ports, ordering, deduplication and the
+  default port range are preserved. Offline tests only.
+
+- `find_elements` resolves its target once per search instead of probing it again
+  for every property batch. A search reading properties of 205 elements now makes
+  one `GetProductInfo` request to the target instead of four. Property validation,
+  batches of 100, pagination and per-element errors are unchanged. Tested offline
+  against the fake Archicad; not tested in a real Archicad.
 
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
   about one suggestion in three was usable. Cameras now stand clear of walls, columns
