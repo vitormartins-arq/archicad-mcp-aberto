@@ -1,5 +1,15 @@
 # Estado atual
 
+- **Codex / validação real, 25/10/2026:** rodada autorizada por Vitor no projeto sem
+  nome inicialmente vazio, AC30 build 3001 BRA/Tapir 1.7.0/Windows, sem salvar. #72
+  passou em 120 elementos reais, duas leituras de propriedade: sondagens 3→1, resultados
+  e paginação iguais. #73 passou na configuração e conexão real. #71 teve vários
+  `verified`, mas continua bloqueada por leitura de cortes de paredes, retorno dos
+  subconjuntos, hotlink com resultado desconhecido e eixos sem APX novo carregado.
+  Morfo editado volta aberto e não mantém superfície/sombras; caixa 3D de escada falha.
+  Evidências e limites: `docs/VALIDAR-resultado-2026-10-25.md`. Não repetir hotlink sem
+  inspecionar o aplicativo. Nada integrado, nenhum projeto de produção alterado.
+
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
