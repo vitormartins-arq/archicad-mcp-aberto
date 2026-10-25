@@ -1,5 +1,14 @@
 # Estado atual
 
+- **Codex / rodada noturna, 25/10/2026:** corrigida a validação de
+  `ARCHICAD_MCP_PORTS`. Portas fora de 1–65535 e faixas invertidas agora falham antes
+  da descoberta; os limites são conferidos antes de expandir, evitando listas enormes
+  por erro de digitação. Mantidos padrões, portas personalizadas válidas, ordem e
+  deduplicação. Cinco regressões reproduzidas antes da correção; 2438 testes unitários
+  e Ruff passaram no Windows/Python 3.13.6. Nenhum acesso ao Archicad do PC nem teste
+  real na nuvem (sem conexão configurada conhecida). Registro de lições indisponível
+  em H: e G:. Validar manualmente a configuração com faixa válida e inválida.
+
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 

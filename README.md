@@ -221,6 +221,10 @@ Then install Tapir for your Archicad version from its
 [releases](https://github.com/ENZYME-APD/tapir-archicad-automation/releases).
 
 Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports.
+Ports must be between 1 and 65535, and ranges must be ascending. Invalid entries
+stop startup with an `ARCHICAD_MCP_PORTS` error before discovery; range endpoints
+are validated before expansion. Duplicate ports are scanned only once, in the
+order configured.
 
 ## Safety rules
 

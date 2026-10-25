@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Reject invalid `ARCHICAD_MCP_PORTS` entries before discovery: out-of-range TCP
+  ports, malformed entries and descending ranges now raise a configuration error.
+  Validate endpoints before expanding ranges so a typo such as `1-1000000000`
+  cannot allocate a huge list. Custom valid ports, ordering, deduplication and the
+  default port range are preserved. Offline tests only.
+
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
   about one suggestion in three was usable. Cameras now stand clear of walls, columns
   and smaller rooms inside the room's box, and their sight line avoids wall and column
