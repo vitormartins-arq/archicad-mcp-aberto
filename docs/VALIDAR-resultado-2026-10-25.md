@@ -108,6 +108,30 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
 
 ## Conclusão para revisão
 
+### Retomada com APX da #71
+
+- Confirmados novamente os seis eixos por `GetGridElements`. A camada `ANT - Grelha`
+  está visível e desbloqueada; a falta de exibição na planta não foi resolvida.
+  `Get2DBoundingBoxes` oficial recusa esses elementos com 7203 (não suportado).
+- Criados novos elementos de teste no projeto sem nome atual: parede, telhado e
+  morfo passaram; escada repetiu `verification_failed`, caixa 3D com erro 6000.
+- Cortar/remover corte repetiram a falha de leitura `-2130313103` na prévia.
+- Um novo subconjunto de nome distinto foi criado e encontrado no Book, mas o
+  retorno permaneceu `unknown`. Não houve repetição desse mesmo subconjunto.
+- Morfo redimensionado para 4 × 2 × 1,5 m repetiu as divergências de corpo aberto,
+  `castShadow` e `receiveShadow`. Não foi solicitada superfície nessa repetição.
+- Antes da nova tentativa de hotlink, `GetHotlinks` confirmou lista vazia no projeto
+  novo. Durante a tentativa, a acessibilidade revelou o aviso: o PLN público de
+  demonstração é de versão de avaliação e só pode abrir no computador de origem.
+  Portanto essa fonte **não é válida para certificar importação bem-sucedida**.
+  Após fechar o aviso com Enter, o Archicad encerrou e surgiu `GSReport.exe`, janela
+  “Relatório de Erros”. Nenhum relatório foi enviado. O recibo permaneceu `unknown`;
+  leituras posteriores expiraram. Não atribuir a causa do encerramento ao servidor
+  sem investigação adicional. Falta fonte PLN/MOD compatível para o caso positivo.
+- A captura remota também voltou a falhar com `0x80070057`; o aviso acima foi lido
+  pela acessibilidade, não por imagem. A interrupção do aplicativo impede novas
+  validações reais nesta instância. Evidências locais com prefixos `r2-` e `resume-`.
+
 - #72 e #73 passaram nos casos reais e offline acima. Sem merge automático.
 - #71 **não está integralmente aprovada**. Corrigir/retestar C26/C27/C30,
   inspecionar o resultado desconhecido de C28 e conferir a exibição visual de C34.

@@ -11,6 +11,11 @@
   Morfo editado volta aberto e não mantém superfície/sombras; caixa 3D de escada falha.
   Evidências e limites: `docs/VALIDAR-resultado-2026-10-25.md`. Não repetir hotlink sem
   inspecionar o aplicativo. Nada integrado, nenhum projeto de produção alterado.
+- **Retomada:** cortes, subconjuntos, morfo e escada reproduziram falhas com novos
+  elementos. Camada dos eixos visível/desbloqueada. Hotlink revelou PLN de avaliação
+  restrito ao computador de origem; após fechar o aviso, Archicad encerrou e abriu
+  GSReport. Relatório não enviado. Recibo unknown, não repetir essa fonte. Reabrir
+  projeto descartável e usar fonte compatível para concluir o caso positivo.
 
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
