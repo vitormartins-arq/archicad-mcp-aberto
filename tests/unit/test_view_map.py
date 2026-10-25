@@ -28,7 +28,9 @@ def model(*args, **kwargs):
     project_folder = fake.navigator_trees["PublicViewMap"]
     project_folder["type"] = "FolderItem"
     fake.navigator_trees["PublicViewMap"] = {
-        "navigatorItemId": {"guid": MAP_ROOT}, "name": "???", "type": "FolderItem",
+        "navigatorItemId": {"guid": MAP_ROOT},
+        "name": "???",
+        "type": "FolderItem",
         "children": [{"navigatorItem": project_folder}],
     }
     return fake
@@ -447,8 +449,9 @@ async def test_synthetic_map_root_refused_before_any_write(kind):
 
 async def test_live_root_header_is_refused_even_though_it_is_a_folder():
     fixture = json.loads(
-        (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-        .read_text(encoding="utf-8")
+        (
+            Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json"
+        ).read_text(encoding="utf-8")
     )
     fake = FakeArchicad(19723)
     root = deepcopy(fixture["headers"]["root"])
@@ -458,11 +461,13 @@ async def test_live_root_header_is_refused_even_though_it_is_a_folder():
     async with ArchicadClient(transport=fake_transport(fake)) as client:
         with pytest.raises(ValueError, match="synthetic map root"):
             await navigator.create_view_map_folders(
-                client, [{"parent_guid": root["navigatorItemId"]["guid"], "name": "Refused"}],
+                client,
+                [{"parent_guid": root["navigatorItemId"]["guid"], "name": "Refused"}],
                 19723,
             )
         preview = await navigator.create_view_map_folders(
-            client, [{"parent_guid": project["navigatorItemId"]["guid"], "name": "Allowed"}],
+            client,
+            [{"parent_guid": project["navigatorItemId"]["guid"], "name": "Allowed"}],
             19723,
         )
     assert preview["items"][0]["status"] == "ready"

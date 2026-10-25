@@ -80,6 +80,10 @@ class ObjectModify(_Edit):
     dimensions: Dimensions | None = None
 
 
+class LampModify(ObjectModify):
+    lightIsOn: bool | None = None
+
+
 class RoofModify(_Edit):
     thickness: write.Positive | None = None
     level: float | None = None
@@ -423,6 +427,14 @@ def _object(change, row, target, label, extra):
     return changes, parameters, expected
 
 
+def _lamp(change, row, target, label, extra):
+    changes, parameters, expected = _object(change, row, target, label, extra)
+    if "lightIsOn" in changes:
+        # Tapir 1.7.0 writes lightIsOn; its own source says lightColor is discarded.
+        parameters["lightIsOn"] = expected["lightIsOn"] = changes["lightIsOn"]
+    return changes, parameters, expected
+
+
 def _roof(change, row, target, label, extra):
     details, changes = row["details"], change.model_dump(exclude={"guid"}, exclude_none=True)
     if details.get("roofClass") != "MultiPlane":
@@ -490,6 +502,8 @@ async def _owner_walls(client, port, rows):
     return dict(zip(guids, walls, strict=True))
 
 
+# Library part edits whose height goes through ZZYZX after the Modify command.
+HEIGHTS = ("modify_objects", "modify_lamps")
 # operation -> (element types accepted, Tapir command, list key, field planner)
 SPECS = {
     "modify_slabs": (("Slab",), "ModifySlabs", "slabsWithDetails", _slab),
@@ -498,6 +512,7 @@ SPECS = {
     "modify_windows": (("Window",), "ModifyWindows", "windowsWithDetails", _opening),
     "modify_doors": (("Door",), "ModifyDoors", "doorsWithDetails", _opening),
     "modify_objects": (("Object",), "ModifyObjects", "objectsWithDetails", _object),
+    "modify_lamps": (("Lamp",), "ModifyLamps", "lampsWithDetails", _lamp),
     "modify_roofs": (("Roof",), "ModifyRoofs", "roofsWithDetails", _roof),
     "modify_texts": (("Text",), "ModifyTexts", "textsWithDetails", _text),
     "modify_labels": (("Label",), "ModifyLabels", "labelsWithDetails", _label),
@@ -519,7 +534,7 @@ async def _plan(client, edits, port, operation):
         if row["type"] not in types or not isinstance(row.get("details"), dict):
             raise ValueError(f"{label}: is a {row['type']}, not a {types[0]} with details.")
         changes, parameters, expected = fields(change, row, target, label, extra)
-        if operation == "modify_objects" and "dimensions" in changes:
+        if operation in HEIGHTS and "dimensions" in changes:
             height = await _height_parameter(client, port, change.guid, label)
             try:
                 height["value"] = edit._gdl_value(height["before"], changes["dimensions"]["z"])
@@ -560,7 +575,7 @@ async def _height_parameter(client, port, guid, label) -> dict:
 
 
 async def _set_heights(client, receipt) -> None:
-    """Second step of modify_objects: ZZYZX through Set/GetGDLParametersOfElements."""
+    """Second step of modify_objects and modify_lamps: ZZYZX by Set/GetGDLParameters."""
     items = [
         i
         for i in receipt["items"]
@@ -697,7 +712,7 @@ async def _verify(client, receipt, items):
 async def _dispatch(client, receipt):
     _, command, key, _ = SPECS[receipt["operation"]]
     await edit._execute(client, receipt, command, key, _verify)
-    if receipt["operation"] == "modify_objects":
+    if receipt["operation"] in HEIGHTS:
         await _set_heights(client, receipt)
     if receipt["operation"] == "modify_morphs":
         _check_sizes(receipt)
@@ -800,6 +815,23 @@ async def modify_objects(
     """
     return await _modify(
         client, objects, ObjectModify, port, dry_run, confirmation_token, "modify_objects"
+    )
+
+
+async def modify_lamps(
+    client: ArchicadClient,
+    lamps: list[dict | LampModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 lamps: origin (x, y), level from its story, dimensions,
+    lightIsOn.
+
+    dimensions.z sets the height through the ZZYZX GDL parameter; a part without it is refused.
+    """
+    return await _modify(
+        client, lamps, LampModify, port, dry_run, confirmation_token, "modify_lamps"
     )
 
 

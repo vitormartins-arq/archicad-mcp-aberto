@@ -283,6 +283,7 @@ OPERATIONS = {
         "object_edit_receipt_id",
         "Only requested fields are modified.",
     ),
+    "modify_lamps": ("lamp edit", "lamp_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
@@ -608,6 +609,103 @@ OPERATIONS["create_openings"] = (
     "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
 )
 CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
+OPERATIONS["create_drawings"] = (
+    "drawing",
+    "drawing_receipt_id",
+    "Each view is placed on its layout with its centre at the position (metres of paper); "
+    "the rest comes from the Drawing tool defaults. Archicad shows the layout after.",
+)
+OPERATIONS["update_drawings"] = (
+    "drawing update",
+    "drawing_update_receipt_id",
+    "Every Drawing on the layouts is updated from its source view; nothing else changes.",
+)
+OPERATIONS["add_stories"] = (
+    "story",
+    "story_receipt_id",
+    "Only adds stories above the top or below the bottom; the existing ones are sent back "
+    "unchanged. Check structure_after: the old top story's height changes when stories "
+    "are added above it.",
+)
+OPERATIONS["create_design_options"] = (
+    "design option item",
+    "design_option_receipt_id",
+    "Sets, then options, then combinations are added; nothing existing changes and no "
+    "element is moved into an option. Archicad 29 or newer.",
+)
+OPERATIONS["move_to_design_options"] = (
+    "design option move",
+    "design_option_move_receipt_id",
+    "Each element is linked to its design option, or back to the main model, and read "
+    "back. Archicad 29 or newer.",
+)
+OPERATIONS["create_solid_operations"] = (
+    "solid operation",
+    "solid_operation_receipt_id",
+    "Each operator acts on its target as Design > Solid Element Operations does; check "
+    "the result in 3D.",
+)
+OPERATIONS["trim_to_roof"] = (
+    "trim",
+    "trim_receipt_id",
+    "Each element is trimmed by the roof or shell, as Design > Trim to Roof/Shell does; "
+    "check the result in 3D and section.",
+)
+OPERATIONS["remove_solid_operations"] = (
+    "solid link removal",
+    "solid_unlink_receipt_id",
+    "Each operator stops acting on its target; both elements stay in the model.",
+)
+OPERATIONS["remove_trims"] = (
+    "trim removal",
+    "untrim_receipt_id",
+    "The roof or shell stops trimming each element; the elements stay in the model.",
+)
+OPERATIONS["create_classification_systems"] = (
+    "classification system",
+    "classification_system_receipt_id",
+    "Each system is added with its whole item tree; the existing systems are not touched.",
+)
+OPERATIONS["create_surfaces"] = (
+    "surface",
+    "surface_receipt_id",
+    "Each surface is a copy of its base surface with the asked changes; nothing is overwritten.",
+)
+OPERATIONS["create_grid_elements"] = (
+    "grid line",
+    "grid_receipt_id",
+    "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
+)
+OPERATIONS["move_navigator_items"] = (
+    "Navigator move",
+    "navigator_move_receipt_id",
+    "Each item goes to the start of its new folder, one move at a time; nothing else changes.",
+)
+OPERATIONS["update_favorites_from_elements"] = (
+    "favorite update",
+    "favorite_update_receipt_id",
+    "Each favorite is overwritten with its element's settings; the old settings are not "
+    "kept. Make a copy first with create_favorites_from_elements if they matter.",
+)
+OPERATIONS["create_layout_subsets"] = (
+    "layout subset",
+    "layout_subset_receipt_id",
+    "New subsets go in the Layout Book under their parent; the rest of their settings "
+    "comes from Archicad's subset defaults.",
+)
+OPERATIONS["place_hotlinks"] = (
+    "hotlink",
+    "hotlink_receipt_id",
+    "One node per file (an existing node for the same file is reused), then each "
+    "instance at its origin, angle and mirroring; the other options keep the Hotlink "
+    "tool defaults. The files must exist on the computer Archicad runs on.",
+)
+OPERATIONS["create_composites"] = (
+    "composite",
+    "composite_receipt_id",
+    "New composites are added; an existing name is never overwritten. Each skin's "
+    "building material and every separator's line type are read back by GUID.",
+)
 
 
 @dataclass
@@ -1865,6 +1963,7 @@ NAMED_PREVIEWS = {
     "modify_windows",
     "modify_doors",
     "modify_objects",
+    "modify_lamps",
     "modify_roofs",
     "modify_texts",
     "modify_morphs",
