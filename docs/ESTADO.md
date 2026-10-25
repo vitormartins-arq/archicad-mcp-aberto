@@ -1,5 +1,21 @@
 # Estado atual
 
+- **Codex / conflito da #73 após merge da #72, 25/10/2026:** main incorporada na
+  branch da #73. Conflito apenas no CHANGELOG, resolvido preservando as duas entradas.
+  Nenhum código da #71 incluído. A validação real anterior da #73 cobriu parser e
+  conexão na porta 19723. Na base integrada: 2440 testes passaram em 20,40 s e Ruff
+  check passou. Formatação global aponta sete arquivos herdados da main, fora da
+  alteração da #73; preservados. Arquivos Python da #73 conferidos separadamente.
+
+- **Codex / rodada noturna, 25/10/2026:** corrigida a validação de
+  `ARCHICAD_MCP_PORTS`. Portas fora de 1–65535 e faixas invertidas agora falham antes
+  da descoberta; os limites são conferidos antes de expandir, evitando listas enormes
+  por erro de digitação. Mantidos padrões, portas personalizadas válidas, ordem e
+  deduplicação. Cinco regressões reproduzidas antes da correção; 2438 testes unitários
+  e Ruff passaram no Windows/Python 3.13.6. Nenhum acesso ao Archicad do PC nem teste
+  real na nuvem (sem conexão configurada conhecida). Registro de lições indisponível
+  em H: e G:. Validar manualmente a configuração com faixa válida e inválida.
+
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
 
