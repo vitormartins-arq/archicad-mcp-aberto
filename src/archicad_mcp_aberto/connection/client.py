@@ -37,11 +37,25 @@ def ports_from_env(value: str | None = None) -> tuple[int, ...]:
     ports: list[int] = []
     for part in value.split(","):
         part = part.strip()
-        if "-" in part:
-            start, end = (int(p) for p in part.split("-", 1))
-            ports.extend(range(start, end + 1))
-        elif part:
-            ports.append(int(part))
+        if not part:
+            continue
+        try:
+            if "-" in part:
+                start, end = (int(p) for p in part.split("-", 1))
+            else:
+                start = end = int(part)
+        except ValueError as exc:
+            raise ValueError(
+                "ARCHICAD_MCP_PORTS must contain integer ports or ascending ranges."
+            ) from exc
+        # Check endpoints before expanding: a typo must not allocate an enormous list
+        # or silently discard a reversed range while scanning the other entries.
+        if not 1 <= start <= end <= 65535:
+            raise ValueError(
+                "ARCHICAD_MCP_PORTS ports must be between 1 and 65535, "
+                "with ranges in ascending order."
+            )
+        ports.extend(range(start, end + 1))
     if not ports:
         raise ValueError("ARCHICAD_MCP_PORTS is empty.")
     return tuple(dict.fromkeys(ports))

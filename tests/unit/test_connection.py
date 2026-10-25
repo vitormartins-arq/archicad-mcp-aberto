@@ -81,3 +81,33 @@ def test_ports_from_env():
     assert ports_from_env("19723-19725") == (19723, 19724, 19725)
     assert ports_from_env("19723, 19730") == (19723, 19730)
     assert ports_from_env("")[0] == 19723
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "0",
+        "65536",
+        "0-2",
+        "65534-65536",
+        "19723,19730-19724",
+        "1-1000000000",
+        "-1",
+        "19723-",
+        "19723-19724-19725",
+        "abc",
+        ", ,",
+    ],
+)
+def test_invalid_port_configuration_is_rejected(value):
+    with pytest.raises(ValueError, match="ARCHICAD_MCP_PORTS"):
+        ports_from_env(value)
+
+
+def test_port_configuration_preserves_custom_ports_order_and_deduplicates():
+    assert ports_from_env("65535, 1-2,2,65535") == (65535, 1, 2)
+
+
+def test_port_configuration_reads_environment(monkeypatch):
+    monkeypatch.setenv("ARCHICAD_MCP_PORTS", "19725,19723-19725")
+    assert ports_from_env() == (19725, 19723, 19724)
