@@ -358,7 +358,7 @@ and open to everyone's contributions.
 
 - Exact floor-plan polygon duplicates within each element are removed (same vertex order, 1e-9 m tolerance); `notes` reports the removed count. Different polygons are preserved.
 
-- `find_elements` filters by `element_type`, `floor_index`, `layer_index` and optional `property_guid`/`operator`/`value`. Operators: `equal`, case-sensitive `contains`, `greater`, `less`. It returns total matches, offset, a page of up to 500 element IDs and read errors. Missing properties are refused; unavailable values do not match. Type filtering precedes detail reads, and story/layer filtering precedes property reads, in batches of 100.
+- `find_elements` filters by `element_type`, `floor_index`, `layer_index` and optional `property_guid`/`operator`/`value`. Operators: `equal`, case-sensitive `contains`, `greater`, `less`. It returns total matches, offset, a page of up to 500 element IDs and read errors. Missing properties are refused; unavailable values do not match. Type filtering precedes detail reads, and story/layer filtering precedes property reads, in batches of 100. The target is resolved once per search, without extra connection probes for each property batch.
 
 - `delete_elements` previews up to 50 GUIDs and applies only in an untitled test project (`isUntitled=true` from Tapir). It lists type/story/layer, refuses missing, hotlinked or non-editable elements, requires explicit port and a single-use token, writes per-element receipts and verifies absence. Uses Tapir `DeleteElements` and `FilterElements(IsEditable)`; `API.DeleteElements` is not an official JSON API command. Never saves, unlocks or automatically retries. Owned subelements may also be removed by Archicad.
 
