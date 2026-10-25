@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add experimental `inspect_object_replacements` and `replace_object_libraries` with
+  exact library identity, explicit mounting references, stale-state checks, native
+  Undo batching and independent readback. Target GDL defaults replace parameters
+  other than A/B/ZZYZX. See `docs/OBJECT_REPLACEMENT.md`; live acceptance is pending.
+
 - Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
   (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
   `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,

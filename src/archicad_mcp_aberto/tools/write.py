@@ -676,6 +676,11 @@ OPERATIONS["create_grid_elements"] = (
     "grid_receipt_id",
     "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
 )
+OPERATIONS["replace_object_libraries"] = (
+    "object library replacement",
+    "replacement_receipt_id",
+    "Target GDL defaults replace source parameters except A/B/ZZYZX. One native Undo batch.",
+)
 OPERATIONS["move_navigator_items"] = (
     "Navigator move",
     "navigator_move_receipt_id",

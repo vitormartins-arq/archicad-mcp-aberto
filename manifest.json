@@ -562,6 +562,14 @@
     {
       "name": "update_favorites_from_elements",
       "description": "Preview or overwrite existing favorites from elements of their type."
+    },
+    {
+      "name": "inspect_object_replacements",
+      "description": "Read object replacement state and exact target defaults without writing."
+    },
+    {
+      "name": "replace_object_libraries",
+      "description": "Preview or replace existing Object libraries using explicit mounting references."
     }
   ],
   "compatibility": {

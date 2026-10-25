@@ -6,6 +6,10 @@ preview safe model changes with explicit confirmation, per-item receipts and ver
 
 [Leia em português](docs/LEIA-ME.pt-BR.md)
 
+Experimental [object library replacement](docs/OBJECT_REPLACEMENT.md) preserves existing
+instances using explicit mounting references. It requires the updated native companion
+and live acceptance testing before production use.
+
 > Not an official Graphisoft product and not affiliated with Graphisoft or Nemetschek.
 > Archicad is a trademark of Graphisoft SE.
 

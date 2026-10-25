@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
+from archicad_mcp_aberto.connection import AddOnError, AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
@@ -36,6 +36,7 @@ from archicad_mcp_aberto.tools import (
     morphs,
     navigator,
     navigator_moves,
+    object_replacement,
     openings,
     project_info,
     property_definitions,
@@ -85,6 +86,17 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
+    "replace_object_libraries": {
+        "replacements": [
+            {
+                "guid": GUID,
+                "target_unid": "EXACT-UNID",
+                "source_mount": {"x": 0.1, "y": 0.0, "z": 0.0},
+                "target_mount": {"x": 0.2, "y": 0.0, "z": 0.0},
+            }
+        ]
+    },
     "read_scene_model": {},
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
@@ -477,6 +489,7 @@ TARGETED = {
         grids,
         navigator_moves,
         openings,
+        object_replacement,
         project_info,
         property_definitions,
         read,
@@ -622,6 +635,17 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {"inspect_object_replacements", "replace_object_libraries"}:
+            # General fake intentionally lacks the new native command. Dedicated
+            # contract stubs test replacement separately; here verify routing and
+            # fail-closed behavior with an old companion add-on.
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetObjectReplacementData"]
+            assert untouched.calls == untouched.own_addon_calls == []
+            assert selected.elements == untouched.elements == {GUID: "Wall"}
+            return
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     if isinstance(result, tuple):  # shoot_3d_scenes: (report, images)
         result = result[0]

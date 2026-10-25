@@ -24,6 +24,7 @@ from archicad_mcp_aberto.tools import (
     keynotes,
     locks,
     modify,
+    object_replacement,
     openings,
     project_info,
     property_definitions,
@@ -1889,6 +1890,38 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         layer index and library part; include_parameters adds the GDL parameters and the
         Grid Tool defaults. Needs the ArchicadMcpAberto add-on."""
         return await grids_tool.list_grid_elements(client_of(ctx), port, include_parameters)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_object_replacements(
+        ctx: Context,
+        guids: list[str],
+        target_unid: str,
+        port: int | None = None,
+    ) -> dict:
+        """Read current object libraries, transforms, GDL parameters and exact target
+        defaults. Use before retrying an unknown replacement outcome. No writes."""
+        return await object_replacement.inspect_object_replacements(
+            client_of(ctx), guids, target_unid, port
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def replace_object_libraries(
+        ctx: Context,
+        replacements: list[object_replacement.Replacement],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Replace library parts of existing standalone Objects, preserving GUID and
+        final dimensions. Requires the updated companion add-on, one exact target_unid
+        per batch and explicit source_mount/target_mount {x,y,z} measured in metres in
+        final-sized local axes before reflection/rotation. Never infer mounting points.
+        Preview discloses parameter resets and anchor changes. Apply requires explicit
+        port and single-use confirmation; inspect the receipt before retrying unknown
+        results. One Undo batch; never imports or saves a project."""
+        return await object_replacement.replace_object_libraries(
+            client_of(ctx), replacements, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=WRITE)
     async def create_grid_elements(
