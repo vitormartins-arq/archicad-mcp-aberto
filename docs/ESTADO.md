@@ -5,7 +5,9 @@
   passou em 120 elementos reais, duas leituras de propriedade: sondagens 3→1, resultados
   e paginação iguais. #73 passou na configuração e conexão real. #71 teve vários
   `verified`, mas continua bloqueada por leitura de cortes de paredes, retorno dos
-  subconjuntos, hotlink com resultado desconhecido e eixos sem APX novo carregado.
+  subconjuntos e hotlink com resultado desconhecido. Na retomada, APX novo de #71
+  confirmado ativo; seis eixos criados e relidos `verified`, mas sem aparecer na
+  captura da planta mesmo após centralizar. Exibição visual de C34 ainda pendente.
   Morfo editado volta aberto e não mantém superfície/sombras; caixa 3D de escada falha.
   Evidências e limites: `docs/VALIDAR-resultado-2026-10-25.md`. Não repetir hotlink sem
   inspecionar o aplicativo. Nada integrado, nenhum projeto de produção alterado.

@@ -10,8 +10,9 @@ no projeto sem nome. Nenhuma PR foi integrada.
 - PR #71: código Python `19e6cd0f53daf40f3c7d643f6ed9e4dfafad1a9a`.
 - PR #72: `535b4aaeb51dcf67fb8c35fde1de2e9b1b8e4d86`.
 - PR #73: `e5566e3cf7aee9dc56a1de06010c0e8b9c7a4264`.
-- O add-on carregado responde aos comandos de câmera, mas não aos comandos de eixos.
-  Não é o APX de eixos da #71. Seu binário de CI foi baixado, mas não substituído.
+- Na primeira rodada, o APX antigo não respondia aos comandos de eixos. Na retomada,
+  o Gestor confirmou o APX de CI da #71 (`apx-pr71`) ativo, sem duplicidade, e os
+  comandos de eixos responderam no novo projeto sem nome, inicialmente vazio.
 - 2715 testes simulados da #71 passaram também no Windows/Python 3.13.6.
 
 `verified` abaixo significa releitura pela API; não substitui aprovação visual do
@@ -56,7 +57,7 @@ O filtro oficial `GetElementsByType` também recusa `Hotspot`. A comparação fi
 | C31 editar luminária | `verified`: Luz Geral criada, movida para (33,31), nível 0,5 m, luz desligada. |
 | C31 altura por ZZYZX | Prévia recusou a altura da Luz Geral porque o parâmetro é Fixed/oculto/travado. Não foi forçado. Falta peça com altura editável. |
 | C32 classificações | `verified`: sistema e árvore com quatro itens, incluindo filhos. |
-| C34 eixos | **Não testado**: comandos ausentes no APX atualmente carregado. |
+| C34 eixos | Retomada com APX novo: seis eixos A/B/C e 1/2/3 criados em lote, todos `verified`; releitura retorna seis com parâmetros conferidos. Validação visual pendente: a planta capturada continua vazia após centralizar a vista. |
 | C35 superfícies | `verified`: cor alterada, textura removida em uma cópia, transparência 60 em outra. |
 | C36 mover no Book | `verified`: prancha movida entre subconjuntos. |
 | C36 mover no Mapa de Vistas | `verified`: pastas criadas, pavimento clonado e vista movida. |
@@ -109,6 +110,6 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
 
 - #72 e #73 passaram nos casos reais e offline acima. Sem merge automático.
 - #71 **não está integralmente aprovada**. Corrigir/retestar C26/C27/C30,
-  inspecionar o resultado desconhecido de C28 e carregar o APX correto para C34.
+  inspecionar o resultado desconhecido de C28 e conferir a exibição visual de C34.
 - A edição de morfos e a conferência de escadas da main também precisam de correção
   ou limitação explicitamente tratada. Não certificar essas pendências pelo CI verde.
