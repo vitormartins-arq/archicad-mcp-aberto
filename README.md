@@ -27,11 +27,29 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **14 read-only** tools and
-**12 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Rotation, GDL parameters and
-limited straight-wall editing are available, tested only with the simulated Archicad
-in this delivery; operator live validation of these additions remains pending.
+Pre-alpha with **109 registered tools**: **30 read-only**, **3 view/session actions** and
+**76 project or model writes**. The broad surface is already useful, but pre-alpha is
+intentional: older tools have recorded live validation while several newer tools still
+need operator checks in Archicad. The table below is the current registered surface, and
+the manifest test prevents it from drifting away from the server.
+
+Writes preview by default and require a single-use confirmation token and an explicit
+Archicad port to apply. They produce per-item results and receipts and read the result
+back whenever the available API exposes enough information. No tool saves the project.
+Lengths use metres and angles use radians regardless of project display units.
+
+### Capabilities at a glance
+
+- Inspect elements, properties, classifications, attributes, libraries, stories,
+  Navigator trees, views, issues, Design Options and 3D scene geometry.
+- Create and edit common BIM elements, 2D documentation, properties, classifications,
+  layers, favorites, project information and issue data.
+- Create worksheets, details, sections, interior elevations, View Map content, layouts
+  and placed drawings, with saved-view settings and associative dimensions.
+- Use an optional native companion add-on for 3D camera, cut-plane, image and saved-scene
+  operations that the official JSON API and Tapir do not expose.
+- Run every automated test without Archicad against the simulated adapter; fixtures say
+  whether they came from a live response or from the Tapir/API source contract.
 
 | Tool | Access | What it does | Needs Tapir |
 |---|---|---|---|

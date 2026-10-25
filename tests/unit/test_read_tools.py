@@ -113,7 +113,7 @@ async def test_stories_and_project():
         assert (await read.get_stories(c))["stories"][0]["name"] == "Térreo"
 
 
-async def test_server_registers_eleven_read_only_tools_and_wall_creation():
+async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
     assert len(tools) == 109
