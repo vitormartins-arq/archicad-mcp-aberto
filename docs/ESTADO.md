@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Quarta rodada / Codex:** subsolo preservando pavimentos/elementos passou; nível
+  intermediário recusado. Composto de 25 cm aplicado em parede passou, duplicado e
+  material inexistente recusados. Cota acompanhou parede de 4 para 7 m pela API.
+  Um Desfazer removeu o lote de dois eixos preservando os anteriores. Luminária de
+  piso criada, mas ZZYZX HiddenFromScript impede certificar edição de altura.
+  Evidências `r4-*`; relatório detalhado abaixo. Sem mudança de código ou merge.
+
 - **Terceira rodada / Codex, 25/10:** hotlink positivo passou com PLN descartável
   criado e salvo localmente (uma parede): duas instâncias, giro/espelho, e terceira
   chamada reaproveitando um único nó. Duas primeiras conferidas em planta/3D.

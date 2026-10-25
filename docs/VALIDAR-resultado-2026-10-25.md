@@ -110,6 +110,28 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
 
 ## Conclusão para revisão
 
+### Quarta rodada: cobertura complementar
+
+- C22: subsolo a −3 m criado `verified`. Comparação antes/depois confirmou índices,
+  nomes, níveis e exibição em cortes dos pavimentos anteriores preservados; os GUIDs
+  enumerados de elementos existentes também ficaram iguais. Nível intermediário
+  de 1,50 m foi recusado na prévia.
+- C18: composto de três camadas 0,02 + 0,21 + 0,02 m criado e aplicado numa parede
+  de 0,25 m, ambos `verified`. Nome duplicado e material inexistente recusados.
+- C13: cota associativa criada numa parede de 4 m. Após editar o final para 7 m,
+  `GetDimensionData` retornou valor 7, ponto (7,30) e o GUID original da parede.
+  Acompanhamento conferido pela API; não é aprovação visual de apresentação.
+- C31: `Luminária de Piso 01` criada `verified`. Seu ZZYZX está marcado
+  `HiddenFromScript`, portanto não foi forçado. A primeira tentativa de teste enviou
+  somente dimensions.z, mas o modelo de entrada exige também x/y e recusou antes de
+  escrever; isso é erro do roteiro, não regressão da ferramenta. Altura editável de
+  uma peça compatível continua sem caso positivo.
+- C34: parâmetro inventado `AC_MarkerText` recusado na prévia. Lote adicional de
+  dois eixos `verified`; um único Ctrl+Z removeu ambos. Releitura passou de 2 → 4 → 2
+  e confirmou exatamente os GUIDs anteriores preservados.
+- Evidências locais `r4-*`. Sem alterações de código, sem salvar o receptor e sem
+  merge. Falhas já reproduzidas precisam de correção para justificar novo reteste.
+
 ### Terceira rodada: fonte local e conferência visual
 
 - Criada uma parede 3 × 0,20 × 2,70 m e salvo um **arquivo descartável novo**
