@@ -127,6 +127,23 @@ async def test_property_batches_and_empty_results():
     assert empty["total"] == 0
 
 
+@pytest.mark.parametrize("port", [None, 19723])
+async def test_property_search_resolves_target_once_across_batches(port):
+    fake = model(205)
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        result = await read.find_elements(
+            client, port=port, property_guid=PROP, operator="greater", value=199
+        )
+    assert result["total"] == 6
+    assert [e["elementId"]["guid"] for e in result["elements"]] == [
+        guid(i) for i in range(200, 206)
+    ]
+    assert result["errors"] == []
+    # Count probes of the reachable instance; discovery also checks unused ports.
+    probes = [r for r in fake.command_requests if r["command"] == "API.GetProductInfo"]
+    assert len(probes) == 1
+
+
 @pytest.mark.parametrize(
     "changes",
     [

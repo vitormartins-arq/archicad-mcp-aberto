@@ -339,10 +339,17 @@ async def find_elements(
         elements = filtered
     if property_guid is not None:
         filtered = []
+        properties = [{"propertyId": {"guid": property_guid}}]
         for start in range(0, len(elements), 100):
             batch = elements[start : start + 100]
-            guids = [e["elementId"]["guid"] for e in batch]
-            response = await get_properties(client, guids, [property_guid], port)
+            request_elements = element_ids([e["elementId"]["guid"] for e in batch])
+            # The target and property were already validated for this search.
+            # Calling get_properties here would probe the same port for every batch.
+            response = await client.command(
+                port,
+                "GetPropertyValuesOfElements",
+                {"elements": request_elements, "properties": properties},
+            )
             rows = response.get("propertyValuesForElements")
             if not isinstance(rows, list) or len(rows) != len(batch):
                 raise ValueError("Unexpected property response cardinality.")
