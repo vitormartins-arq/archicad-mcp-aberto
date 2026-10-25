@@ -42,6 +42,16 @@ uma cópia do repositório, com a configuração do README. Instale o Tapir da s
 do ArchiCAD pela página de
 [releases](https://github.com/ENZYME-APD/tapir-archicad-automation/releases).
 
+Depois de abrir o Archicad, confira a instalação com:
+
+```bash
+uv run archicad-mcp-doctor
+```
+
+O diagnóstico mostra versão, porta, projeto, Tapir e o add-on complementar opcional,
+além da ação necessária para cada problema. Ele é somente leitura e não altera projeto,
+vista nem seleção. Use `--json` para gerar um relatório de suporte.
+
 ## Regras de segurança
 
 - Com mais de uma instância aberta, nada roda sem destino explícito.

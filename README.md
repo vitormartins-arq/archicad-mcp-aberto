@@ -192,6 +192,17 @@ incomplete inventory as proof that an object name is absent.
 Requires [uv](https://docs.astral.sh/uv/) and, for most tools, the
 [Tapir](https://github.com/ENZYME-APD/tapir-archicad-automation/releases) add-on in Archicad.
 
+After installation, open Archicad and run:
+
+```bash
+uv run archicad-mcp-doctor
+```
+
+The doctor scans the configured local ports and reports the Archicad version, project,
+Tapir version and optional companion add-on state, followed by a concrete action for
+each problem. It is read-only and never changes the project, view or selection. Use
+`--json` for support logs and `--ports 19723-19730` to override the scan range.
+
 ### Claude Desktop (one click)
 
 Download `archicad-mcp-aberto-<version>.mcpb` from the

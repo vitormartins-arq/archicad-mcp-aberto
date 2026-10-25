@@ -1,5 +1,7 @@
 # Changelog
 
+- Add `archicad-mcp-doctor`, a read-only setup diagnostic for local ports, Archicad
+  instances, Tapir and the optional 3D companion add-on, with text and JSON output.
 - Refresh the English and Brazilian Portuguese project overview to reflect the 109
   registered tools, the current safety protocol, capability groups and live-validation
   status without presenting simulated coverage as an Archicad live test.
