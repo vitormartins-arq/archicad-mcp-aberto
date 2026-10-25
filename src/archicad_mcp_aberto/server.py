@@ -1895,13 +1895,16 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     async def inspect_object_replacements(
         ctx: Context,
         guids: list[str],
-        target_unid: str,
+        target_unid: str | None = None,
         port: int | None = None,
+        target_index: int | None = None,
     ) -> dict:
         """Read current object libraries, transforms, GDL parameters and exact target
-        defaults. Use before retrying an unknown replacement outcome. No writes."""
+        defaults. Supply either full target_unid or target_index from list_library_parts;
+        index lookup resolves the full immutable ID to use in replacement previews.
+        Use before retrying an unknown replacement outcome. No writes."""
         return await object_replacement.inspect_object_replacements(
-            client_of(ctx), guids, target_unid, port
+            client_of(ctx), guids, target_unid, port, target_index
         )
 
     @mcp.tool(annotations=WRITE)

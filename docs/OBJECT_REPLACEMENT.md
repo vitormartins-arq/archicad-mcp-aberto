@@ -8,7 +8,10 @@ The updated companion APX is required. Tapir 1.7.0 ModifyObjects cannot swap lib
 1. Discover instances and explicitly select the test project/port.
 2. Obtain the **full unique library ID** (main GUID and revision GUID) of an already
    loaded Object library part. Missing/duplicate IDs are rejected. Importing a new
-   library is a separate operation, with its existing safeguards.
+   library is a separate operation, with its existing safeguards. To resolve the full
+   ID, pass `target_index` from `list_library_parts` to the read-only inspector,
+   omitting `target_unid`. An empty `guids` list reads only the target definition.
+   All write previews still require the resolved full ID, never a bare index/name.
 3. `inspect_object_replacements(guids, target_unid, port)` reads current libraries,
    dimensions, placement, story, angle, reflection, group/classifications and GDL
    parameters plus target defaults. It performs no mutation.

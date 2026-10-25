@@ -2,7 +2,7 @@
 
 - **Issue #87 / Codex:** troca de biblioteca implementada em checkout isolado, com
   comandos nativos próprios, montagem explícita e prévia/token/recibo. APX AC30
-  compilado (SDK30/MSVC v143). 2760 testes offline, Ruff e formatação dos arquivos
+  compilado (SDK30/MSVC v143). 2765 testes offline, Ruff e formatação dos arquivos
   alterados passaram. Aceite real ainda pendente. Não usar
   em produção nem fechar a issue antes do checklist `OBJECT_REPLACEMENT.md`.
   Parâmetros além de A/B/ZZYZX assumem os padrões do destino, expostos na prévia.

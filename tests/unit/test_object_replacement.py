@@ -61,6 +61,7 @@ def native(monkeypatch, tmp_path):
         "writes": [],
         "fail": False,
         "drift": False,
+        "reads": [],
     }
 
     async def editable(client, guids, port):
@@ -69,6 +70,11 @@ def native(monkeypatch, tmp_path):
 
     async def addon(client, port, command, parameters=None, timeout=None):
         if command == "GetObjectReplacementData":
+            state["reads"].append(deepcopy(parameters))
+            if not parameters["guids"]:
+                return deepcopy(
+                    {"sessionId": state["sessionId"], "target": state["target"], "objects": []}
+                )
             return deepcopy({k: state[k] for k in ("sessionId", "target", "objects")})
         assert command == "ReplaceObjectLibraries"
         state["writes"].append(deepcopy(parameters))
@@ -202,3 +208,24 @@ async def test_apply_requires_explicit_port(native):
             await tool.replace_object_libraries(
                 client, [request()], dry_run=False, confirmation_token=preview["confirmation_token"]
             )
+
+
+@pytest.mark.anyio
+async def test_read_only_index_resolution_returns_full_id(native):
+    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+        data = await tool.inspect_object_replacements(client, [], port=19723, target_index=7)
+        assert data["target"]["unid"] == UNID
+        assert native["reads"] == [{"guids": [], "targetIndex": 7}]
+        assert not native["writes"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "kwargs",
+    [{}, {"target_unid": UNID, "target_index": 7}, {"target_index": -1}, {"target_index": True}],
+)
+async def test_inspection_requires_one_valid_selector(native, kwargs):
+    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+        with pytest.raises(ValueError):
+            await tool.inspect_object_replacements(client, [], port=19723, **kwargs)
+        assert not native["reads"] and not native["writes"]

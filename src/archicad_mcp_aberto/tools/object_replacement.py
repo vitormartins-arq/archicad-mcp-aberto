@@ -60,9 +60,12 @@ def _placement(before: dict, source: dict, target: dict) -> tuple[dict, dict]:
     return placement, mount
 
 
-async def _data(client, port, guids, unid, timeout=None):
+async def _data(client, port, guids, unid, timeout=None, *, target_index=None):
+    if (unid is None) == (target_index is None):
+        raise ValueError("Supply exactly one of target_unid and target_index.")
+    selector = {"targetUnid": unid} if unid is not None else {"targetIndex": target_index}
     result = await grids._addon(
-        client, port, "GetObjectReplacementData", {"guids": guids, "targetUnid": unid}, timeout
+        client, port, "GetObjectReplacementData", {"guids": guids, **selector}, timeout
     )
     if not isinstance(result.get("objects"), list) or len(result["objects"]) != len(guids):
         raise ValueError("Unexpected object replacement snapshot cardinality.")
@@ -74,13 +77,23 @@ async def _data(client, port, guids, unid, timeout=None):
 
 
 async def inspect_object_replacements(
-    client, guids: list[str], target_unid: str, port: int | None = None
+    client,
+    guids: list[str],
+    target_unid: str | None = None,
+    port: int | None = None,
+    target_index: int | None = None,
 ) -> dict:
     """Read actual library/transform after an unknown result before planning a new write."""
     canonical = [str(UUID(g)).upper() for g in guids]
-    edit._unique(canonical, 50)
+    if canonical:
+        edit._unique(canonical, 50)
     port = await resolve_port(client, port)
-    return {"port": port, **await _data(client, port, canonical, target_unid)}
+    if target_index is not None and (type(target_index) is not int or target_index < 1):
+        raise ValueError("target_index must be a positive integer.")
+    return {
+        "port": port,
+        **await _data(client, port, canonical, target_unid, target_index=target_index),
+    }
 
 
 async def _plan(client, replacements, port, operation):

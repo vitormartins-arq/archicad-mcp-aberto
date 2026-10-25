@@ -131,14 +131,16 @@ GSErrCode Describe (const API_Guid& guid, GS::ObjectState& result)
 GS::String GetObjectReplacementDataCommand::GetName () const { return "GetObjectReplacementData"; }
 GS::Optional<GS::UniString> GetObjectReplacementDataCommand::GetInputParametersSchema () const
 {
-    return R"({"type":"object","properties":{"guids":{"type":"array","maxItems":50,"items":{"type":"string"}},"targetUnid":{"type":"string"}},"required":["guids","targetUnid"],"additionalProperties":false})";
+    return R"({"type":"object","properties":{"guids":{"type":"array","maxItems":50,"items":{"type":"string"}},"targetUnid":{"type":"string"},"targetIndex":{"type":"integer","minimum":1}},"required":["guids"],"additionalProperties":false})";
 }
 GS::ObjectState GetObjectReplacementDataCommand::Execute (const GS::ObjectState& input, GS::ProcessControl&) const
 {
     GS::UniString unid;
-    input.Get ("targetUnid", unid);
     Int32 index = 0;
-    GSErrCode error = FindLibrary (unid, index);
+    const bool hasUnid = input.Get ("targetUnid", unid);
+    const bool hasIndex = input.Get ("targetIndex", index);
+    if (hasUnid == hasIndex) return CreateErrorResponse (APIERR_BADPARS, "Supply exactly one library selector.");
+    GSErrCode error = hasUnid ? FindLibrary (unid, index) : (index > 0 ? NoError : APIERR_BADID);
     if (error != NoError) return CreateErrorResponse (error, "Target library is missing or ambiguous; use its exact full unique ID.");
     API_ElementMemo memo = {};
     const GS::OnExit guard ([&] () { ACAPI_DisposeElemMemoHdls (&memo); });
