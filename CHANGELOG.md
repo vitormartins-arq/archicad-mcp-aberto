@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `find_elements` resolves its target once per search instead of probing it again
+  for every property batch. A search reading properties of 205 elements now makes
+  one `GetProductInfo` request to the target instead of four. Property validation,
+  batches of 100, pagination and per-element errors are unchanged. Tested offline
+  against the fake Archicad; not tested in a real Archicad.
+
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
   about one suggestion in three was usable. Cameras now stand clear of walls, columns
   and smaller rooms inside the room's box, and their sight line avoids wall and column
