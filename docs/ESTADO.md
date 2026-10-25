@@ -1,5 +1,10 @@
 # Estado atual
 
+- **Compatibilidade:** #71+#72+#73 combinadas somente em checkout isolado passaram
+  2730 testes offline, ruff check e formatação (164 arquivos). Conflitos de merge
+  apenas no changelog/estado, preservados localmente. Sem merge no GitHub. #72/#73
+  aprovadas pelos testes realizados; #71 continua com bloqueios reais conhecidos.
+
 - **Quarta rodada / Codex:** subsolo preservando pavimentos/elementos passou; nível
   intermediário recusado. Composto de 25 cm aplicado em parede passou, duplicado e
   material inexistente recusados. Cota acompanhou parede de 4 para 7 m pela API.

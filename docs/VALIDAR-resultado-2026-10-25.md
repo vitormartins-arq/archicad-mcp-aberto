@@ -110,6 +110,16 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
 
 ## Conclusão para revisão
 
+### Compatibilidade das três PRs
+
+Checkout isolado combinou #71 (`ee46156`), #72 (`535b4aa`) e #73 (`e5566e3`),
+sem merge no GitHub. Conflitos apenas em CHANGELOG.md e docs/ESTADO.md, resolvidos
+localmente preservando as entradas das duas partes. Resultado local `3821058`:
+**2730 testes offline passaram em 24,22 s**, `ruff check .` passou e
+`ruff format --check .` confirmou 164 arquivos formatados. Esse checkout não foi
+publicado e não certifica as falhas reais conhecidas. #72/#73 estão aprovadas pelos
+casos realizados; #71 permanece bloqueada pelos erros reais detalhados neste relatório.
+
 ### Quarta rodada: cobertura complementar
 
 - C22: subsolo a −3 m criado `verified`. Comparação antes/depois confirmou índices,
