@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Terceira rodada / Codex, 25/10:** hotlink positivo passou com PLN descartável
+  criado e salvo localmente (uma parede): duas instâncias, giro/espelho, e terceira
+  chamada reaproveitando um único nó. Duas primeiras conferidas em planta/3D.
+  Nome personalizado do nó não confirmado (volta nome do arquivo). Eixos novos
+  conferidos visualmente em planta/3D; a planta atualizou ao alternar de volta do 3D.
+  #71 ainda bloqueada por C26/C27/C30; morfos/escadas também continuam com falhas.
+  Receptor está sem nome e não foi salvo. Relatório abaixo tem evidências e limites.
+
 - **Codex / validação real, 25/10/2026:** rodada autorizada por Vitor no projeto sem
   nome inicialmente vazio, AC30 build 3001 BRA/Tapir 1.7.0/Windows, sem salvar. #72
   passou em 120 elementos reais, duas leituras de propriedade: sondagens 3→1, resultados

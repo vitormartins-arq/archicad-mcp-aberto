@@ -4,8 +4,10 @@
 
 Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, porta explícita 19723.
 Projeto sem nome, inicialmente vazio, autorizado pelo Vitor para esta rodada.
-Nada foi salvo; nenhum projeto de produção foi usado. As alterações de teste ficam
-no projeto sem nome. Nenhuma PR foi integrada.
+Nenhum projeto de produção foi usado. As primeiras rodadas não salvaram o projeto.
+Na terceira rodada foi salvo somente um PLN descartável com uma parede, como fonte
+local do hotlink; o projeto receptor continua sem nome e não foi salvo. Nenhuma PR
+foi integrada.
 
 - PR #71: código Python `19e6cd0f53daf40f3c7d643f6ed9e4dfafad1a9a`.
 - PR #72: `535b4aaeb51dcf67fb8c35fde1de2e9b1b8e4d86`.
@@ -52,12 +54,12 @@ O filtro oficial `GetElementsByType` também recusa `Hotspot`. A comparação fi
 | C27 subconjuntos | **Não aprovado**: ambos criados, mas Tapir retorna erro e recibo fica `unknown`. |
 | C27 prancha dentro do subconjunto | `verified`, usando o subconjunto observado no Navegador. |
 | C28 caminho inexistente | `failed` por item como esperado, sem instância criada. |
-| C28 projeto válido | **Resultado desconhecido**: `CreateHotlinkNodes` excedeu 120 s; não houve repetição. |
+| C28 projeto válido | Terceira rodada com PLN criado localmente: duas instâncias `verified`, uma girada/espelhada; conferidas na planta e no 3D. Terceira instância reaproveita o único nó, também `verified`. O exemplo público anterior é incompatível por restrição de avaliação. Nome personalizado do nó não confirmado: GetHotlinks retorna nome do arquivo. |
 | C29 atualizar desenhos | Comando respondeu sucesso; recibo `unverified` por projeto. Atualização visual não certificada. |
 | C31 editar luminária | `verified`: Luz Geral criada, movida para (33,31), nível 0,5 m, luz desligada. |
 | C31 altura por ZZYZX | Prévia recusou a altura da Luz Geral porque o parâmetro é Fixed/oculto/travado. Não foi forçado. Falta peça com altura editável. |
 | C32 classificações | `verified`: sistema e árvore com quatro itens, incluindo filhos. |
-| C34 eixos | Retomada com APX novo: seis eixos A/B/C e 1/2/3 criados em lote, todos `verified`; releitura retorna seis com parâmetros conferidos. Validação visual pendente: a planta capturada continua vazia após centralizar a vista. |
+| C34 eixos | Seis eixos iniciais `verified`. Terceira rodada: dois eixos novos `verified`, rótulos R3-A/R3-1; linhas e marcadores conferidos no 3D e na planta após alternar de volta do 3D. Capturas anteriores da planta não atualizada não certificavam ausência de geometria. |
 | C35 superfícies | `verified`: cor alterada, textura removida em uma cópia, transparência 60 em outra. |
 | C36 mover no Book | `verified`: prancha movida entre subconjuntos. |
 | C36 mover no Mapa de Vistas | `verified`: pastas criadas, pavimento clonado e vista movida. |
@@ -108,6 +110,23 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
 
 ## Conclusão para revisão
 
+### Terceira rodada: fonte local e conferência visual
+
+- Criada uma parede 3 × 0,20 × 2,70 m e salvo um **arquivo descartável novo**
+  `r3-hotlink-local-source.pln` no diretório local de evidências. Não foi usado nem
+  salvo projeto de produção. Abriu-se depois outro projeto sem nome vazio receptor.
+- C28: duas instâncias da fonte local passaram, uma a (10,10) e outra a (20,10),
+  girada 90° e espelhada. As duas paredes foram vistas na captura do add-on e na
+  planta. Uma chamada seguinte criou a terceira a (30,10), sem duplicar o nó:
+  `GetHotlinks` retorna exatamente um nó para a fonte. Limite: a releitura do nó
+  devolve o nome do arquivo, não `MCP QA R3 Local` solicitado; o recibo atual não
+  verifica esse campo. Não afirmar que o nome personalizado passou.
+- C34: dois eixos foram conferidos pela API, no 3D (`r3-scene-0.png`) e na planta
+  pela UI. Ao voltar do 3D para a planta, linhas e rótulos apareceram. Sem mudança
+  de camada ou alteração dos parâmetros para fazê-los aparecer.
+- O caso positivo de hotlink e a exibição dos eixos deixam de estar bloqueados.
+  Cortes/subconjuntos e as falhas da main continuam como descritos abaixo.
+
 ### Retomada com APX da #71
 
 - Confirmados novamente os seis eixos por `GetGridElements`. A camada `ANT - Grelha`
@@ -133,7 +152,8 @@ o 3D, as capturas funcionaram. Não confundir mudança de janela com add-on ause
   validações reais nesta instância. Evidências locais com prefixos `r2-` e `resume-`.
 
 - #72 e #73 passaram nos casos reais e offline acima. Sem merge automático.
-- #71 **não está integralmente aprovada**. Corrigir/retestar C26/C27/C30,
-  inspecionar o resultado desconhecido de C28 e conferir a exibição visual de C34.
+- #71 **não está integralmente aprovada**. Corrigir/retestar C26/C27/C30 e tratar
+  a divergência do nome personalizado em C28. Caso positivo de C28 e visual C34
+  passaram na terceira rodada; não repetir a fonte pública de avaliação.
 - A edição de morfos e a conferência de escadas da main também precisam de correção
   ou limitação explicitamente tratada. Não certificar essas pendências pelo CI verde.
