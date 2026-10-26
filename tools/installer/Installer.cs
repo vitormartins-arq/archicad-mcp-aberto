@@ -11,16 +11,10 @@ public class Installer : Form {
  PackageInfo config; TextBox path; Button install,restore; Label info;
  string Extensions {
   get {
-   string root=Path.GetFullPath(path.Text.Trim()); InstallCore.NoLinks(root);
-   string exe=Path.Combine(root,"Archicad.exe");
-   if(!File.Exists(exe)||FileVersionInfo.GetVersionInfo(exe).FileMajorPart!=config.archicad) throw new Exception("Escolha a pasta do Archicad "+config.archicad+" (versão incompatível ou não encontrada).");
-   string[] options={Path.Combine(root,"Extensões"),Path.Combine(root,"Add-Ons")};
-   var found=options.Where(Directory.Exists).ToArray();
-   if(found.Length!=1) throw new Exception("Não foi possível identificar a pasta nativa de extensões.");
-   return found[0];
+   return InstallCore.ResolveExtensions(path.Text,config.archicad);
   }
  }
- List<string> RegistryKeys() {
+ public static List<string> RegistryKeys(PackageInfo config) {
   var result=new List<string>();
   using(var root=Registry.CurrentUser.OpenSubKey("Software\\GRAPHISOFT\\Archicad")) {
    if(root!=null) foreach(string name in root.GetSubKeyNames())
@@ -30,14 +24,14 @@ public class Installer : Form {
   if(result.Count>1) throw new Exception("Há mais de uma configuração do Archicad desta versão. Identifique a instalação de destino antes de migrar os caminhos do Gestor de Extensões.");
   return result;
  }
- void PrepareRegistry(InstallRecord record,string extensions) {
-  foreach(string baseKey in RegistryKeys()) {
+ public static void PrepareRegistry(InstallRecord record,string extensions,PackageInfo config) {
+  foreach(string baseKey in RegistryKeys(config)) {
    using(var manager=Registry.CurrentUser.OpenSubKey(baseKey)) {
     if(manager!=null) {
      string actual=InstallCore.DecodePath(Convert.ToString(manager.GetValue("Actual Path","")));
      if(Directory.Exists(actual)&&!String.Equals(Path.GetFullPath(actual).TrimEnd('\\'),Path.GetFullPath(extensions).TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))
       foreach(string f in InstallCore.Files(actual).Where(x=>x.EndsWith(".apx",StringComparison.OrdinalIgnoreCase)))
-       if(Mdid.Read(f)==config.mdid) throw new Exception("Há uma cópia na pasta personalizada do Gestor de Extensões. Remova-a do carregamento antes de instalar: "+f);
+       if(InstallCore.RegisteredCopyMatches(f,config.mdid)) throw new Exception("Há uma cópia na pasta personalizada do Gestor de Extensões. Remova-a do carregamento antes de instalar: "+f);
     }
    }
    string key=baseKey+"\\Include";
@@ -45,7 +39,7 @@ public class Installer : Form {
     if(include!=null) foreach(string name in include.GetValueNames()) {
      string value=include.GetValue(name) as string;if(value==null) continue;
      string p=InstallCore.DecodePath(value);
-     if(File.Exists(p)&&p.EndsWith(".apx",StringComparison.OrdinalIgnoreCase)&&Mdid.Read(p)==config.mdid)
+     if(InstallCore.RegisteredCopyMatches(p,config.mdid))
       record.registry.Add(new RegistryState{key=key,name=name,value=value});
     }
    }
@@ -100,7 +94,7 @@ public class Installer : Form {
       InstallCore.Restore(r,()=>RestoreRegistry(r));
       MessageBox.Show("Versão anterior restaurada. A versão substituída foi preservada no backup.",Text);
      } else {
-      var r=InstallCore.Prepare(ext,config);PrepareRegistry(r,ext);
+      var r=InstallCore.Prepare(ext,config);PrepareRegistry(r,ext,config);
       string stage=Path.Combine(ext,"(LAB - Preparação "+Guid.NewGuid().ToString("N")+")");Directory.CreateDirectory(stage);
       using(var zip=Assembly.GetExecutingAssembly().GetManifestResourceStream("payload.zip")) InstallCore.Extract(zip,stage,config);
       RequireClosedArchicad();
@@ -115,8 +109,10 @@ public class Installer : Form {
  public Installer(PackageInfo c) {
   config=c;Text=c.product+" — instalador "+c.revision;Width=670;Height=330;FormBorderStyle=FormBorderStyle.FixedDialog;MaximizeBox=false;StartPosition=FormStartPosition.CenterScreen;
   info=new Label{Left=20,Top=20,Width=610,Height=95,Text="Instalar ou atualizar "+c.product+"\nArchicad "+c.archicad+" | conteúdo "+c.payload_revision+" | "+c.channel+"\n\nFeche o Archicad antes de continuar. A versão anterior será preservada para restauração."};Controls.Add(info);
-  path=new TextBox{Left=20,Top=125,Width=520,Text=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"Graphisoft","Archicad "+c.archicad)};Controls.Add(path);
-  var browse=new Button{Left=550,Top=123,Width=80,Text="Escolher"};browse.Click+=(s,e)=>{using(var d=new FolderBrowserDialog{SelectedPath=path.Text,Description="Pasta do Archicad "+c.archicad})if(d.ShowDialog()==DialogResult.OK)path.Text=d.SelectedPath;};Controls.Add(browse);
+  string defaultRoot=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"Graphisoft","Archicad "+c.archicad);
+  string defaultExtensions=Path.Combine(defaultRoot,Directory.Exists(Path.Combine(defaultRoot,"Extensões"))?"Extensões":Directory.Exists(Path.Combine(defaultRoot,"Add-Ons"))?"Add-Ons":"Extensões");
+  path=new TextBox{Left=20,Top=125,Width=520,Text=defaultExtensions};Controls.Add(path);
+  var browse=new Button{Left=550,Top=123,Width=80,Text="Escolher"};browse.Click+=(s,e)=>{using(var d=new FolderBrowserDialog{SelectedPath=path.Text,Description="Pasta de extensões do Archicad "+c.archicad})if(d.ShowDialog()==DialogResult.OK)path.Text=d.SelectedPath;};Controls.Add(browse);
   install=new Button{Left=20,Top=180,Width=200,Height=35,Text="Instalar / Atualizar"};install.Click+=(s,e)=>Run(false);Controls.Add(install);
   restore=new Button{Left=235,Top=180,Width=200,Height=35,Text="Restaurar versão anterior"};restore.Click+=(s,e)=>Run(true);Controls.Add(restore);
   var close=new Button{Left=450,Top=180,Width=180,Height=35,Text="Fechar"};close.Click+=(s,e)=>Close();Controls.Add(close);

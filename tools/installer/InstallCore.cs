@@ -21,6 +21,22 @@ public sealed class InstallRecord {
 }
 public static class InstallCore {
  public static readonly JavaScriptSerializer Json=new JavaScriptSerializer {MaxJsonLength=16000000};
+ public static string ResolveExtensions(string selected,int major,Func<string,int> versionReader=null) {
+  string folder=Path.GetFullPath(selected.Trim()).TrimEnd(Path.DirectorySeparatorChar);NoLinks(folder);
+  string leaf=Path.GetFileName(folder);
+  bool isExtensions=String.Equals(leaf,"Extensões",StringComparison.OrdinalIgnoreCase)||String.Equals(leaf,"Add-Ons",StringComparison.OrdinalIgnoreCase);
+  string root=isExtensions?Path.GetDirectoryName(folder):folder;
+  string exe=Path.Combine(root,"Archicad.exe");
+  if(!File.Exists(exe)||(versionReader==null?System.Diagnostics.FileVersionInfo.GetVersionInfo(exe).FileMajorPart:versionReader(exe))!=major)
+   throw new Exception("Escolha a pasta Extensões do Archicad "+major+" (versão incompatível ou não encontrada).");
+  var options=new[]{Path.Combine(root,"Extensões"),Path.Combine(root,"Add-Ons")}.Where(Directory.Exists).ToArray();
+  if(options.Length!=1) throw new Exception("Não foi possível identificar uma única pasta nativa de extensões.");
+  if(isExtensions&&!String.Equals(folder,options[0],StringComparison.OrdinalIgnoreCase)) throw new Exception("A pasta escolhida não é a pasta nativa de extensões.");
+  NoLinks(options[0]);return options[0];
+ }
+ public static bool RegisteredCopyMatches(string path,string mdid) {
+  return File.Exists(path)&&path.EndsWith(".apx",StringComparison.OrdinalIgnoreCase)&&Mdid.ReadOptional(path)==mdid;
+ }
  public static string DecodePath(string s) {
   if(s.StartsWith("lan.flat:///",StringComparison.OrdinalIgnoreCase)) return Uri.UnescapeDataString(s.Substring(12)).Replace('/','\\');
   if(s.StartsWith("file:///",StringComparison.OrdinalIgnoreCase)) return new Uri(s).LocalPath;
@@ -99,7 +115,7 @@ public static class InstallCore {
   }
   if(Directory.Exists(target)) {
    var apxs=Files(target).Where(p=>p.EndsWith(".apx",StringComparison.OrdinalIgnoreCase)).ToList();
-   if(apxs.Count!=1||Mdid.Read(apxs[0])!=c.mdid) throw new Exception("A pasta de destino contém outro produto ou arquivos desconhecidos: "+target);
+   if(apxs.Count>1||(apxs.Count==1&&Mdid.Read(apxs[0])!=c.mdid)) throw new Exception("A pasta de destino contém outro produto ou arquivos desconhecidos: "+target);
   }
   var r=new InstallRecord{product=c.product,target=target,status="preparado",backupRoot=Path.Combine(extensions,"(LAB - Backups)",c.product,DateTime.UtcNow.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N"))};
   NoLinks(r.backupRoot);

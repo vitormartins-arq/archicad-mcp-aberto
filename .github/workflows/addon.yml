@@ -43,7 +43,7 @@ jobs:
         run: |
           $apx = "addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx"
           $csc = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe"
-          & $csc /nologo /main:InstallerTests /out:InstallerTests.exe /r:System.Web.Extensions.dll /r:System.IO.Compression.dll (Resolve-Path tools/installer/InstallCore.cs).Path (Resolve-Path tools/installer/Mdid.cs).Path (Resolve-Path tools/installer/InstallerTests.cs).Path
+          & $csc /nologo /main:InstallerTests /out:InstallerTests.exe /r:System.Web.Extensions.dll /r:System.IO.Compression.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll (Resolve-Path tools/installer/InstallCore.cs).Path (Resolve-Path tools/installer/Mdid.cs).Path (Resolve-Path tools/installer/Installer.cs).Path (Resolve-Path tools/installer/InstallerTests.cs).Path
           if ($LASTEXITCODE -ne 0) { throw 'Installer test compilation failed' }
           ./InstallerTests.exe $apx
           if ($LASTEXITCODE -ne 0) { throw 'Installer recovery tests failed' }

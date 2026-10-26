@@ -72,3 +72,9 @@ separate acceptance checks. Compiler/OS sources:
 
 The three repositories intentionally carry identical installer sources. Update all
 three together and compare hashes when changing the installation/recovery contract.
+
+## Installation failure fixes (26 October 2026)
+
+The selected/displayed directory is now the native `Extensões` or `Add-Ons` directory; a legacy Archicad root selection is also normalized to it. The Archicad executable and major are verified in its parent. Missing legacy MDID resources in unrelated valid APXs (including Graphisoft AI Assistant) return no match when scanning Include entries and designated folders; payload identity validation remains strict. Missing files referenced by stale Include values are ignored. Empty managed destination folders after manual APX deletion are preserved in backup and no longer prevent installation.
+
+Regression tests cover the same resolver and registry preflight methods used by the GUI. An optional notebook run reads the real destination/Include entries without writing them; all install/update/rollback writes remain in a fresh temporary fixture. Full real installation and UAC remain separate acceptance checks.
