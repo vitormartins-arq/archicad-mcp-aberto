@@ -49,19 +49,25 @@ the table. Wheel/sdist filenames retain the Python packaging standard so install
 
 ## Drive delivery
 
-Keep each delivery under the existing `Archicad MCP` folder:
+Keep one folder per repository under `Archicad/Add-Ons Archicad`:
 
 ```text
-Instalar/Archicad 30/Main/          integrated distribution
-Instalar/Archicad 30/Em teste/      unaccepted experimental distribution
-Servidor/Main/                    corresponding source snapshots
-Servidor/Em teste/                experimental source snapshots
-Documentação/Revisões.json         component commits, hashes and validation status
-00 - Anteriores/                  previous distributions and document backups
+archicad-mcp-aberto/   Python MCP server, not an Archicad APX
+archicad-mcp-lab/      private Python MCP layer, not another APX
+lab-blocos/           native importer, complete package with engine/runtime
+archicad-mcp-addon/   native MCP companion
 ```
 
+Within each repository folder, `Atual` is the current integrated distribution or
+explicitly labelled latest candidate, `Em teste` contains unaccepted PR material, and
+`00 - Anteriores` keeps previous material. Put Archicad 29/30 in separate child folders.
+Keep source snapshots and the delivery receipt alongside the matching material.
+The companion APXs built in the open server and private add-on repository share an
+MDID: they are alternatives, not independent plug-ins to load together.
+
+
 Keep only the name and revision in each filename; the parent folder carries major
-version and status. Update the Drive copies and delivery record whenever material is
+version and status. Use the exact repository folder above; update the Drive copies and delivery record whenever material is
 delivered, preserve the previous revision, and keep test builds separate until accepted.
 This workflow creates GitHub artifacts; it does not authenticate to Drive or silently
 upload private material. The authorized delivery step copies the verified files there.
