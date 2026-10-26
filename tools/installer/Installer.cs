@@ -60,12 +60,24 @@ public class Installer : Form {
   }
  }
  static void WriteRegistry(InstallRecord r) {
+  foreach(var p in r.registry) using(var k=Registry.CurrentUser.OpenSubKey(p.key))
+   if(k==null||Convert.ToString(k.GetValue(p.name))!=p.value) throw new Exception("O Gestor de Extensões mudou durante a instalação. A atualização será revertida.");
+  foreach(var p in r.written) using(var k=Registry.CurrentUser.OpenSubKey(p.key)) {
+   var old=r.registry.FirstOrDefault(x=>x.key==p.key&&x.name==p.name);
+   string actual=k==null?null:k.GetValue(p.name) as string;
+   if(old==null&&actual!=null) throw new Exception("Outra instalação ocupou o registro reservado. A atualização será revertida.");
+  }
   foreach(var p in r.registry) using(var k=Registry.CurrentUser.CreateSubKey(p.key)) k.DeleteValue(p.name,false);
   foreach(var p in r.written) using(var k=Registry.CurrentUser.CreateSubKey(p.key)) k.SetValue(p.name,p.value,RegistryValueKind.String);
  }
  static void RestoreRegistry(InstallRecord r) {
-  foreach(var p in r.written) using(var k=Registry.CurrentUser.CreateSubKey(p.key)) k.DeleteValue(p.name,false);
-  foreach(var p in r.registry) using(var k=Registry.CurrentUser.CreateSubKey(p.key)) k.SetValue(p.name,p.value,RegistryValueKind.String);
+  foreach(var p in r.written) using(var k=Registry.CurrentUser.CreateSubKey(p.key))
+   if(Convert.ToString(k.GetValue(p.name))==p.value) k.DeleteValue(p.name,false);
+  foreach(var p in r.registry) using(var k=Registry.CurrentUser.CreateSubKey(p.key)) {
+   string actual=k.GetValue(p.name) as string;
+   if(actual!=null&&actual!=p.value) throw new Exception("Uma entrada do Gestor foi alterada por outro processo. Confira o backup antes de restaurar o registro.");
+   k.SetValue(p.name,p.value,RegistryValueKind.String);
+  }
  }
  static void RequireClosedArchicad() {
   if(Process.GetProcessesByName("Archicad").Length>0) throw new Exception("Salve seu trabalho e feche o Archicad antes de instalar ou restaurar. O instalador não fecha o programa automaticamente.");
@@ -74,7 +86,7 @@ public class Installer : Form {
   install.Enabled=restore.Enabled=false;
   try {
    RequireClosedArchicad();string ext=Extensions;
-   using(var mutex=new System.Threading.Mutex(false,"Global\\LAB-Archicad-"+config.archicad+"-"+config.mdid.Replace("-",""))) {
+   using(var mutex=new System.Threading.Mutex(false,"Global\\LAB-Archicad-"+config.archicad)) {
     if(!mutex.WaitOne(0)) throw new Exception("Outro instalador deste add-on está em execução.");
     try {
      if(previous) {
