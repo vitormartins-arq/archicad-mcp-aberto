@@ -1024,3 +1024,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Revisão única em `distribution.json`; empacotamento gera nome + revisão, recibo SHA-256
   e fontes versionadas. R03 proposta, R01/R02 preservadas; nada instalado ou testado
   no Archicad nesta mudança. Ver `docs/DISTRIBUTION.md`. Sem merge da PR #88.
+
+- Codex, 26/10/2026: Vitor requested the LAB prefix on all deliveries. Proposed R04; native display label updated in source only. No merge or installation.

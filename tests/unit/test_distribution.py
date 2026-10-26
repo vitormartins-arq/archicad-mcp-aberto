@@ -22,10 +22,10 @@ class DistributionTests(unittest.TestCase):
             "schema": 1,
             "revision": "R03",
             "names": {
-                "addon": "Archicad MCP",
-                "bundle": "Servidor MCP",
-                "server_source": "Servidor MCP",
-                "addon_source": "Complemento MCP",
+                "addon": "LAB - Complemento MCP",
+                "bundle": "LAB - Servidor MCP",
+                "server_source": "LAB - Servidor MCP",
+                "addon_source": "LAB - Complemento MCP Fonte",
             },
         }
         self.save()
@@ -52,7 +52,7 @@ class DistributionTests(unittest.TestCase):
             self.save()
             self.assertEqual(
                 distribution.filename(distribution.metadata(self.root), "addon"),
-                f"Archicad MCP - {revision}.apx",
+                f"LAB - Complemento MCP - {revision}.apx",
             )
 
     def test_bad_revision_and_path_names_are_refused(self):
@@ -89,7 +89,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_different_commit_cannot_reuse_a_distribution_folder(self):
         distribution.stage(self.root, "addon", self.apx, self.root / "out", 30)
-        self.data["names"]["bundle"] = "MCP Server"
+        self.data["names"]["bundle"] = "LAB - MCP Server"
         self.save()
         self.commit()
         with self.assertRaises(FileExistsError):
@@ -97,7 +97,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_changed_material_requires_a_revision_advance(self):
         base = self.git("rev-parse", "HEAD")
-        self.data["names"]["bundle"] = "MCP Server"
+        self.data["names"]["bundle"] = "LAB - MCP Server"
         self.save()
         self.commit()
         with self.assertRaises(ValueError):

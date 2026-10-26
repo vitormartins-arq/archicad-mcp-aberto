@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "revision": "R03",
+  "revision": "R04",
   "names": {
-    "addon": "Archicad MCP",
-    "bundle": "Servidor MCP",
-    "server_source": "Servidor MCP",
-    "addon_source": "Complemento MCP"
+    "addon": "LAB - Complemento MCP",
+    "bundle": "LAB - Servidor MCP",
+    "server_source": "LAB - Servidor MCP",
+    "addon_source": "LAB - Complemento MCP Fonte"
   }
 }

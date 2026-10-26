@@ -6,10 +6,10 @@ rename a published binary to pretend it is newer, or infer a revision from a PR 
 
 | Material | Generated name for the proposed revision |
 |---|---|
-| Native add-on | `Archicad MCP - R03.apx` |
-| MCP client bundle | `Servidor MCP - R03.mcpb` |
-| Server source snapshot | `Servidor MCP - R03.zip` |
-| Private companion source snapshot | `Complemento MCP - R03.zip` |
+| Native add-on | `LAB - Complemento MCP - R04.apx` |
+| MCP client bundle | `LAB - Servidor MCP - R04.mcpb` |
+| Server source snapshot | `LAB - Servidor MCP - R04.zip` |
+| Private companion source snapshot | `LAB - Complemento MCP Fonte - R04.zip` |
 
 R01 and R02 already identify the historical Drive distribution and the experimental
 PR #88 distribution. R03 is reserved by this proposed packaging change; it does not
@@ -52,10 +52,10 @@ the table. Wheel/sdist filenames retain the Python packaging standard so install
 Keep one folder per repository under `Archicad/Add-Ons Archicad`:
 
 ```text
-archicad-mcp-aberto/   Python MCP server, not an Archicad APX
-archicad-mcp-lab/      private Python MCP layer, not another APX
-lab-blocos/           native importer, complete package with engine/runtime
-archicad-mcp-addon/   native MCP companion
+LAB - Servidor MCP/   Python MCP server, not an Archicad APX
+LAB - MCP Escritório/      private Python MCP layer, not another APX
+LAB - Importador de Blocos e Texturas/           native importer, complete package with engine/runtime
+LAB - Complemento MCP/   native MCP companion
 ```
 
 Within each repository folder, `Atual` is the current integrated distribution or
@@ -75,3 +75,10 @@ Never run a working clone, venv or installed APX from Drive/OneDrive.
 
 Package naming is not runtime certification. It changes no add-on MDID, native command,
 project element, installation or saved Archicad file. Keep the LAB Blocos importer separate.
+
+## LAB prefix (26 October 2026)
+
+All user-facing names start with `LAB - `. R04 supersedes proposed R03; existing
+R01/R02/R03 binaries keep their revisions when given a LAB delivery label. The native
+Add-On Manager label is changed in source and requires a new build to take effect.
+MDID, command namespaces and technical project identifiers remain unchanged.

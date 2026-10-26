@@ -22,7 +22,11 @@ def metadata(root: Path) -> dict:
         raise ValueError("Revision must be positive.")
     for kind in EXTENSIONS:
         name = data.get("names", {}).get(kind, "")
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 -]{0,60}", name) or name != name.strip():
+        if (
+            not name.startswith("LAB - ")
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 -]{0,60}", name)
+            or name != name.strip()
+        ):
             raise ValueError(f"Unsafe material name for {kind}.")
     return data
 
