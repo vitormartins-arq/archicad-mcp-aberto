@@ -1026,3 +1026,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   no Archicad nesta mudança. Ver `docs/DISTRIBUTION.md`. Sem merge da PR #88.
 
 - Codex, 26/10/2026: Vitor requested the LAB prefix on all deliveries. Proposed R04; native display label updated in source only. No merge or installation.
+
+- Codex, 26/10/2026: proposed R05 adds self-contained Windows installation, same-MDID replacement, Include migration and recoverable backups. Core tests use temporary files only; Program Files/UAC/real loading acceptance pending. No merge or installed add-on changes.

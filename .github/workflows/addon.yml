@@ -2,10 +2,10 @@ name: Add-on
 
 on:
   pull_request:
-    paths: ["addon/**", "tools/distribution.py", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
+    paths: ["addon/**", "tools/distribution.py", "tools/installer/**", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
   push:
     branches: [main]
-    paths: ["addon/**", "tools/distribution.py", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
+    paths: ["addon/**", "tools/distribution.py", "tools/installer/**", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
 
 jobs:
   build_win:
@@ -38,6 +38,20 @@ jobs:
         run: |
           python tools/distribution.py stage addon --input "addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx" --archicad ${{ matrix.params.acVersion }} --output packages
           python tools/distribution.py source server_source --archicad ${{ matrix.params.acVersion }} --output packages
+      - name: Test safe Windows installation and build installer
+        shell: pwsh
+        run: |
+          $apx = "addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx"
+          $csc = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe"
+          & $csc /nologo /main:InstallerTests /out:InstallerTests.exe /r:System.Web.Extensions.dll /r:System.IO.Compression.dll tools/installer/InstallCore.cs tools/installer/Mdid.cs tools/installer/InstallerTests.cs
+          if ($LASTEXITCODE -ne 0) { throw 'Installer test compilation failed' }
+          ./InstallerTests.exe $apx
+          if ($LASTEXITCODE -ne 0) { throw 'Installer recovery tests failed' }
+          python -m unittest discover -s tools/installer -p test_builder.py
+          if ($LASTEXITCODE -ne 0) { throw 'Installer builder tests failed' }
+          $revision = (Get-Content distribution.json -Raw | ConvertFrom-Json).revision
+          python tools/installer/build_installer.py --root . --input $apx --archicad ${{ matrix.params.acVersion }} --payload-revision $revision --channel "em teste" --output packages
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: ArchicadMcpAberto AC${{ matrix.params.acVersion }} Win
