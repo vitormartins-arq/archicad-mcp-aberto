@@ -1018,3 +1018,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   simulados e Ruff passaram. Registro: 126 ferramentas. IFC (C33) continua fora: o
   Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
   (vale também para add-on próprio; conferir no DevKit 29 quando der).
+
+
+- **Codex / nomes de distribuição, 26/10/2026:** proposta em `codex/material-revision-names`.
+  Revisão única em `distribution.json`; empacotamento gera nome + revisão, recibo SHA-256
+  e fontes versionadas. R03 proposta, R01/R02 preservadas; nada instalado ou testado
+  no Archicad nesta mudança. Ver `docs/DISTRIBUTION.md`. Sem merge da PR #88.

@@ -860,3 +860,10 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+## Distribution names
+
+User-facing files are generated from `distribution.json`: name plus material revision only.
+See [the distribution contract](docs/DISTRIBUTION.md) for packaging, immutable revisions,
+Archicad-major folders and the separate Main/test Drive delivery. R03 is proposed;
+existing R01/R02 files are unchanged.

@@ -15,6 +15,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Changed material requires a newer revision
+        if: github.event_name == 'pull_request'
+        run: python tools/distribution.py check --base "${{ github.event.pull_request.base.sha }}"
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python }}
