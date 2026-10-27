@@ -24,7 +24,7 @@ Pen = Annotated[int, Field(ge=1, le=255)]
 Name = Annotated[str, Field(min_length=1, max_length=255)]
 
 
-class _Drawn(write.InputModel):
+class _Drawn(write._Favored):
     floor_index: int
     layer: Name | None = None
     pen: Pen | None = None
@@ -94,7 +94,7 @@ class ArcCreate(CircleCreate):
         return self
 
 
-class FillCreate(write.InputModel):
+class FillCreate(write._Favored):
     outline: Annotated[list[write.Point], Field(min_length=3, max_length=200)]
     floor_index: int
     layer: Name | None = None
@@ -159,6 +159,8 @@ def _payload(operation: str, item: Any) -> dict:
         p |= {"coordinates": [q.model_dump() for q in item.outline], "arcs": []}
         if item.contour_pen is not None:
             p["contourPenIndex"] = item.contour_pen
+    if item.favorite is not None:
+        p["favoriteName"] = item.favorite
     if item.pen is not None:
         pens = {"create_fills": "fillPenIndex", "create_hotspots": "penIndex"}
         p[pens.get(operation, "linePenIndex")] = item.pen
@@ -189,6 +191,7 @@ async def _plan(client, items, port, operation):
             raise ValueError(f"{label}: {exc}") from None
         entry["parameters"] = payload
         planned.append(entry)
+    await write._resolve_favorites(client, port, KINDS[operation][0], items, planned)
     return {"operation": operation, "target": target, "items": planned}
 
 

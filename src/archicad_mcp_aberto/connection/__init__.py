@@ -1,6 +1,7 @@
 from archicad_mcp_aberto.connection.client import DEFAULT_PORTS, ArchicadClient, ports_from_env
 from archicad_mcp_aberto.connection.discovery import discover, resolve_port
 from archicad_mcp_aberto.connection.errors import (
+    AddOnError,
     AmbiguousTarget,
     ArchicadBusy,
     ArchicadError,
@@ -12,6 +13,7 @@ from archicad_mcp_aberto.connection.errors import (
 )
 
 __all__ = [
+    "AddOnError",
     "DEFAULT_PORTS",
     "AmbiguousTarget",
     "ArchicadBusy",
