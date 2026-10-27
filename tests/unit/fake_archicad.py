@@ -636,6 +636,8 @@ class FakeArchicad:
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
+    saved_story_views: list[dict] = field(default_factory=list)
+    story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
     grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
     grid_ignored: set[str] = field(default_factory=set)  # parameters CreateGridElements drops
     grid_create_errors: dict[int, dict] = field(default_factory=dict)  # item -> error
@@ -1099,6 +1101,23 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": deepcopy(self.cut_3d)})
         if name == "Show3DAll":
             return ok({"addOnCommandResponse": {}})
+        if name == "SaveStoryView":
+            # Not live: shaped from addon/Sources/PlanViewCommands.cpp.
+            if args["storyIndex"] not in {s["index"] for s in self.stories}:
+                error = {"code": -2130313112, "message": "Story is not in the Project Map."}
+                return ok({"addOnCommandResponse": {"error": error}})
+            view = {"saveZoom": "zoom" not in self.story_view_ignored, "saveDrawingScale": False,
+                    "saveLayers": False}  # fmt: skip
+            if view["saveZoom"]:
+                view["zoom"] = deepcopy(args["zoom"])
+            if "drawingScale" in args and "drawingScale" not in self.story_view_ignored:
+                view.update(saveDrawingScale=True, drawingScale=args["drawingScale"])
+            if "layerCombination" in args:
+                view.update(saveLayers=True, layerCombination=args["layerCombination"])
+            guid = str(uuid4()).upper()
+            self.saved_story_views.append({"viewGuid": guid, **deepcopy(args)})
+            return ok({"addOnCommandResponse": {"viewGuid": guid, "name": args["name"],
+                       "storyIndex": args["storyIndex"], "view": view}})  # fmt: skip
         if name in {"GetGridElementDefaults", "GetGridElements", "CreateGridElements"}:
             return ok({"addOnCommandResponse": self._grid(name, args)})
         if name == "Get3DWindowImage":

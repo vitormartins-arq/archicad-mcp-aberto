@@ -243,7 +243,7 @@ GS::Optional<GS::UniString> Save3DViewCommand::GetInputParametersSchema () const
     })";
 }
 
-static void SetItemName (API_NavigatorItem& item, const GS::UniString& name)
+void SetItemName (API_NavigatorItem& item, const GS::UniString& name)
 {
     GS::ucscpy (item.uName, name.ToUStr ().Get ());
     item.customName = true;
@@ -306,6 +306,33 @@ static bool FindFolderAnywhere (const API_Guid& parentGuid, const GS::UniString&
     return false;
 }
 
+GSErrCode ResolveViewMapFolder (const GS::Array<GS::UniString>& folderPath, API_Guid& parentGuid, GS::UniString& error)
+{
+    API_NavigatorSet viewMap {};
+    viewMap.mapId = API_PublicViewMap;
+    GSErrCode err = ACAPI_Navigator_GetNavigatorSet (&viewMap);
+    if (err != NoError) {
+        error = "Failed to read the View Map.";
+        return err;
+    }
+    parentGuid = viewMap.rootGuid;
+    bool first = true;
+    for (const GS::UniString& folder : folderPath) {
+        if (first) {
+            first = false;
+            if (FindFolderAnywhere (viewMap.rootGuid, folder, parentGuid)) {
+                continue;
+            }
+        }
+        err = FindOrCreateFolder (parentGuid, folder, parentGuid);
+        if (err != NoError) {
+            error = "Failed to find or create the View Map folder " + folder + ".";
+            return err;
+        }
+    }
+    return NoError;
+}
+
 GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
     GS::UniString name;
@@ -337,25 +364,11 @@ GS::ObjectState Save3DViewCommand::Execute (const GS::ObjectState& parameters, G
         return CreateErrorResponse (err != NoError ? err : APIERR_GENERAL, "The Project Map has no 3D item to clone.");
     }
 
-    API_NavigatorSet viewMap {};
-    viewMap.mapId = API_PublicViewMap;
-    err = ACAPI_Navigator_GetNavigatorSet (&viewMap);
+    API_Guid parentGuid = APINULLGuid;
+    GS::UniString folderError;
+    err = ResolveViewMapFolder (folderPath, parentGuid, folderError);
     if (err != NoError) {
-        return CreateErrorResponse (err, "Failed to read the View Map.");
-    }
-    API_Guid parentGuid = viewMap.rootGuid;
-    bool first = true;
-    for (const GS::UniString& folder : folderPath) {
-        if (first) {
-            first = false;
-            if (FindFolderAnywhere (viewMap.rootGuid, folder, parentGuid)) {
-                continue;
-            }
-        }
-        err = FindOrCreateFolder (parentGuid, folder, parentGuid);
-        if (err != NoError) {
-            return CreateErrorResponse (err, "Failed to find or create the View Map folder " + folder + ".");
-        }
+        return CreateErrorResponse (err, folderError);
     }
 
     API_Guid createdGuid = APINULLGuid;

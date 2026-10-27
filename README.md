@@ -139,6 +139,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
 | `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `save_room_plan_views` | Write | Room enlargement views: a framed floor plan view per room, numbered, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
 | `update_drawings` | Write | Updates every Drawing on layouts from its source view | yes |
@@ -667,6 +668,15 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   the first folder name is found at any depth. Both put the 3D camera and cut back. They
   need this project's own add-on (`addon/`); the photographer rules are in
   `docs/3D_SCENES.md`.
+- `save_room_plan_views(folder_path, rooms?, stories?, prefix?, first_number?, margin?,
+  scale?, layer_combination?, port?, dry_run?, confirmation_token?)` saves room
+  enlargement views: for each zone (all, or `rooms` by name, label or number, on
+  `stories`), its story's floor plan as a View Map view framed on the zone's box plus
+  `margin` metres (0.5 by default), at `scale` (25 for 1:25 by default, `null` keeps the
+  story's) and an optional existing `layer_combination`. Views go into `folder_path +
+  [room]` and are numbered by story and zone number: "AMP 01 - BANHO", "AMP 02 -
+  COZINHA". Preview first; each saved view's zoom, scale and layers are read back. It
+  needs the add-on's `SaveStoryView`; View Map changes are outside Undo.
 - `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir

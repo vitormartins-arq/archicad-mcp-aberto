@@ -49,6 +49,7 @@ from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import room_views as room_views_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
@@ -1645,6 +1646,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             content.append(TextContent(type="text", text=name))
             content.append(Image(data=data, format="jpeg" if image_format == "jpg" else "png"))
         return content
+
+    @mcp.tool(annotations=WRITE)
+    async def save_room_plan_views(
+        ctx: Context,
+        folder_path: list[str],
+        rooms: list[str] | None = None,
+        stories: list[int] | None = None,
+        prefix: str = "AMP",
+        first_number: int = 1,
+        margin: float = 0.5,
+        scale: int | None = 25,
+        layer_combination: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Room enlargement views: per zone (all, or rooms by name or number, on stories),
+        save its story's floor plan in the View Map framed on the room plus margin (m),
+        at scale (25 = 1:25) and an optional layer_combination, in folder_path + a folder
+        named after the room, numbered "AMP 01 - <room>" by story and zone number.
+        Preview first; apply with explicit port and token. Needs the ArchicadMcpAberto
+        add-on. Outside Undo; never saves."""
+        return await room_views_tool.save_room_plan_views(
+            client_of(ctx), folder_path, rooms, stories, prefix, first_number, margin, scale,
+            layer_combination, port, dry_run, confirmation_token,
+        )  # fmt: skip
 
     @mcp.tool(annotations=WRITE)
     async def save_3d_scenes(
