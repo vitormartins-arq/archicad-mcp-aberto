@@ -408,6 +408,10 @@
       "description": "Set cameras and 3D cuts and return the 3D window images to judge; puts the 3D window back."
     },
     {
+      "name": "save_room_plan_views",
+      "description": "Preview or save one framed floor plan view per room, numbered, in a folder named after it (ArchicadMcpAberto add-on)."
+    },
+    {
       "name": "save_3d_scenes",
       "description": "Preview/save 3D scenes as View Map views, one folder per room; never saves the project."
     },

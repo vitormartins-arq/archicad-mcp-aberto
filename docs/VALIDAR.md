@@ -808,3 +808,16 @@ ArchiCAD de teste.
   teste: mudar a espessura de uma parede e pedir "atualize o favorito <nome> com esta
   parede". Conferir na paleta de Favoritos que o favorito passou a ter a espessura nova.
   O recibo fica `unverified`. Anotar se o Desfazer volta o favorito antigo.
+
+## Lote do Claude C38: vistas de ampliação por ambiente
+
+Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
+
+- [ ] **save_room_plan_views.** No projeto novo, com três ou quatro zonas em dois
+  pavimentos e uma combinação de vegetais de ampliação: "crie as vistas de ampliação dos
+  banheiros e da cozinha na pasta AMPLIAÇÕES, 1:25, com a combinação <nome>". Conferir na
+  prévia os nomes "AMP 01 - ..." na ordem certa. Depois de aplicar: uma pasta por
+  ambiente no Mapa de Vistas, cada vista abre na planta do pavimento certo, enquadrada no
+  ambiente com folga, em 1:25 e com a combinação pedida, e o recibo dá `verified`.
+  Anotar se o enquadramento ao abrir a vista bate com o ambiente (o zoom salvo pode
+  ajustar à proporção da janela).

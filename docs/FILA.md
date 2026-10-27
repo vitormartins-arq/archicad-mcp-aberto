@@ -188,6 +188,11 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   O Tapir só tem os comandos depois da 1.7.2, então foram portados para o nosso add-on
   (`addon/Sources/GridCommands.cpp`): `list_grid_elements` e `create_grid_elements`.
   Precisa do `.apx` novo do add-on no ArchiCAD.
+- **C38 vistas de ampliação por ambiente.** (Feito na branch `claude/project-thread-pvslgt`,
+  pedido do Vitor em 23/10/2026: "abrir as vistas de ampliação, salvar numa pasta com o
+  nome do ambiente, enumerar... demora pra cacete"; ele escolheu vista de planta
+  enquadrada, não a ferramenta Detalhe.) `save_room_plan_views` com o comando novo
+  `SaveStoryView` do add-on. Precisa do `.apx` novo.
 - **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
   `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
   etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
