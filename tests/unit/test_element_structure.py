@@ -10,7 +10,7 @@ MISSING = "33333333-3333-3333-3333-333333333333"
 
 
 async def test_structure_reads_preserve_errors():
-    fake = FakeArchicad(19723)
+    fake = FakeArchicad(19723, element_structure_fixture=True)
     async with ArchicadClient(transport=fake_transport(fake)) as client:
         a = await element_structure.get_subelements(client, [GUID, MISSING], 19723)
         b = await element_structure.get_element_trims(client, [GUID, MISSING], 19723)
@@ -25,6 +25,8 @@ async def test_structure_reads_preserve_errors():
 
 @pytest.mark.parametrize("values", [[], [GUID] * 101, ["bad"]])
 async def test_structure_limits(values):
-    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+    async with ArchicadClient(
+        transport=fake_transport(FakeArchicad(19723, element_structure_fixture=True))
+    ) as client:
         with pytest.raises((ValueError, TypeError)):
             await element_structure.get_element_trims(client, values, 19723)

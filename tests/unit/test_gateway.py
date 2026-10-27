@@ -102,4 +102,4 @@ async def test_tapir_error_is_raised_not_hidden():
     fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(TapirError):
-            await gateway.run_read_command(c, "Tapir.GetHotlinks", port=19723)
+            await gateway.run_read_command(c, "Tapir.GetAutoTextKeys", port=19723)

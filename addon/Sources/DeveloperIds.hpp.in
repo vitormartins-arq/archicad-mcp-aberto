@@ -1,0 +1,4 @@
+#pragma once
+
+#define AC_MDID_DEVELOPER_ID @AC_MDID_DEVELOPER_ID@
+#define AC_MDID_LOCAL_ID @AC_MDID_LOCAL_ID@

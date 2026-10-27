@@ -43,6 +43,10 @@ class TapirError(ArchicadError):
     """Tapir answered, but reported an error or an unexpected response."""
 
 
+class AddOnError(ArchicadError):
+    """This project's own add-on (addon/) answered with an error or an unexpected response."""
+
+
 class NoInstance(ArchicadError):
     """No Archicad instance is reachable."""
 

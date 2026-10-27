@@ -1,0 +1,6 @@
+#include "DeveloperIds.hpp"
+
+'MDID' 32500 "Add-On Identifier" {
+	AC_MDID_DEVELOPER_ID
+	AC_MDID_LOCAL_ID
+}
