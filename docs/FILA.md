@@ -61,6 +61,25 @@ fim das listas). (T23 a T27 já entraram na main; a T23 ficou bloqueada no AC30.
 - **T34 local e unidades do projeto, branch `codex/t34-project-location`.**
   `get_project_location` por `GetGeoLocation` e `GetCalculationUnits`, e
   `get_layout_settings` por `GetLayoutSettings`.
+- **T35 `create_layer_combinations`, branch `codex/t35-layer-combinations`.** Em
+  `tools/layer_settings.py`, pelo `CreateLayerCombinations` da JSON API oficial: nome e,
+  por vegetal (por nome), oculto, travado, aramado e grupo de interseção. Até 20.
+  Recuse nome existente e vegetal inexistente na prévia. Conferência por
+  `list_layer_combinations(include_layers=True)`. Sem mudar nem apagar combinações.
+- **T36 leituras de MEP, branch `codex/t36-mep-read`.** Arquivo `tools/mep.py`:
+  `list_mep_systems` (`GetMEPSystems`, `GetMEPDistributionSystems`), `get_mep_elements`
+  (`GetMEPElements`, `GetMEPRoutingElements`, `GetMEPPorts`) e
+  `get_mep_preference_tables` (`GetMEPPreferenceTables`).
+- **T37 estrutura dos elementos, branch `codex/t37-element-structure`.**
+  `get_subelements` (`GetSubelementsOfHierarchicalElements`), `get_element_trims`
+  (`GetElementTrims`), `get_solid_operation_links` (`GetSolidElementLinks`) e
+  `get_section_elements` (`GetSectionElements`). Até 100 elementos.
+- **T38 cotas, OVM e bibliotecas, branch `codex/t38-dimensions-mvo-libraries`.**
+  `get_dimension_data` (`GetDimensionData`), `get_model_view_options`
+  (`GetModelViewOptions`) e `list_libraries` (`GetLibraries`, `GetSpecialFolders`).
+- **T39 imagens de prévia, branch `codex/t39-preview-images`.** `get_element_preview`
+  (`GetElementPreviewImage`), `get_zone_image` (`GetRoomImage`) e
+  `get_favorite_preview` (`GetFavoritePreviewImage`) como imagem PNG do MCP, até 10.
 
 ## Tarefas do Claude (Codex: não pegue)
 
@@ -91,12 +110,94 @@ nuvem, numa rodada a cada 3 horas. As tarefas abaixo são dele; o Codex fica só
   metros, no padrão de `create_polylines`, conferidas pela leitura de tipo e pavimento.
 - **C10 `create_hotspots`.** (Feito no lote `lote/claude-4`.) `CreateHotspots`: pontos quentes 2D em metros, no pavimento
   dado, conferidos pela leitura de tipo, pavimento e posição.
-- **C11 `create_keynote_labels`.** `CreateKeynoteLabels`: etiqueta de nota-chave em
+- **C11 `create_keynote_labels`.** (Feito no lote `lote/claude-7`.) `CreateKeynoteLabels`: etiqueta de nota-chave em
   elemento existente, usando um item de `list_keynotes`. Sem mudar as notas-chave.
-- **C12 `modify_morphs`.** `ModifyMorphs`: mudar morfos existentes e editáveis no que o
+- **C12 `modify_morphs`.** (Feito no lote `lote/claude-7`.) `ModifyMorphs`: mudar morfos existentes e editáveis no que o
   Tapir 1.7.0 aceitar (confira o código-fonte), conferindo pela leitura e pela caixa 3D.
-- **C13 cotas associativas.** `CreateAssociativeDimensions`: cota linear entre pontos de
+- **C13 cotas associativas.** (Feito no lote `lote/claude-7`, só pontas de parede.) `CreateAssociativeDimensions`: cota linear entre pontos de
   elementos existentes em planta, conferida pela leitura de tipo e pavimento. Sem cortes.
+- **C15 `create_lamps`.** (Feito no lote `lote/claude-7`.) `CreateLamps`: luminárias por nome de peça de biblioteca, no
+  padrão de `create_objects`, com `favorite`. Conferência por tipo, pavimento, origem e
+  peça.
+- **C16 `create_stairs`.** (Feito no lote `lote/claude-7`.) `CreateStairs` do Tapir 1.7.0 (confira no código-fonte o que
+  ele aceita): escada reta por linha de base e altura, com `favorite`, conferida pela
+  leitura de tipo, pavimento e caixa 3D.
+- **C17 categorias de zona.** (Feito no lote `lote/claude-7`; falta o Lab.) `CreateZoneCategories`: categorias novas com nome, código
+  e cor, sem mudar nem apagar as que existem. Depois, no Lab, levar ao
+  `lab_apply_template` as categorias de zona do LAB Template.
+- **C18 compostos.** (Feito na branch `claude/project-thread-pvslgt`; falta o Lab.) `CreateComposites`: compostos novos por camadas (material de
+  construção e espessura), sem sobrescrever. Depois, no Lab, os compostos do template.
+- **C19 salvar a vista 3D atual.** (Pedido do Vitor, 21/10/2026.) `CreateViewsInViewMap`
+  do Tapir 1.7.0 a partir da Perspectiva genérica do Mapa do projeto, com nome e pasta
+  do Mapa de vistas, conferida pela árvore do Navegador. O Tapir não move a câmera: o
+  Vitor acerta o ângulo na tela e o MCP salva. Conferir ao vivo se o ângulo fica gravado.
+- **C20 gerar cenas 3D.** (Pedido do Vitor, 21/10/2026: "gera várias vistas legais do meu
+  3D e salva no mapa de vistas".) Passo 1: investigar na API C++ do ArchiCAD o que lê e
+  define a câmera do 3D (posição, alvo, lente, axonometria) e propor ao Tapir um comando
+  para isso, pela regra de upstream primeiro. Passo 2: no MCP, `create_3d_scenes`, que lê
+  a caixa 3D do modelo, escolhe ângulos (axonometrias dos cantos, perspectivas na altura
+  dos olhos), põe a câmera, salva cada uma no Mapa de vistas com nome e pasta (C19) e
+  tira print para conferir. Até o Tapir ter o comando, só o passo 1.
+- **C21 `create_drawings`.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `CreateDrawings` do Tapir 1.7.0: vista do Mapa de vistas (ou GUID do Navegador) numa
+  prancha existente, na posição em metros de papel, conferida na base da prancha.
+- **C22 `add_stories`.** (Feito na branch `claude/project-thread-pvslgt`.) `SetStories`
+  do Tapir 1.7.0 só para acrescentar pavimentos acima do topo ou abaixo do primeiro,
+  devolvendo os existentes sem mudança. Conferência por `GetStories`.
+- **C23 opções de design.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_design_options`: conjuntos, opções e combinações novos numa chamada
+  (ArchiCAD 29+), sem mudar os existentes nem mover elementos. `move_to_design_options` (`MoveElementsToDesignOptions`) põe elementos numa opção
+  ou de volta no modelo principal.
+- **C24 `CreateProjectInfoFields`: não fazer.** No Tapir 1.7.0 o comando responde "not
+  migrated to AC30" no ArchiCAD 30; só serviria no 28/29.
+- **C26 sólidos e corte por telhado.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_solid_operations` (`CreateSolidElementLinks`) e `trim_to_roof`
+  (`TrimElements`). O fake já responde `GetSolidElementLinks` e `GetElementTrims`, que a
+  T37 do Codex vai ler: reaproveitar esses handlers, sem duplicar.
+- **C27 subconjuntos do Book.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_layout_subsets` (`CreateLayoutSubset`) e `subset` em `create_layouts`.
+- **C28 módulos (hotlinks).** (Feito na branch `claude/project-thread-pvslgt`.)
+  `place_hotlinks` (`CreateHotlinkNodes` e `CreateHotlinkInstances`): um nó por
+  arquivo `.mod`/`.pln`, reaproveitando o que já aponta para o mesmo arquivo.
+- **C29 `update_drawings`.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `UpdateDrawings` do Tapir 1.7.0: atualizar os desenhos de
+  pranchas (por nome da prancha). O Tapir só devolve sucesso; não há como ler se o
+  desenho foi atualizado, então o recibo fica `unverified`.
+- **C30 desfazer sólidos e cortes.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `remove_solid_operations` (`RemoveSolidElementLinks`) e `remove_trims`
+  (`RemoveElementTrims`).
+- **C31 `modify_lamps`.** (Feito na branch `claude/project-thread-pvslgt`.) `ModifyLamps`
+  do Tapir 1.7.0: os campos do `modify_objects` e `lightIsOn`. A cor da luz ficou de fora
+  (o código do Tapir diz que o ArchiCAD descarta).
+- **C32 sistemas de classificação.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_classification_systems` (`CreateClassificationSystems`): sistema novo com a
+  árvore de itens. Depois, no Lab, a classificação do template.
+- **C33 propriedades IFC: não fazer.** No Tapir 1.7.0 o `SetIFCPropertiesOfElements`
+  responde "not supported in Archicad 28 and newer" (a escrita só existe até o 27).
+- **C35 superfícies novas.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `create_surfaces` (`CreateSurfaces`): cópia de uma superfície existente com cor,
+  transparência, tipo ou sem textura. O Tapir 1.7.0 começa a superfície zerada, por isso
+  a cópia.
+- **C36 organizar o Mapa de Vistas.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `move_navigator_items` (`MoveNavigatorItem`): vistas e pastas do Mapa de Vistas, e
+  pranchas e subconjuntos do Book, para outra pasta.
+- **C37 atualizar favoritos.** (Feito na branch `claude/project-thread-pvslgt`.)
+  `update_favorites_from_elements` (`UpdateFavoritesFromElements`): sobrescreve um
+  favorito existente com os ajustes de um elemento do mesmo tipo. Fica `unverified`.
+- **C34 eixos (malha estrutural).** (Feito na branch `claude/project-thread-pvslgt`.)
+  O Tapir só tem os comandos depois da 1.7.2, então foram portados para o nosso add-on
+  (`addon/Sources/GridCommands.cpp`): `list_grid_elements` e `create_grid_elements`.
+  Precisa do `.apx` novo do add-on no ArchiCAD.
+- **C38 vistas de ampliação por ambiente.** (Feito na branch `claude/project-thread-pvslgt`,
+  pedido do Vitor em 23/10/2026: "abrir as vistas de ampliação, salvar numa pasta com o
+  nome do ambiente, enumerar... demora pra cacete"; ele escolheu vista de planta
+  enquadrada, não a ferramenta Detalhe.) `save_room_plan_views` com o comando novo
+  `SaveStoryView` do add-on. Precisa do `.apx` novo.
+- **C14 criar a partir de favorito.** (Feito: lote `lote/claude-5` e objetos no `lote/claude-6`.)
+  `favoriteName` do Tapir 1.7.0 em paredes, lajes, pilares, vigas, zonas, textos,
+  etiquetas, malhas e desenho 2D. Falta `create_objects`: com favorito, a peça de
+  biblioteca viria dele e a conferência por nome da peça teria de mudar.
+
 
 ## Integrado
 

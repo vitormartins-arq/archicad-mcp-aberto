@@ -95,6 +95,7 @@ async def test_malformed_inventory_is_rejected_instead_of_partially_returned(mon
     from tests.unit import fake_archicad
 
     monkeypatch.setitem(fake_archicad.DESIGN_OPTIONS_FIXTURE, "options", original)
+    fake.do_options = deepcopy(original)  # the fake copies the fixture when it is built
     async with client(fake) as c:
         with pytest.raises(ValueError, match="design option GUID"):
             await design_options.list_design_options(c, 19723)
