@@ -15,7 +15,7 @@ GS::UniString& Epoch ()
     static GS::UniString epoch = GS::Guid (GS::Guid::GenerateGuid).ToUniString ();
     return epoch;
 }
-GSErrCode __ACENV_CALL OnProjectEvent (API_NotifyEventID event, Int32)
+GSErrCode OnProjectEvent (API_NotifyEventID event, Int32)
 {
     if (event == APINotify_New || event == APINotify_NewAndReset ||
         event == APINotify_Open || event == APINotify_Close)
@@ -80,9 +80,11 @@ GS::ObjectState SaveProjectAsPLNCommand::Execute (const GS::ObjectState& paramet
         return CreateErrorResponse (APIERR_BADPARS, "Missing absolute PLN path.");
     try {
         const std::string value = destination.ToCStr (CC_UTF8).Get ();
-        const auto path = std::filesystem::u8path (value);
+        const std::filesystem::path path (std::u8string (
+            reinterpret_cast<const char8_t*> (value.data ()), value.size ()));
         auto extension = path.extension ().string ();
-        for (auto& ch : extension) if (ch >= 'A' && ch <= 'Z') ch += 'a' - 'A';
+        for (auto& ch : extension)
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char> (ch + ('a' - 'A'));
         if (!path.is_absolute () || extension != ".pln" ||
             !std::filesystem::is_directory (path.parent_path ()) || std::filesystem::exists (path))
             return CreateErrorResponse (APIERR_BADPARS, "Destination must be a new absolute PLN in an existing folder.");

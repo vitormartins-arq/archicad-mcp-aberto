@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Integração da #92 / 27/10/2026:** main `713406c` incorporada na branch da PR,
+  preservando SaveStoryView/ampliações e salvamento de revisões. Conflitos resolvidos;
+  2.791 testes offline passaram (27,47 s), Ruff e formatação passaram (169 arquivos).
+  Corrigidas a declaração do callback de eventos e a conversão UTF-8 para filesystem
+  C++20 após a primeira compilação CI. Teste real continua pendente; nenhum acesso
+  ao Archicad aberto, instalação de APX ou merge da PR no GitHub.
+
 - **Salvar revisão / 27/10/2026:** implementação isolada de Save As PLN nativo e
   próxima revisão com arquivamento posterior em `Anteriores`. Prévia/token, identidade
   nativa e recibos; falha/timeout não repete salvamento nem arquiva automaticamente.
