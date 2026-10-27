@@ -61,6 +61,7 @@ class ViewpointCreate(write.InputModel):
 class LayoutCreate(write.InputModel):
     name: Text
     master: Text
+    subset: Text | None = None  # a Layout Book subset by name or navigator GUID
 
     @field_validator("name")
     @classmethod
@@ -84,6 +85,21 @@ def _flatten(node: Any, out: list[dict]) -> list[dict]:
     for child in node.get("children", []) if isinstance(node.get("children"), list) else []:
         _flatten(child.get("navigatorItem") if isinstance(child, dict) else None, out)
     return out
+
+
+def subset_row(tree: list[dict], wanted: str, label: str) -> dict:
+    """A Layout Book subset by navigator GUID or name; raises when missing or ambiguous."""
+    subsets = [r for r in tree if r["type"] == "SubSetItem"]
+    guid = _guid({"guid": wanted})
+    found = (
+        [r for r in subsets if r["navigator_guid"] == guid]
+        if guid
+        else [r for r in subsets if str(r["name"]).casefold() == wanted.casefold()]
+    )
+    if len(found) != 1:
+        problem = "is ambiguous (pass its GUID)" if found else "does not exist"
+        raise ValueError(f"{label}: subset {wanted!r} {problem}.")
+    return found[0]
 
 
 async def _tree(client, port, map_id, timeout=None) -> list[dict]:
@@ -136,6 +152,10 @@ async def _plan(client, entries, port, operation):
                 "layoutName": entry.name,
             }
             extra = {"master_name": found[0]["name"], "master_guid": found[0]["navigator_guid"]}
+            if entry.subset is not None:
+                subset = subset_row(tree, entry.subset, f"Layout {index}")
+                parameters["parentNavigatorItemId"] = {"guid": subset["navigator_guid"]}
+                extra["subset_name"] = subset["name"]
         else:
             key = (entry.reference_id.casefold(), entry.name.casefold())
             clash = [

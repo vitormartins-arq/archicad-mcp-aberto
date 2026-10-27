@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 import httpx
 
 from archicad_mcp_aberto.connection.errors import (
+    AddOnError,
     ArchicadUnavailable,
     TapirError,
     from_api_error,
@@ -24,6 +25,8 @@ DEFAULT_HOST = "127.0.0.1"
 # Archicad picks the first free port from 19723 upward, one per running instance.
 DEFAULT_PORTS: tuple[int, ...] = tuple(range(19723, 19744))
 TAPIR_NAMESPACE = "TapirCommand"
+# Commands of this project's own add-on in addon/.
+OWN_ADDON_NAMESPACE = "ArchicadMcpAberto"
 
 
 def ports_from_env(value: str | None = None) -> tuple[int, ...]:
@@ -34,11 +37,25 @@ def ports_from_env(value: str | None = None) -> tuple[int, ...]:
     ports: list[int] = []
     for part in value.split(","):
         part = part.strip()
-        if "-" in part:
-            start, end = (int(p) for p in part.split("-", 1))
-            ports.extend(range(start, end + 1))
-        elif part:
-            ports.append(int(part))
+        if not part:
+            continue
+        try:
+            if "-" in part:
+                start, end = (int(p) for p in part.split("-", 1))
+            else:
+                start = end = int(part)
+        except ValueError as exc:
+            raise ValueError(
+                "ARCHICAD_MCP_PORTS must contain integer ports or ascending ranges."
+            ) from exc
+        # Check endpoints before expanding: a typo must not allocate an enormous list
+        # or silently discard a reversed range while scanning the other entries.
+        if not 1 <= start <= end <= 65535:
+            raise ValueError(
+                "ARCHICAD_MCP_PORTS ports must be between 1 and 65535, "
+                "with ranges in ascending order."
+            )
+        ports.extend(range(start, end + 1))
     if not ports:
         raise ValueError("ARCHICAD_MCP_PORTS is empty.")
     return tuple(dict.fromkeys(ports))
@@ -150,4 +167,26 @@ class ArchicadClient:
             raise TapirError(f"Tapir command {name} returned no response.")
         if response.get("error"):
             raise TapirError(f"Tapir error in {name}.", detail=response["error"])
+        return response
+
+    async def own_addon(
+        self,
+        port: int,
+        name: str,
+        parameters: dict[str, Any] | None = None,
+        *,
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
+        """Run a command of this project's own add-on (addon/) through ExecuteAddOnCommand."""
+        request: dict[str, Any] = {
+            "addOnCommandId": {"commandNamespace": OWN_ADDON_NAMESPACE, "commandName": name}
+        }
+        if parameters is not None:
+            request["addOnCommandParameters"] = parameters
+        result = await self.command(port, "ExecuteAddOnCommand", request, timeout=timeout)
+        response = result.get("addOnCommandResponse")
+        if not isinstance(response, dict):
+            raise AddOnError(f"Add-on command {name} returned no response.")
+        if response.get("error"):
+            raise AddOnError(f"Add-on error in {name}.", detail=response["error"])
         return response
