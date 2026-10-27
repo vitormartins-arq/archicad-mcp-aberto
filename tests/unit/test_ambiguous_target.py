@@ -10,13 +10,19 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    classification_systems,
     classifications,
+    composites,
+    design_option_create,
     design_options,
     documents,
     drafting,
+    drawings,
     edit,
     favorites,
     gateway,
+    grids,
+    hotlinks,
     ifc,
     interior_elevations,
     issues,
@@ -24,27 +30,41 @@ from archicad_mcp_aberto.tools import (
     labels,
     layer_settings,
     layers,
+    layout_book,
     locks,
     meshes,
     modify,
     morphs,
     navigator,
+    navigator_moves,
     openings,
     project_info,
     property_definitions,
     read,
     renames,
     roofs,
+    room_views,
+    scenes,
     sections,
     selection,
+    solids,
+    stairs,
+    stories,
+    surfaces,
     texts,
     views,
     voids,
     wall_dimensions,
     write,
+    zone_categories,
     zones,
 )
-from tests.unit.fake_archicad import CREATE_WALLS_FIXTURE, FakeArchicad, fake_transport
+from tests.unit.fake_archicad import (
+    BUILDING_MATERIALS_FIXTURE,
+    CREATE_WALLS_FIXTURE,
+    FakeArchicad,
+    fake_transport,
+)
 from tests.unit.test_modify_elements import ROWS as MODIFY_ROWS
 
 pytestmark = pytest.mark.anyio
@@ -58,12 +78,19 @@ MODIFY_TYPES = {
     "modify_windows": "Window",
     "modify_doors": "Door",
     "modify_objects": "Object",
+    "modify_lamps": "Lamp",
     "modify_roofs": "Roof",
     "modify_texts": "Text",
     "modify_labels": "Label",
     "modify_meshes": "Mesh",
+    "modify_morphs": "Morph",
 }
+SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "read_scene_model": {},
+    "shoot_3d_scenes": {"scenes": [SCENE]},
+    "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
+    "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
     "get_ifc_of_elements": {"element_guids": [GUID]},
     "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
     "list_design_options": {},
@@ -118,6 +145,10 @@ INPUTS = {
     },
     "create_texts": {"texts": [{"text": "Sala", "position": {"x": 1, "y": 1}, "floor_index": 0}]},
     "create_labels": {"labels": [{"text": "Parede", "element_guid": GUID}]},
+    "modify_morphs": {"morphs": [{"guid": GUID, "castShadow": False}]},
+    "create_keynote_labels": {
+        "labels": [{"keynote_item_guid": GUID, "position": {"x": 0, "y": 0}}]
+    },
     "list_classifications": {},
     "list_layers": {},
     "get_project_info_fields": {},
@@ -129,6 +160,44 @@ INPUTS = {
     "get_element_groups": {"element_guids": [GUID]},
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
+    "create_zone_categories": {"categories": [{"name": "Varanda", "code": "VAR"}]},
+    "create_design_options": {"sets": ["Cobertura"]},
+    "place_hotlinks": {
+        "placements": [
+            {"source_path": "C:/m/banho.mod", "origin": {"x": 0, "y": 0}, "floor_index": 0}
+        ]
+    },
+    "create_layout_subsets": {"subsets": [{"name": "Executivo"}]},
+    "create_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
+    "trim_to_roof": {"element_guids": [GUID], "roof_guid": PROP},
+    "remove_solid_operations": {"links": [{"target_guid": GUID, "operator_guid": PROP}]},
+    "remove_trims": {"element_guids": [GUID], "roof_guid": PROP},
+    "move_to_design_options": {"moves": [{"element_guid": GUID, "option": "F-02"}]},
+    "add_stories": {"stories": [{"name": "Cobertura", "level": 6.0}]},
+    "update_drawings": {"layouts": ["Planta baixa"]},
+    "move_navigator_items": {
+        "map": "view_map",
+        "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_grid_elements": {},
+    "create_grid_elements": {
+        "grids": [{"start": {"x": 0, "y": 0}, "end": {"x": 0, "y": 9}, "floor_index": 0}]
+    },
+    "create_surfaces": {"surfaces": [{"name": "Pintura Azul", "based_on": "Pintura Branca"}]},
+    "create_drawings": {
+        "drawings": [
+            {"view": "Ground floor", "layout": "Planta baixa", "position": {"x": 0.2, "y": 0.15}}
+        ]
+    },
+    "create_composites": {
+        "composites": [
+            {
+                "name": "Parede 15",
+                "use_with": ["Wall"],
+                "skins": [{"building_material": "Insulation", "thickness": 0.15}],
+            }
+        ]
+    },
     "lock_elements": {"element_guids": [GUID]},
     "unlock_elements": {"element_guids": [GUID]},
     "update_zones": {},
@@ -177,6 +246,7 @@ INPUTS = {
     "modify_windows": {"windows": [{"guid": GUID, "width": 1.0}]},
     "modify_doors": {"doors": [{"guid": GUID, "width": 1.0}]},
     "modify_objects": {"objects": [{"guid": GUID, "origin": {"x": 0, "y": 0}}]},
+    "modify_lamps": {"lamps": [{"guid": GUID, "lightIsOn": False}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
@@ -221,6 +291,16 @@ INPUTS = {
             }
         ]
     },
+    "create_lamps": {
+        "lamps": [
+            {
+                "library_part_name": "Pendente 01",
+                "origin": {"x": 1, "y": 2},
+                "floor_index": 0,
+                "base_level": 2.5,
+            }
+        ]
+    },
     "get_bounding_boxes": {"element_ids": [GUID]},
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
@@ -230,12 +310,34 @@ INPUTS = {
             {"owner_guid": GUID, "base_point": {"x": 1, "y": 0, "z": 0.5}, "width": 1, "height": 1}
         ]
     },
+    "create_associative_dimensions": {
+        "dimensions": [
+            {
+                "points": [
+                    {"wall_guid": GUID, "end": "start"},
+                    {"wall_guid": GUID, "end": "end"},
+                ],
+                "reference_point": {"x": 0, "y": 1},
+            }
+        ]
+    },
     "create_wall_thickness_dimensions": {
         "dimensions": [
             {
                 "wall_guid": GUID,
                 "reference_point": {"x": 0, "y": 0},
                 "direction": {"x": 0, "y": 1},
+            }
+        ]
+    },
+    "create_stairs": {
+        "stairs": [
+            {
+                "start": {"x": 0, "y": 0},
+                "end": {"x": 3, "y": 0},
+                "floor_index": 0,
+                "base_level": 0,
+                "total_height": 2.8,
             }
         ]
     },
@@ -262,6 +364,9 @@ INPUTS = {
     },
     "set_attribute_property_values": {
         "changes": [{"attribute_guid": GUID, "property_guid": PROP, "value": "Fornecedor A"}]
+    },
+    "update_favorites_from_elements": {
+        "favorites": [{"element_guid": GUID, "favorite": "Parede padrão"}]
     },
     "create_favorites_from_elements": {
         "favorites": [{"element_guid": GUID, "favorite": "Parede nova"}]
@@ -332,6 +437,9 @@ INPUTS = {
             }
         ]
     },
+    "create_classification_systems": {
+        "systems": [{"name": "LAB", "version": "1", "items": [{"id": "01", "name": "A"}]}]
+    },
     "create_classification_items": {
         "items": [
             {
@@ -343,11 +451,13 @@ INPUTS = {
         ]
     },
 }
+REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
         attribute_properties,
         attributes,
+        classification_systems,
         classifications,
         design_options,
         documents,
@@ -356,6 +466,7 @@ TARGETED = {
         edit,
         favorites,
         gateway,
+        hotlinks,
         ifc,
         ifc,
         interior_elevations,
@@ -364,24 +475,37 @@ TARGETED = {
         labels,
         layer_settings,
         layers,
+        layout_book,
         locks,
         meshes,
         modify,
         morphs,
         navigator,
+        grids,
+        navigator_moves,
         openings,
         project_info,
         property_definitions,
         read,
         roofs,
+        room_views,
+        scenes,
         sections,
         selection,
+        solids,
+        surfaces,
+        stairs,
+        stories,
         texts,
         views,
         voids,
         wall_dimensions,
         write,
         zones,
+        zone_categories,
+        composites,
+        design_option_create,
+        drawings,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
@@ -407,6 +531,9 @@ def instances(second_state="ready"):
         busy=second_state == "busy",
         tapir_version=None if second_state == "no_tapir" else "1.7.0",
     )
+    for instance in (first, second):
+        row = {"keynoteItemId": {"guid": GUID}, "key": "K-LABEL", "title": "Piso"}
+        instance.keynotes["itemsInRoot"].append(row)
     return first, second
 
 
@@ -456,7 +583,7 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
-    if name in {"modify_walls", "create_windows", "create_doors"}:
+    if name in {"modify_walls", "create_windows", "create_doors", "create_associative_dimensions"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name in {"get_gdl_parameters", "set_gdl_parameters"}:
@@ -475,7 +602,21 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "set_attribute_property_values":
         for instance in (first, second):
             instance.attribute_property_values[(GUID, PROP)] = "Fornecedor"
-    if name == "apply_favorites":
+    if name in ("create_solid_operations", "trim_to_roof", *REMOVALS):
+        for instance in (first, second):
+            instance.elements[PROP] = "Roof"
+            if name in REMOVALS:
+                instance.solid_links[(GUID, PROP)] = {"operation": "Subtraction", "linkFlags": {}}
+                instance.element_trims[(GUID, PROP)] = "KeepInside"
+    if name == "update_drawings":
+        for instance in (first, second):
+            database = instance.nav_databases["88888888-8888-4888-8888-000000000013"]
+            instance.layout_drawings[database] = ["D2000000-0000-4000-8000-000000000002"]
+    if name == "create_composites":
+        for instance in (first, second):
+            row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
+            instance.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
+    if name in ("apply_favorites", "update_favorites_from_elements"):
         for instance in (first, second):
             instance.favorites["Wall"] = ["Parede padrão"]
     if name == "unlock_elements":
@@ -484,19 +625,38 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "update_zones":
         for instance in (first, second):
             instance.elements[PROP] = "Zone"
+    if name == "save_room_plan_views":
+        for instance in (first, second):
+            instance.elements[PROP] = "Zone"
+            instance.details[PROP] = {"type": "Zone", "floorIndex": 0}
+            instance.bounding_boxes_3d[PROP] = {
+                "boundingBox3D": {"xMin": 0, "yMin": 0, "zMin": 0, "xMax": 4, "yMax": 3, "zMax": 3}
+            }
+            for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
+                instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+    if isinstance(result, tuple):  # shoot_3d_scenes: (report, images)
+        result = result[0]
     selected, untouched = (first, second) if port == 19723 else (second, first)
     result_port = result["target"]["port"] if "target" in result else result["port"]
     assert result_port == port
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
-    extra = {"create_groups": {PROP: "Wall"}, "update_zones": {PROP: "Zone"}}.get(name, {})
+    extra = {
+        "create_groups": {PROP: "Wall"},
+        "update_zones": {PROP: "Zone"},
+        "save_room_plan_views": {PROP: "Zone"},
+        "create_solid_operations": {PROP: "Roof"},
+        "trim_to_roof": {PROP: "Roof"},
+        "remove_solid_operations": {PROP: "Roof"},
+        "remove_trims": {PROP: "Roof"},
+    }.get(name, {})
     assert selected.elements == untouched.elements == {GUID: expected_type, **extra}
     assert not any("Create" in command or "Save" in command for command in selected.tapir_calls)
 
@@ -524,13 +684,18 @@ async def test_instance_inventory_tools_report_both_without_selecting(name):
 async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path, monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path / "receipts"))
     first, second = instances()
-    if name in {"create_windows", "create_doors"}:
+    if name in {"create_windows", "create_doors", "create_associative_dimensions"}:
         second.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
     if name == "set_layer_settings":
         for instance in (first, second):
             instance.layers[2] = "Editable"
     if name == "create_groups":
         second.elements[PROP] = "Wall"
+    if name in ("create_solid_operations", "trim_to_roof"):
+        second.elements[PROP] = "Roof"
+    if name == "create_composites":
+        row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
+        second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
     arguments = deepcopy(INPUTS[name])
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)

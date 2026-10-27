@@ -1,0 +1,7 @@
+[
+ {"folder": "04 GYM", "name": "GYM - 1P 01", "cam": [33, 44.6, 1.4], "tgt": [33, 25], "cone": 65, "two": false},
+ {"folder": "04 GYM", "name": "GYM - 2P 01", "cam": [46.8, 44.5, 1.4], "tgt": [30, 30], "cone": 60, "two": true},
+ {"folder": "EXTERIOR", "name": "EXTERIOR - FRONT FACADE 01", "cam": [-2.2, 53.7, 1.6], "tgt": [22.6, 35.4], "cone": 62, "two": false},
+ {"folder": "AXONOMETRICS", "name": "AXONOMETRIC GENERAL", "parallel": {"azimuth": 1.676, "projectionMode": 15}, "cut": null},
+ {"folder": "AXONOMETRICS", "name": "AXONOMETRIC GROUND FLOOR", "parallel": {"azimuth": 1.676, "projectionMode": 15}, "cut": 1.5}
+]

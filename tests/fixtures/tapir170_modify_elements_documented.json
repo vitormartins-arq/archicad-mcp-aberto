@@ -75,6 +75,13 @@
         "code": -2130313112,
         "message": "Element is not a Text."
       }
+    },
+    "ModifyLamps": {
+      "success": false,
+      "error": {
+        "code": -2130313112,
+        "message": "Element is not of the expected type."
+      }
     }
   },
   "object_details": {
