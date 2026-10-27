@@ -1,0 +1,8 @@
+[
+ {"id": "top", "cam": [30, 18, 95], "tgt": [30, 18.5, 0], "cone": 63},
+ {"id": "gym_1P01", "cam": [33, 44.6, 1.4], "tgt": [33, 25], "cone": 65, "two": false},
+ {"id": "gym_2P01", "cam": [46.8, 44.5, 1.4], "tgt": [30, 30], "cone": 60, "two": true},
+ {"id": "reception_1P01", "cam": [48.3, 41.3, 1.3], "tgt": [58, 41.3], "cone": 60, "two": false},
+ {"id": "pool_1P01", "cam": [27.2, 6.2, 1.4], "tgt": [50, 6.2], "cone": 60, "two": false},
+ {"id": "front_facade_1P01", "cam": [-2.2, 53.7, 1.6], "tgt": [22.6, 35.4], "cone": 62, "two": false}
+]

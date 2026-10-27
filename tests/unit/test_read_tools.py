@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 98
+    assert len(tools) == 129
     writes = {
         "create_walls",
         "create_slabs",
@@ -125,13 +125,19 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "create_roofs",
         "create_texts",
         "create_labels",
+        "create_keynote_labels",
+        "modify_morphs",
         "create_lines",
         "create_polylines",
+        "create_splines",
+        "create_hotspots",
         "create_arcs",
         "create_circles",
         "create_fills",
         "set_classifications",
         "create_layers",
+        "create_zone_categories",
+        "create_stairs",
         "set_element_layers",
         "create_groups",
         "set_project_info_fields",
@@ -184,11 +190,34 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "create_keynote_items",
         "create_morphs",
         "create_wall_thickness_dimensions",
+        "create_associative_dimensions",
+        "create_lamps",
         "create_openings",
+        "shoot_3d_scenes",
+        "save_3d_scenes",
+        "save_room_plan_views",
+        "create_composites",
+        "create_drawings",
+        "add_stories",
+        "create_design_options",
+        "move_to_design_options",
+        "create_solid_operations",
+        "trim_to_roof",
+        "create_layout_subsets",
+        "place_hotlinks",
+        "remove_solid_operations",
+        "remove_trims",
+        "modify_lamps",
+        "create_classification_systems",
+        "update_drawings",
+        "create_surfaces",
+        "move_navigator_items",
+        "update_favorites_from_elements",
+        "create_grid_elements",
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 31
+    assert len(reads) == 33
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

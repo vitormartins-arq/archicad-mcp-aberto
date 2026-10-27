@@ -52,11 +52,49 @@ ROWS = {
     "Window": CREATE_OPENINGS_FIXTURE["window_details"],
     "Door": CREATE_OPENINGS_FIXTURE["door_details"],
     "Object": MODIFY_ELEMENTS_FIXTURE["object_details"],
+    # Lamps share the object details in the Tapir 1.7.0 source, plus lightIsOn; synthetic.
+    "Lamp": {
+        **MODIFY_ELEMENTS_FIXTURE["object_details"],
+        "type": "Lamp",
+        "details": {**MODIFY_ELEMENTS_FIXTURE["object_details"]["details"], "lightIsOn": True},
+    },
     "Roof": ROOFS_TEXTS_FIXTURE["roof_details"],
     "Text": {
         **ROOFS_TEXTS_FIXTURE["text_details"],
         "details": {**ROOFS_TEXTS_FIXTURE["text_details"]["details"], "text": "Sala"},
     },
+    # A create_morphs box in the GetDetailsOfElements shape (Tapir 1.7.0 source); synthetic.
+    "Morph": {
+        "type": "Morph",
+        "floorIndex": 0,
+        "layerIndex": 1,
+        "details": {
+            "origin": {"x": 1.0, "y": 2.0, "z": 0.0},
+            "castShadow": True,
+            "receiveShadow": True,
+            "body": {
+                "bodyType": "Solid",
+                "edgeDefault": "SoftHidden",
+                "isClosed": True,
+                "vertices": [
+                    {"x": x, "y": y, "z": z}
+                    for z in (0.0, 3.0)
+                    for x, y in ((0.0, 0.0), (2.0, 0.0), (2.0, 1.0), (0.0, 1.0))
+                ],
+                "polygons": [
+                    {"vertexIds": face}
+                    for face in (
+                        [0, 3, 2, 1],
+                        [4, 5, 6, 7],
+                        [0, 1, 5, 4],
+                        [1, 2, 6, 5],
+                        [2, 3, 7, 6],
+                        [3, 0, 4, 7],
+                    )
+                ],
+            },
+        },
+    },  # fmt: skip
 }
 TOOLS = {
     "Label": (modify.modify_labels, "ModifyLabels", "labelsWithDetails"),
@@ -66,6 +104,7 @@ TOOLS = {
     "Window": (modify.modify_windows, "ModifyWindows", "windowsWithDetails"),
     "Door": (modify.modify_doors, "ModifyDoors", "doorsWithDetails"),
     "Object": (modify.modify_objects, "ModifyObjects", "objectsWithDetails"),
+    "Lamp": (modify.modify_lamps, "ModifyLamps", "lampsWithDetails"),
     "Roof": (modify.modify_roofs, "ModifyRoofs", "roofsWithDetails"),
     "Text": (modify.modify_texts, "ModifyTexts", "textsWithDetails"),
 }
@@ -77,6 +116,7 @@ SAMPLE = {
     "Window": {"width": 1.5},
     "Door": {"height": 2.2},
     "Object": {"origin": {"x": 5, "y": 6}},
+    "Lamp": {"lightIsOn": False},
     "Roof": {"eavesOverhang": 0.6},
     "Text": {"text": "Cozinha"},
 }
@@ -159,6 +199,13 @@ async def test_preview_then_apply_verified(kind):
             {"level": 0.4},
             {"coordinates": {"x": 2, "y": 3, "z": 0.4}},
             {"origin": {"x": 2, "y": 3, "z": 0.4}},
+        ),
+        ("Lamp", {"lightIsOn": False}, {"lightIsOn": False}, None),
+        (
+            "Lamp",
+            {"origin": {"x": 7, "y": 8}},
+            {"coordinates": {"x": 7, "y": 8, "z": 0}},
+            {"origin": {"x": 7, "y": 8, "z": 0}},
         ),
         (
             "Object",
@@ -507,3 +554,16 @@ async def test_object_height_is_set_through_zzyzx():
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError, match="no ZZYZX"):
             await modify.modify_objects(c, edits, 19723)
+
+
+async def test_lamp_height_is_set_through_zzyzx():
+    edits = [{"guid": ELEMENT, "dimensions": {"x": 0.4, "y": 0.4, "z": 0.9}, "lightIsOn": False}]
+    fake = model("Lamp")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Lamp", edits)
+    assert result["status"] == "verified"
+    assert sent(fake, "Lamp")[0]["lightIsOn"] is False
+    request = next(r for r in fake.tapir_requests if r["command"] == "SetGDLParametersOfElements")
+    assert request["parameters"]["elementsWithGDLParameters"][0]["gdlParameters"] == [
+        {"name": "ZZYZX", "value": 0.9}
+    ]
