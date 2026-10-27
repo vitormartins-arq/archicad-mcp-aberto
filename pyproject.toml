@@ -45,6 +45,7 @@ markers = ["live: needs a running Archicad on this machine (run with -m live)"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["addon/Tools"]  # Build scripts copied from Tapir, kept as upstream wrote them.
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

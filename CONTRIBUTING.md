@@ -21,7 +21,7 @@ uv run ruff check .
 | `src/archicad_mcp_aberto/server.py` | MCP registration only |
 | `tests/unit/` | Tests against `fake_archicad.py`; these run in CI |
 | `tests/live/` | Tests against a real Archicad; run locally with `-m live` |
-| `addon/` | Native C++ code, only for gaps Tapir cannot cover |
+| `addon/` | Native C++ code for commands Tapir lacks (also offered upstream) |
 
 ## Rules for a tool
 
@@ -31,8 +31,8 @@ uv run ruff check .
 3. Never pick an instance when several are open: use `resolve_port`.
 4. Read tools are annotated `readOnlyHint`. Write tools must dry-run by default,
    report results per element and check the model after writing.
-5. A new Tapir command belongs upstream in Tapir first. Native code in `addon/` needs
-   an issue explaining why Tapir cannot do it.
+5. A command Tapir lacks may go into our add-on in `addon/`; offer the same command to
+   Tapir upstream too, so it can replace ours later.
 6. Only report what you tested. Say which Archicad version, build, OS and Tapir
    version you used in the PR.
 

@@ -257,3 +257,90 @@ async def create_favorites_from_elements(
         planner_override=_plan_create,
         dispatcher_override=_dispatch_create,
     )
+
+
+# UpdateFavoritesFromElements overwrites an EXISTING favorite of the element's type with
+# that element's settings, classifications, property values and memo. The favorite must
+# exist for that type. Tapir cannot read a favorite's settings, so an update stays
+# "unverified"; the old settings are not kept by the MCP.
+class FavoriteUpdate(write.InputModel):
+    element_guid: str
+    favorite: Annotated[str, Field(min_length=1, max_length=255)]
+
+    @field_validator("element_guid")
+    @classmethod
+    def canonical_guid(cls, value: str) -> str:
+        return str(UUID(value)).upper()
+
+
+async def _plan_update(client, items, port, operation):
+    port, target, rows = await _source_rows(client, [i.element_guid for i in items], port)
+    by_type: dict[str, list[str]] = {}
+    seen: set[tuple[str, str]] = set()
+    planned = []
+    for index, (item, row) in enumerate(zip(items, rows, strict=True)):
+        kind = row["type"]
+        if kind not in by_type:
+            by_type[kind] = await _names(client, port, kind)
+        name = match(by_type[kind], item.favorite)
+        if name is None:
+            raise ValueError(f"Favorite {index}: no {kind} favorite {item.favorite!r}.")
+        if (kind, name) in seen:
+            raise ValueError(f"Favorite {index}: {name!r} is updated twice.")
+        seen.add((kind, name))
+        planned.append(
+            {
+                "index": index,
+                "status": "ready",
+                "element_guid": item.element_guid,
+                "elementType": kind,
+                "favorite": name,
+                "parameters": {"elementId": {"guid": item.element_guid}, "favorite": name},
+            }
+        )
+    return {"operation": operation, "target": target, "items": planned}
+
+
+async def _verify_update(client, receipt, items):
+    port = receipt["target"]["port"]
+    names: dict[str, list[str]] = {}
+    for item in items:
+        kind = item["elementType"]
+        if kind not in names:
+            names[kind] = await _names(client, port, kind)
+        if item["favorite"] not in names[kind]:
+            item.update(status="verification_failed", mismatches=["favorite_name"])
+    receipt["verification_note"] = (
+        "Tapir cannot read a favorite's settings; check the updated favorites in Archicad."
+    )
+
+
+async def _dispatch_update(client, receipt):
+    await edit._execute(
+        client, receipt, "UpdateFavoritesFromElements", "favoritesFromElements", _verify_update
+    )
+
+
+async def update_favorites_from_elements(
+    client: ArchicadClient,
+    favorites: list[dict | FavoriteUpdate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/overwrite up to 50 existing favorites, each from one element of its type."""
+    if not 1 <= len(favorites) <= MAX_CREATE:
+        raise ValueError(f"Pass between 1 and {MAX_CREATE} favorites.")
+    validated = [
+        f if isinstance(f, FavoriteUpdate) else FavoriteUpdate.model_validate(f) for f in favorites
+    ]
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "update_favorites_from_elements",
+        planner_override=_plan_update,
+        dispatcher_override=_dispatch_update,
+    )

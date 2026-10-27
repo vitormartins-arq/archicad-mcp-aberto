@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, Literal
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp import Context, FastMCP, Image
+from mcp.types import TextContent
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
@@ -29,22 +31,37 @@ from archicad_mcp_aberto.tools import (
     read,
     write,
 )
+from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
+from archicad_mcp_aberto.tools import composites as composites_tool
+from archicad_mcp_aberto.tools import design_option_create as design_option_create_tool
+from archicad_mcp_aberto.tools import drawings as drawings_tool
+from archicad_mcp_aberto.tools import grids as grids_tool
+from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
+from archicad_mcp_aberto.tools import layout_book as layout_book_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
+from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import room_views as room_views_tool
+from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
+from archicad_mcp_aberto.tools import solids as solids_tool
+from archicad_mcp_aberto.tools import stairs as stairs_tool
+from archicad_mcp_aberto.tools import stories as stories_tool
+from archicad_mcp_aberto.tools import surfaces as surfaces_tool
 from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 
 INSTRUCTIONS = """\
@@ -60,6 +77,10 @@ Archicad MCP (read tools and safe wall and slab creation).
 - Wall and slab writes dry-run by default. Show the plan to the user before applying, then
   repeat the same inputs with dry_run=false, the explicit port and confirmation_token.
   Tokens expire after ten minutes, work only in this session and can be consumed once.
+- "Generate the 3D scenes": read_scene_model, then shoot_3d_scenes (look at every image,
+  move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
+  level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
+  above each story. These need the ArchicadMcpAberto add-on (addon/).
 - Receipts are local. No tool saves the Archicad project. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
@@ -181,13 +202,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview straight Basic walls (up to 20). All lengths are metres.
+        """Preview straight walls (up to 20). All lengths are metres.
         Requires Tapir. Review the preview with the user, then repeat identical inputs
-        with dry_run=false, explicit port and confirmation_token. New walls inherit the
-        default layer and building material, or take everything from `favorite` (a Wall
-        favorite's name; height and thickness may then be left out, given fields override
-        it). Returns per-wall results and local receipts; verifies geometry after writing.
-        Never saves the project."""
+        with dry_run=false, explicit port and confirmation_token. Height is always needed,
+        thickness too unless `composite` (a wall Composite's name) is given; the wall then
+        takes the composite and its total thickness. New walls inherit the default layer
+        and building material, or those of `favorite` (a Wall favorite's name). Tapir 1.7.0
+        does not keep a favorite's structure, height or linked top: pass the favorite's
+        composite to keep it. Returns per-wall results and local receipts; verifies
+        geometry after writing. Never saves the project."""
         return await write.create_walls(client_of(ctx), walls, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -241,10 +264,26 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Preview up to 20 library part objects by exact name, in metres and radians.
         base_level is absolute project Z; size stays the part's default. Requires Tapir;
         review then apply identical inputs with explicit port and single-use token.
-        An unknown name fails only that object. Verifies each object; never saves."""
+        An unknown name fails only that object. `favorite` takes an Object favorite's
+        pens, layer and parameters; pass that favorite's own library part. Verifies each
+        object; never saves."""
         return await write.create_objects(
             client_of(ctx), objects, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_lamps(
+        ctx: Context,
+        lamps: list[write.ObjectCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 lamps (Lamp library parts) by exact name, in metres and
+        radians, like create_objects. base_level is absolute project Z. Optional Lamp
+        `favorite` (pass its own library part). Requires Tapir; apply with explicit port
+        and single-use token. Verifies each lamp; never saves."""
+        return await write.create_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
 
     @mcp.tool(annotations=WRITE)
     async def move_elements(
@@ -327,6 +366,22 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         back. Requires Tapir. Never saves."""
         return await layers_tool.create_layers(
             client_of(ctx), layers, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_zone_categories(
+        ctx: Context,
+        categories: list[zone_categories_tool.ZoneCategoryCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 zone categories: name, optional code and colour (red,
+        green, blue from 0 to 1). An existing name is refused, never overwritten; the stamp
+        comes from the first zone category. Apply with explicit port and single-use token;
+        each is read back. Requires Tapir. Never saves."""
+        return await zone_categories_tool.create_zone_categories(
+            client_of(ctx), categories, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)
@@ -578,9 +633,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview adding up to 20 layouts to the Layout Book: name and master (an
-        existing master layout's name; a missing master is refused, never created).
-        Size and margins come from the master. A layout name already in the book is
+        """Preview adding up to 20 layouts to the Layout Book: name, master (an
+        existing master layout's name; a missing master is refused, never created) and
+        optional subset (an existing subset by name or GUID; default the top of the
+        book). Size and margins come from the master. A layout name already in the book is
         refused. Apply identical inputs with explicit port and single-use token; each
         is found back in the Navigator. Requires Tapir. Never saves."""
         return await documents.create_layouts(
@@ -991,6 +1047,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def modify_morphs(
+        ctx: Context,
+        morphs: list[modify.MorphModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview edits of up to 50 morphs: size {x, y, z} in metres (box morphs from
+        create_morphs only; the corner stays), buildingMaterial and surface by name,
+        castShadow, receiveShadow. Move or rotate with move_elements/rotate_elements.
+        Requires Tapir; apply with explicit port and token; read back. Never saves."""
+        return await modify.modify_morphs(client_of(ctx), morphs, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_keynote_labels(
+        ctx: Context,
+        labels: list[labels_tool.KeynoteLabelCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 20 keynote labels: keynote_item_guid from list_keynotes and a
+        position in metres; content_fields picks Key/Title/Description/Reference (all by
+        default). Archicad 28+; the label goes on the story Archicad shows, attached to
+        nothing. Requires Tapir; apply with explicit port and token. Never saves."""
+        return await labels_tool.create_keynote_labels(
+            client_of(ctx), labels, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def modify_roofs(
         ctx: Context,
         roofs: list[modify.RoofModify],
@@ -1348,7 +1434,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), sections, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def create_favorites_from_elements(
         ctx: Context,
@@ -1367,7 +1452,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), new_favorites, port, dry_run, confirmation_token
         )
 
-
     @mcp.tool(annotations=WRITE)
     async def set_attribute_property_values(
         ctx: Context,
@@ -1385,7 +1469,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await attribute_properties.set_attribute_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token
         )
-
 
     @mcp.tool(annotations=WRITE)
     async def create_interior_elevations(
@@ -1476,6 +1559,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=WRITE)
+    async def create_stairs(
+        ctx: Context,
+        stairs: list[stairs_tool.StairCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 straight stairs: a start-end baseline in metres,
+        base_level (absolute Z) and explicit floor_index. Optional total_height,
+        flight_width, risers and `favorite` (a Stair favorite's name); what is left out
+        comes from the Stair tool defaults or the favorite. Create on the story Archicad
+        shows. Reads back type, story and 3D box. Explicit apply port, one-use token and
+        receipt; never saves."""
+        return await stairs_tool.create_stairs(
+            client_of(ctx), stairs, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
     async def create_wall_thickness_dimensions(
         ctx: Context,
         dimensions: list[wall_dimensions_tool.WallThicknessDimension],
@@ -1488,6 +1589,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         direction in plan metres; default crosses the wall's middle. Explicit apply port,
         one-use token and receipt; never saves."""
         return await wall_dimensions_tool.create_wall_thickness_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_associative_dimensions(
+        ctx: Context,
+        dimensions: list[wall_dimensions_tool.WallPointsDimension],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 50 linear dimensions between wall ends: points
+        [{wall_guid, end: start|end}] (2 to 20, straight walls on one story),
+        reference_point the line passes through, optional direction (default the first
+        wall's). Linked to the walls; read back point by point. Explicit apply port,
+        one-use token and receipt; never saves."""
+        return await wall_dimensions_tool.create_associative_dimensions(
             client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 
@@ -1506,6 +1624,401 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Explicit apply port, one-use token and receipt; never saves."""
         return await voids_tool.create_openings(
             client_of(ctx), openings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def read_scene_model(
+        ctx: Context,
+        port: int | None = None,
+        min_z: float | None = None,
+        max_z: float | None = None,
+    ) -> dict:
+        """Plan 3D scenes: rooms (zone name, number, area, 3D box, suggested cameras) and
+        boxes of walls, columns, objects, doors, windows and curtain walls; min_z/max_z
+        keep one height band. Official API only. Rules in docs/3D_SCENES.md."""
+        return await scenes_tool.read_scene_model(client_of(ctx), port, min_z, max_z)
+
+    @mcp.tool(annotations=VIEW, structured_output=False)
+    async def shoot_3d_scenes(
+        ctx: Context,
+        scenes: list[scenes_tool.Scene],
+        port: int | None = None,
+        image_format: Literal["jpg", "png"] = "jpg",
+    ) -> list:
+        """Set up to 8 scenes in the 3D window and return their images to judge: name,
+        then perspective (camera, target, view_cone in radians, two_point; target.z left
+        out keeps it level) or parallel (azimuth) with optional cut_height. Puts the 3D
+        camera and cut back. Changes no element. Needs the ArchicadMcpAberto add-on."""
+        report, images = await scenes_tool.shoot_3d_scenes(
+            client_of(ctx), scenes, port, image_format
+        )
+        content: list = [TextContent(type="text", text=json.dumps(report, ensure_ascii=False))]
+        for name, data in images:
+            content.append(TextContent(type="text", text=name))
+            content.append(Image(data=data, format="jpeg" if image_format == "jpg" else "png"))
+        return content
+
+    @mcp.tool(annotations=WRITE)
+    async def save_room_plan_views(
+        ctx: Context,
+        folder_path: list[str],
+        rooms: list[str] | None = None,
+        stories: list[int] | None = None,
+        prefix: str = "AMP",
+        first_number: int = 1,
+        margin: float = 0.5,
+        scale: int | None = 25,
+        layer_combination: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Room enlargement views: per zone (all, or rooms by name or number, on stories),
+        save its story's floor plan in the View Map framed on the room plus margin (m),
+        at scale (25 = 1:25) and an optional layer_combination, in folder_path + a folder
+        named after the room, numbered "AMP 01 - <room>" by story and zone number.
+        Preview first; apply with explicit port and token. Needs the ArchicadMcpAberto
+        add-on. Outside Undo; never saves."""
+        return await room_views_tool.save_room_plan_views(
+            client_of(ctx), folder_path, rooms, stories, prefix, first_number, margin, scale,
+            layer_combination, port, dry_run, confirmation_token,
+        )  # fmt: skip
+
+    @mcp.tool(annotations=WRITE)
+    async def save_3d_scenes(
+        ctx: Context,
+        scenes: list[scenes_tool.Scene],
+        folder_path: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/save up to 60 scenes (shoot_3d_scenes shape) as View Map views in
+        folder_path + each scene's folder (one per room); folders are created when missing.
+        Apply identical inputs with explicit port and one-use token. Puts the 3D window
+        back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
+        return await scenes_tool.save_3d_scenes(
+            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_composites(
+        ctx: Context,
+        composites: list[composites_tool.CompositeCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 composites: name, use_with (Wall, Slab, Roof, Shell)
+        and up to 20 skins, each a building material by name, thickness in metres, type
+        (Core, Finish, Other) and frame pen. Separators use separator_line (default: the
+        first line type) and separator_pen. An existing name is refused, never
+        overwritten. Apply with explicit port and single-use token; each is read back.
+        Requires Tapir. Never saves."""
+        return await composites_tool.create_composites(
+            client_of(ctx), composites, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_drawings(
+        ctx: Context,
+        drawings: list[drawings_tool.DrawingCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview placing up to 20 views on layouts as Drawings: view (a View Map view
+        name, or a Navigator item GUID from get_navigator_tree), layout (a Layout Book
+        layout name or GUID), position (the Drawing's centre on the layout, metres of
+        paper), optional name and angle. Folders, layouts and placed Drawings are refused.
+        Apply with explicit port and single-use token; each is found on its layout after.
+        Requires Tapir. Never saves."""
+        return await drawings_tool.create_drawings(
+            client_of(ctx), drawings, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def add_stories(
+        ctx: Context,
+        stories: list[stories_tool.StoryCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 stories: name, absolute level in metres and optional
+        show_on_sections. Each goes above the top story or below the bottom one
+        (basements); levels between stories are refused. Existing stories are kept as
+        they are; structure_after shows every height. Apply with explicit port and
+        single-use token; read back by GetStories. Requires Tapir. Never saves."""
+        return await stories_tool.add_stories(
+            client_of(ctx), stories, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_design_options(
+        ctx: Context,
+        sets: list[str] | None = None,
+        options: list[design_option_create_tool.OptionCreate] | None = None,
+        combinations: list[design_option_create_tool.CombinationCreate] | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding design option sets (names), options ({name, id, set}: an
+        existing set or one of sets) and combinations ({name, options: option ids}), up
+        to 20 of each, in that order. Existing names and ids are refused; nothing is
+        changed and no element is moved. Apply with explicit port and single-use token;
+        all read back. Requires Tapir and Archicad 29+. Never saves."""
+        return await design_option_create_tool.create_design_options(
+            client_of(ctx), sets, options, combinations, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def move_to_design_options(
+        ctx: Context,
+        moves: list[design_option_create_tool.OptionMove],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview putting up to 100 elements in a design option: {element_guid, option}
+        with the option's string id (list_design_options), or option null for the main
+        model. The preview shows from and to. Apply with explicit port and single-use
+        token; each is read back. Requires Tapir and Archicad 29+. Never saves."""
+        return await design_option_create_tool.move_to_design_options(
+            client_of(ctx), moves, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_solid_operations(
+        ctx: Context,
+        links: list[solids_tool.SolidLink],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 solid element operations: target_guid, operator_guid,
+        operation (Subtraction, SubtractionUpwards, SubtractionDownwards, Intersection,
+        Addition), inherit_operator_attributes, skip_polygon_holes. Both elements must be
+        editable; an existing link is refused. Apply with explicit port and single-use
+        token; each link is read back. Requires Tapir. Never saves."""
+        return await solids_tool.create_solid_operations(
+            client_of(ctx), links, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def trim_to_roof(
+        ctx: Context,
+        element_guids: list[str],
+        roof_guid: str,
+        keep: Literal["KeepInside", "KeepOutside", "KeepAll"] = "KeepInside",
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview trimming up to 100 editable elements (walls, columns, beams...) with
+        one roof or shell, keeping the part inside (below), outside or all. An existing
+        trim by that roof is refused. Apply with explicit port and single-use token; each
+        trim is read back. Requires Tapir. Never saves."""
+        return await solids_tool.trim_to_roof(
+            client_of(ctx), element_guids, roof_guid, keep, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def remove_solid_operations(
+        ctx: Context,
+        links: list[solids_tool.LinkPair],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview removing up to 50 existing solid element operations: target_guid and
+        operator_guid. Both elements must be editable and the link must exist; the
+        elements stay. Apply with explicit port and single-use token; each removal is
+        read back. Requires Tapir. Never saves."""
+        return await solids_tool.remove_solid_operations(
+            client_of(ctx), links, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def remove_trims(
+        ctx: Context,
+        element_guids: list[str],
+        roof_guid: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview removing the trim of one roof or shell from up to 100 editable elements
+        it trims; the elements stay. Apply with explicit port and single-use token; each
+        removal is read back. Requires Tapir. Never saves."""
+        return await solids_tool.remove_trims(
+            client_of(ctx), element_guids, roof_guid, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def modify_lamps(
+        ctx: Context,
+        lamps: list[modify.LampModify],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/edit up to 50 lamps: origin {x, y}, level from its story, dimensions
+        {x, y, z} in metres (z through ZZYZX) and lightIsOn. Refuses a level that changes
+        story, locked and hotlinked lamps; verifies fields and never saves. Requires
+        Tapir."""
+        return await modify.modify_lamps(client_of(ctx), lamps, port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_classification_systems(
+        ctx: Context,
+        systems: list[classification_systems_tool.SystemCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 10 classification systems: name, version, description,
+        source, date (YYYY-MM-DD, today if omitted) and items, a tree of {id, name,
+        description, children} with at least one item. A name and version already used is
+        refused. Apply with explicit port and single-use token; the system and its whole
+        tree are read back. create_classification_items adds items to an existing system.
+        Requires Tapir. Never saves."""
+        return await classification_systems_tool.create_classification_systems(
+            client_of(ctx), systems, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def update_drawings(
+        ctx: Context,
+        layouts: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview updating every Drawing on up to 20 layouts (name or GUID) from its
+        source view, as Update Drawing does (Archicad 27+). The preview lists the
+        Drawings; a layout without Drawings is refused. Apply with explicit port and
+        single-use token. Archicad has no read-back of the update, so the receipt stays
+        unverified. Requires Tapir. Never saves."""
+        return await drawings_tool.update_drawings(
+            client_of(ctx), layouts, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_surfaces(
+        ctx: Context,
+        surfaces: list[surfaces_tool.SurfaceCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 50 surfaces, each a copy of an existing surface
+        (based_on, by name) with a new name and optional color {red, green, blue} 0..1,
+        transparency 0..100, material_type (General, Simple, Matte, Metal, Plastic,
+        Glass, Glowing, Constant) and keep_texture. An existing name is refused. Apply
+        with explicit port and single-use token; every field is read back. Requires
+        Tapir. Never saves."""
+        return await surfaces_tool.create_surfaces(
+            client_of(ctx), surfaces, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_grid_elements(
+        ctx: Context, port: int | None = None, include_parameters: bool = False
+    ) -> dict:
+        """List every grid line (Grid Tool element): start, end, angle, length, story,
+        layer index and library part; include_parameters adds the GDL parameters and the
+        Grid Tool defaults. Needs the ArchicadMcpAberto add-on."""
+        return await grids_tool.list_grid_elements(client_of(ctx), port, include_parameters)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_grid_elements(
+        ctx: Context,
+        grids: list[grids_tool.GridCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview drawing up to 50 grid lines, each from start to end {x, y} on
+        floor_index, with optional layer (name) and GDL parameters [{name, value}] such as
+        the bubble text (names from list_grid_elements with include_parameters). The
+        length comes from the points. Apply with explicit port and single-use token; one
+        Undo step, every line read back. Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await grids_tool.create_grid_elements(
+            client_of(ctx), grids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def move_navigator_items(
+        ctx: Context,
+        map: Literal["view_map", "layout_book"],
+        moves: list[navigator_moves_tool.Move],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview moving up to 50 items: in the View Map, views and folders into a folder;
+        in the Layout Book, layouts and subsets into a subset or the top of the book.
+        item and folder are names or GUIDs (a repeated name needs the GUID). An item
+        already in the folder, or a folder into itself, is refused. Apply with explicit
+        port and single-use token; one move at a time, each read back. Requires Tapir.
+        Never saves."""
+        return await navigator_moves_tool.move_navigator_items(
+            client_of(ctx), map, moves, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def update_favorites_from_elements(
+        ctx: Context,
+        favorites_to_update: list[favorites.FavoriteUpdate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview overwriting up to 50 EXISTING favorites, each with the settings,
+        classifications and property values of one element of the favorite's type
+        (element_guid, favorite). The old settings are not kept: copy them first with
+        create_favorites_from_elements if they matter. Apply with explicit port and
+        single-use token. Tapir cannot read a favorite's settings, so the receipt stays
+        unverified. Requires Tapir. Never saves."""
+        return await favorites.update_favorites_from_elements(
+            client_of(ctx), favorites_to_update, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layout_subsets(
+        ctx: Context,
+        subsets: list[layout_book_tool.SubsetCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview adding up to 20 Layout Book subsets: name, parent (an existing subset
+        by name or GUID; omitted for the top of the book), optional own ID prefix and
+        numbering (abc, ABC, 1, 01, 001, 0001, noID). A name already under that parent
+        is refused. Apply with explicit port and single-use token; each is read back in
+        the Layout Book. create_layouts takes the subset to put layouts in. Requires
+        Tapir. Never saves."""
+        return await layout_book_tool.create_layout_subsets(
+            client_of(ctx), subsets, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def place_hotlinks(
+        ctx: Context,
+        placements: list[hotlinks_tool.HotlinkPlace],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview placing up to 20 hotlink modules: source_path (absolute .mod or .pln
+        path on the Archicad computer), origin {x, y, z?} in metres, floor_index, angle
+        (radians), mirrored, optional node name and single_story (one source story).
+        A node for the same file is reused. Apply with explicit port and single-use
+        token; each instance is read back. Requires Tapir. Never saves."""
+        return await hotlinks_tool.place_hotlinks(
+            client_of(ctx), placements, port, dry_run, confirmation_token
         )
 
     return mcp

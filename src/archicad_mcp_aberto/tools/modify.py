@@ -1,4 +1,4 @@
-"""Edits of existing slabs, columns, beams, windows, doors and objects (Tapir Modify*).
+"""Edits of existing slabs, columns, beams, windows, doors, objects and morphs (Tapir Modify*).
 
 Every tool follows modify_walls: a dry run first, a single-use token and the explicit
 port to apply, per-element receipts and a read-back of each changed field. Fields are
@@ -20,6 +20,7 @@ from pydantic import Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
 from archicad_mcp_aberto.tools import edit, read, roofs, texts, write
+from archicad_mcp_aberto.tools import morphs as boxes
 
 MAX_EDITS = 50
 
@@ -79,6 +80,10 @@ class ObjectModify(_Edit):
     dimensions: Dimensions | None = None
 
 
+class LampModify(ObjectModify):
+    lightIsOn: bool | None = None
+
+
 class RoofModify(_Edit):
     thickness: write.Positive | None = None
     level: float | None = None
@@ -118,6 +123,111 @@ class LabelModify(_Edit):
         if value is not None and not value.strip():
             raise ValueError("text must not be blank.")
         return value if value is None else texts._lines(value)
+
+
+class MorphSize(write.InputModel):
+    x: boxes.Size
+    y: boxes.Size
+    z: boxes.Size
+
+
+class MorphModify(_Edit):
+    size: MorphSize | None = None
+    buildingMaterial: Annotated[str, Field(min_length=1, max_length=255)] | None = None
+    surface: Annotated[str, Field(min_length=1, max_length=255)] | None = None
+    castShadow: bool | None = None
+    receiveShadow: bool | None = None
+
+
+def _box_size(body: Any) -> dict | None:
+    """The size of a create_morphs box body (corner at the origin), else None."""
+    if not isinstance(body, dict) or body.get("bodyType") != "Solid":
+        return None
+    vertices, polygons = body.get("vertices"), body.get("polygons")
+    if not isinstance(vertices, list) or len(vertices) != 8:
+        return None
+    if not isinstance(polygons, list) or len(polygons) != len(boxes.FACES):
+        return None
+    try:
+        size = {k: max(float(v[k]) for v in vertices) for k in "xyz"}
+        low = {k: min(float(v[k]) for v in vertices) for k in "xyz"}
+    except (KeyError, TypeError, ValueError):
+        return None
+    if any(abs(low[k]) > boxes.TOLERANCE or size[k] <= 0 for k in "xyz"):
+        return None
+
+    def snap(value: float, top: float) -> float | None:
+        if abs(value) <= boxes.TOLERANCE:
+            return 0
+        return top if abs(value - top) <= boxes.TOLERANCE else None
+
+    found = {tuple(snap(float(v[k]), size[k]) for k in "xyz") for v in vertices}
+    corners = {(x, y, z) for x in (0, size["x"]) for y in (0, size["y"]) for z in (0, size["z"])}
+    return size if found == corners else None
+
+
+async def _morph_attributes(client, port, edits) -> dict:
+    """Attribute name -> GUID for the building materials and surfaces the edits name."""
+    out: dict[str, dict[str, str]] = {}
+    for field, kind in (("buildingMaterial", "BuildingMaterial"), ("surface", "Surface")):
+        wanted = {getattr(e, field) for e in edits if getattr(e, field) is not None}
+        if not wanted:
+            continue
+        response = await client.tapir(port, "GetAttributesByType", {"attributeType": kind})
+        rows = response.get("attributes")
+        if not isinstance(rows, list):
+            raise ValueError(f"Cannot read the {kind} attributes.")
+        names = {}
+        for row in rows:
+            guid = _guid_of(row.get("attributeId")) if isinstance(row, dict) else None
+            if guid and isinstance(row.get("name"), str):
+                names.setdefault(row["name"], guid)
+        out[field] = {}
+        for name in wanted:
+            found = [n for n in names if n == name] or [
+                n for n in names if n.strip().casefold() == name.strip().casefold()
+            ]
+            if len(found) != 1:
+                problem = "is ambiguous" if found else "does not exist"
+                raise ValueError(f"{kind} {name!r} {problem}.")
+            out[field][name] = names[found[0]]
+    return out
+
+
+def _guid_of(value: Any) -> str | None:
+    try:
+        return str(UUID(value["guid"])).upper()
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _morph(change, row, target, label, extra):
+    details, changes = row["details"], change.model_dump(exclude={"guid"}, exclude_none=True)
+    parameters, expected = {}, {}
+    if "size" in changes:
+        if _box_size(details.get("body")) is None:
+            raise ValueError(
+                f"{label}: only a box morph (as create_morphs makes) can be resized; "
+                "Tapir replaces the whole body."
+            )
+        box = boxes.MorphCreate(
+            base_point={"x": 0, "y": 0, "z": 0},
+            size_x=changes["size"]["x"],
+            size_y=changes["size"]["y"],
+            size_z=changes["size"]["z"],
+            floor_index=0,
+        )
+        parameters["body"] = boxes._body(box)
+        expected["body"] = {"bodyType": "Solid", "isClosed": True}
+    for field, key in (("buildingMaterial", "buildingMaterialId"), ("surface", "surfaceId")):
+        if field in changes:
+            attribute = {"guid": extra[field][changes[field]]}
+            parameters[key] = attribute
+            expected[key] = attribute
+    for key in ("castShadow", "receiveShadow"):
+        if key in changes:
+            parameters[key] = expected[key] = changes[key]
+    return changes, parameters, expected
 
 
 def _label(change, row, target, label, extra):
@@ -317,6 +427,14 @@ def _object(change, row, target, label, extra):
     return changes, parameters, expected
 
 
+def _lamp(change, row, target, label, extra):
+    changes, parameters, expected = _object(change, row, target, label, extra)
+    if "lightIsOn" in changes:
+        # Tapir 1.7.0 writes lightIsOn; its own source says lightColor is discarded.
+        parameters["lightIsOn"] = expected["lightIsOn"] = changes["lightIsOn"]
+    return changes, parameters, expected
+
+
 def _roof(change, row, target, label, extra):
     details, changes = row["details"], change.model_dump(exclude={"guid"}, exclude_none=True)
     if details.get("roofClass") != "MultiPlane":
@@ -384,6 +502,8 @@ async def _owner_walls(client, port, rows):
     return dict(zip(guids, walls, strict=True))
 
 
+# Library part edits whose height goes through ZZYZX after the Modify command.
+HEIGHTS = ("modify_objects", "modify_lamps")
 # operation -> (element types accepted, Tapir command, list key, field planner)
 SPECS = {
     "modify_slabs": (("Slab",), "ModifySlabs", "slabsWithDetails", _slab),
@@ -392,9 +512,11 @@ SPECS = {
     "modify_windows": (("Window",), "ModifyWindows", "windowsWithDetails", _opening),
     "modify_doors": (("Door",), "ModifyDoors", "doorsWithDetails", _opening),
     "modify_objects": (("Object",), "ModifyObjects", "objectsWithDetails", _object),
+    "modify_lamps": (("Lamp",), "ModifyLamps", "lampsWithDetails", _lamp),
     "modify_roofs": (("Roof",), "ModifyRoofs", "roofsWithDetails", _roof),
     "modify_texts": (("Text",), "ModifyTexts", "textsWithDetails", _text),
     "modify_labels": (("Label",), "ModifyLabels", "labelsWithDetails", _label),
+    "modify_morphs": (("Morph",), "ModifyMorphs", "morphsWithDetails", _morph),
 }
 
 
@@ -404,13 +526,15 @@ async def _plan(client, edits, port, operation):
     extra: dict[str, Any] = {}
     if operation in ("modify_windows", "modify_doors"):
         extra = await _owner_walls(client, port, rows)
+    if operation == "modify_morphs":
+        extra = await _morph_attributes(client, port, edits)
     items = []
     for index, (change, row) in enumerate(zip(edits, rows, strict=True)):
         label = f"{types[0]} {index} ({change.guid})"
         if row["type"] not in types or not isinstance(row.get("details"), dict):
             raise ValueError(f"{label}: is a {row['type']}, not a {types[0]} with details.")
         changes, parameters, expected = fields(change, row, target, label, extra)
-        if operation == "modify_objects" and "dimensions" in changes:
+        if operation in HEIGHTS and "dimensions" in changes:
             height = await _height_parameter(client, port, change.guid, label)
             try:
                 height["value"] = edit._gdl_value(height["before"], changes["dimensions"]["z"])
@@ -451,7 +575,7 @@ async def _height_parameter(client, port, guid, label) -> dict:
 
 
 async def _set_heights(client, receipt) -> None:
-    """Second step of modify_objects: ZZYZX through Set/GetGDLParametersOfElements."""
+    """Second step of modify_objects and modify_lamps: ZZYZX by Set/GetGDLParameters."""
     items = [
         i
         for i in receipt["items"]
@@ -508,6 +632,22 @@ async def _set_heights(client, receipt) -> None:
         if write._mismatches({"value": item["height"]["value"]}, item["height"]["after"]):
             item["status"] = "verification_failed"
             item["mismatches"] = item.get("mismatches", []) + ["gdl.ZZYZX"]
+
+
+def _check_sizes(receipt) -> None:
+    """A resized morph's read-back body must be the requested box."""
+    for item in receipt["items"]:
+        wanted = item.get("new", {}).get("size")
+        if wanted is None or item["status"] not in ("verified", "verification_failed"):
+            continue
+        details = (
+            item.get("after", {}).get("details") if isinstance(item.get("after"), dict) else None
+        )
+        size = _box_size(details.get("body")) if isinstance(details, dict) else None
+        item["size_after"] = size
+        if size is None or any(abs(size[k] - wanted[k]) > boxes.TOLERANCE for k in "xyz"):
+            item["status"] = "verification_failed"
+            item["mismatches"] = item.get("mismatches", []) + ["details.body.size"]
 
 
 def _detail_mismatches(expected, actual):
@@ -572,8 +712,10 @@ async def _verify(client, receipt, items):
 async def _dispatch(client, receipt):
     _, command, key, _ = SPECS[receipt["operation"]]
     await edit._execute(client, receipt, command, key, _verify)
-    if receipt["operation"] == "modify_objects":
+    if receipt["operation"] in HEIGHTS:
         await _set_heights(client, receipt)
+    if receipt["operation"] == "modify_morphs":
+        _check_sizes(receipt)
 
 
 async def _modify(client, edits, model, port, dry_run, confirmation_token, operation):
@@ -676,6 +818,23 @@ async def modify_objects(
     )
 
 
+async def modify_lamps(
+    client: ArchicadClient,
+    lamps: list[dict | LampModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 lamps: origin (x, y), level from its story, dimensions,
+    lightIsOn.
+
+    dimensions.z sets the height through the ZZYZX GDL parameter; a part without it is refused.
+    """
+    return await _modify(
+        client, lamps, LampModify, port, dry_run, confirmation_token, "modify_lamps"
+    )
+
+
 async def modify_roofs(
     client: ArchicadClient,
     roofs: list[dict | RoofModify],
@@ -721,4 +880,23 @@ async def modify_labels(
     """
     return await _modify(
         client, labels, LabelModify, port, dry_run, confirmation_token, "modify_labels"
+    )
+
+
+async def modify_morphs(
+    client: ArchicadClient,
+    morphs: list[dict | MorphModify],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/modify up to 50 morphs: size (x, y, z in metres, box morphs only),
+    buildingMaterial and surface by name, castShadow and receiveShadow.
+
+    Tapir rebuilds the whole body on a size change, so only a box as create_morphs
+    makes is resized, keeping its corner. Moving and rotating stay with move_elements
+    and rotate_elements.
+    """
+    return await _modify(
+        client, morphs, MorphModify, port, dry_run, confirmation_token, "modify_morphs"
     )

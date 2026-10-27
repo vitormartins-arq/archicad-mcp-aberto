@@ -1,91 +1,117 @@
-"""GetHotlinks coverage uses a source-derived fake and never opens Archicad."""
-
-import json
-from copy import deepcopy
-from pathlib import Path
+"""place_hotlinks (Tapir 1.7.0 CreateHotlinkNodes/Instances), against the simulated Archicad."""
 
 import pytest
+from pydantic import ValidationError
 
 from archicad_mcp_aberto.connection import ArchicadClient
 from archicad_mcp_aberto.tools import hotlinks
-from tests.unit.fake_archicad import HOTLINKS_FIXTURE, FakeArchicad, fake_transport
+from tests.unit.fake_archicad import FakeArchicad, fake_transport
 
 pytestmark = pytest.mark.anyio
-ROOT = "10000000-0000-4000-8000-000000000001"
-CHILD = "10000000-0000-4000-8000-000000000002"
-XREF = "20000000-0000-4000-8000-000000000001"
+BATH = r"H:\Meu Drive\Modulos\Banheiro 01.mod"
+KITCHEN = "C:/Modulos/Cozinha.pln"
 
 
-def client(fake):
-    return ArchicadClient(transport=fake_transport(fake))
+@pytest.fixture(autouse=True)
+def receipts(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path))
 
 
-async def test_tree_is_flattened_in_preorder_with_parent_and_depth():
-    fake = FakeArchicad(19723)
-    async with client(fake) as c:
-        result = await hotlinks.list_hotlinks(c, 19723)
-    assert result["total"] == 3
-    assert [row["guid"] for row in result["hotlinks"]] == [ROOT, CHILD, XREF]
-    assert result["hotlinks"][0]["parent_guid"] is None
-    assert result["hotlinks"][1]["parent_guid"] == ROOT
-    assert [row["depth"] for row in result["hotlinks"]] == [0, 1, 0]
-    assert result["hotlinks"][2]["type"] == "XRef"
-    assert fake.tapir_requests == [{"command": "GetHotlinks", "parameters": {}}]
+def model(**kwargs):
+    stories = [{"index": 0, "name": "Térreo", "level": 0.0}, {"index": 1, "name": "1º", "level": 3}]
+    return FakeArchicad(19723, stories=stories, **kwargs)
 
 
-@pytest.mark.parametrize(
-    ("query", "guid"),
-    [("kitchen", CHILD), ("xref", XREF), ("survey.dwg", XREF)],
-)
-async def test_filter_matches_name_type_or_location(query, guid):
-    async with client(FakeArchicad(19723)) as c:
-        result = await hotlinks.list_hotlinks(c, 19723, query=query)
-    assert result["total"] == 1 and result["hotlinks"][0]["guid"] == guid
-
-
-async def test_pagination_applies_after_filtering():
-    async with client(FakeArchicad(19723)) as c:
-        result = await hotlinks.list_hotlinks(c, 19723, offset=1, limit=1)
-    assert result["total"] == 3
-    assert [row["guid"] for row in result["hotlinks"]] == [CHILD]
-
-
-@pytest.mark.parametrize(
-    "change, message",
-    [
-        (lambda tree: tree[0].update(hotlinkNodeId={"guid": "bad"}), "GUID"),
-        (lambda tree: tree[0].update(type="IFC"), "details"),
-        (lambda tree: tree[0].update(children={}), "children"),
-        (
-            lambda tree: tree[0]["children"][0].update(
-                hotlinkNodeId=deepcopy(tree[0]["hotlinkNodeId"])
-            ),
-            "Duplicate",
-        ),
-    ],
-)
-async def test_malformed_or_duplicate_nodes_are_rejected(monkeypatch, change, message):
-    response = deepcopy(HOTLINKS_FIXTURE["response"])
-    change(response["hotlinks"])
-    monkeypatch.setitem(HOTLINKS_FIXTURE, "response", response)
-    async with client(FakeArchicad(19723)) as c:
-        with pytest.raises(ValueError, match=message):
-            await hotlinks.list_hotlinks(c, 19723)
-
-
-@pytest.mark.parametrize("kwargs", [{"offset": -1}, {"limit": 0}, {"limit": 501}, {"query": 2}])
-async def test_invalid_page_or_query_is_rejected_before_command(kwargs):
-    fake = FakeArchicad(19723)
-    async with client(fake) as c:
-        with pytest.raises(ValueError):
-            await hotlinks.list_hotlinks(c, port=19723, **kwargs)
-    assert fake.tapir_calls == []
-
-
-def test_fixture_is_explicitly_source_derived_not_live():
-    fixture = json.loads(
-        (Path(__file__).parents[1] / "fixtures" / "tapir170_hotlinks_documented.json").read_text()
+async def apply(c, items):
+    preview = await hotlinks.place_hotlinks(c, items, 19723)
+    return preview, await hotlinks.place_hotlinks(
+        c, items, 19723, False, preview["confirmation_token"]
     )
-    assert fixture["provenance"]["live_capture"] is False
-    assert fixture["provenance"]["tapir_version"] == "1.7.0"
-    assert fixture["provenance"]["commit"] == "02691b5d680b60c73317e8e49b78ab14dfd4c9d8"
+
+
+async def test_one_node_per_file_and_instances_read_back():
+    fake = model()
+    items = [
+        {"source_path": BATH, "origin": {"x": 1, "y": 2}, "floor_index": 0},
+        {"source_path": BATH.upper(), "origin": {"x": 5, "y": 2}, "floor_index": 1,
+         "angle": 1.5708, "mirrored": True},
+        {"source_path": KITCHEN, "origin": {"x": 0, "y": 8, "z": 0.1}, "floor_index": 0,
+         "name": "Cozinha", "single_story": 0},
+    ]  # fmt: skip
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(c, items)
+    assert preview["hotlink_nodes"] == [
+        {"sourceLocation": BATH},
+        {"sourceLocation": KITCHEN, "name": "Cozinha", "storyRangeType": "SingleStory",
+         "refFloorIndex": 0},
+    ]  # fmt: skip
+    request = next(r for r in fake.tapir_requests if r["command"] == "CreateHotlinkInstances")
+    first, second, _ = request["parameters"]["hotlinkInstances"]
+    assert first["hotlinkNodeId"] == second["hotlinkNodeId"]
+    assert second == {
+        "origin": {"x": 5.0, "y": 2.0, "z": 0.0},
+        "rotationAngle": 1.5708,
+        "mirrored": True,
+        "floorIndex": 1,
+        "hotlinkNodeId": first["hotlinkNodeId"],
+    }
+    assert result["status"] == "verified"
+    assert len(fake.hotlink_nodes) == 2
+
+
+async def test_existing_node_is_reused():
+    fake = model()
+    fake.hotlink_nodes.append(
+        {"location": BATH, "hotlinkNodeId": {"guid": "B0000000-0000-4000-8000-000000000001"},
+         "name": "Banheiro 01", "type": "Module"}
+    )  # fmt: skip
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(
+            c, [{"source_path": BATH, "origin": {"x": 0, "y": 0}, "floor_index": 0}]
+        )
+    assert preview["items"][0]["node"].startswith("existing")
+    assert result["items"][0]["node_guid"] == "B0000000-0000-4000-8000-000000000001"
+    assert result["status"] == "verified" and len(fake.hotlink_nodes) == 1
+
+
+async def test_missing_file_fails_its_instances_only():
+    fake = model(missing_hotlink_files={KITCHEN})
+    items = [
+        {"source_path": KITCHEN, "origin": {"x": 0, "y": 0}, "floor_index": 0},
+        {"source_path": BATH, "origin": {"x": 3, "y": 0}, "floor_index": 0},
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        _, result = await apply(c, items)
+    assert [i["status"] for i in result["items"]] == ["failed", "verified"]
+
+
+async def test_preview_refusals():
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        with pytest.raises(ValueError, match="story 7 does not exist"):
+            await hotlinks.place_hotlinks(
+                c, [{"source_path": BATH, "origin": {"x": 0, "y": 0}, "floor_index": 7}], 19723
+            )
+        with pytest.raises(ValueError, match="other name or story"):
+            await hotlinks.place_hotlinks(
+                c,
+                [
+                    {"source_path": BATH, "origin": {"x": 0, "y": 0}, "floor_index": 0},
+                    {
+                        "source_path": BATH,
+                        "origin": {"x": 0, "y": 0},
+                        "floor_index": 0,
+                        "name": "Outro",
+                    },
+                ],  # fmt: skip
+                19723,
+            )
+
+
+@pytest.mark.parametrize(
+    "path", ["Modulos/Banheiro.mod", r"C:\Modulos\Banheiro.pla", " C:/a.mod", "C:/a.gsm"]
+)
+def test_bad_paths_are_refused(path):
+    with pytest.raises(ValidationError):
+        hotlinks.HotlinkPlace.model_validate(
+            {"source_path": path, "origin": {"x": 0, "y": 0}, "floor_index": 0}
+        )

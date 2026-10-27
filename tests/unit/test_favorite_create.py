@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from archicad_mcp_aberto.connection import ArchicadClient
+from archicad_mcp_aberto.connection.errors import TapirError
 from archicad_mcp_aberto.tools import drafting, labels, meshes, texts, write
 from tests.unit.fake_archicad import FakeArchicad, fake_transport
 
@@ -51,40 +52,91 @@ async def apply(tool, c, items):
     return preview, await tool(c, items, 19723, False, preview["confirmation_token"])
 
 
-async def test_wall_from_favorite_keeps_its_size_and_structure():
-    fake = model()
+async def test_wall_from_favorite_needs_height_and_thickness():
+    # Tapir 1.7.0 CreateWalls refused a wall with only a favorite (live, 21/10/2026).
     wall = {
         "start": {"x": 0, "y": 0},
         "end": {"x": 4, "y": 0},
         "floor_index": 0,
-        "favorite": "parede 15 - alvenaria",
+        "favorite": WALL_FAVORITE,
     }
-    async with ArchicadClient(transport=fake_transport(fake)) as c:
-        preview, result = await apply(write.create_walls, c, [wall])
-    assert preview["items"][0]["favorite"] == WALL_FAVORITE
-    payload = sent(fake, "CreateWalls", "wallsData")[0]
-    assert payload["favoriteName"] == WALL_FAVORITE
-    for left_out in ("height", "thickness", "structureType", "offset", "zCoordinate"):
-        assert left_out not in payload
-    assert result["status"] == "verified", result["items"][0].get("mismatches")
-    details = fake.details[result["items"][0]["element_guid"]]["details"]
-    assert details["structureType"] == "Composite" and details["begThickness"] == 0.15
+    with pytest.raises(ValidationError, match="height"):
+        write.WallCreate.model_validate(wall)
+    with pytest.raises(ValidationError, match="thickness required unless a composite"):
+        write.WallCreate.model_validate({**wall, "height": 3.0})
 
 
-async def test_given_fields_override_the_favorite_and_are_checked():
+async def test_wall_from_favorite_is_basic_with_the_given_size():
     fake = model()
     wall = {
         "start": {"x": 0, "y": 0},
         "end": {"x": 4, "y": 0},
         "floor_index": 0,
         "height": 3.1,
+        "thickness": 0.05,
+        "favorite": "parede 15 - alvenaria",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(write.create_walls, c, [wall])
+    assert preview["items"][0]["favorite"] == WALL_FAVORITE
+    assert "pass composite" in preview["items"][0]["note"]
+    payload = sent(fake, "CreateWalls", "wallsData")[0]
+    assert payload["favoriteName"] == WALL_FAVORITE and "structureType" not in payload
+    assert payload["height"] == 3.1 and payload["thickness"] == 0.05
+    assert result["status"] == "verified", result["items"][0].get("mismatches")
+    details = fake.details[result["items"][0]["element_guid"]]["details"]
+    # The favorite's composite is lost, as seen live: the wall comes out Basic.
+    assert details["structureType"] == "Basic" and details["begThickness"] == 0.05
+
+
+async def test_wall_with_composite_takes_its_thickness():
+    fake = model()
+    wall = {
+        "start": {"x": 0, "y": 0},
+        "end": {"x": 4, "y": 0},
+        "floor_index": 0,
+        "height": 3.0,
+        "composite": "alvenaria 14cm com reboco",
         "favorite": WALL_FAVORITE,
     }
     async with ArchicadClient(transport=fake_transport(fake)) as c:
-        _, result = await apply(write.create_walls, c, [wall])
-    assert sent(fake, "CreateWalls", "wallsData")[0]["height"] == 3.1
-    assert result["status"] == "verified"
-    assert fake.details[result["items"][0]["element_guid"]]["details"]["height"] == 3.1
+        preview, result = await apply(write.create_walls, c, [wall])
+    assert "note" not in preview["items"][0]
+    payload = sent(fake, "CreateWalls", "wallsData")[0]
+    guid = "C0C0C0C0-0000-4000-8000-000000000001"
+    assert payload["structureType"] == "Composite"
+    assert payload["compositeId"] == {"guid": guid}
+    assert payload["thickness"] == pytest.approx(0.14)
+    assert result["status"] == "verified", result["items"][0].get("mismatches")
+    details = fake.details[result["items"][0]["element_guid"]]["details"]
+    assert details["structureType"] == "Composite" and details["compositeId"]["guid"] == guid
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        ({"composite": "Nada"}, "Composite 'Nada' does not exist"),
+        ({"composite": "Laje Composta 20"}, "is not for walls"),
+        ({"composite": "Alvenaria 14cm com Reboco", "thickness": 0.2}, "is 0.14 m thick"),
+    ],
+)
+async def test_bad_wall_composite_refused_in_preview(extra, message):
+    fake = model()
+    wall = {"start": {"x": 0, "y": 0}, "end": {"x": 4, "y": 0}, "floor_index": 0}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match=message):
+            await write.create_walls(c, [{**wall, "height": 3.0, **extra}], 19723)
+    assert "CreateWalls" not in fake.tapir_calls
+
+
+async def test_wall_without_height_is_refused_by_the_fake_like_tapir():
+    fake = model()
+    wall = {"begCoordinate": {"x": 0, "y": 0}, "endCoordinate": {"x": 1, "y": 0}}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(TapirError) as caught:
+            await c.tapir(19723, "CreateWalls", {"wallsData": [wall]})
+    assert "Invalid command parameters" in str(caught.value.detail)
+    assert not fake.details
 
 
 async def test_slab_column_and_beam_from_favorites():
@@ -134,7 +186,13 @@ async def test_column_with_favorite_and_its_own_section():
 
 async def test_unknown_or_wrong_type_favorite_refused_in_preview():
     fake = model()
-    wall = {"start": {"x": 0, "y": 0}, "end": {"x": 4, "y": 0}, "floor_index": 0}
+    wall = {
+        "start": {"x": 0, "y": 0},
+        "end": {"x": 4, "y": 0},
+        "floor_index": 0,
+        "height": 3.0,
+        "thickness": 0.2,
+    }
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError, match="No Wall favorite named 'LAJE 12'"):
             await write.create_walls(c, [{**wall, "favorite": "LAJE 12"}], 19723)
@@ -247,3 +305,44 @@ async def test_mesh_settings_come_from_the_favorite_unless_given():
     payload = sent(fake, "CreateMeshes", "meshesData")[0]
     assert payload["ridges"] == "AllSmooth"
     assert not {"skirtType", "skirtLevel", "showLines"} & set(payload)
+
+
+async def test_object_from_favorite_keeps_its_angle_and_notes_the_library_part():
+    fake = FakeArchicad(
+        19723,
+        stories=[dict(s) for s in STORIES],
+        favorites={"Object": ["CADEIRA LAB"]},
+        favorite_settings={"CADEIRA LAB": {"defaults": {"angle": 1.5}}},
+    )
+    fake.library_parts = {"Cadeira 01"}
+    item = {
+        "library_part_name": "Cadeira 01",
+        "origin": {"x": 1, "y": 2},
+        "floor_index": 0,
+        "base_level": 0.0,
+        "favorite": "cadeira lab",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview, result = await apply(write.create_objects, c, [item])
+    assert "library part" in preview["items"][0]["note"]
+    payload = sent(fake, "CreateObjects", "objectsData")[0]
+    assert payload["favoriteName"] == "CADEIRA LAB" and "angle" not in payload
+    assert result["items"][0]["status"] == "verified"
+    assert fake.details[result["items"][0]["element_guid"]]["details"]["angle"] == 1.5
+
+
+async def test_object_favorite_of_another_type_fails_that_object():
+    fake = FakeArchicad(
+        19723, stories=[dict(s) for s in STORIES], favorites={"Object": ["CADEIRA LAB"]}
+    )
+    fake.library_parts = {"Cadeira 01"}
+    item = {
+        "library_part_name": "Cadeira 01",
+        "origin": {"x": 1, "y": 2},
+        "floor_index": 0,
+        "base_level": 0.0,
+        "favorite": "PAREDE",
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="No Object favorite named 'PAREDE'"):
+            await write.create_objects(c, [item], 19723)

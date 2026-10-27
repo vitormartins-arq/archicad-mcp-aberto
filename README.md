@@ -59,10 +59,13 @@ in this delivery; operator live validation of these additions remains pending.
 | `list_design_options` | Read | Design Option sets, options and combinations | yes; AC29+ |
 | `get_elements_of_design_options` | Read | Elements belonging to Design Options, with per-option errors | yes; AC29+ |
 | `get_design_options_for_elements` | Read | Design Option status and details for elements | yes; AC29+ |
-| `create_walls` | Write | Up to 20 straight Basic walls | yes |
+| `create_walls` | Write | Up to 20 straight walls, Basic or of a composite | yes |
 | `create_slabs` | Write | Up to 20 simple polygon slabs | yes |
 | `create_columns` | Write | Up to 20 rectangular/circular columns | yes |
 | `create_objects` | Write | Up to 20 library objects by name, position and angle | yes |
+| `create_lamps` | Write | Up to 20 lamps by library part name, position and angle | yes |
+| `create_stairs` | Write | Up to 20 straight stairs along a baseline, with `favorite` | yes |
+| `create_zone_categories` | Write | Up to 50 new zone categories with name, code and colour | yes |
 | `create_beams` | Write | Up to 20 straight rectangular beams | yes |
 | `create_zones` | Write | Up to 20 manually bounded polygon zones | yes |
 | `create_roofs` | Write | Up to 20 single- or multi-plane roofs from simple polygons | yes |
@@ -72,6 +75,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_polylines` | Write | Up to 50 straight-segment 2D polylines | yes |
 | `create_splines` | Write | Up to 50 auto-smoothed 2D splines | yes |
 | `create_hotspots` | Write | Up to 50 2D hotspots on a story | yes |
+| `create_keynote_labels` | Write | Up to 20 labels showing a keynote item's fields | yes |
+| `modify_morphs` | Write | Up to 50 morphs: box size, building material, surface, shadows | yes |
 | `create_arcs` | Write | Up to 50 circular 2D arcs | yes |
 | `create_circles` | Write | Up to 50 full 2D circles | yes |
 | `create_fills` | Write | Up to 50 fills (hatches) on simple polygons | yes |
@@ -121,6 +126,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `set_layer_settings` | Write | Existing layer visibility, locking, wireframe and intersection group | yes |
 | `create_sections` | Write | Straight sections with a new name, read back on the story and in the Project Map | yes |
 | `create_favorites_from_elements` | Write | New favorites captured from existing elements, never overwriting; names read back | yes |
+| `update_favorites_from_elements` | Write | Overwrites existing favorites from elements of their type | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
 | `list_hotlinks` | Read | Linked Module and XRef nodes with GUID, source path and hierarchy | yes |
@@ -129,7 +135,30 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
+| `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
+| `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
+| `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
+| `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `save_room_plan_views` | Write | Room enlargement views: a framed floor plan view per room, numbered, one folder per room | no (own add-on) |
+| `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
+| `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
+| `update_drawings` | Write | Updates every Drawing on layouts from its source view | yes |
+| `add_stories` | Write | New stories above the top or below the bottom; existing stories kept | yes |
+| `create_design_options` | Write | New design option sets, options and combinations (Archicad 29+); only adds | yes |
+| `move_to_design_options` | Write | Puts elements in a design option or back in the main model (Archicad 29+) | yes |
+| `create_solid_operations` | Write | Solid element operations between existing elements | yes |
+| `trim_to_roof` | Write | Trims elements with a roof or shell | yes |
+| `remove_solid_operations` | Write | Removes solid element operation links; the elements stay | yes |
+| `modify_lamps` | Write | Edits lamps: position, level, size, light on or off | yes |
+| `remove_trims` | Write | Removes a roof or shell trim from elements; the elements stay | yes |
+| `create_classification_systems` | Write | New classification systems with their item trees | yes |
+| `create_surfaces` | Write | New surfaces copied from an existing one, with a new colour, transparency or type | yes |
+| `move_navigator_items` | Write | Moves View Map views and folders, or layouts and subsets, into other folders | yes |
+| `list_grid_elements` | Read | Grid lines with start, end, story, layer and GDL parameters | no (own add-on) |
+| `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
+| `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
+| `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
 ### Reported live validation
 
@@ -213,6 +242,10 @@ Then install Tapir for your Archicad version from its
 [releases](https://github.com/ENZYME-APD/tapir-archicad-automation/releases).
 
 Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports.
+Ports must be between 1 and 65535, and ranges must be ascending. Invalid entries
+stop startup with an `ARCHICAD_MCP_PORTS` error before discovery; range endpoints
+are validated before expansion. Duplicate ports are scanned only once, in the
+order configured.
 
 ## Safety rules
 
@@ -226,8 +259,9 @@ Set `ARCHICAD_MCP_PORTS` (for example `19723-19730`) to change the scanned ports
 ## Wall creation
 
 `create_walls` accepts `walls`, an optional `port`, `dry_run` (default `true`), and
-`confirmation_token`. This initial scope supports straight Basic walls only. Lengths
-are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`:
+`confirmation_token`. It creates straight walls, Basic or of a composite. Lengths
+are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickness`
+(or `composite`, below):
 
 ```json
 {
@@ -242,9 +276,12 @@ are metres. Each wall needs `start`, `end`, `floor_index`, `height` and `thickne
 }
 ```
 
-Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`
-and `reference_line` (`Outside`, `Center` or `Inside`). New walls inherit Archicad's
-current default layer and building material.
+Optional wall settings are `bottom_offset` (relative to the chosen story), `offset`,
+`reference_line` (`Outside`, `Center` or `Inside`), `composite` and `favorite`. New
+walls inherit Archicad's current default layer and building material. `composite` names
+a Composite attribute for walls: the preview reads its skins with `GetComposites`, the
+wall's thickness is their total (a different `thickness` is refused), and the read-back
+checks the structure and the composite.
 
 The default call only reads the target and returns a preview. After the user reviews
 it, repeat the same wall inputs with the preview's explicit port, `dry_run: false`
@@ -342,7 +379,7 @@ and open to everyone's contributions.
 
 - Exact floor-plan polygon duplicates within each element are removed (same vertex order, 1e-9 m tolerance); `notes` reports the removed count. Different polygons are preserved.
 
-- `find_elements` filters by `element_type`, `floor_index`, `layer_index` and optional `property_guid`/`operator`/`value`. Operators: `equal`, case-sensitive `contains`, `greater`, `less`. It returns total matches, offset, a page of up to 500 element IDs and read errors. Missing properties are refused; unavailable values do not match. Type filtering precedes detail reads, and story/layer filtering precedes property reads, in batches of 100.
+- `find_elements` filters by `element_type`, `floor_index`, `layer_index` and optional `property_guid`/`operator`/`value`. Operators: `equal`, case-sensitive `contains`, `greater`, `less`. It returns total matches, offset, a page of up to 500 element IDs and read errors. Missing properties are refused; unavailable values do not match. Type filtering precedes detail reads, and story/layer filtering precedes property reads, in batches of 100. The target is resolved once per search, without extra connection probes for each property batch.
 
 - `delete_elements` previews up to 50 GUIDs and applies only in an untitled test project (`isUntitled=true` from Tapir). It lists type/story/layer, refuses missing, hotlinked or non-editable elements, requires explicit port and a single-use token, writes per-element receipts and verifies absence. Uses Tapir `DeleteElements` and `FilterElements(IsEditable)`; `API.DeleteElements` is not an official JSON API command. Never saves, unlocks or automatically retries. Owned subelements may also be removed by Archicad.
 
@@ -361,6 +398,9 @@ and open to everyone's contributions.
 - `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.
 
 - `modify_slabs`, `modify_columns`, `modify_beams`, `modify_windows`, `modify_doors` and `modify_objects` work like `modify_walls`: up to 50 entries, each a `guid` plus at least one field, native camelCase, metres. Slabs: `thickness` (Basic only) and `level` from the slab's story. Columns: `origin`, `bottomOffset`, `height` (unlinks the top story, as Tapir does), `width`, `depth`. Beams: `begCoordinate`, `endCoordinate`, `level` from its story, `width`, `height`; curved and zero-length beams are refused. Windows and doors: `width`, `height`, `sillHeight` and `centerOffset` along the owner wall from its start, refused past the wall end. Objects: `origin` `{x, y}`, `level` from its story and `dimensions` `{x, y, z}`; Tapir 1.7.0 changes only x and y, so z (the height) is then set and read back through the part's `ZZYZX` GDL parameter, and a part without it is refused. Round or linked sections take one size for both. Tapir places slabs and objects on the story that holds their absolute z, so a level that would move one to another story is refused. Single-use confirmation, explicit port, per-element receipts and read-back verification through Tapir 1.7.0 `ModifySlabs`/`ModifyColumns`/`ModifyBeams`/`ModifyWindows`/`ModifyDoors`/`ModifyObjects`; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0 except `modify_beams`; the object height fix awaits a new live run (see [docs/VALIDAR.md](docs/VALIDAR.md)).
+- `modify_lamps` works like `modify_objects` (same fields, the height through `ZZYZX`)
+  plus `lightIsOn`, by Tapir 1.7.0 `ModifyLamps`. The light colour is not offered: the
+  Tapir source says Archicad discards it on write. Not tested live yet.
 
 - `create_roofs` previews up to 20 roofs, each with `outline` (simple polygon, metres), `floor_index`, `level` (absolute project Z, as in `create_slabs`) and `thickness`. With `pivot_line` (`start`, `end`) and `angle` (radians, between 0 and π/2) it makes one plane rising on the left of the line direction. Without them it makes a multi-plane roof on the polygon as pivot polygon, with optional `levels` (1 to 16 `{height, angle}`, heights non-decreasing) and `eaves_overhang`; omitted values keep the Roof tool default. Roofs are always created Basic (one building material, the Roof tool's), because a Composite default ignores the thickness. Applying checks type, story, class, structure, thickness, level, slope, pivot line or levels, and the polygon (the pivot polygon for multi-plane roofs, whose contour grows by the overhang). Tapir 1.7.0 `CreateRoofs`; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.
 
@@ -546,6 +586,12 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   existing favorite is never overwritten; locked elements are fine, since they are only
   read. Each new name is read back with GetFavoritesByType. Fixtures come from the Tapir
   source, not a live capture. Registry: **81 tools (25 reads, 56 writes/interactions)**.
+- `update_favorites_from_elements([{element_guid, favorite}], port?, dry_run?,
+  confirmation_token?)` overwrites up to 50 existing favorites through Tapir 1.7.0
+  `UpdateFavoritesFromElements`, each from one element of the favorite's type. The old
+  settings are not kept, so the preview says to copy them first with
+  `create_favorites_from_elements` when they matter. Tapir cannot read a favorite's
+  settings, so a successful receipt stays `unverified`.
 
 - `set_attribute_property_values([{attribute_guid, property_guid, value}], port?,
   dry_run?, confirmation_token?)` writes up to 100 custom property values on attributes
@@ -612,13 +658,36 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   Tapir returns no opening-specific details, so the read-back checks the new element's
   type and that the host lists it among its connected openings (`GetConnectedElements`).
   Fixtures come from the Tapir source, not a live capture.
+- 3D scenes ("generate the 3D scenes"): `read_scene_model(port?, min_z?, max_z?)` reads
+  zone name, number, area and 3D box with the official API, plus element boxes, and
+  suggests a level one-point camera per room (and a two-point one in big rooms).
+  `shoot_3d_scenes(scenes, port?, image_format?)` sets up to 8 scenes and returns their
+  images; a scene is `{name, folder?, camera, target, view_cone?, two_point?}` or
+  `{name, folder?, parallel: {azimuth?}, cut_height?}` (a horizontal 3D cut, absolute
+  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?)`
+  saves up to 60 as View Map views in `folder_path + [folder]`, creating missing folders;
+  the first folder name is found at any depth. Both put the 3D camera and cut back. They
+  need this project's own add-on (`addon/`); the photographer rules are in
+  `docs/3D_SCENES.md`.
+- `save_room_plan_views(folder_path, rooms?, stories?, prefix?, first_number?, margin?,
+  scale?, layer_combination?, port?, dry_run?, confirmation_token?)` saves room
+  enlargement views: for each zone (all, or `rooms` by name, label or number, on
+  `stories`), its story's floor plan as a View Map view framed on the zone's box plus
+  `margin` metres (0.5 by default), at `scale` (25 for 1:25 by default, `null` keeps the
+  story's) and an optional existing `layer_combination`. Views go into `folder_path +
+  [room]` and are numbered by story and zone number: "AMP 01 - BANHO", "AMP 02 -
+  COZINHA". Preview first; each saved view's zoom, scale and layers are read back. It
+  needs the add-on's `SaveStoryView`; View Map changes are outside Undo.
 - `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir
   1.7.0 applies the favorite to the tool defaults first and the given fields override
-  it, so with a favorite the settings it holds may be left out: wall height and
-  thickness, slab thickness, column height and section, beam width and height. The
-  wall's structure (Basic, Composite or Profile) comes from the favorite too. The
+  it, so with a favorite the settings it holds may be left out: slab thickness,
+  column height and section, beam width and height. Walls are the exception: Tapir
+  1.7.0 `CreateWalls` requires height and thickness even with a favorite (refused live
+  on 21/10/2026) and sets the structure to Basic, the reference line, the bottom and
+  an unlinked top over it, so a wall keeps only the favorite's layer, pens, materials
+  and the like. Pass the favorite's `composite` to keep a composite wall. The
   read-back checks the geometry and the fields that were given. `create_zones`,
   `create_texts`, `create_labels`, `create_meshes` and the 2D drafting tools (lines,
   polylines, splines, arcs, circles, fills and hotspots) take `favorite` the same way;
@@ -636,8 +705,163 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   confirmation_token?)` places up to 50 2D hotspots by Tapir 1.7.0 `CreateHotspots`:
   position in metres, optional height (the hotspot's z on its story, metres), layer by
   name and pen index. The read-back compares type, story, layer, position, height and
-  pen. Fixtures come from the Tapir source, not a live capture. Registry: **98 tools
-  (29 reads, 69 writes/interactions)**.
+  pen. Fixtures come from the Tapir source, not a live capture.
+- `create_keynote_labels([{keynote_item_guid, position, content_fields?}], port?,
+  dry_run?, confirmation_token?)` places up to 20 keynote labels by Tapir 1.7.0
+  `CreateKeynoteLabels` (Archicad 28 or newer). The item GUID comes from
+  `list_keynotes`, and the preview refuses one that is not in the tree. The label text
+  is the item's autotext for `content_fields` (Key, Title, Description, Reference; all
+  by default). Tapir puts the label on the story Archicad shows and attaches it to
+  nothing; the receipt reports the story and the text read back. The read-back checks
+  type, class and position. The keynotes are never changed. Fixtures come from the
+  Tapir source, not a live capture.
+- `modify_morphs([{guid, size?, buildingMaterial?, surface?, castShadow?,
+  receiveShadow?}], port?, dry_run?, confirmation_token?)` edits up to 50 morphs by
+  Tapir 1.7.0 `ModifyMorphs`. Tapir rebuilds the whole body on a size change, so only a
+  box as `create_morphs` makes (corner at the origin) is resized, and the corner stays;
+  any other morph is refused in the preview. Building material and surface are given by
+  name. The read-back checks each changed field and the new box size within 1 mm.
+  Moving and rotating stay with `move_elements` and `rotate_elements`: Tapir's
+  `rotationDegreesZ` mixes the x and z rows of the transform in the 1.7.0 source, which
+  looks like a turn about Y, so it is not exposed until checked live.
+- `create_associative_dimensions([{points: [{wall_guid, end}], reference_point,
+  direction?}], port?, dry_run?, confirmation_token?)` adds up to 50 linear dimensions
+  between end points (`start` or `end`) of existing straight walls by Tapir 1.7.0
+  `CreateAssociativeDimensions`, 2 to 20 points each, all on one story. The dimension
+  stays linked to the walls. Its line passes through `reference_point`; `direction`
+  defaults to the first wall's direction. Tapir's own example gives `inIndex` 1 and 2 as
+  the two ends of the reference line. The read-back checks type and story, then reads
+  `GetDimensionData` and compares each witness point's wall and position within 1 mm. A
+  section or elevation window in front makes Tapir fail, so show a floor plan.
+- `create_lamps` works like `create_objects` for Lamp library parts, by Tapir 1.7.0
+  `CreateLamps`: the preview checks the name among the loaded Lamp parts (an Object
+  part is refused, as Tapir's `CreateObjects` refuses lamps), and `favorite` takes a
+  Lamp favorite. Size and light stay the part's defaults.
+- `create_zone_categories([{name, code?, color?: {red, green, blue}}], port?, dry_run?,
+  confirmation_token?)` adds up to 50 zone categories by Tapir 1.7.0
+  `CreateZoneCategories`. It never overwrites: a name the project already has, or a
+  repeated name, is refused in the preview. Colours go from 0 to 1. Tapir copies the
+  zone stamp from the project's first category. The read-back is `GetZoneCategories`
+  (name, code and colour).
+- `create_composites([{name, use_with, skins: [{building_material, thickness, type?,
+  pen?}], separator_line?, separator_pen?}], port?, dry_run?, confirmation_token?)` adds
+  up to 20 composites by Tapir 1.7.0 `CreateComposites`. `use_with` lists Wall, Slab,
+  Roof or Shell; each of up to 20 skins takes a building material by name, a thickness
+  in metres, a type (Core by default, Finish or Other) and a frame pen (1 by default).
+  Every separator line gets `separator_line` (default: the project's first line type,
+  the solid line) and `separator_pen`. A name the project already has, a repeated name,
+  or a building material or line type that does not exist is refused in the preview,
+  because Tapir would silently keep the default material for a GUID it cannot find.
+  The read-back is `GetComposites`: use, skins (type, pen, thickness, material GUID) and
+  separators (pen, line type GUID). Fixtures come from the Tapir source, not a live
+  capture.
+- `create_drawings([{view, layout, position: {x, y}, name?, angle?}], port?, dry_run?,
+  confirmation_token?)` places up to 20 views on layouts by Tapir 1.7.0
+  `CreateDrawings`. `view` is a View Map view name or any Navigator item GUID from
+  `get_navigator_tree`; `layout` is a Layout Book layout name or GUID. The preview
+  refuses folders, layouts, master layouts and placed Drawings, which Tapir cannot use as
+  a source. `position` is the Drawing's centre on the layout in metres of paper; `name`
+  sets a custom title; scale, title and frame come from the Drawing tool defaults, with
+  the view's full extent. Tapir switches the window to the layout. The read-back finds
+  the new Drawing on its layout (`GetElementsByType` with the layout database).
+- `update_drawings(layouts, port?, dry_run?, confirmation_token?)` updates every Drawing
+  on up to 20 layouts (name or GUID) by Tapir 1.7.0 `UpdateDrawings` (Archicad 27+). The
+  preview lists the Drawings found on each layout. Tapir answers only success or
+  failure, and Archicad has no read-back of a Drawing's update state, so a successful
+  receipt stays `unverified`.
+- `add_stories([{name, level, show_on_sections?}], port?, dry_run?,
+  confirmation_token?)` adds up to 20 stories by Tapir 1.7.0 `SetStories`, which takes
+  the whole story structure and would delete stories (and their elements) missing from
+  it. The MCP sends every existing story back exactly as `GetStories` reads it, so the
+  structure only grows. Each new story goes above the top story or below the bottom one
+  (basements get negative indices); a level between two stories is refused, because it
+  would renumber the stories the elements sit on. Names must be new and stories at
+  least 1 cm apart. `structure_after` in the preview shows every story with its height
+  after the change (the old top story's height becomes the gap to the first new one).
+  The read-back checks the new stories and that the existing ones kept name and level.
+- `create_design_options(sets?, options?: [{name, id, set}], combinations?: [{name,
+  options}], port?, dry_run?, confirmation_token?)` adds design option sets, options and
+  combinations by Tapir 1.7.0 (`CreateDesignOptionSets`, `CreateDesignOptions`,
+  `CreateDesignOptionCombinations`; Archicad 29+), up to 20 of each, in that order, so an
+  option can go in a set made in the same call and a combination can use new options.
+  A combination names its active options by their string id. Existing set names,
+  option ids and combination names are refused in the preview. Tapir does not report
+  whether a combination's active options were set, so the read-back compares them, as
+  well as each option's name, id and set. Elements are not moved into options.
+- `move_to_design_options([{element_guid, option}], port?, dry_run?,
+  confirmation_token?)` puts up to 100 elements in a design option by Tapir 1.7.0
+  `MoveElementsToDesignOptions` (Archicad 29+). `option` is the option's string id from
+  `list_design_options`; `null` takes the element back to the main model. The preview
+  shows each element's current option and refuses missing elements and unknown ids. The
+  read-back is `GetDesignOptionForElements`.
+- `create_solid_operations([{target_guid, operator_guid, operation?,
+  inherit_operator_attributes?, skip_polygon_holes?}], port?, dry_run?,
+  confirmation_token?)` adds up to 50 links by Tapir 1.7.0 `CreateSolidElementLinks`,
+  as Design > Solid Element Operations: `Subtraction` (default), `SubtractionUpwards`,
+  `SubtractionDownwards`, `Intersection` or `Addition`. Both elements must exist, be
+  editable and not hotlinked; a link that already exists between the two is refused.
+  The read-back is `GetSolidElementLinks` (operation and flags).
+- `trim_to_roof(element_guids, roof_guid, keep?, port?, dry_run?, confirmation_token?)`
+  trims up to 100 editable elements with one roof or shell by Tapir 1.7.0
+  `TrimElements`, as Design > Trim to Roof/Shell; `keep` is `KeepInside` (default),
+  `KeepOutside` or `KeepAll`. The preview refuses a trimmer that is not a roof or shell
+  and elements it already trims. The read-back is `GetElementTrims`.
+- `remove_solid_operations([{target_guid, operator_guid}], port?, dry_run?,
+  confirmation_token?)` and `remove_trims(element_guids, roof_guid, port?, dry_run?,
+  confirmation_token?)` undo the two tools above by Tapir 1.7.0
+  `RemoveSolidElementLinks` and `RemoveElementTrims`. The link or trim must exist; the
+  elements stay. The preview shows what is removed, and the read-back checks it is gone.
+- `create_classification_systems([{name, version, description?, source?, date?, items}],
+  port?, dry_run?, confirmation_token?)` adds up to 10 systems by Tapir 1.7.0
+  `CreateClassificationSystems`, each with a tree of up to 500 items (`id`, `name`,
+  `description`, `children`). At least one item is required, because Tapir 1.7.0 gives
+  no result for a system without items. A name and version already used is refused.
+  Tapir does not report an error in a child item, so the read-back compares the whole
+  tree, and the system's description, source and date.
+- `create_surfaces([{name, based_on, color?, transparency?, material_type?,
+  keep_texture?}], port?, dry_run?, confirmation_token?)` adds up to 50 surfaces by Tapir
+  1.7.0 `CreateSurfaces`, never overwriting. Tapir starts a new surface from a zeroed
+  record (black, no reflection), so each one copies every field of `based_on`, an
+  existing surface, read with `GetSurfaces`, and changes only what is asked. The
+  read-back compares every sent field.
+- `move_navigator_items(map, [{item, folder}], port?, dry_run?, confirmation_token?)`
+  moves up to 50 items by Tapir 1.7.0 `MoveNavigatorItem`: with `map` `view_map`, views
+  and folders into a View Map folder; with `layout_book`, layouts and subsets into a
+  subset or the top of the book. Names or GUIDs; a repeated name needs the GUID. An item
+  already in the folder, or a folder into itself, is refused. One move per native call,
+  each read back in the tree. The item goes to the start of the folder.
+- `list_grid_elements(port?, include_parameters?)` and `create_grid_elements([{start,
+  end, floor_index, layer?, parameters?: [{name, value}]}], port?, dry_run?,
+  confirmation_token?)` read and draw grid lines through our add-on (`addon/`), as Tapir
+  has grid commands only after 1.7.2. The length comes from the two points; the GDL
+  parameters (the bubble text, for example) are checked by name and type against the
+  Grid Tool defaults, which `include_parameters` lists. One Undo step for the batch,
+  every line read back.
+- `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
+  confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
+  `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`
+  by name or GUID). `prefix` turns on the subset's own ID prefix; `numbering` is one of
+  `abc`, `ABC`, `1`, `01`, `001`, `0001`, `noID`. The rest comes from Archicad's subset
+  defaults. A name already used under the same parent is refused. The read-back finds
+  each subset in the Layout Book under its parent. `create_layouts` now takes an
+  optional `subset` to put the new layouts in.
+- `place_hotlinks([{source_path, origin: {x, y, z?}, floor_index, angle?, mirrored?,
+  name?, single_story?}], port?, dry_run?, confirmation_token?)` places up to 20 hotlink
+  modules by Tapir 1.7.0: one node per file (`CreateHotlinkNodes`, which reuses a node
+  that already points at the same file, keeping its name and story settings) and then
+  the instances (`CreateHotlinkInstances`). `source_path` is an absolute `.mod` or
+  `.pln` path on the computer Archicad runs on; the MCP cannot check that it exists.
+  `single_story` places only that story of the source. Other placement options keep the
+  Hotlink tool defaults. The read-back checks each new element's type and story, and
+  that its node is listed by `GetHotlinks`.
+- `create_stairs([{start, end, floor_index, base_level, total_height?, flight_width?,
+  risers?, favorite?}], port?, dry_run?, confirmation_token?)` adds up to 20 straight
+  stairs by Tapir 1.7.0 `CreateStairs`, along the `start`-`end` baseline from
+  `base_level` (absolute Z). What is left out comes from the Stair tool defaults or the
+  favorite; Archicad's stair rules set riser and tread. Tapir returns no stair details,
+  so after type and story the read-back checks the 3D box: it covers the baseline, starts
+  at the base level and reaches the total height when one was given. Create on the story
+  Archicad shows. Registry: **104 tools (29 reads, 75 writes/interactions)**.
 
 ### Live validation notes: sections and attribute values
 Section markers inherit the Section tool defaults. On AC30 build 3001 BRA/Tapir 1.7.0,
