@@ -42,6 +42,7 @@ from archicad_mcp_aberto.tools import (
     read,
     renames,
     roofs,
+    room_views,
     scenes,
     sections,
     selection,
@@ -88,6 +89,7 @@ INPUTS = {
     "read_scene_model": {},
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
+    "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -481,6 +483,7 @@ TARGETED = {
         property_definitions,
         read,
         roofs,
+        room_views,
         scenes,
         sections,
         selection,
@@ -617,6 +620,15 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "update_zones":
         for instance in (first, second):
             instance.elements[PROP] = "Zone"
+    if name == "save_room_plan_views":
+        for instance in (first, second):
+            instance.elements[PROP] = "Zone"
+            instance.details[PROP] = {"type": "Zone", "floorIndex": 0}
+            instance.bounding_boxes_3d[PROP] = {
+                "boundingBox3D": {"xMin": 0, "yMin": 0, "zMin": 0, "xMax": 4, "yMax": 3, "zMax": 3}
+            }
+            for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
+                instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -634,6 +646,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     extra = {
         "create_groups": {PROP: "Wall"},
         "update_zones": {PROP: "Zone"},
+        "save_room_plan_views": {PROP: "Zone"},
         "create_solid_operations": {PROP: "Roof"},
         "trim_to_roof": {PROP: "Roof"},
         "remove_solid_operations": {PROP: "Roof"},

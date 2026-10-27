@@ -1018,3 +1018,12 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   simulados e Ruff passaram. Registro: 126 ferramentas. IFC (C33) continua fora: o
   Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
   (vale também para add-on próprio; conferir no DevKit 29 quando der).
+
+- **Claude / vistas de ampliação, 27/10/2026 (branch `claude/project-thread-pvslgt`,
+  recriada da `main` depois do merge do PR #71):** o Vitor pediu para automatizar as vistas
+  de ampliação (abrir, salvar na pasta do ambiente, numerar) e escolheu vista de planta
+  enquadrada. Comando novo `SaveStoryView` no add-on (`addon/Sources/PlanViewCommands.cpp`:
+  clona o pavimento do Mapa do Projeto para o Mapa de Vistas e grava zoom, escala e
+  combinação de vegetais pela `API_NavigatorView`) e a ferramenta `save_room_plan_views`
+  (`tools/room_views.py`). Testes simulados passaram; nada testado ao vivo (VALIDAR, C38).
+  A thread ficou parada de 23 a 27/10 pelo limite de uso da organização.

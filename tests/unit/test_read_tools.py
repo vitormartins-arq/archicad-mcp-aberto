@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_eleven_read_only_tools_and_wall_creation():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 126
+    assert len(tools) == 127
     writes = {
         "create_walls",
         "create_slabs",
@@ -195,6 +195,7 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "create_openings",
         "shoot_3d_scenes",
         "save_3d_scenes",
+        "save_room_plan_views",
         "create_composites",
         "create_drawings",
         "add_stories",

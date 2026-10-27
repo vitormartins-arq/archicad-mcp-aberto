@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `save_room_plan_views` (`tools/room_views.py`): room enlargement views. For each
+  zone, its story's floor plan is saved in the View Map framed on the room plus a margin,
+  with an optional drawing scale and layer combination, in a folder named after the room,
+  numbered "AMP 01 - <room>". Uses the new `SaveStoryView` command of our add-on; each
+  saved view's zoom, scale and layers are read back. Not tested live yet.
+
 - Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
   (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
   `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,
