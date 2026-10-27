@@ -144,3 +144,20 @@ async def test_limits_and_explicit_port():
                 False,
                 preview["confirmation_token"],
             )
+
+
+async def test_update_overwrites_existing_favorites_only():
+    fake = model()
+    update = favorites.update_favorites_from_elements
+    inputs = [{"element_guid": WALL, "favorite": "parede 15"}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="no Slab favorite 'Parede 15'"):
+            await update(c, [{"element_guid": SLAB, "favorite": "Parede 15"}], 19723)
+        with pytest.raises(ValueError, match="updated twice"):
+            await update(c, inputs * 2, 19723)
+        preview = await update(c, inputs, 19723)
+        assert "overwritten" in preview["note"]
+        result = await update(c, inputs, 19723, False, preview["confirmation_token"])
+    assert fake.updated_favorites == [{"elementId": {"guid": WALL}, "favorite": " Parede 15"}]
+    assert result["items"][0]["status"] == "unverified"
+    assert "cannot read" in result["verification_note"]

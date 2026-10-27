@@ -220,14 +220,6 @@
       "description": "Preview or add layouts on an existing master layout; never creates a master."
     },
     {
-      "name": "create_drawings",
-      "description": "Preview or place existing View Map views as drawings on existing layouts."
-    },
-    {
-      "name": "create_profiles",
-      "description": "Preview or create complex profiles by copying existing profile geometry."
-    },
-    {
       "name": "rename_items",
       "description": "Preview or rename template items in bulk (Navigator, favorites, classifications, properties, attributes, layer combinations, folders); read back."
     },
@@ -416,6 +408,10 @@
       "description": "Set cameras and 3D cuts and return the 3D window images to judge; puts the 3D window back."
     },
     {
+      "name": "save_room_plan_views",
+      "description": "Preview or save one framed floor plan view per room, numbered, in a folder named after it (ArchicadMcpAberto add-on)."
+    },
+    {
       "name": "save_3d_scenes",
       "description": "Preview/save 3D scenes as View Map views, one folder per room; never saves the project."
     },
@@ -494,6 +490,86 @@
     {
       "name": "create_keynote_items",
       "description": "Preview/create new keynote items with new keys; only adds, read back by GUID."
+    },
+    {
+      "name": "create_composites",
+      "description": "Preview or add composites by skins (building material, thickness, type, pen); existing names are refused. Read back after."
+    },
+    {
+      "name": "create_drawings",
+      "description": "Preview or place views on existing layouts as Drawings, found on the layout after."
+    },
+    {
+      "name": "add_stories",
+      "description": "Preview or add stories above the top or below the bottom; existing stories are kept. Read back after."
+    },
+    {
+      "name": "create_design_options",
+      "description": "Preview or add design option sets, options and combinations; only adds. Read back after."
+    },
+    {
+      "name": "move_to_design_options",
+      "description": "Preview or put elements in a design option, or back in the main model. Read back after."
+    },
+    {
+      "name": "create_solid_operations",
+      "description": "Preview or add solid element operations (subtract, intersect, add) between elements. Read back after."
+    },
+    {
+      "name": "trim_to_roof",
+      "description": "Preview or trim elements with a roof or shell. Read back after."
+    },
+    {
+      "name": "create_layout_subsets",
+      "description": "Preview or add Layout Book subsets with prefix and numbering. Read back after."
+    },
+    {
+      "name": "place_hotlinks",
+      "description": "Preview or place hotlink modules from .mod or .pln files. Read back after."
+    },
+    {
+      "name": "remove_solid_operations",
+      "description": "Preview or remove solid element operation links. Read back after."
+    },
+    {
+      "name": "remove_trims",
+      "description": "Preview or remove roof or shell trims from elements. Read back after."
+    },
+    {
+      "name": "modify_lamps",
+      "description": "Preview or edit lamps: position, level, size, light on or off. Read back after."
+    },
+    {
+      "name": "create_classification_systems",
+      "description": "Preview or add classification systems with their item trees. Read back after."
+    },
+    {
+      "name": "update_drawings",
+      "description": "Preview or update every Drawing on layouts from its source view."
+    },
+    {
+      "name": "create_surfaces",
+      "description": "Preview or add surfaces copied from an existing one, with a new colour or transparency. Read back after."
+    },
+    {
+      "name": "move_navigator_items",
+      "description": "Preview or move View Map and Layout Book items into other folders. Read back after."
+    },
+    {
+      "name": "list_grid_elements",
+      "description": "List grid lines with start, end, story and layer (ArchicadMcpAberto add-on)."
+    },
+    {
+      "name": "create_grid_elements",
+      "description": "Preview or draw grid lines from start and end points (ArchicadMcpAberto add-on). Read back after."
+    },
+    {
+      "name": "update_favorites_from_elements",
+      "description": "Preview or overwrite existing favorites from elements of their type."
+    },
+    {
+      "name": "create_profiles",
+      "description": "Preview or create complex profiles by copying existing profile geometry."
     }
   ],
   "compatibility": {

@@ -77,6 +77,7 @@ MODIFY_COMMANDS = {
     "ModifyWindows": ("Window", "windowsWithDetails"),
     "ModifyDoors": ("Door", "doorsWithDetails"),
     "ModifyObjects": ("Object", "objectsWithDetails"),
+    "ModifyLamps": ("Lamp", "lampsWithDetails"),  # same code as ModifyObjects in Tapir 1.7.0
     "ModifyRoofs": ("Roof", "roofsWithDetails"),
     "ModifyTexts": ("Text", "textsWithDetails"),
     "ModifyLabels": ("Label", "labelsWithDetails"),
@@ -174,6 +175,31 @@ def layer_guid(index: int) -> str:
     return f"44444444-4444-4444-8444-{index:012d}"
 
 
+# GetSurfaces fields (Tapir 1.7.0 source, AttributeCommands.cpp); the values are synthetic.
+SURFACE_NUMBERS = (
+    "ambientReflection", "diffuseReflection", "specularReflection", "transparency", "shine",
+    "transparencyAttenuation", "emissionAttenuation",
+)  # fmt: skip
+SURFACE_COLORS = ("surfaceColor", "specularColor", "emissionColor")
+SURFACE_DEFAULT = {
+    "materialType": "Matte",
+    "ambientReflection": 50.0, "diffuseReflection": 80.0, "specularReflection": 10.0,
+    "transparency": 0.0, "shine": 1600.0, "transparencyAttenuation": 0.0,
+    "emissionAttenuation": 0.0,
+    "surfaceColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+    "specularColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+    "emissionColor": {"red": 0.0, "green": 0.0, "blue": 0.0},
+    "texture": {"name": "", "rotationAngle": 0.0, "xSize": 1.0, "ySize": 1.0,
+                "FillRectangle": False, "FitPicture": False, "mirrorX": False,
+                "mirrorY": False, "useAlphaChannel": False,
+                "alphaChannelChangesTransparency": False,
+                "alphaChannelChangesSurfaceColor": False,
+                "alphaChannelChangesAmbientColor": False,
+                "alphaChannelChangesSpecularColor": False,
+                "alphaChannelChangesDiffuseColor": False},
+}  # fmt: skip
+
+
 def surface_guid(index: int) -> str:
     return f"45454545-4545-4545-8545-{index:012d}"
 
@@ -255,6 +281,40 @@ def fail(code: int, message: str) -> dict:
     return {"succeeded": False, "error": {"code": code, "message": message}}
 
 
+# Not live: the GetGridElementDefaults shape of addon/Sources/GridCommands.cpp, with a
+# made-up parameter list (no grid default was read from a real Archicad yet).
+GRID_DEFAULTS = {
+    "elementId": {"guid": "00000000-0000-0000-0000-000000000000"},
+    "variation": "GREL",
+    "floorIndex": 0,
+    "layerIndex": 1,
+    "pos": {"x": 0.0, "y": 0.0},
+    "angle": 0.0,
+    "length": 1.0,
+    "xRatio": 1.0,
+    "yRatio": 1.0,
+    "useXYFixSize": False,
+    "level": 0.0,
+    "libInd": 12,
+    "libraryPartName": "Grid Element",
+    "parameters": [
+        {"name": "A", "displayName": "Width", "type": "Length", "value": 1.0},
+        {"name": "AC_Length", "displayName": "Length", "type": "Length", "value": 1.0},
+        {"name": "AC_MarkerText", "displayName": "Marker Text", "type": "String", "value": "1"},
+        {"name": "AC_BubbleBoth", "displayName": "Both Ends", "type": "Boolean", "value": 0.0},
+        {"name": "AC_BubbleSize", "displayName": "Bubble Size", "type": "Length", "value": 0.01},
+        {
+            "name": "AC_Points",
+            "displayName": "Points",
+            "type": "Length",
+            "dimension1": 2,
+            "dimension2": 2,
+        },
+        {"name": "AC_Pen", "displayName": "Pen", "type": "Dictionary"},
+    ],
+}
+
+
 @dataclass
 class FakeArchicad:
     port: int
@@ -300,6 +360,55 @@ class FakeArchicad:
     surfaces: dict[int, str] = field(
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
+    surface_details: dict[str, dict] = field(default_factory=dict)  # GUID -> GetSurfaces row
+    surface_type_ignored: bool = False
+    # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
+    line_types: list[dict] = field(
+        default_factory=lambda: [
+            {"attributeId": {"guid": "11E11E11-0000-4000-8000-000000000002"}, "index": 2,
+             "name": "Tracejada"},
+            {"attributeId": {"guid": "11E11E11-0000-4000-8000-000000000001"}, "index": 1,
+             "name": "Linha Contínua"},
+        ]
+    )  # fmt: skip
+    # Design options, mutable copies of the documented fixture (Tapir 1.7.0 source).
+    do_sets: list[dict] = field(default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["sets"]))
+    do_options: list[dict] = field(
+        default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
+    )
+    do_combinations: list[dict] = field(
+        default_factory=lambda: deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+    )
+    # Hotlink nodes in the GetHotlinks shape (Tapir 1.7.0 ProjectCommands.cpp); synthetic.
+    hotlink_nodes: list[dict] = field(default_factory=list)
+    missing_hotlink_files: set[str] = field(default_factory=set)
+    # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
+    solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
+    element_trims: dict[tuple[str, str], str] = field(default_factory=dict)  # (elem, roof)
+    solid_link_flags_ignored: bool = False  # links created without the flags
+    trim_refused: bool = False
+    remove_ignored: bool = False  # Remove* answers success but keeps the link or trim
+    # element guid -> design option guid (GetDesignOptionForElements / MoveElements...).
+    do_members: dict[str, str] = field(
+        default_factory=lambda: {
+            element: option
+            for option, elements in DESIGN_OPTIONS_FIXTURE["elements_by_option"].items()
+            for element in elements
+        }
+    )
+    move_to_option_ignored: bool = False  # answers success without relinking
+    design_option_errors: dict[str, dict] = field(default_factory=dict)  # name -> error row
+    combination_drops_options: bool = False  # Tapir ignores SetActiveOptionsInCombination
+    # SetStories (Tapir 1.7.0 ProjectCommands.cpp): refuse it, or keep a story off level.
+    set_stories_error: dict | None = None
+    set_stories_level_drift: float = 0.0
+    # CreateDrawings: layout database guid -> Drawing guids on it (Tapir 1.7.0 source).
+    layout_drawings: dict[str, list[str]] = field(default_factory=dict)
+    updated_drawings: list[str] = field(default_factory=list)
+    update_drawings_refused: bool = False
+    drawing_lost: bool = False  # CreateDrawings answers a GUID the layout does not list
+    # CreateComposites: Archicad keeps this skin thickness instead (verification test).
+    composite_thickness_stored: float | None = None
     classification_data: dict = field(default_factory=lambda: deepcopy(CLASSIFICATIONS_FIXTURE))
     # Renames (rename_items): refuse items by position, answer success without renaming,
     # or lose the answer after renaming.
@@ -356,6 +465,7 @@ class FakeArchicad:
     property_create_errors: dict[int, dict] = field(default_factory=dict)
     property_drops_availability: bool = False  # store without availability (mismatch test)
     lose_property_definition_response: bool = False
+    navigator_move_ignored: bool = False
     navigator_trees: dict[str, dict] = field(
         default_factory=lambda: deepcopy(DOCUMENTS_FIXTURE["trees"])
     )
@@ -445,6 +555,7 @@ class FakeArchicad:
     classification_set_errors: dict[int, dict] = field(default_factory=dict)
     classification_ignored: bool = False
     lose_classification_response: bool = False
+    classification_children_dropped: bool = False  # nested items silently not made
     gdl_parameters: dict[str, list] = field(default_factory=dict)
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
@@ -511,6 +622,7 @@ class FakeArchicad:
     section_stored_name: str | None = None  # Project Map shows this name instead
     section_wrong_floor: bool = False
     lose_section_response: bool = False
+    updated_favorites: list[dict] = field(default_factory=list)
     # CreateFavoritesFromElements: names Archicad refuses, and a name listed back instead.
     favorite_create_refused: set[str] = field(default_factory=set)
     favorite_stored_name: str | None = None
@@ -538,6 +650,11 @@ class FakeArchicad:
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
+    saved_story_views: list[dict] = field(default_factory=list)
+    story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
+    grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
+    grid_ignored: set[str] = field(default_factory=set)  # parameters CreateGridElements drops
+    grid_create_errors: dict[int, dict] = field(default_factory=dict)  # item -> error
     camera_3d: dict = field(
         default_factory=lambda: {
             "isPerspective": True,
@@ -783,7 +900,13 @@ class FakeArchicad:
                     out.append(deepcopy(DOCUMENTS_FIXTURE["layout_failed"]))
                     continue
             nav, database = str(uuid4()).upper(), str(uuid4()).upper()
-            self.navigator_trees[map_id].setdefault("children", []).append(
+            parent = self.navigator_trees[map_id]
+            if "parentNavigatorItemId" in data:
+                wanted = data["parentNavigatorItemId"]["guid"]
+                parent = next(
+                    n for n in self._nav_items_of(parent) if n["navigatorItemId"]["guid"] == wanted
+                )
+            parent.setdefault("children", []).append(
                 {
                     "navigatorItem": {
                         "navigatorItemId": {"guid": nav},
@@ -907,6 +1030,45 @@ class FakeArchicad:
             self.issue_attachments.setdefault(guid, set()).update(guids)
         return ok({"addOnCommandResponse": deepcopy(ISSUES_FIXTURE["attach_elements"])})
 
+    def _grid(self, name: str, args: dict) -> dict:
+        # Not live: shaped from addon/Sources/GridCommands.cpp (Tapir's port).
+        if name == "GetGridElementDefaults":
+            return deepcopy(GRID_DEFAULTS)
+        if name == "GetGridElements":
+            rows = deepcopy(list(self.grid_elements.values()))
+            if not args.get("includeParameters"):
+                for row in rows:
+                    row.pop("parameters", None)
+            return {"gridElements": rows}
+        elements = []
+        for index, item in enumerate(args["gridElements"]):
+            if index in self.grid_create_errors:
+                elements.append({"error": deepcopy(self.grid_create_errors[index])})
+                continue
+            beg, end = item["begCoordinate"], item["endCoordinate"]
+            dx, dy = end["x"] - beg["x"], end["y"] - beg["y"]
+            row = deepcopy(GRID_DEFAULTS)
+            guid = str(uuid4()).upper()
+            row.update(
+                elementId={"guid": guid},
+                pos={"x": beg["x"], "y": beg["y"]},
+                angle=math.atan2(dy, dx),
+                length=math.hypot(dx, dy),
+                floorIndex=item.get("floorIndex", row["floorIndex"]),
+            )
+            if item.get("layerIndex", 0) > 0:
+                row["layerIndex"] = item["layerIndex"]
+            values = {p["name"]: p["value"] for p in item.get("parameters", [])}
+            for param in row["parameters"]:
+                if param["name"] == "AC_Length":
+                    param["value"] = row["length"]
+                elif param["name"] in values and param["name"] not in self.grid_ignored:
+                    value = values[param["name"]]
+                    param["value"] = float(value) if isinstance(value, bool) else value
+            self.grid_elements[guid] = row
+            elements.append({"elementId": {"guid": guid}})
+        return {"elements": elements, "warnings": []}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -953,6 +1115,25 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": deepcopy(self.cut_3d)})
         if name == "Show3DAll":
             return ok({"addOnCommandResponse": {}})
+        if name == "SaveStoryView":
+            # Not live: shaped from addon/Sources/PlanViewCommands.cpp.
+            if args["storyIndex"] not in {s["index"] for s in self.stories}:
+                error = {"code": -2130313112, "message": "Story is not in the Project Map."}
+                return ok({"addOnCommandResponse": {"error": error}})
+            view = {"saveZoom": "zoom" not in self.story_view_ignored, "saveDrawingScale": False,
+                    "saveLayers": False}  # fmt: skip
+            if view["saveZoom"]:
+                view["zoom"] = deepcopy(args["zoom"])
+            if "drawingScale" in args and "drawingScale" not in self.story_view_ignored:
+                view.update(saveDrawingScale=True, drawingScale=args["drawingScale"])
+            if "layerCombination" in args:
+                view.update(saveLayers=True, layerCombination=args["layerCombination"])
+            guid = str(uuid4()).upper()
+            self.saved_story_views.append({"viewGuid": guid, **deepcopy(args)})
+            return ok({"addOnCommandResponse": {"viewGuid": guid, "name": args["name"],
+                       "storyIndex": args["storyIndex"], "view": view}})  # fmt: skip
+        if name in {"GetGridElementDefaults", "GetGridElements", "CreateGridElements"}:
+            return ok({"addOnCommandResponse": self._grid(name, args)})
         if name == "Get3DWindowImage":
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
@@ -986,68 +1167,332 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "CreateDrawings":
+            # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
+            placeable = {"StoryItem", "ScheduleItem", "WorksheetDrawingItem"}
+            nodes = {
+                n["navigatorItemId"]["guid"]: n
+                for tree in self.navigator_trees.values()
+                for n in self._nav_items_of(tree)
+            }
+            out = []
+            for index, data in enumerate(args["drawingsData"]):
+                assert set(data) <= {"navigatorItemId", "layoutDatabaseId", "position", "name",
+                                     "angle"}  # fmt: skip
+                source = nodes.get(data["navigatorItemId"]["guid"])
+                database = data["layoutDatabaseId"]["guid"]
+                if index in self.create_errors:
+                    out.append(deepcopy(self.create_errors[index]))
+                elif source is None or source["type"] not in placeable:
+                    message = "navigatorItemId is not a view or viewpoint that can be placed."
+                    out.append({"error": {"code": -2130313112, "message": message}})
+                elif database not in self.nav_databases.values():
+                    out.append({"error": {"code": -1, "message": "Failed to activate the "
+                                "layout database."}})  # fmt: skip
+                else:
+                    guid = str(uuid4()).upper()
+                    if not self.drawing_lost:
+                        self.layout_drawings.setdefault(database, []).append(guid)
+                    out.append({"elementId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"elements": out}})
+        if name == "UpdateDrawings":
+            # Tapir 1.7.0 source (NavigatorCommands.cpp): one ExecutionResult; not live.
+            placed = {g for guids in self.layout_drawings.values() for g in guids}
+            missing = any(e["elementId"]["guid"] not in placed for e in args["elements"])
+            if missing or self.update_drawings_refused:
+                return ok({"addOnCommandResponse": {"success": False, "error": {
+                    "code": -2130313112, "message": "Failed to update drawings."}}})  # fmt: skip
+            self.updated_drawings += [e["elementId"]["guid"] for e in args["elements"]]
+            return ok({"addOnCommandResponse": {"success": True}})
+        if name == "GetElementsByType" and "databases" in args:
+            assert args["elementType"] == "Drawing" and len(args["databases"]) == 1
+            database = args["databases"][0]["databaseId"]["guid"]
+            known = database in self.nav_databases.values()
+            result = {"success": True} if known else {
+                "success": False, "error": {"code": -1, "message": "Bad database."}}  # fmt: skip
+            rows = [{"elementId": {"guid": g}} for g in self.layout_drawings.get(database, [])]
+            return ok({"addOnCommandResponse": {"elements": rows,
+                       "executionResultForDatabases": [result]}})  # fmt: skip
         if name == "GetDesignOptionSets":
-            return ok(
-                {
-                    "addOnCommandResponse": {
-                        "designOptionSets": deepcopy(DESIGN_OPTIONS_FIXTURE["sets"])
-                    }
-                }
-            )
+            return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":
-            return ok(
-                {
-                    "addOnCommandResponse": {
-                        "designOptions": deepcopy(DESIGN_OPTIONS_FIXTURE["options"])
-                    }
-                }
-            )
+            return ok({"addOnCommandResponse": {"designOptions": deepcopy(self.do_options)}})
         if name == "GetDesignOptionCombinations":
             return ok(
                 {
                     "addOnCommandResponse": {
-                        "designOptionCombinations": deepcopy(DESIGN_OPTIONS_FIXTURE["combinations"])
+                        "designOptionCombinations": deepcopy(self.do_combinations)
                     }
                 }
             )
+        if name == "GetHotlinks":
+            return ok({"addOnCommandResponse": {"hotlinks": deepcopy(self.hotlink_nodes)}})
+        if name == "CreateHotlinkNodes":
+            rows = []
+            for data in args["hotlinkNodes"]:
+                path = data["sourceLocation"]
+                known = next((n for n in self.hotlink_nodes
+                              if n["location"].casefold() == path.casefold()), None)  # fmt: skip
+                if known is not None:
+                    rows.append(
+                        {"hotlinkNodeId": deepcopy(known["hotlinkNodeId"]), "existing": True}
+                    )
+                elif path in self.missing_hotlink_files:
+                    message = "Failed to create the hotlink node from " + path
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                else:
+                    guid = str(uuid4()).upper()
+                    name = data.get("name") or path.replace("\\", "/").rsplit("/", 1)[-1]
+                    self.hotlink_nodes.append({"location": path, "hotlinkNodeId": {"guid": guid},
+                                               "name": name, "type": "Module"})  # fmt: skip
+                    rows.append({"hotlinkNodeId": {"guid": guid}, "existing": False})
+            return ok({"addOnCommandResponse": {"hotlinkNodes": rows}})
+        if name == "CreateHotlinkInstances":
+            rows = []
+            nodes = {n["hotlinkNodeId"]["guid"] for n in self.hotlink_nodes}
+            for data in args["hotlinkInstances"]:
+                assert {"hotlinkNodeId", "origin"} <= set(data)
+                if data["hotlinkNodeId"]["guid"] not in nodes:
+                    message = "hotlinkNodeId is not a hotlink node"
+                    rows.append({"error": {"code": -2130313111, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                self.elements[guid] = "Hotlink"
+                self.details[guid] = {"type": "Hotlink", "floorIndex": data.get("floorIndex", 0)}
+                rows.append({"elementId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"elements": rows}})
+        if name == "CreateSolidElementLinks":
+            results = []
+            for link in args["solidLinks"]:
+                target, operator = link["targetId"]["guid"], link["operatorId"]["guid"]
+                if target not in self.elements or operator not in self.elements:
+                    error = {"code": -2130313112, "message": "Failed to create the link."}
+                    results.append({"success": False, "error": error})
+                    continue
+                flags = {"inheritOperatorAttributes": False, "skipPolygonHoles": False}
+                if not self.solid_link_flags_ignored:
+                    flags = dict(link.get("linkFlags", flags))
+                operation = link.get("operation", "Subtraction")
+                self.solid_links[(target, operator)] = {"operation": operation, "linkFlags": flags}
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "RemoveSolidElementLinks":
+            # Shapes from the Tapir 1.7.0 source (SolidElementOperationCommands.cpp); not live.
+            results = []
+            for link in args["solidLinks"]:
+                key = (link["targetId"]["guid"], link["operatorId"]["guid"])
+                if key not in self.solid_links:
+                    message = "Failed to remove solid element link."
+                    results.append({"success": False, "error": {"code": -2130312312,
+                                    "message": message}})  # fmt: skip
+                    continue
+                if not self.remove_ignored:
+                    del self.solid_links[key]
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "RemoveElementTrims":
+            results = []
+            for pair in args["elementPairs"]:
+                key = (pair["elementId"]["guid"], pair["trimmingElementId"]["guid"])
+                if key not in self.element_trims:
+                    results.append({"success": False, "error": {"code": -2130312312,
+                                    "message": "Failed to remove the trim."}})  # fmt: skip
+                    continue
+                if not self.remove_ignored:
+                    del self.element_trims[key]
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "GetSolidElementLinks":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                rows.append({
+                    "solidLinksWithTheGivenTarget": [
+                        {"operatorId": {"guid": o}, **deepcopy(v)}
+                        for (t, o), v in self.solid_links.items() if t == guid],
+                    "solidLinksWithTheGivenOperator": [
+                        {"targetId": {"guid": t}, **deepcopy(v)}
+                        for (t, o), v in self.solid_links.items() if o == guid],
+                })  # fmt: skip
+            return ok({"addOnCommandResponse": {"solidLinks": rows}})
+        if name == "TrimElements":
+            guids = [e["elementId"]["guid"] for e in args["elements"]]
+            roof = args["trimmingElement"]["guid"]
+            if self.trim_refused or self.elements.get(roof) not in ("Roof", "Shell"):
+                message = "Failed to trim the elements."
+                return ok({"addOnCommandResponse": {"success": False,
+                           "error": {"code": -2130313112, "message": message}}})  # fmt: skip
+            for guid in guids:
+                self.element_trims[(guid, roof)] = args.get("trimType", "KeepInside")
+            return ok({"addOnCommandResponse": {"success": True}})
+        if name == "GetElementTrims":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"]
+                if guid not in self.elements:
+                    rows.append({"error": {"code": -2130313112, "message": "Not found."}})
+                    continue
+                rows.append({
+                    "trimmedBy": [{"elementId": {"guid": r}, "trimType": t}
+                                  for (e, r), t in self.element_trims.items() if e == guid],
+                    "trims": [{"elementId": {"guid": e}}
+                              for (e, r) in self.element_trims if r == guid],
+                })  # fmt: skip
+            return ok({"addOnCommandResponse": {"elementTrims": rows}})
+        if name == "CreateDesignOptionSets":
+            # Shapes from the Tapir 1.7.0 source (DesignOptionCommands.cpp); not live.
+            results = []
+            for set_name in args["designOptionSets"]:
+                if set_name in self.design_option_errors:
+                    results.append({"success": False, "error": self.design_option_errors[set_name]})
+                    continue
+                guid = str(uuid4()).upper()
+                self.do_sets.append({"designOptionSetId": {"guid": guid}, "name": set_name,
+                                     "designOptions": []})  # fmt: skip
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "CreateDesignOptions":
+            rows = []
+            for data in args["designOptions"]:
+                assert set(data) == {"name", "id", "ownerSetName"}
+                owner = next((x for x in self.do_sets if x["name"] == data["ownerSetName"]), None)
+                if data["name"] in self.design_option_errors:
+                    rows.append({"error": self.design_option_errors[data["name"]]})
+                elif owner is None:
+                    message = "Not found design option set with the given 'ownerSetName'"
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                else:
+                    guid = str(uuid4()).upper()
+                    self.do_options.append({"designOptionId": {"guid": guid}, **data})
+                    owner["designOptions"].append({"designOptionId": {"guid": guid}})
+                    rows.append({"designOptionId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"designOptionIdsOrErrors": rows}})
+        if name == "CreateDesignOptionCombinations":
+            rows = []
+            known = {r["designOptionId"]["guid"] for r in self.do_options}
+            for data in args["designOptionCombinations"]:
+                active = [a["designOptionId"]["guid"] for a in data["activeDesignOptions"]]
+                missing = [g for g in active if g not in known]
+                if missing:
+                    message = (
+                        f"Not found design option with the given 'designOptionId' {missing[0]}"
+                    )
+                    rows.append({"error": {"code": -2130313112, "message": message}})
+                    continue
+                guid = str(uuid4()).upper()
+                kept = [] if self.combination_drops_options else active
+                active_rows = [{"designOptionId": {"guid": g}} for g in kept]
+                self.do_combinations.append({"designOptionCombinationId": {"guid": guid},
+                                             "name": data["name"],
+                                             "activeDesignOptions": active_rows})  # fmt: skip
+                rows.append({"designOptionCombinationId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"designOptionCombinationIdsOrErrors": rows}})
         if name == "GetElementsOfDesignOptions":
             rows = []
-            mapping = DESIGN_OPTIONS_FIXTURE["elements_by_option"]
             for item in args["designOptions"]:
                 guid = item["designOptionId"]["guid"]
-                if guid not in {
-                    r["designOptionId"]["guid"] for r in DESIGN_OPTIONS_FIXTURE["options"]
-                }:
+                if guid not in {r["designOptionId"]["guid"] for r in self.do_options}:
                     rows.append({"error": {"code": -2, "message": "Not found design option"}})
                 else:
+                    members = [e for e, o in self.do_members.items() if o == guid]
                     rows.append(
                         {
                             "designOptionId": {"guid": guid},
-                            "elements": [self._id(g) for g in mapping.get(guid, [])],
+                            "elements": [self._id(g) for g in members],
                         }
                     )
             return ok({"addOnCommandResponse": {"elementsOfDesignOptions": rows}})
         if name == "GetDesignOptionForElements":
-            linked = DESIGN_OPTIONS_FIXTURE["options"][0]
-            members = set(
-                DESIGN_OPTIONS_FIXTURE["elements_by_option"][linked["designOptionId"]["guid"]]
-            )
+            options = {r["designOptionId"]["guid"]: r for r in self.do_options}
             rows = []
             for item in args["elements"]:
                 guid = item["elementId"]["guid"]
                 if guid not in self.elements:
                     rows.append({"elementId": {"guid": guid}, "type": "NotExistingElement"})
-                elif guid in members:
+                elif guid in self.do_members:
                     rows.append(
                         {
                             "elementId": {"guid": guid},
                             "type": "LinkedToDesignOption",
-                            "designOption": deepcopy(linked),
+                            "designOption": deepcopy(options[self.do_members[guid]]),
                         }
                     )
                 else:
                     rows.append({"elementId": {"guid": guid}, "type": "NotLinkedToAnyDesignOption"})
             return ok({"addOnCommandResponse": {"designOptionForElements": rows}})
+        if name == "MoveElementsToDesignOptions":
+            # Shapes from the Tapir 1.7.0 source (DesignOptionCommands.cpp); not live.
+            results = []
+            known = {r["designOptionId"]["guid"] for r in self.do_options}
+            for pair in args["elementDesignOptionPairs"]:
+                element = pair["elementId"]["guid"]
+                option = pair["designOptionId"]["guid"]
+                null = option == "00000000-0000-0000-0000-000000000000"
+                if not null and option not in known:
+                    results.append({"success": False, "error": {"code": -2130313110,
+                                    "message": "Not found design option"}})  # fmt: skip
+                    continue
+                if not self.move_to_option_ignored:
+                    if null:
+                        self.do_members.pop(element, None)
+                    else:
+                        self.do_members[element] = option
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
+        if name == "MoveNavigatorItem":
+            # Tapir 1.7.0 source (NavigatorCommands.cpp): one ExecutionResult; not live.
+            guid = args["navigatorItemIdToMove"]["guid"]
+            parent_guid = args["parentNavigatorItemId"]["guid"]
+            for tree in self.navigator_trees.values():
+                holder = next((n for n in self._nav_items_of(tree) if any(
+                    c["navigatorItem"]["navigatorItemId"]["guid"] == guid
+                    for c in n.get("children", []))), None)  # fmt: skip
+                parent = _view_map_node(tree, parent_guid)
+                if holder is not None and parent is not None:
+                    break
+            else:
+                message = "Failed to move navigator item."
+                return ok({"addOnCommandResponse": {"success": False, "error": {
+                    "code": -2130313112, "message": message}}})  # fmt: skip
+            if not self.navigator_move_ignored:
+                wrapper = next(
+                    c for c in holder["children"]
+                    if c["navigatorItem"]["navigatorItemId"]["guid"] == guid
+                )  # fmt: skip
+                holder["children"].remove(wrapper)
+                parent.setdefault("children", []).insert(0, wrapper)
+            return ok({"addOnCommandResponse": {"success": True}})
+        if name == "CreateClassificationSystems":
+            # Tapir 1.7.0 source (ClassificationCommands.cpp); not live. A system without
+            # items gets no result, and an error in a child item is not reported.
+            results = []
+
+            def build(rows, depth):
+                out = []
+                for row in rows:
+                    children = row.get("children", [])
+                    if self.classification_children_dropped:
+                        children = []
+                    item = {"classificationItemId": {"guid": str(uuid4()).upper()},
+                            **{k: row[k] for k in ("id", "name", "description")}}  # fmt: skip
+                    if children:
+                        item["children"] = build(children, depth + 1)
+                    out.append({"classificationItem": item})
+                return out
+
+            for entry in args["classificationSystemsWithItems"]:
+                data = entry["classificationSystem"]
+                guid = str(uuid4()).upper()
+                self.classification_data["systems"]["classificationSystems"].append(
+                    {"classificationSystemId": {"guid": guid}, **deepcopy(data)}
+                )
+                self.classification_data["items"][guid] = {"classificationItems": []}
+                if not entry["classificationItems"]:
+                    continue
+                tree = build(entry["classificationItems"], 0)
+                self.classification_data["items"][guid]["classificationItems"] = tree
+                results.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": results}})
         if name == "CreateClassificationItems":
             results = []
             for entry in args["newClassificationItems"]:
@@ -1071,9 +1516,13 @@ class FakeArchicad:
             # Live AC30 build 3001 BRA / Tapir 1.7.0, 2026-10-15:
             # the synthetic PublicViewMap root is not an insertion parent.
             if parent is view_root and name == "CreateViewMapFolder":
-                return ok({"addOnCommandResponse": deepcopy(
-                    VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
-                )})
+                return ok(
+                    {
+                        "addOnCommandResponse": deepcopy(
+                            VIEW_MAP_ROOT_LIVE_FIXTURE["create_under_synthetic_root"]
+                        )
+                    }
+                )
             if name == "CreateViewMapFolder":
                 node = deepcopy(VIEW_MAP_FIXTURE["folder"])
                 node["name"] = args["folderName"]
@@ -1268,6 +1717,18 @@ class FakeArchicad:
                     self.created_favorites.append(deepcopy(row))
                     out.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": out}})
+        if name == "UpdateFavoritesFromElements":
+            # Tapir 1.7.0 source (FavoritesCommands.cpp); not live captured.
+            out = []
+            for row in args["favoritesFromElements"]:
+                kind = self.elements.get(row["elementId"]["guid"])
+                if kind is None or row["favorite"] not in self.favorites.get(kind, []):
+                    error = {"code": -2130313112, "message": "Failed to update the favorite"}
+                    out.append({"success": False, "error": error})
+                else:
+                    self.updated_favorites.append(deepcopy(row))
+                    out.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": out}})
         if name == "ChangeSelectionOfElements":
             added, removed = [], []
             for row in args.get("addElementsToSelection", []):
@@ -1381,17 +1842,35 @@ class FakeArchicad:
                 else:
                     out.append({"databaseId": {"guid": database}})
             return ok({"addOnCommandResponse": {"databases": out}})
+        if name == "CreateLayoutSubset":
+            # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
+            book = self.navigator_trees["LayoutBook"]
+            out = []
+            for data in args["subsetsData"]:
+                parent = book
+                if "parentNavigatorItemId" in data:
+                    wanted = data["parentNavigatorItemId"]["guid"]
+                    parent = next(
+                        n
+                        for n in self._nav_items_of(book)
+                        if n["navigatorItemId"]["guid"] == wanted
+                    )
+                guid = str(uuid4()).upper()
+                parent.setdefault("children", []).append(
+                    {
+                        "navigatorItem": {
+                            "navigatorItemId": {"guid": guid},
+                            "type": "SubSetItem",
+                            "name": data["name"],
+                            "prefix": data.get("ownPrefix", ""),
+                            "uiId": "",
+                        }
+                    }
+                )
+                out.append({"navigatorItemId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"navigatorItems": out}})
         if name in ("CreateWorksheets", "CreateDetails", "CreateLayout"):
             return ok({"addOnCommandResponse": {"databases": self._create_documents(name, args)}})
-        if name == "CreateDrawings":
-            # Source-derived from Tapir 1.7.0 DocumentCreationCommands.cpp; not a live capture.
-            out = []
-            for data in args["drawingsData"]:
-                guid = str(uuid4()).upper()
-                self.elements[guid] = "Drawing"
-                self.details[guid] = {"type": "Drawing", "details": deepcopy(data)}
-                out.append({"elementId": {"guid": guid}})
-            return ok({"addOnCommandResponse": {"elements": out}})
         if name == "GetAllProperties":
             return ok(
                 {
@@ -1511,6 +1990,38 @@ class FakeArchicad:
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
         ):
             return self._rename(name, args)
+        if name == "CreateSurfaces":
+            # Tapir 1.7.0 source (CreateAttributesCommandBase, CreateSurfaces); not live.
+            # A new surface starts zeroed: fields not sent stay 0.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for data in args["surfaceDataArray"]:
+                if data["name"].casefold() in {n.casefold() for n in self.surfaces.values()}:
+                    out.append({"error": {"code": -2130313094, "message": "Already exists."}})
+                    continue
+                index = max(self.surfaces, default=0) + 1
+                self.surfaces[index] = data["name"]
+                row = {k: 0.0 for k in SURFACE_NUMBERS} | {"materialType": "General"}
+                row |= {k: {"red": 0.0, "green": 0.0, "blue": 0.0} for k in SURFACE_COLORS}
+                row |= {k: deepcopy(v) for k, v in data.items() if k != "name"}
+                if self.surface_type_ignored:
+                    row["materialType"] = "General"
+                self.surface_details[surface_guid(index)] = row
+                out.append({"attributeId": {"guid": surface_guid(index)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetSurfaces":
+            out = []
+            for entry in args["attributeIds"]:
+                guid = entry["attributeId"]["guid"]
+                index = next((i for i in self.surfaces if surface_guid(i) == guid), None)
+                if index is None:
+                    out.append({"error": {"code": -2130313112,
+                                "message": "Failed to retrieve attribute."}})  # fmt: skip
+                    continue
+                details = self.surface_details.get(guid, SURFACE_DEFAULT)
+                out.append({"attributeId": {"guid": guid}, "index": index,
+                            "name": self.surfaces[index], **deepcopy(details)})  # fmt: skip
+            return ok({"addOnCommandResponse": {"surfaces": out}})
         if name == "CreateLayers":
             assert args.get("overwriteExisting") is False
             out = []
@@ -1642,6 +2153,38 @@ class FakeArchicad:
                 for r in self.composites.values()
             ]
             return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Line":
+            return ok({"addOnCommandResponse": {"attributes": deepcopy(self.line_types)}})
+        if name == "CreateComposites":
+            # Shapes from the Tapir 1.7.0 source (AttributeCommands.cpp); not live captured.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for index, data in enumerate(args["compositeDataArray"]):
+                assert set(data) <= {"name", "useWith", "skins", "separators"}
+                taken = {r["name"] for r in self.composites.values()}
+                if index in self.create_errors or data["name"] in taken:
+                    error = {"error": {"code": -2130313081, "message": "Composite already exists."}}
+                    out.append(deepcopy(self.create_errors.get(index, error)))
+                    continue
+                if len(data["separators"]) != len(data["skins"]) + 1:
+                    out.append({"error": {"code": -1, "message": "Invalid separator count."}})
+                    continue
+                skins = deepcopy(data["skins"])
+                for skin in skins:
+                    assert set(skin) == {"type", "buildingMaterialId", "framePen", "thickness"}
+                    if self.composite_thickness_stored is not None:
+                        skin["thickness"] = self.composite_thickness_stored
+                guid = str(uuid4()).upper()
+                self.composites[guid] = {
+                    "attributeId": {"guid": guid},
+                    "index": len(self.composites) + 3,
+                    "name": data["name"],
+                    "useWith": list(data.get("useWith", [])),
+                    "skins": skins,
+                    "separators": deepcopy(data["separators"]),
+                }
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name == "GetAttributesByType" and args["attributeType"] == "Profile":
             rows = [
                 {k: deepcopy(row[k]) for k in ("attributeId", "index", "name")}
@@ -1735,6 +2278,24 @@ class FakeArchicad:
                     keys = {"attributeId", "index", "name", *args["fields"]}
                     out.append({key: deepcopy(value) for key, value in row.items() if key in keys})
             return ok({"addOnCommandResponse": {"buildingMaterials": out}})
+        if name == "SetStories":
+            # Shapes from the Tapir 1.7.0 source (ProjectCommands.cpp); not live captured.
+            if self.set_stories_error is not None:
+                result = {"success": False, "error": deepcopy(self.set_stories_error)}
+                return ok({"addOnCommandResponse": result})
+            rows = args["stories"]
+            assert rows and all(set(r) <= {"index", "name", "level", "dispOnSections"}
+                                and {"name", "level", "dispOnSections"} <= set(r)
+                                for r in rows)  # fmt: skip
+            first = rows[0].get("index", min(r["index"] for r in self.stories))
+            self.stories = [
+                {"index": first + n, "floorId": first + n + 1,
+                 "dispOnSections": r["dispOnSections"], "level": r["level"], "name": r["name"]}
+                for n, r in enumerate(rows)
+            ]  # fmt: skip
+            if self.set_stories_level_drift:
+                self.stories[-1]["level"] += self.set_stories_level_drift
+            return ok({"addOnCommandResponse": {"success": True}})
         if name == "GetStories":
             return ok({"addOnCommandResponse": {"stories": self.stories}})
         if name == "GetDetailsOfElements":
@@ -1834,7 +2395,7 @@ class FakeArchicad:
                 rows = []
                 for element in args["elements"]:
                     guid = element["elementId"]["guid"]
-                    if self.elements.get(guid) != "Object":
+                    if self.elements.get(guid) not in ("Object", "Lamp"):  # Tapir 1.7.0 source
                         rows.append({"error": {"code": -1, "message": "Not an Object"}})
                     else:
                         parameters = self.gdl_parameters.setdefault(
@@ -2823,7 +3384,7 @@ class FakeArchicad:
                     details["relativeTopStory"] = 0
                 if name == "ModifyBeams" and "level" in changes:
                     details["zCoordinate"] = story["level"] + changes["level"]
-                if name == "ModifyObjects" and "dimensions" in changes:
+                if name in ("ModifyObjects", "ModifyLamps") and "dimensions" in changes:
                     # Live AC30 build 3001 BRA (14/10/2026): x and y change, the height
                     # (ZZYZX) does not, and dimensions.z always reads back as 0.
                     changes["dimensions"] = {**changes["dimensions"], "z": 0}
@@ -3190,6 +3751,7 @@ def _classification_creation_parent(roots, guid):
 
 # Actual capture: Windows, Archicad 30 build 3001 BRA, Tapir 1.7.0, 2026-10-15.
 VIEW_MAP_ROOT_LIVE_FIXTURE = json.loads(
-    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).parents[1] / "fixtures" / "ac30_3001_bra_view_map_root_live.json").read_text(
+        encoding="utf-8"
+    )
 )

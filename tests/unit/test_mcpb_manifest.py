@@ -50,8 +50,7 @@ async def test_readmes_report_the_registered_tool_counts():
     tools = await create_server().list_tools()
     reads = sum(tool.annotations.readOnlyHint is True for tool in tools)
     views = sum(
-        tool.annotations.readOnlyHint is False
-        and tool.annotations.destructiveHint is False
+        tool.annotations.readOnlyHint is False and tool.annotations.destructiveHint is False
         for tool in tools
     )
     writes = len(tools) - reads - views

@@ -11,6 +11,93 @@
 
 ## Unreleased
 
+- Add `save_room_plan_views` (`tools/room_views.py`): room enlargement views. For each
+  zone, its story's floor plan is saved in the View Map framed on the room plus a margin,
+  with an optional drawing scale and layer combination, in a folder named after the room,
+  numbered "AMP 01 - <room>". Uses the new `SaveStoryView` command of our add-on; each
+  saved view's zoom, scale and layers are read back. Not tested live yet.
+
+- Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
+  (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
+  `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,
+  MIT). The preview checks GDL parameter names and value types against the tool
+  defaults; the batch is one Undo step and every line is read back. Not tested live yet.
+
+- Add `update_favorites_from_elements`: overwrite existing favorites from elements by
+  Tapir 1.7.0 `UpdateFavoritesFromElements`. The receipt stays unverified, because
+  Tapir cannot read a favorite's settings. Not tested live yet.
+
+- Add `move_navigator_items` (`tools/navigator_moves.py`): move View Map and Layout Book
+  items into other folders by Tapir 1.7.0 `MoveNavigatorItem`, read back in the tree.
+  Not tested live yet.
+
+- Add `create_surfaces` (`tools/surfaces.py`): new surfaces copied from an existing one
+  by Tapir 1.7.0 `CreateSurfaces`, with colour, transparency, type or no texture;
+  read back by `GetSurfaces`. Not tested live yet.
+
+- Add `update_drawings` (`tools/drawings.py`): update every Drawing on layouts by Tapir
+  1.7.0 `UpdateDrawings`. Tapir answers only success, so the receipt stays unverified.
+  Not tested live yet.
+
+- Add `create_classification_systems` (`tools/classification_systems.py`): new systems
+  with item trees by Tapir 1.7.0 `CreateClassificationSystems`, read back by
+  `GetAllClassificationSystems` and the whole tree. Not tested live yet.
+
+- Add `modify_lamps`: origin, level, size (height through ZZYZX) and `lightIsOn` of
+  lamps by Tapir 1.7.0 `ModifyLamps`, the same code as `ModifyObjects`; read back like
+  `modify_objects`. The light colour is left out: the Tapir source says Archicad
+  discards it. Not tested live yet.
+
+- Add `remove_solid_operations` and `remove_trims` (`tools/solids.py`): remove solid
+  element operation links and roof or shell trims by Tapir 1.7.0
+  `RemoveSolidElementLinks` and `RemoveElementTrims`, read back as gone. Not tested
+  live yet.
+
+- Add `place_hotlinks` (`tools/hotlinks.py`): hotlink modules from .mod or .pln files by
+  Tapir 1.7.0 `CreateHotlinkNodes` and `CreateHotlinkInstances`, read back by type,
+  story and `GetHotlinks`. Not tested live yet.
+
+- Add `create_layout_subsets` (`tools/layout_book.py`): Layout Book subsets by Tapir
+  1.7.0 `CreateLayoutSubset`, read back under their parent. `create_layouts` takes an
+  optional `subset`. Not tested live yet.
+
+- Add `create_solid_operations` and `trim_to_roof` (`tools/solids.py`): solid element
+  operation links and trims to a roof or shell by Tapir 1.7.0, read back by
+  `GetSolidElementLinks` and `GetElementTrims`. Not tested live yet.
+
+- Add `move_to_design_options`: elements into a design option or back to the main model
+  by Tapir 1.7.0 `MoveElementsToDesignOptions`, read back per element. Not tested live
+  yet.
+
+- Add `create_design_options` (`tools/design_option_create.py`): new design option sets,
+  options and combinations in one call (Tapir 1.7.0, Archicad 29+), read back by the
+  three inventories. Not tested live yet.
+
+- Add `add_stories` (`tools/stories.py`): new stories above the top or below the bottom
+  by Tapir 1.7.0 `SetStories`, sending the existing stories back unchanged; read back by
+  `GetStories`. Not tested live yet.
+
+- Add `create_drawings` (`tools/drawings.py`): views on existing layouts by Tapir 1.7.0
+  `CreateDrawings`, by View Map name or Navigator GUID, read back on the layout's
+  database. Not tested live yet.
+
+- Add `create_composites` (`tools/composites.py`): new composites by Tapir 1.7.0
+  `CreateComposites`, skins by building material name, thickness, type and pen, one
+  separator line type and pen. Existing names, unknown materials and line types are
+  refused in the preview; the read-back compares every skin and separator. Not tested
+  live yet.
+- Reject invalid `ARCHICAD_MCP_PORTS` entries before discovery: out-of-range TCP
+  ports, malformed entries and descending ranges now raise a configuration error.
+  Validate endpoints before expanding ranges so a typo such as `1-1000000000`
+  cannot allocate a huge list. Custom valid ports, ordering, deduplication and the
+  default port range are preserved. Offline tests only.
+
+- `find_elements` resolves its target once per search instead of probing it again
+  for every property batch. A search reading properties of 205 elements now makes
+  one `GetProductInfo` request to the target instead of four. Property validation,
+  batches of 100, pagination and per-element errors are unchanged. Tested offline
+  against the fake Archicad; not tested in a real Archicad.
+
 - `read_scene_model` suggests better cameras, after the live run of 22/10/2026 where
   about one suggestion in three was usable. Cameras now stand clear of walls, columns
   and smaller rooms inside the room's box, and their sight line avoids wall and column

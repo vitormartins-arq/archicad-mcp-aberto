@@ -2,6 +2,11 @@
 
 #include "CommandBase.hpp"
 
+// View Map helpers shared with the plan view commands.
+void SetItemName (API_NavigatorItem& item, const GS::UniString& name);
+// Finds or creates folderPath in the View Map; the first name may be a folder at any depth.
+GSErrCode ResolveViewMapFolder (const GS::Array<GS::UniString>& folderPath, API_Guid& parentGuid, GS::UniString& error);
+
 // Reads the 3D projection (camera) of the "3D Projection Settings" dialog.
 class Get3DCameraCommand : public CommandBase
 {
