@@ -1,7 +1,10 @@
 """P-005: target selection against MockTransport only; never a real Archicad."""
 
 import inspect
+import tempfile
 from copy import deepcopy
+from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -38,6 +41,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     openings,
     project_info,
+    project_save,
     property_definitions,
     read,
     renames,
@@ -174,6 +178,10 @@ INPUTS = {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
     },
+    "save_project_as": {
+        "destination_path": str(Path(tempfile.gettempdir()) / f"ambiguous-{uuid4()}.pln")
+    },
+    "save_next_project_revision": {},
     "list_grid_elements": {},
     "create_grid_elements": {
         "grids": [{"start": {"x": 0, "y": 0}, "end": {"x": 0, "y": 9}, "floor_index": 0}]
@@ -478,6 +486,7 @@ TARGETED = {
         navigator_moves,
         openings,
         project_info,
+        project_save,
         property_definitions,
         read,
         roofs,
@@ -617,6 +626,11 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "update_zones":
         for instance in (first, second):
             instance.elements[PROP] = "Zone"
+    if name == "save_next_project_revision":
+        folder = Path(tempfile.mkdtemp())
+        (folder / "Casa_R01.pln").write_bytes(b"PLN")
+        for instance in (first, second):
+            instance.project_path = str(folder / "Casa_R01.pln")
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""

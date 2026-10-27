@@ -802,6 +802,21 @@ ArchiCAD de teste.
   bolha, que o recibo dá `verified` e que um Desfazer apaga os seis. Comparar a aparência
   com um eixo feito à mão (o Tapir avisa que os padrões da ferramenta podem diferir).
 
+## Lote do Claude: salvar como e próxima revisão (27/10/2026)
+
+Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` deste PR). Use uma cópia
+descartável numa pasta de teste, nunca o WG Formosa. O Archicad em versão de avaliação
+(demo) recusa salvar pela API; nesse caso o recibo dá `failed` e nada muda.
+
+- [ ] **save_next_project_revision.** Abrir `Teste_R04.pln`, mudar uma parede sem salvar
+  e pedir "salve na próxima revisão". Conferir na prévia `Teste_R05.pln` e o destino
+  `00 - Anteriores\Teste_R04.pln`. Aplicar: o título da janela passa a `Teste_R05`, a
+  parede mudada está no R05 (fechar e reabrir) e o R04 foi para `00 - Anteriores`.
+- [ ] **Arquivo do R04 preso.** Anotar se o Windows deixa mover o R04 logo após o
+  salvar. Se não deixar, o recibo diz "Move it by hand" e o R05 fica salvo.
+- [ ] **save_project_as.** No "Sem Nome", "salve como C:\Teste\Novo.pln". Conferir o
+  arquivo e o título da janela. Repetir com o mesmo caminho: tem de recusar.
+
 ## Lote do Claude C37: atualizar favoritos
 
 - [ ] **update_favorites_from_elements.** No projeto novo, com um favorito de parede de

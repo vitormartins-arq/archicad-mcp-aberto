@@ -4,6 +4,7 @@
 #include "ResourceIds.hpp"
 #include "CameraCommands.hpp"
 #include "GridCommands.hpp"
+#include "ProjectCommands.hpp"
 
 template <typename CommandType>
 static GSErrCode InstallCommand ()
@@ -35,6 +36,8 @@ GSErrCode Initialize (void)
     err |= InstallCommand<GetGridElementDefaultsCommand> ();
     err |= InstallCommand<GetGridElementsCommand> ();
     err |= InstallCommand<CreateGridElementsCommand> ();
+    err |= InstallCommand<GetProjectSaveContextCommand> ();
+    err |= InstallCommand<SaveProjectAsPLNCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif

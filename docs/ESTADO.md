@@ -1,5 +1,11 @@
 # Estado atual
 
+- **Salvar como / próxima revisão, 27/10/2026 (Claude, continuando o Codex):** branch
+  `claude/save-project-revisions`. Add-on: `GetProjectSaveContext` e `SaveProjectAsPLN`
+  (`addon/Sources/ProjectCommands.cpp`). MCP: `save_project_as` e
+  `save_next_project_revision` (`tools/project_save.py`). 2771 testes offline e Ruff
+  passaram; compilação só no CI; sem teste real. Roteiro em `docs/VALIDAR.md`.
+
 - **Conflito da #71 / 25/10/2026:** main atual (com #72 e #73) incorporada na branch.
   Conflitos somente no changelog e neste registro, resolvidos preservando os dois
   conteúdos. 2730 testes offline passaram em 22,81 s; Ruff e formatação passaram

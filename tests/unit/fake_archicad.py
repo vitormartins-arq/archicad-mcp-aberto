@@ -654,6 +654,11 @@ class FakeArchicad:
     )
     cut_3d: dict = field(default_factory=lambda: {"enabled": False, "planes": []})
     saved_3d_views: list[dict] = field(default_factory=list)
+    # GetProjectSaveContext / SaveProjectAsPLN (addon/Sources/ProjectCommands.cpp; not live
+    # yet). None is an untitled project. SaveProjectAsPLN writes a small file there.
+    project_path: str | None = None
+    project_teamwork: bool = False
+    lose_save_response: bool = False  # the save happens but the answer never arrives
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1101,6 +1106,8 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": {}})
         if name in {"GetGridElementDefaults", "GetGridElements", "CreateGridElements"}:
             return ok({"addOnCommandResponse": self._grid(name, args)})
+        if name in {"GetProjectSaveContext", "SaveProjectAsPLN"}:
+            return self._project_save(name, args)
         if name == "Get3DWindowImage":
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
@@ -1126,6 +1133,30 @@ class FakeArchicad:
                 }
             )
         return fail(4010, "Add-On command is not registered")
+
+    def _project_save(self, name: str, args: dict) -> dict:
+        def context():
+            out = {"untitled": self.project_path is None, "teamwork": self.project_teamwork}
+            if self.project_path is not None:
+                out["projectPath"] = self.project_path
+                out["projectName"] = Path(self.project_path).stem
+            return ok({"addOnCommandResponse": out})
+
+        if name == "SaveProjectAsPLN":
+            error = None
+            if self.project_teamwork:
+                error = "Teamwork projects are not saved by this command."
+            elif (self.project_path or "").casefold() != args["expectedProjectPath"].casefold():
+                error = "Another project is open now; run a new preview."
+            elif Path(args["destinationPath"]).exists():
+                error = "The destination file already exists."
+            if error:
+                return ok(
+                    {"addOnCommandResponse": {"error": {"code": -2130313112, "message": error}}}
+                )
+            Path(args["destinationPath"]).write_bytes(b"PLN fake project")
+            self.project_path = args["destinationPath"]
+        return context()
 
     def _tapir(self, params: dict) -> dict:
         if self.tapir_version is None:
@@ -3459,6 +3490,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout("Injected lost interior elevation response", request=request)
         if instance.lose_section_response and command == "CreateSections":
             raise httpx.ReadTimeout("Injected lost section response", request=request)
+        if instance.lose_save_response and command == "SaveProjectAsPLN":
+            raise httpx.ReadTimeout("Injected lost save response", request=request)
         if instance.lose_create_response and command == "CreateWalls":
             raise httpx.ReadTimeout("Injected lost response after model change", request=request)
         if instance.lose_slab_response and command == "CreateSlabs":

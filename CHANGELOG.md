@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `save_project_as` and `save_next_project_revision` (`tools/project_save.py`):
+  save the open project, unsaved changes included, as a new PLN through our add-on's new
+  `GetProjectSaveContext` and `SaveProjectAsPLN` (`ACAPI_ProjectOperation_Save`; the JSON
+  API and Tapir 1.7 cannot save). The revision routine saves `Casa_R04.pln` as
+  `Casa_R05.pln` in the same folder and, once Archicad shows the new file, moves R04
+  into `00 - Anteriores`. Existing files, Teamwork and in-place overwrites are refused.
+  Not tested live yet.
+
 - Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
   (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
   `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,

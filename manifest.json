@@ -560,6 +560,14 @@
       "description": "Preview or draw grid lines from start and end points (ArchicadMcpAberto add-on). Read back after."
     },
     {
+      "name": "save_project_as",
+      "description": "Preview or save the open project as a new PLN; never overwrites (ArchicadMcpAberto add-on)."
+    },
+    {
+      "name": "save_next_project_revision",
+      "description": "Preview or save the open project as its next revision (_R04 to _R05) and move the previous PLN to 00 - Anteriores (ArchicadMcpAberto add-on)."
+    },
+    {
       "name": "update_favorites_from_elements",
       "description": "Preview or overwrite existing favorites from elements of their type."
     }

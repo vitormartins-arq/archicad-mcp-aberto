@@ -45,6 +45,11 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
   Tool elements), ported from Tapir's commands added after 1.7.2 (MIT). Coordinates in
   metres; `CreateGridElements` takes `begCoordinate`, `endCoordinate` and optional
   `floorIndex`, `layerIndex`, `lengthMode` and GDL `parameters`, all in one Undo step.
+- `GetProjectSaveContext`, `SaveProjectAsPLN`: whether the project is untitled or
+  Teamwork and the path of its PLN; Save As to a new PLN by `ACAPI_ProjectOperation_Save`
+  (`APIFType_PlanFile`). `SaveProjectAsPLN` takes `destinationPath` and
+  `expectedProjectPath` and refuses Teamwork, another open project and an existing file.
+  Archicad refuses saving in its demo version.
 
 Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands
 convert. A perspective camera defaults to a 60 degree view cone. First live test

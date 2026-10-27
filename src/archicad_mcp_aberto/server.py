@@ -46,6 +46,7 @@ from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
+from archicad_mcp_aberto.tools import project_save as project_save_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
@@ -79,7 +80,8 @@ Archicad MCP (read tools and safe wall and slab creation).
   move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
   level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
   above each story. These need the ArchicadMcpAberto add-on (addon/).
-- Receipts are local. No tool saves the Archicad project. After any unknown outcome,
+- Receipts are local. Only save_project_as and save_next_project_revision save the
+  project, and only when the user asks for it. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
 
@@ -1905,6 +1907,40 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Undo step, every line read back. Needs the ArchicadMcpAberto add-on. Never saves."""
         return await grids_tool.create_grid_elements(
             client_of(ctx), grids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_project_as(
+        ctx: Context,
+        destination_path: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview saving the open project, unsaved changes included, as a new PLN at an
+        absolute destination_path (Save As). An existing file and Teamwork projects are
+        refused. Apply with explicit port and single-use token; Archicad must then show
+        the new file. No Undo. Only when the user asks to save. Needs the
+        ArchicadMcpAberto add-on."""
+        return await project_save_tool.save_project_as(
+            client_of(ctx), destination_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_next_project_revision(
+        ctx: Context,
+        port: int | None = None,
+        archive_folder: str = project_save_tool.ARCHIVE_FOLDER,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview saving the open project as its next revision in the same folder
+        ("Casa_R04.pln" -> "Casa_R05.pln"; a name without _R gets _R01), then moving the
+        previous PLN into archive_folder (default "00 - Anteriores") once the save is
+        confirmed. Nothing is overwritten. Apply with explicit port and single-use token.
+        No Undo. Only when the user asks to save. Needs the ArchicadMcpAberto add-on."""
+        return await project_save_tool.save_next_project_revision(
+            client_of(ctx), port, archive_folder, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

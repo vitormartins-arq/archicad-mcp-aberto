@@ -155,6 +155,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `move_navigator_items` | Write | Moves View Map views and folders, or layouts and subsets, into other folders | yes |
 | `list_grid_elements` | Read | Grid lines with start, end, story, layer and GDL parameters | no (own add-on) |
 | `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
+| `save_project_as` | Write | Saves the open project as a new PLN (Save As); never overwrites | no (own add-on) |
+| `save_next_project_revision` | Write | Saves the open project as its next revision (_R04 to _R05) and moves the previous PLN to `00 - Anteriores` | no (own add-on) |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 
@@ -826,6 +828,14 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   parameters (the bubble text, for example) are checked by name and type against the
   Grid Tool defaults, which `include_parameters` lists. One Undo step for the batch,
   every line read back.
+- `save_project_as(destination_path, port?, dry_run?, confirmation_token?)` and
+  `save_next_project_revision(port?, archive_folder?, dry_run?, confirmation_token?)`
+  save the open project through our add-on, unsaved changes included (it is not a copy
+  of the file on disk). The revision routine takes the next free number after `_R`,
+  ` REV` or `-R` (a name without one gets `_R01`), looking in the folder and the archive,
+  and moves the previous PLN into `archive_folder` (default `00 - Anteriores`) only after
+  Archicad shows the new file. Existing files, Teamwork projects and overwriting the open
+  file are refused; a lost answer is `unknown` and nothing is moved. No Undo.
 - `create_layout_subsets([{name, parent?, prefix?, numbering?}], port?, dry_run?,
   confirmation_token?)` adds up to 20 Layout Book subsets by Tapir 1.7.0
   `CreateLayoutSubset`, at the top of the book or inside an existing subset (`parent`
