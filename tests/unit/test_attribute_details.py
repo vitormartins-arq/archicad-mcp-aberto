@@ -15,7 +15,7 @@ GUID = "A1000000-0000-4000-8000-000000000001"
 
 @pytest.mark.parametrize("kind", list(attributes_details.KINDS))
 async def test_each_closed_kind_preserves_details(kind):
-    fake = FakeArchicad(19723)
+    fake = FakeArchicad(19723, attribute_details_fixture=True)
     async with ArchicadClient(transport=fake_transport(fake)) as client:
         result = await attributes_details.get_attribute_details(client, kind, [GUID], 19723)
     assert result["kind"] == kind and result["items"][0]["guid"] == GUID
@@ -23,7 +23,7 @@ async def test_each_closed_kind_preserves_details(kind):
 
 
 async def test_inventory_and_per_item_error():
-    fake = FakeArchicad(19723)
+    fake = FakeArchicad(19723, attribute_details_fixture=True)
     missing = "A1000000-0000-4000-8000-000000000099"
     async with ArchicadClient(transport=fake_transport(fake)) as client:
         all_rows = await attributes_details.get_attribute_details(client, "composites", port=19723)
@@ -35,7 +35,9 @@ async def test_inventory_and_per_item_error():
 
 
 async def test_invalid_inputs():
-    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+    async with ArchicadClient(
+        transport=fake_transport(FakeArchicad(19723, attribute_details_fixture=True))
+    ) as client:
         with pytest.raises(ValueError):
             await attributes_details.get_attribute_details(client, "walls", [], 19723)
         with pytest.raises(ValueError):

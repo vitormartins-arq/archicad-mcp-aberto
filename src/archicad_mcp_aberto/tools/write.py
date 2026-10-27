@@ -60,12 +60,47 @@ class Point(InputModel):
     y: float
 
 
-class WallCreate(InputModel):
+FavoriteName = Annotated[str, Field(min_length=1, max_length=255)]
+
+
+class _Favored(InputModel):
+    """A create input that may start from a named favorite of the element's tool.
+
+    Tapir 1.7.0 applies the favorite to the tool defaults first, then the fields given
+    here override it. With a favorite, the settings it holds (size, structure, layer,
+    materials) may be left out and come from the favorite.
+    """
+
+    favorite: FavoriteName | None = None
+
+    @field_validator("favorite")
+    @classmethod
+    def not_blank(cls, value: str | None) -> str | None:
+        # Kept exactly: Archicad 30 BRA favorites can start with a space.
+        if value is not None and not value.strip():
+            raise ValueError("favorite must not be blank.")
+        return value
+
+    def _needs(self, *names: str) -> None:
+        missing = [n for n in names if getattr(self, n) is None]
+        if missing and self.favorite is None:
+            raise ValueError(f"{', '.join(missing)} required unless a favorite is given.")
+
+
+class WallCreate(_Favored):
+    """A straight wall. Tapir 1.7.0 CreateWalls always needs height and thickness, also
+    with a favorite (refused live, 21/10/2026), and always sets the structure (Basic
+    unless a composite is given), the bottom, the offset and an unlinked top: from a
+    favorite only layer, pens, materials and the like are kept. ``composite`` names a
+    Composite attribute for walls; its total thickness is the wall's thickness.
+    """
+
     start: Point
     end: Point
     floor_index: int
     height: Positive
-    thickness: Positive
+    thickness: Positive | None = None
+    composite: Annotated[str, Field(min_length=1, max_length=255)] | None = None
     bottom_offset: float = 0.0
     offset: float = 0.0
     reference_line: Literal["Outside", "Center", "Inside"] = "Center"
@@ -74,28 +109,31 @@ class WallCreate(InputModel):
     def nonzero_length(self) -> WallCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A wall must have a reference line at least 0.000001 m long.")
+        if self.thickness is None and self.composite is None:
+            raise ValueError("thickness required unless a composite is given.")
         return self
 
 
-class BeamCreate(InputModel):
+class BeamCreate(_Favored):
     start: Point
     end: Point
     floor_index: int
     level: float
-    width: Positive
-    height: Positive
+    width: Positive | None = None
+    height: Positive | None = None
 
     @model_validator(mode="after")
     def nonzero_length(self) -> BeamCreate:
         if math.hypot(self.start.x - self.end.x, self.start.y - self.end.y) < 1e-6:
             raise ValueError("A beam must be at least 0.000001 m long.")
+        self._needs("width", "height")
         return self
 
 
-class ColumnCreate(InputModel):
+class ColumnCreate(_Favored):
     origin: Point
     floor_index: int
-    height: Positive
+    height: Positive | None = None
     base_level: float
     section: Literal["rectangular", "circular"] = "rectangular"
     width: Positive | None = None
@@ -104,6 +142,9 @@ class ColumnCreate(InputModel):
 
     @model_validator(mode="after")
     def valid_section(self) -> ColumnCreate:
+        self._needs("height")
+        if self.favorite is not None and self.size_from_favorite:
+            return self
         if self.section == "rectangular":
             if self.width is None or self.depth is None or self.diameter is not None:
                 raise ValueError("Rectangular columns require width/depth and no diameter.")
@@ -111,8 +152,12 @@ class ColumnCreate(InputModel):
             raise ValueError("Circular columns require diameter and no width/depth.")
         return self
 
+    @property
+    def size_from_favorite(self) -> bool:
+        return (self.width, self.depth, self.diameter) == (None, None, None)
 
-class ObjectCreate(InputModel):
+
+class ObjectCreate(_Favored):
     library_part_name: Annotated[str, Field(min_length=1, max_length=255)]
     origin: Point
     floor_index: int
@@ -127,10 +172,10 @@ class ObjectCreate(InputModel):
         return value
 
 
-class SlabCreate(InputModel):
+class SlabCreate(_Favored):
     outline: Annotated[list[Point], Field(min_length=3, max_length=200)]
     floor_index: int
-    thickness: Positive
+    thickness: Positive | None = None
     level: float
 
     @model_validator(mode="after")
@@ -164,10 +209,11 @@ class SlabCreate(InputModel):
                 if _segments_intersect(a, b, c, d):
                     raise ValueError("A slab polygon must not intersect or touch itself.")
         self.outline = points
+        self._needs("thickness")
         return self
 
 
-class ZoneCreate(InputModel):
+class ZoneCreate(_Favored):
     outline: Annotated[list[Point], Field(min_length=3, max_length=200)]
     name: Annotated[str, Field(min_length=1)]
     number: Annotated[str, Field(min_length=1)]
@@ -237,6 +283,7 @@ OPERATIONS = {
         "object_edit_receipt_id",
         "Only requested fields are modified.",
     ),
+    "modify_lamps": ("lamp edit", "lamp_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
     "rotate_elements": (
         "rotation",
@@ -281,6 +328,12 @@ OPERATIONS = {
         "New objects keep the library part's default size and the Object tool's layer. "
         "A library part name Archicad cannot find fails only that object.",
     ),
+    "create_lamps": (
+        "lamp",
+        "lamp_receipt_id",
+        "New lamps keep the library part's default size and light and the Lamp tool's layer. "
+        "A library part name Archicad cannot find fails only that lamp.",
+    ),
     "move_elements": (
         "move",
         "move_receipt_id",
@@ -302,6 +355,16 @@ OPERATIONS = {
         "polyline_receipt_id",
         "New polylines take line type from the Polyline tool.",
     ),
+    "create_hotspots": (
+        "hotspot",
+        "hotspot_receipt_id",
+        "New hotspots keep the Hotspot tool's settings unless named here.",
+    ),
+    "create_splines": (
+        "spline",
+        "spline_receipt_id",
+        "New splines are auto-smoothed and take line type from the Spline tool.",
+    ),
     "create_arcs": ("arc", "arc_receipt_id", "New arcs take line type from the Arc tool."),
     "create_circles": ("circle", "circle_receipt_id", "New circles take line type from the tool."),
     "create_fills": (
@@ -313,6 +376,12 @@ OPERATIONS = {
         "layer",
         "layer_receipt_id",
         "New layers are added; an existing name is never overwritten.",
+    ),
+    "create_zone_categories": (
+        "zone category",
+        "zone_category_receipt_id",
+        "New zone categories are added; an existing name is never overwritten. The zone "
+        "stamp comes from the project's first zone category.",
     ),
     "set_element_layers": (
         "layer change",
@@ -338,6 +407,12 @@ OPERATIONS = {
         "label",
         "label_receipt_id",
         "New labels take font and style from the Label tool default.",
+    ),
+    "create_keynote_labels": (
+        "keynote label",
+        "keynote_label_receipt_id",
+        "New keynote labels go on the story Archicad shows, attached to nothing, with the "
+        "Label tool's style. Keynotes are not changed.",
     ),
     "lock_elements": (
         "lock",
@@ -414,6 +489,11 @@ OPERATIONS["modify_meshes"] = (
     "mesh_edit_receipt_id",
     "Only level/skirt/display change; topology is preserved.",
 )
+OPERATIONS["modify_morphs"] = (
+    "morph edit",
+    "morph_edit_receipt_id",
+    "A new size rebuilds the box body from its corner; other fields keep the geometry.",
+)
 
 OPERATIONS["set_view_settings"] = (
     "view settings",
@@ -444,11 +524,15 @@ CREATE_COMMANDS = {
     "create_slabs": ("CreateSlabs", "slabsData"),
     "create_columns": ("CreateColumns", "columnsData"),
     "create_objects": ("CreateObjects", "objectsData"),
+    "create_lamps": ("CreateLamps", "lampsData"),
     "create_roofs": ("CreateRoofs", "roofsData"),
     "create_texts": ("CreateTexts", "textsData"),
     "create_labels": ("CreateLabels", "labelsData"),
+    "create_keynote_labels": ("CreateKeynoteLabels", "labelsData"),
     "create_lines": ("CreateLineElements", "linesData"),
     "create_polylines": ("CreatePolylines", "polylinesData"),
+    "create_splines": ("CreateSplines", "splinesData"),
+    "create_hotspots": ("CreateHotspots", "hotspotsData"),
     "create_arcs": ("CreateArcs", "arcsData"),
     "create_circles": ("CreateCircles", "circlesData"),
     "create_fills": ("CreateHatches", "hatchesData"),
@@ -492,6 +576,14 @@ OPERATIONS["create_morphs"] = (
     "dialog that blocks the API until someone clicks it; show that story first.",
 )
 CREATE_COMMANDS["create_morphs"] = ("CreateMorphs", "morphsData")
+OPERATIONS["create_stairs"] = (
+    "stair",
+    "stair_receipt_id",
+    "Straight stairs; Stair tool defaults or the favorite for what is not given. "
+    "Create on the story Archicad shows: another story may open a dialog that blocks "
+    "the API until someone clicks it.",
+)
+CREATE_COMMANDS["create_stairs"] = ("CreateStairs", "stairsData")
 OPERATIONS["create_wall_thickness_dimensions"] = (
     "wall thickness dimension",
     "dimension_receipt_id",
@@ -501,12 +593,119 @@ CREATE_COMMANDS["create_wall_thickness_dimensions"] = (
     "CreateWallThicknessDimensions",
     "dimensionsData",
 )
+OPERATIONS["create_associative_dimensions"] = (
+    "associative dimension",
+    "associative_dimension_receipt_id",
+    "Linked to the wall ends; Dimension tool defaults for display. Show a floor plan "
+    "window: Tapir cannot create it with a section window in front.",
+)
+CREATE_COMMANDS["create_associative_dimensions"] = (
+    "CreateAssociativeDimensions",
+    "dimensionsData",
+)
 OPERATIONS["create_openings"] = (
     "opening",
     "opening_receipt_id",
     "Rectangular Opening-tool openings in existing walls or slabs; tool defaults for the rest.",
 )
 CREATE_COMMANDS["create_openings"] = ("CreateOpenings", "openingsData")
+OPERATIONS["create_drawings"] = (
+    "drawing",
+    "drawing_receipt_id",
+    "Each view is placed on its layout with its centre at the position (metres of paper); "
+    "the rest comes from the Drawing tool defaults. Archicad shows the layout after.",
+)
+OPERATIONS["update_drawings"] = (
+    "drawing update",
+    "drawing_update_receipt_id",
+    "Every Drawing on the layouts is updated from its source view; nothing else changes.",
+)
+OPERATIONS["add_stories"] = (
+    "story",
+    "story_receipt_id",
+    "Only adds stories above the top or below the bottom; the existing ones are sent back "
+    "unchanged. Check structure_after: the old top story's height changes when stories "
+    "are added above it.",
+)
+OPERATIONS["create_design_options"] = (
+    "design option item",
+    "design_option_receipt_id",
+    "Sets, then options, then combinations are added; nothing existing changes and no "
+    "element is moved into an option. Archicad 29 or newer.",
+)
+OPERATIONS["move_to_design_options"] = (
+    "design option move",
+    "design_option_move_receipt_id",
+    "Each element is linked to its design option, or back to the main model, and read "
+    "back. Archicad 29 or newer.",
+)
+OPERATIONS["create_solid_operations"] = (
+    "solid operation",
+    "solid_operation_receipt_id",
+    "Each operator acts on its target as Design > Solid Element Operations does; check "
+    "the result in 3D.",
+)
+OPERATIONS["trim_to_roof"] = (
+    "trim",
+    "trim_receipt_id",
+    "Each element is trimmed by the roof or shell, as Design > Trim to Roof/Shell does; "
+    "check the result in 3D and section.",
+)
+OPERATIONS["remove_solid_operations"] = (
+    "solid link removal",
+    "solid_unlink_receipt_id",
+    "Each operator stops acting on its target; both elements stay in the model.",
+)
+OPERATIONS["remove_trims"] = (
+    "trim removal",
+    "untrim_receipt_id",
+    "The roof or shell stops trimming each element; the elements stay in the model.",
+)
+OPERATIONS["create_classification_systems"] = (
+    "classification system",
+    "classification_system_receipt_id",
+    "Each system is added with its whole item tree; the existing systems are not touched.",
+)
+OPERATIONS["create_surfaces"] = (
+    "surface",
+    "surface_receipt_id",
+    "Each surface is a copy of its base surface with the asked changes; nothing is overwritten.",
+)
+OPERATIONS["create_grid_elements"] = (
+    "grid line",
+    "grid_receipt_id",
+    "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
+)
+OPERATIONS["move_navigator_items"] = (
+    "Navigator move",
+    "navigator_move_receipt_id",
+    "Each item goes to the start of its new folder, one move at a time; nothing else changes.",
+)
+OPERATIONS["update_favorites_from_elements"] = (
+    "favorite update",
+    "favorite_update_receipt_id",
+    "Each favorite is overwritten with its element's settings; the old settings are not "
+    "kept. Make a copy first with create_favorites_from_elements if they matter.",
+)
+OPERATIONS["create_layout_subsets"] = (
+    "layout subset",
+    "layout_subset_receipt_id",
+    "New subsets go in the Layout Book under their parent; the rest of their settings "
+    "comes from Archicad's subset defaults.",
+)
+OPERATIONS["place_hotlinks"] = (
+    "hotlink",
+    "hotlink_receipt_id",
+    "One node per file (an existing node for the same file is reused), then each "
+    "instance at its origin, angle and mirroring; the other options keep the Hotlink "
+    "tool defaults. The files must exist on the computer Archicad runs on.",
+)
+OPERATIONS["create_composites"] = (
+    "composite",
+    "composite_receipt_id",
+    "New composites are added; an existing name is never overwritten. Each skin's "
+    "building material and every separator's line type are read back by GUID.",
+)
 
 
 @dataclass
@@ -579,8 +778,23 @@ async def _guard_sequential_context(client: ArchicadClient, receipt: dict, index
     return False
 
 
+def _favored(payload: dict, item: _Favored, settings: dict[str, str]) -> dict:
+    """With a favorite, drop the settings the caller left out; Tapir takes them from it.
+
+    ``settings`` maps payload keys to the input field that sets them ("" = always drop).
+    """
+    if item.favorite is None:
+        return payload
+    given = item.model_fields_set
+    for key, name in settings.items():
+        if not name or name not in given or payload.get(key) is None:
+            payload.pop(key, None)
+    payload["favoriteName"] = item.favorite
+    return payload
+
+
 def _create_payload(wall: WallCreate) -> dict:
-    return {
+    payload = {
         "begCoordinate": wall.start.model_dump(),
         "endCoordinate": wall.end.model_dump(),
         "floorIndex": wall.floor_index,
@@ -592,6 +806,51 @@ def _create_payload(wall: WallCreate) -> dict:
         "structureType": "Basic",
         "referenceLineLocation": wall.reference_line,
     }
+    if wall.favorite is not None:
+        # Left out, Tapir keeps the favorite's building material on the Basic wall.
+        del payload["structureType"]
+        payload["favoriteName"] = wall.favorite
+    return payload
+
+
+async def _wall_composites(client, port: int, walls: list) -> dict[str, tuple[str, float]]:
+    """Composite name -> (guid, total thickness) for the walls; raises on a bad name."""
+    wanted = sorted({w.composite for w in walls if getattr(w, "composite", None)})
+    if not wanted:
+        return {}
+    response = await client.tapir(port, "GetAttributesByType", {"attributeType": "Composite"})
+    rows = response.get("attributes")
+    if not isinstance(rows, list):
+        raise ValueError(f"Cannot read the composites ({response}).")
+    found = {}
+    for name in wanted:
+        hits = [
+            r
+            for r in rows
+            if isinstance(r, dict) and str(r.get("name")).casefold() == name.casefold()
+        ]
+        if len(hits) != 1:
+            problem = "is ambiguous" if hits else "does not exist"
+            raise ValueError(f"Composite {name!r} {problem} in this project.")
+        found[name] = hits[0]["attributeId"]["guid"]
+    response = await client.tapir(
+        port,
+        "GetComposites",
+        {"attributeIds": [{"attributeId": {"guid": g}} for g in found.values()],
+         "fields": ["useWith", "skins"]},
+    )  # fmt: skip
+    composites = response.get("composites")
+    if not isinstance(composites, list) or len(composites) != len(found):
+        raise ValueError(f"Cannot read the composites ({response}).")
+    out = {}
+    for name, row in zip(found, composites, strict=True):
+        skins = row.get("skins") if isinstance(row, dict) else None
+        if not isinstance(skins, list) or not skins:
+            raise ValueError(f"Cannot read the skins of composite {name!r} ({row}).")
+        if "Wall" not in row.get("useWith", []):
+            raise ValueError(f"Composite {name!r} is not for walls.")
+        out[name] = (found[name], round(sum(float(k["thickness"]) for k in skins), 9))
+    return out
 
 
 async def _plan(
@@ -603,17 +862,20 @@ async def _plan(
     column = operation == "create_columns"
     zone = operation == "create_zones"
     beam = operation == "create_beams"
-    obj = operation == "create_objects"
+    lamp = operation == "create_lamps"
+    obj = operation == "create_objects" or lamp
     kind = (
         "Beam" if beam else "Object" if obj else "Column" if column else "Slab" if slab else "Wall"
     )
+    if lamp:
+        kind = "Lamp"
     if zone:
         kind = "Zone"
     library_parts = {}
     if obj:
         inventory = await _library_inventory(client, port)
         for row in inventory["libraryParts"]:
-            if row["typeId"] == "Object":
+            if row["typeId"] == kind:
                 library_parts.setdefault(row["documentName"].casefold(), []).append(row)
         for wall in walls:
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
@@ -622,23 +884,29 @@ async def _plan(
                     continue  # An unreadable part may still resolve during CreateObjects.
                 raise ValueError(
                     f"Library part {wall.library_part_name!r}: "
-                    "name not in loaded Object library parts."
+                    f"name not in loaded {kind} library parts."
                 )
             if len({row["guid"].upper() for row in candidates}) != 1:
                 raise ValueError(f"Ambiguous library part name {wall.library_part_name!r}.")
+    exact = await _favorite_names(client, port, kind, walls)
+    composites = await _wall_composites(client, port, walls) if kind == "Wall" else {}
     for index, wall in enumerate(walls):
         if wall.floor_index not in floors:
             raise ValueError(f"{kind} {index}: story {wall.floor_index} does not exist.")
         payload = (
-            {
-                "polygonCoordinates": [p.model_dump() for p in wall.outline],
-                "floorIndex": wall.floor_index,
-                "thickness": wall.thickness,
-                "level": wall.level,
-                "referencePlaneLocation": "Top",
-                "polygonArcs": [],
-                "holes": [],
-            }
+            _favored(
+                {
+                    "polygonCoordinates": [p.model_dump() for p in wall.outline],
+                    "floorIndex": wall.floor_index,
+                    "thickness": wall.thickness,
+                    "level": wall.level,
+                    "referencePlaneLocation": "Top",
+                    "polygonArcs": [],
+                    "holes": [],
+                },
+                wall,
+                {"thickness": "thickness"},
+            )
             if slab
             else _column_payload(wall)
             if column
@@ -651,7 +919,27 @@ async def _plan(
             else _create_payload(wall)
         )
         item = {"index": index, "status": "ready", "parameters": payload}
+        if "favoriteName" in payload:
+            payload["favoriteName"] = item["favorite"] = exact[payload["favoriteName"]]
+        if kind == "Wall" and wall.composite is not None:
+            guid, total = composites[wall.composite]
+            if wall.thickness is not None and abs(wall.thickness - total) > 1e-4:
+                raise ValueError(
+                    f"Wall {index}: composite {wall.composite!r} is {total:g} m thick, "
+                    f"not {wall.thickness:g} m."
+                )
+            payload.update(thickness=total, structureType="Composite", compositeId={"guid": guid})
+        elif kind == "Wall" and "favoriteName" in payload:
+            item["note"] = (
+                "Tapir 1.7.0 builds this wall as Basic with the height and thickness given "
+                "here and an unlinked top; pass composite to keep a composite favorite."
+            )
         if obj:
+            if "favoriteName" in payload:
+                item["note"] = (
+                    "Tapir cannot read which library part a favorite holds: pass the "
+                    "favorite's own library part, or its parameters may not fit."
+                )
             candidates = library_parts.get(wall.library_part_name.casefold(), [])
             if candidates:
                 item["library_part_guid"] = candidates[0]["guid"].upper()
@@ -665,26 +953,60 @@ async def _plan(
     return {"operation": operation, "target": target, "items": items}
 
 
+async def _favorite_names(client, port: int, kind: str, items: list) -> dict[str, str]:
+    """Wanted favorite name -> its exact name in the project; raises when missing."""
+    from archicad_mcp_aberto.tools.favorites import match
+
+    wanted = sorted({i.favorite for i in items if getattr(i, "favorite", None)})
+    if not wanted:
+        return {}
+    response = await client.tapir(port, "GetFavoritesByType", {"elementType": kind})
+    known = response.get("favorites")
+    if not isinstance(known, list):
+        raise ValueError(f"Cannot read the {kind} favorites ({response}).")
+    names = [n for n in known if isinstance(n, str)]
+    out = {}
+    for name in wanted:
+        found = match(names, name)
+        if found is None:
+            raise ValueError(f"No {kind} favorite named {name!r}.")
+        out[name] = found
+    return out
+
+
+async def _resolve_favorites(client, port: int, kind: str, models: list, items: list) -> None:
+    """Swap each item's requested favorite for its exact name; raises when one is missing."""
+    exact = await _favorite_names(client, port, kind, models)
+    for item in items:
+        parameters = item["parameters"]
+        if "favoriteName" in parameters:
+            parameters["favoriteName"] = item["favorite"] = exact[parameters["favoriteName"]]
+
+
 def _expected(item: dict) -> dict:
     parameters = item["parameters"]
-    return {
-        "type": "Wall",
-        "floorIndex": parameters["floorIndex"],
-        "details": {
-            "geometryType": "Straight",
-            "structureType": "Basic",
-            "arcAngle": 0.0,
-            "relativeTopStory": 0.0,
-            "profileType": "Normal",
-            "bottomOffset": parameters["zCoordinate"],
-            "referenceLineLocation": parameters["referenceLineLocation"],
-            "begCoordinate": parameters["begCoordinate"],
-            "endCoordinate": parameters["endCoordinate"],
-            "height": parameters["height"],
-            "offset": parameters["offset"],
-            "begThickness": parameters["thickness"],
-        },
+    details = {
+        "geometryType": "Straight",
+        "arcAngle": 0.0,
+        "begCoordinate": parameters["begCoordinate"],
+        "endCoordinate": parameters["endCoordinate"],
     }
+    # Tapir 1.7.0 sets structure and an unlinked top even over a favorite.
+    details.update(structureType=parameters.get("structureType", "Basic"), relativeTopStory=0.0)
+    if "compositeId" in parameters:
+        details["compositeId"] = parameters["compositeId"]
+    if "favoriteName" not in parameters:
+        details["profileType"] = "Normal"  # A favorite may hold a slanted profile.
+    for key, detail in (
+        ("zCoordinate", "bottomOffset"),
+        ("referenceLineLocation", "referenceLineLocation"),
+        ("height", "height"),
+        ("offset", "offset"),
+        ("thickness", "begThickness"),
+    ):
+        if key in parameters:
+            details[detail] = parameters[key]
+    return {"type": "Wall", "floorIndex": parameters["floorIndex"], "details": details}
 
 
 def _mismatches(expected: Any, actual: Any, path: str = "") -> list[str]:
@@ -710,7 +1032,7 @@ async def _dispatch(client: ArchicadClient, receipt: dict, mismatch=None) -> Non
     column = receipt["operation"] == "create_columns"
     zone = receipt["operation"] == "create_zones"
     beam = receipt["operation"] == "create_beams"
-    obj = receipt["operation"] == "create_objects"
+    obj = receipt["operation"] in ("create_objects", "create_lamps")
     command, key = CREATE_COMMANDS[receipt["operation"]]
     try:
         raw = await client.tapir(
@@ -774,7 +1096,9 @@ async def _dispatch(client: ArchicadClient, receipt: dict, mismatch=None) -> Non
                 if slab
                 else _column_mismatches(item, row, receipt["target"])
                 if column
-                else _object_mismatches(item, row)
+                else _object_mismatches(
+                    item, row, "Lamp" if receipt["operation"] == "create_lamps" else "Object"
+                )
                 if obj
                 else _beam_mismatches(item, row, receipt["target"])
                 if beam
@@ -895,7 +1219,7 @@ async def create_walls(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview or apply up to 20 straight Basic walls. Lengths are metres."""
+    """Preview or apply up to 20 straight walls, Basic or of a composite. Lengths are metres."""
     if not 1 <= len(walls) <= MAX_WALLS:
         raise ValueError(f"Pass between 1 and {MAX_WALLS} walls.")
     validated = [w if isinstance(w, WallCreate) else WallCreate.model_validate(w) for w in walls]
@@ -923,7 +1247,7 @@ def _slab_mismatches(item: dict, row: Any, target: dict) -> list[str]:
         "type": "Slab",
         "floorIndex": p["floorIndex"],
         "details": {
-            "thickness": p["thickness"],
+            **({"thickness": p["thickness"]} if "thickness" in p else {}),
             "level": p["level"] - story["level"],
             "zCoordinate": p["level"],
             "referencePlaneLocation": "Top",
@@ -960,7 +1284,7 @@ async def create_slabs(
 
 def _column_payload(column: ColumnCreate) -> dict:
     circular = column.section == "circular"
-    return {
+    payload = {
         "coordinates": {**column.origin.model_dump(), "z": column.base_level},
         "floorIndex": column.floor_index,
         "height": column.height,
@@ -971,32 +1295,33 @@ def _column_payload(column: ColumnCreate) -> dict:
         "axisRotationAngle": 0.0,
         "coreAnchor": "Center",
     }
+    settings = {"height": "height"}
+    if column.size_from_favorite:
+        settings |= dict.fromkeys(("width", "depth", "circleBased", "isWidthAndHeightLinked"), "")
+    return _favored(payload, column, settings)
 
 
 def _column_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     p = item["parameters"]
     coords = p["coordinates"]
     story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
-    expected = {
-        "type": "Column",
-        "floorIndex": p["floorIndex"],
-        "details": {
-            "origin": {"x": coords["x"], "y": coords["y"]},
-            "height": p["height"],
-            "zCoordinate": coords["z"],
-            "bottomOffset": coords["z"] - story["level"],
-            "axisRotationAngle": 0.0,
-            "coreAnchor": "Center",
-            "isSlanted": False,
-            "width": p["width"],
-            "depth": p["depth"],
-            "circleBased": p["circleBased"],
-            "isWidthAndHeightLinked": p["circleBased"],
-        },
+    details = {
+        "origin": {"x": coords["x"], "y": coords["y"]},
+        "zCoordinate": coords["z"],
+        "bottomOffset": coords["z"] - story["level"],
+        "axisRotationAngle": 0.0,
+        "coreAnchor": "Center",
+        "isSlanted": False,
     }
+    for key in ("height", "width", "depth", "circleBased"):
+        if key in p:
+            details[key] = p[key]
+    if "circleBased" in p:
+        details["isWidthAndHeightLinked"] = p["circleBased"]
+    expected = {"type": "Column", "floorIndex": p["floorIndex"], "details": details}
     differences = _mismatches(expected, row)
     details = row.get("details") if isinstance(row, dict) else None
-    if isinstance(details, dict) and "profileId" in details:
+    if "favoriteName" not in p and isinstance(details, dict) and "profileId" in details:
         differences.append("details.profileId")
     return differences
 
@@ -1023,18 +1348,19 @@ async def create_columns(
 
 
 def _object_payload(obj: ObjectCreate) -> dict:
-    return {
+    payload = {
         "libraryPartName": obj.library_part_name,
         "coordinates": {**obj.origin.model_dump(), "z": obj.base_level},
         "floorIndex": obj.floor_index,
         "angle": obj.angle,
     }
+    return _favored(payload, obj, {"angle": "angle"})
 
 
-def _object_mismatches(item: dict, row: Any) -> list[str]:
+def _object_mismatches(item: dict, row: Any, kind: str = "Object") -> list[str]:
     p = item["parameters"]
     expected = {
-        "type": "Object",
+        "type": kind,
         "floorIndex": p["floorIndex"],
         "details": {"origin": p["coordinates"]},
     }
@@ -1042,7 +1368,9 @@ def _object_mismatches(item: dict, row: Any) -> list[str]:
     details = row.get("details") if isinstance(row, dict) else None
     details = details if isinstance(details, dict) else {}
     angle = details.get("angle")
-    if not isinstance(angle, (float, int)) or isinstance(angle, bool):
+    if "angle" not in p:
+        pass  # The favorite's angle.
+    elif not isinstance(angle, (float, int)) or isinstance(angle, bool):
         differences.append("details.angle")
     else:
         # Archicad may store the angle in another turn; compare on the circle.
@@ -1066,7 +1394,8 @@ async def create_objects(
     """Preview/apply up to 20 library part objects by name. Metres, radians.
 
     base_level is absolute project Z. Size and parameters stay the library part's
-    defaults; layer and pens inherit the Object tool. A name Archicad cannot find
+    defaults; layer and pens inherit the Object tool, or the named `favorite`
+    (give that favorite's own library part). A name Archicad cannot find
     fails only that object. Shares the token, receipt and timeout policy.
     """
     if not 1 <= len(objects) <= MAX_OBJECTS:
@@ -1075,6 +1404,26 @@ async def create_objects(
         o if isinstance(o, ObjectCreate) else ObjectCreate.model_validate(o) for o in objects
     ]
     return await _write(client, validated, port, dry_run, confirmation_token, "create_objects")
+
+
+async def create_lamps(
+    client: ArchicadClient,
+    lamps: list[dict | ObjectCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/apply up to 20 lamps by library part name, like create_objects.
+
+    Tapir 1.7.0 CreateLamps places Lamp library parts only; base_level is absolute
+    project Z. Takes a Lamp `favorite` (give that favorite's own library part).
+    """
+    if not 1 <= len(lamps) <= MAX_OBJECTS:
+        raise ValueError(f"Pass between 1 and {MAX_OBJECTS} lamps.")
+    validated = [
+        o if isinstance(o, ObjectCreate) else ObjectCreate.model_validate(o) for o in lamps
+    ]
+    return await _write(client, validated, port, dry_run, confirmation_token, "create_lamps")
 
 
 class Vector(InputModel):
@@ -1599,6 +1948,8 @@ NAMED_PREVIEWS = {
     "apply_favorites",
     "create_lines",
     "create_polylines",
+    "create_splines",
+    "create_hotspots",
     "create_arcs",
     "create_circles",
     "create_fills",
@@ -1612,8 +1963,10 @@ NAMED_PREVIEWS = {
     "modify_windows",
     "modify_doors",
     "modify_objects",
+    "modify_lamps",
     "modify_roofs",
     "modify_texts",
+    "modify_morphs",
     "create_windows",
     "create_doors",
     "lock_elements",
@@ -1671,7 +2024,7 @@ async def _preview_names(client: ArchicadClient, plan: dict) -> None:
 
 
 def _beam_payload(beam: BeamCreate) -> dict:
-    return {
+    payload = {
         "begCoordinate": beam.start.model_dump(),
         "endCoordinate": beam.end.model_dump(),
         "floorIndex": beam.floor_index,
@@ -1688,18 +2041,23 @@ def _beam_payload(beam: BeamCreate) -> dict:
         "circleBased": False,
         "isWidthAndHeightLinked": False,
     }
+    settings = {"width": "width", "height": "height"}
+    if beam.width is None and beam.height is None:
+        settings |= {"circleBased": "", "isWidthAndHeightLinked": ""}
+    return _favored(payload, beam, settings)
 
 
 def _beam_mismatches(item: dict, row: Any, target: dict) -> list[str]:
     p = item["parameters"]
     story = next(s for s in target["stories"] if s["index"] == p["floorIndex"])
-    details = {key: value for key, value in p.items() if key != "floorIndex"}
+    details = {k: v for k, v in p.items() if k not in ("floorIndex", "favoriteName")}
     details.update(level=p["zCoordinate"] - story["level"], beamShape="Straight")
     differences = _mismatches(
         {"type": "Beam", "floorIndex": p["floorIndex"], "details": details}, row
     )
     if (
-        isinstance(row, dict)
+        "favoriteName" not in p
+        and isinstance(row, dict)
         and isinstance(row.get("details"), dict)
         and "profileId" in row["details"]
     ):
@@ -1728,16 +2086,20 @@ async def create_beams(
 
 
 def _zone_payload(zone: ZoneCreate) -> dict:
-    return {
-        "floorIndex": zone.floor_index,
-        "name": zone.name,
-        "numberStr": zone.number,
-        "geometry": {
-            "polygonCoordinates": [p.model_dump() for p in zone.outline],
-            "polygonArcs": [],
-            "holes": [],
+    return _favored(
+        {
+            "floorIndex": zone.floor_index,
+            "name": zone.name,
+            "numberStr": zone.number,
+            "geometry": {
+                "polygonCoordinates": [p.model_dump() for p in zone.outline],
+                "polygonArcs": [],
+                "holes": [],
+            },
         },
-    }
+        zone,
+        {},
+    )
 
 
 def _zone_mismatches(item: dict, row: Any) -> list[str]:
@@ -1795,21 +2157,28 @@ async def create_zones(
 
 
 OPERATIONS["add_comment_to_issue"] = (
-    "issue comment", "comment_receipt_id", "Adds comments only; each comment is one Undo step."
+    "issue comment",
+    "comment_receipt_id",
+    "Adds comments only; each comment is one Undo step.",
 )
 
-OPERATIONS.update({
-    "create_view_map_folders": (
-        "View Map folder", "folder_receipt_id",
-        "No guaranteed Navigator Undo; remove new folders manually."
-    ),
-    "clone_to_view_map": (
-        "View Map clone", "view_receipt_id",
-        "No guaranteed Navigator Undo; native settings are inherited."
-    ),
-})
+OPERATIONS.update(
+    {
+        "create_view_map_folders": (
+            "View Map folder",
+            "folder_receipt_id",
+            "No guaranteed Navigator Undo; remove new folders manually.",
+        ),
+        "clone_to_view_map": (
+            "View Map clone",
+            "view_receipt_id",
+            "No guaranteed Navigator Undo; native settings are inherited.",
+        ),
+    }
+)
 
 OPERATIONS["create_classification_items"] = (
-    "classification item", "classification_item_receipt_id",
-    "Creates only under existing parents; each item is one native Undo step."
+    "classification item",
+    "classification_item_receipt_id",
+    "Creates only under existing parents; each item is one native Undo step.",
 )
