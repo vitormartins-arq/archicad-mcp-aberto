@@ -1,7 +1,74 @@
 # Estado atual
 
+- **Conflito da #71 / 25/10/2026:** main atual (com #72 e #73) incorporada na branch.
+  Conflitos somente no changelog e neste registro, resolvidos preservando os dois
+  conteúdos. 2730 testes offline passaram em 22,81 s; Ruff e formatação passaram
+  (164 arquivos). Esta integração não corrige os bloqueios funcionais do teste real.
+
+- **Compatibilidade:** #71+#72+#73 combinadas somente em checkout isolado passaram
+  2730 testes offline, ruff check e formatação (164 arquivos). Conflitos de merge
+  apenas no changelog/estado, preservados localmente. Sem merge no GitHub. #72/#73
+  aprovadas pelos testes realizados; #71 continua com bloqueios reais conhecidos.
+
+- **Quarta rodada / Codex:** subsolo preservando pavimentos/elementos passou; nível
+  intermediário recusado. Composto de 25 cm aplicado em parede passou, duplicado e
+  material inexistente recusados. Cota acompanhou parede de 4 para 7 m pela API.
+  Um Desfazer removeu o lote de dois eixos preservando os anteriores. Luminária de
+  piso criada, mas ZZYZX HiddenFromScript impede certificar edição de altura.
+  Evidências `r4-*`; relatório detalhado abaixo. Sem mudança de código ou merge.
+
+- **Terceira rodada / Codex, 25/10:** hotlink positivo passou com PLN descartável
+  criado e salvo localmente (uma parede): duas instâncias, giro/espelho, e terceira
+  chamada reaproveitando um único nó. Duas primeiras conferidas em planta/3D.
+  Nome personalizado do nó não confirmado (volta nome do arquivo). Eixos novos
+  conferidos visualmente em planta/3D; a planta atualizou ao alternar de volta do 3D.
+  #71 ainda bloqueada por C26/C27/C30; morfos/escadas também continuam com falhas.
+  Receptor está sem nome e não foi salvo. Relatório abaixo tem evidências e limites.
+
+- **Codex / validação real, 25/10/2026:** rodada autorizada por Vitor no projeto sem
+  nome inicialmente vazio, AC30 build 3001 BRA/Tapir 1.7.0/Windows, sem salvar. #72
+  passou em 120 elementos reais, duas leituras de propriedade: sondagens 3→1, resultados
+  e paginação iguais. #73 passou na configuração e conexão real. #71 teve vários
+  `verified`, mas continua bloqueada por leitura de cortes de paredes, retorno dos
+  subconjuntos e hotlink com resultado desconhecido. Na retomada, APX novo de #71
+  confirmado ativo; seis eixos criados e relidos `verified`, mas sem aparecer na
+  captura da planta mesmo após centralizar. Exibição visual de C34 ainda pendente.
+  Morfo editado volta aberto e não mantém superfície/sombras; caixa 3D de escada falha.
+  Evidências e limites: `docs/VALIDAR-resultado-2026-10-25.md`. Não repetir hotlink sem
+  inspecionar o aplicativo. Nada integrado, nenhum projeto de produção alterado.
+- **Retomada:** cortes, subconjuntos, morfo e escada reproduziram falhas com novos
+  elementos. Camada dos eixos visível/desbloqueada. Hotlink revelou PLN de avaliação
+  restrito ao computador de origem; após fechar o aviso, Archicad encerrou e abriu
+  GSReport. Relatório não enviado. Recibo unknown, não repetir essa fonte. Reabrir
+  projeto descartável e usar fonte compatível para concluir o caso positivo.
+- **Codex / conflito da #73 após merge da #72, 25/10/2026:** main incorporada na
+  branch da #73. Conflito apenas no CHANGELOG, resolvido preservando as duas entradas.
+  Nenhum código da #71 incluído. A validação real anterior da #73 cobriu parser e
+  conexão na porta 19723. Na base integrada: 2440 testes passaram em 20,40 s e Ruff
+  check passou. Formatação global aponta sete arquivos herdados da main, fora da
+  alteração da #73; preservados. Arquivos Python da #73 conferidos separadamente.
+
+- **Codex / rodada noturna, 25/10/2026:** corrigida a validação de
+  `ARCHICAD_MCP_PORTS`. Portas fora de 1–65535 e faixas invertidas agora falham antes
+  da descoberta; os limites são conferidos antes de expandir, evitando listas enormes
+  por erro de digitação. Mantidos padrões, portas personalizadas válidas, ordem e
+  deduplicação. Cinco regressões reproduzidas antes da correção; 2438 testes unitários
+  e Ruff passaram no Windows/Python 3.13.6. Nenhum acesso ao Archicad do PC nem teste
+  real na nuvem (sem conexão configurada conhecida). Registro de lições indisponível
+  em H: e G:. Validar manualmente a configuração com faixa válida e inválida.
+
 Atualize esta página no fim de cada sessão (Claude ou Codex), para quem continuar saber
 onde parou. Mantenha curta: o histórico fica no git e no registro de lições.
+
+- **Codex / melhoria noturna executada sob demanda, 24/10/2026:** `find_elements`
+  reutiliza a porta resolvida ao ler propriedades em lotes, sem chamar `GetProductInfo`
+  de novo para cada lote. No simulado, 205 elementos passam de 4 sondagens da instância
+  para 1, com os mesmos resultados. UUIDs continuam validados/normalizados, lotes de
+  100 e erros por elemento preservados. 2427 testes unitários e Ruff passaram no
+  Windows/Python 3.13.6. Nenhum acesso ao Archicad do PC e nenhum teste real em nuvem;
+  não foi encontrada configuração do ambiente Graphisoft nesta cópia. Registro de
+  lições no Drive indisponível no caminho indicado. Falta validação manual de busca
+  por propriedade em mais de 100 elementos, incluindo paginação e múltiplas instâncias.
 
 **Última atualização:** 11/10/2026 23h, Claude (PRs #22 a #25 integrados e testados ao vivo).
 
@@ -813,5 +880,152 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   posição, altura e pena. 2231 testes simulados e Ruff passaram (Linux, Python 3.13).
   Registro: 98 ferramentas. Próximo: C11 `create_keynote_labels`.
 
+## 2026-10-21 — Claude / C14 criar a partir de favorito (lote 5)
+
+- Pedido do Vitor: com os dois MCPs, modelar já no padrão dele. Passo 1 no aberto:
+  `create_walls`, `create_slabs`, `create_columns` e `create_beams` aceitam `favorite`
+  (o `favoriteName` do Tapir 1.7.0, `CreateElementsCommandBase`). Com favorito, os
+  campos de configuração que ficaram de fora saem do payload (a parede não manda mais
+  `structureType` Basic, que sobrescreveria a composição) e a conferência só cobra a
+  geometria e o que foi dado. A prévia confere o favorito por `GetFavoritesByType`.
+  Lote `lote/claude-5`. Próximo: o mesmo em textos, etiquetas, zonas, objetos, malhas e
+  desenho 2D; depois, no Lab, o guia de qual favorito LAB usar para cada coisa.
+- C14 continuação: `favorite` também em `create_zones`, `create_texts`, `create_labels`,
+  `create_meshes` (saia, arestas e linhas vêm do favorito se não forem dadas) e no
+  desenho 2D. Só `create_objects` ficou de fora. 2247 testes simulados e Ruff passaram
+  (Linux, Python 3.13).
+
+- C14 objetos (lote `lote/claude-6`): `create_objects` aceita `favorite`. O Tapir 1.7.0
+  exige `libraryPartName` mesmo com favorito e troca a peça depois de aplicar o favorito
+  (`ResolveLibraryPartName`), e não há como ler a peça de um favorito; por isso a prévia
+  avisa para passar a peça do próprio favorito, que o `lab_find_favorite` do Lab mostra.
+  O ângulo vem do favorito se não for dado. 2249 testes simulados e Ruff passaram
+  (Linux, Python 3.13).
+
+
+## 2026-10-21 — Claude / C11 etiquetas de nota-chave (lote 7)
+
+- `create_keynote_labels` em `tools/labels.py`, por `CreateKeynoteLabels` do Tapir
+  1.7.0. O Tapir cria uma etiqueta de texto solta (sem elemento), no pavimento que o
+  ArchiCAD mostra, com o autotexto da nota-chave. Por isso a tarefa da FILA ("em
+  elemento existente") não dá: fica a etiqueta num ponto. A prévia confere o item por
+  `GetKeynoteTree`; a conferência cobra tipo, classe e posição e mostra o pavimento e
+  o texto lido. 2270 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  99 ferramentas. Próximo: C12 `modify_morphs`.
+- C12: `modify_morphs` em `tools/modify.py`, por `ModifyMorphs` do Tapir 1.7.0:
+  tamanho (só caixas como as do `create_morphs`, porque o Tapir troca o corpo inteiro),
+  material de construção e superfície por nome, e sombras. Ficaram de fora a translação
+  (já existe `move_elements`) e o `rotationDegreesZ`: no código-fonte ele mistura as
+  linhas x e z da matriz, o que parece giro em torno de Y; conferir ao vivo antes de
+  expor. 2279 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 100
+  ferramentas. Próximo: C13 cotas associativas.
+- C13: `create_associative_dimensions` em `tools/wall_dimensions.py`, por
+  `CreateAssociativeDimensions` do Tapir 1.7.0. Só pontas de paredes retas (começo e fim
+  da linha de referência, `inIndex` 1 e 2, como no exemplo do próprio Tapir); os outros
+  campos do ponto de cota (special, nodeType, nodeId) não são expostos porque o sentido
+  deles depende do tipo de elemento e não foi conferido ao vivo. A conferência lê o
+  `GetDimensionData` e compara parede e posição de cada ponto. 2314 testes simulados e
+  Ruff passaram (Linux, Python 3.13). Registro: 101 ferramentas. Fila do Claude
+  reabastecida com C15 a C18.
+- C15: `create_lamps`, pelo `CreateLamps` do Tapir 1.7.0, no mesmo caminho do
+  `create_objects` (inventário filtrado pelo tipo `Lamp`, conferência pelo tipo `Lamp`),
+  com `favorite`. 2328 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  102 ferramentas. O export de favoritos do LAB Template (`lab_details.json`) não tem
+  nenhum tipo de luminária; se houver favorito de luminária, ele está entre os 44 `Symb`.
+- C17: `create_zone_categories` em `tools/zone_categories.py`, pelo
+  `CreateZoneCategories` do Tapir 1.7.0, sempre com `overwriteExisting` falso; nome que
+  já existe é recusado na prévia. A conferência lê `GetZoneCategories` (nome, código e
+  cor). 2348 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 103
+  ferramentas. Falta levar as categorias do LAB Template ao `lab_apply_template`.
+- Correção da parede por favorito (teste ao vivo de 21/10/2026, ArchiCAD 30 build 3001
+  BRA, Tapir 1.7.0): o `CreateWalls` do Tapir 1.7.0 exige altura e espessura mesmo com
+  favorito e, pelo código-fonte, força estrutura Basic, linha de referência, base e topo
+  solto por cima do favorito. Por isso a parede só com favorito foi recusada, e com
+  altura e espessura saiu Basic. Agora `create_walls` volta a exigir altura e espessura,
+  avisa na prévia, e ganhou `composite` (composição de parede por nome; a espessura é a
+  soma das camadas lidas no `GetComposites`). O `lab_find_favorite` do Lab já devolve a
+  composição do favorito. O falso agora recusa parede sem altura ou espessura. 2353
+  testes simulados e Ruff passaram (Linux, Python 3.13).
+- C16: `create_stairs` em `tools/stairs.py`, pelo `CreateStairs` do Tapir 1.7.0: escada
+  reta por linha de base, com altura total, largura do lance, número de espelhos e
+  `favorite` opcionais. O Tapir não devolve detalhes de escada (`Not yet supported
+  element type`), então a conferência é tipo, pavimento e caixa 3D. 2375 testes
+  simulados e Ruff passaram (Linux, Python 3.13). Registro: 104 ferramentas. Próximo:
+  C18 compostos.
+
+- **Claude / MDID do add-on próprio, 21/10/2026:** o Vitor registrou no portal da Graphisoft o
+  add-on "Archicad MCP Aberto": Developer ID 1110659426, Local ID 287719994. Viraram os padrões
+  do `addon/CMakeLists.txt`, então o `.apx` do CI (PR #68) já carrega no ArchiCAD. Outro Local ID,
+  3542434559 ("LAB Automação"), foi registrado no mesmo dia para comandos só do LAB; não usar aqui.
+
+- **Claude / teste ao vivo da câmera 3D, 21/10/2026:** ArchiCAD 30 build 3001 BRA, Tapir 1.7.0,
+  notebook do Vitor, projeto WG Formosa_R04 com o ok dele (só a câmera 3D, nada salvo), add-on de
+  de83f14. Câmera e alvo voltam exatos; a captura funciona. O ArchiCAD guarda azimute e ângulo de
+  visão em graus: corrigido no add-on (radianos fora, graus dentro, padrões ao sair da paralela).
+  Falta retestar essa correção ao vivo. Detalhes em `addon/CAMERA.md`.
+
+- **Claude / cenas 3D no WG Formosa, 22/10/2026:** AC30 build 3001 BRA no PC ESC, sem Tapir,
+  add-on de 07210e2. 18 vistas salvas em 02 | MODELO 3D > AMBIENTES (uma pasta por ambiente),
+  projeto não salvo. `Save3DView` guarda a câmera (conferido pelo Vitor). Corrigidos depois:
+  2 pontos de fuga herdado, pasta inicial fora da raiz do Mapa de Vistas e caneta do corte.
+  Falta o Vitor conferir se a ISOMETRICA TERREO guardou o corte.
+
+- **Claude / cenas 3D viram ferramentas do MCP, 22/10/2026:** o Vitor conferiu que a
+  ISOMETRICA TERREO guardou o corte de 1,50 m e salvou o WG Formosa_R04 ele mesmo. O gerador
+  usado ao vivo está em `examples/scene_generator/` na branch `claude/scene-generator`.
+  Em `lote/claude-8`: `read_scene_model`, `shoot_3d_scenes` e `save_3d_scenes`
+  (`tools/scenes.py`), `ArchicadClient.own_addon`, `AddOnError` e o add-on no ArchiCAD
+  simulado. 2416 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 107
+  ferramentas. Falta testar as ferramentas ao vivo (docs/VALIDAR.md, C20) e retestar as 3
+  correções do add-on.
+
+- **Claude / teste ao vivo de 8eff234, 22/10/2026 à tarde:** AC30 build 3001 BRA, PC ESC,
+  sem Tapir, WG Formosa_R04 (só câmera, corte e 2 vistas de teste em AMBIENTES > _TESTE
+  ADD-ON, para o Vitor apagar). As 3 correções passaram, menos a caneta 0 do corte, que o
+  ArchiCAD grava como 1 (pendência). `read_scene_model`, `shoot_3d_scenes` e
+  `save_3d_scenes` funcionaram ao vivo. PR #68 pronto para merge depois do #67.
+
+- **Claude / "gera as cenas 3D" ao vivo, 22/10/2026:** AC30 build 3001 BRA, PC ESC, sem
+  Tapir, main depois do #69. 17 vistas salvas em 02 | MODELO 3D > DELETAR (pasta de teste
+  que o Vitor apaga), projeto não salvo. Sugestões automáticas: cerca de 1 em 3 boas.
+  Branch `claude/scene-suggestions`: câmeras checadas contra paredes, pilares e ambientes
+  menores dentro da caixa; depósitos e DML pulados; nome repetido ganha o número da zona;
+  espera de 60 s para imagem e vista. Falta retestar ao vivo.
+
+- **Claude / ferramentas novas sem ArchiCAD, 23/10/2026 (PR #71, branch
+  `claude/project-thread-pvslgt`):** o Vitor não conseguiu a assistência remota, então tudo
+  foi feito na nuvem, contra o ArchiCAD simulado, com formatos de pedido e resposta tirados do
+  código do Tapir 1.7.0 (não capturados ao vivo). Novas: `create_composites` (C18),
+  `create_drawings` (C21), `add_stories` (C22, só acima do último ou abaixo do primeiro
+  pavimento), `create_design_options` e `move_to_design_options` (C23),
+  `create_solid_operations` e `trim_to_roof` (C26), `create_layout_subsets` e `subset` em
+  `create_layouts` (C27), `place_hotlinks` (C28). C24 descartada (`CreateProjectInfoFields`
+  não migrado no AC30). 2589 testes simulados e Ruff passaram (Linux, Python 3.13). Registro:
+  116 ferramentas. Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C18 a C28.
+
+- **Claude / segunda rodada sem ArchiCAD, 23/10/2026 (mesmo PR #71):** o Vitor pediu para
+  continuar. Novas: `remove_solid_operations` e `remove_trims` (C30), `modify_lamps` (C31),
+  `create_classification_systems` (C32), `update_drawings` (C29), `create_surfaces` (C35,
+  cópia de uma superfície existente porque o Tapir começa a nova zerada),
+  `move_navigator_items` (C36) e `update_favorites_from_elements` (C37). C33 descartada: o
+  Tapir 1.7.0 não grava IFC no ArchiCAD 28+. C34 (eixos) só existe no Tapir depois da 1.7.2.
+  2690 testes simulados e Ruff passaram (Linux, Python 3.13). Registro: 124 ferramentas.
+  Nada testado ao vivo: roteiro em `docs/VALIDAR.md`, seções C29 a C37.
+  Depois, a pedido do coordenador (regra do Vitor de não depender do Tapir): C34 feito no
+  add-on próprio. `GetGridElementDefaults`, `GetGridElements` e `CreateGridElements`
+  portados do Tapir (main, depois da 1.7.2) para `addon/Sources/GridCommands.cpp`, com as
+  ferramentas `list_grid_elements` e `create_grid_elements` (`tools/grids.py`). 2715 testes
+  simulados e Ruff passaram. Registro: 126 ferramentas. IFC (C33) continua fora: o
+  Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
+  (vale também para add-on próprio; conferir no DevKit 29 quando der).
+
+- **Claude / vistas de ampliação, 27/10/2026 (branch `claude/project-thread-pvslgt`,
+  recriada da `main` depois do merge do PR #71):** o Vitor pediu para automatizar as vistas
+  de ampliação (abrir, salvar na pasta do ambiente, numerar) e escolheu vista de planta
+  enquadrada. Comando novo `SaveStoryView` no add-on (`addon/Sources/PlanViewCommands.cpp`:
+  clona o pavimento do Mapa do Projeto para o Mapa de Vistas e grava zoom, escala e
+  combinação de vegetais pela `API_NavigatorView`) e a ferramenta `save_room_plan_views`
+  (`tools/room_views.py`). Testes simulados passaram; nada testado ao vivo (VALIDAR, C38).
+  A thread ficou parada de 23 a 27/10 pelo limite de uso da organização.
 ## 2026-10-21 — T34 project location
 - Added read-only project geolocation/calculation units and bounded layout settings queries.
