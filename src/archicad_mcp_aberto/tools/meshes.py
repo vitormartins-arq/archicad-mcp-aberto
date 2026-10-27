@@ -28,7 +28,7 @@ class Point3D(write.InputModel):
     z: float
 
 
-class MeshCreate(write.InputModel):
+class MeshCreate(write._Favored):
     outline: Annotated[list[Point3D], Field(min_length=3, max_length=200)]
     floor_index: int
     level: float
@@ -76,7 +76,7 @@ def _payload(mesh, story):
     level = mesh.level - story["level"]
     if not math.isfinite(level):
         raise ValueError("Mesh base offset must be finite.")
-    return {
+    payload = {
         "floorIndex": mesh.floor_index,
         "level": level,
         "skirtType": mesh.skirt_type,
@@ -87,6 +87,16 @@ def _payload(mesh, story):
         "polygonArcs": [],
         "holes": [],
     }
+    return write._favored(
+        payload,
+        mesh,
+        {
+            "skirtType": "skirt_type",
+            "skirtLevel": "skirt_depth",
+            "ridges": "ridges",
+            "showLines": "show_lines",
+        },
+    )
 
 
 async def _create_plan(client, meshes, port, operation):
@@ -106,6 +116,7 @@ async def _create_plan(client, meshes, port, operation):
                 "parameters": _payload(mesh, story),
             }
         )
+    await write._resolve_favorites(client, port, "Mesh", meshes, items)
     return {"operation": operation, "target": target, "items": items}
 
 
@@ -116,7 +127,9 @@ def _mismatches(item: dict, row: Any) -> list[str]:
             "type": "Mesh",
             "floorIndex": p["floorIndex"],
             "details": {
-                k: p[k] for k in ("level", "skirtType", "skirtLevel", "ridges", "showLines")
+                k: p[k]
+                for k in ("level", "skirtType", "skirtLevel", "ridges", "showLines")
+                if k in p
             },
         },
         row,

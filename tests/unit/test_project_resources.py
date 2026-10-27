@@ -10,7 +10,7 @@ BAD = "22222222-2222-2222-2222-222222222222"
 
 
 async def test_project_resource_reads():
-    fake = FakeArchicad(19723)
+    fake = FakeArchicad(19723, project_resources_fixture=True)
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         dims = await project_resources.get_dimension_data(c, [GUID, BAD], 19723)
         mvo = await project_resources.get_model_view_options(c, 19723)
@@ -21,7 +21,9 @@ async def test_project_resource_reads():
 
 
 async def test_dimension_limit_and_folder_enum():
-    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as c:
+    async with ArchicadClient(
+        transport=fake_transport(FakeArchicad(19723, project_resources_fixture=True))
+    ) as c:
         with pytest.raises(ValueError):
             await project_resources.get_dimension_data(c, [], 19723)
         with pytest.raises(ValueError):
