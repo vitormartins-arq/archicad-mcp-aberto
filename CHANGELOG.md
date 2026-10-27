@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add native `save_project_as`, `save_next_project_revision` and read-only
+  `inspect_project_save`. Preview binds native session/project epoch/stamp and paths;
+  saves the in-memory PLN, verifies path/file, then archives the previous revision in
+  `Anteriores`. Existing files are refused, archive collisions preserved, unknown saves
+  never retried. Requires rebuilt companion add-on; offline tested, native build/live
+  validation pending. See `docs/PROJECT_SAVE_REVISIONS.md` for API limitations and recovery.
+
 - Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
   (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,
   `GetGridElements` and `CreateGridElements` ported from Tapir (added there after 1.7.2,

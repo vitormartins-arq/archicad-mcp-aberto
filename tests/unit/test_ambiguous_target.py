@@ -38,6 +38,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     openings,
     project_info,
+    project_save,
     property_definitions,
     read,
     renames,
@@ -85,6 +86,9 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "save_project_as": {"destination_path": "example.pln"},
+    "save_next_project_revision": {},
+    "inspect_project_save": {"destination_path": "example.pln"},
     "read_scene_model": {},
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
@@ -478,6 +482,7 @@ TARGETED = {
         navigator_moves,
         openings,
         project_info,
+        project_save,
         property_definitions,
         read,
         roofs,
@@ -622,6 +627,15 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {"save_project_as", "save_next_project_revision", "inspect_project_save"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     if isinstance(result, tuple):  # shoot_3d_scenes: (report, images)
         result = result[0]

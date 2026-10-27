@@ -562,6 +562,18 @@
     {
       "name": "update_favorites_from_elements",
       "description": "Preview or overwrite existing favorites from elements of their type."
+    },
+    {
+      "name": "save_project_as",
+      "description": "Preview native Save As PLN to a new explicit destination."
+    },
+    {
+      "name": "save_next_project_revision",
+      "description": "Preview the next project revision and archive the previous PLN after verified saving."
+    },
+    {
+      "name": "inspect_project_save",
+      "description": "Inspect native save context and destination metadata without retrying."
     }
   ],
   "compatibility": {

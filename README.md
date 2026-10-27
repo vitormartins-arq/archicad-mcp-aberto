@@ -29,7 +29,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **14 read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Rotation, GDL parameters and
+and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad
 in this delivery; operator live validation of these additions remains pending.
 
@@ -252,7 +252,7 @@ order configured.
 - "Busy" (error 4001) is reported as busy, not as a missing add-on.
 - Heavy reads (floor plan polygons) only run when asked for.
 - `create_walls` dry-runs by default. Review the plan with the user before applying;
-  writes have per-wall receipts and a geometry check after applying. No tool saves the project.
+  writes have per-wall receipts and a geometry check after applying. These model-editing tools do not save the project.
 
 ## Wall creation
 
@@ -296,7 +296,7 @@ written, creation is blocked. If the response is lost, the outcome is `unknown`;
 inspect the model and do not retry the same batch. Writes and their verification wait up to 120 s
 (set `ARCHICAD_MCP_WRITE_TIMEOUT` in seconds); reads keep the 12 s default. `unverified` and
 `verification_failed` also require review. Partial successes are not rolled back
-automatically. The server never saves the Archicad project.
+automatically. These model-editing operations never save the Archicad project.
 
 This create-only implementation is tested against the fake Archicad. Its response
 fixtures reuse earlier captured Tapir 1.7.0 responses; no new live tests were run for
@@ -311,7 +311,7 @@ local receipts and post-write verification. Pass up to 20 `slabs`, each with `ou
 Straight edges and simple concave polygons are supported; no holes or arcs.
 The top reference plane is explicit. Layer, material and structure inherit defaults;
 incompatible defaults or changed geometry are reported by verification.
-Each slab has its own `slab_receipt_id`. The server never saves the project.
+Each slab has its own `slab_receipt_id`. This slab operation never saves the project.
 
 The fixture `tests/fixtures/tapir170_create_slabs_documented.json` records pinned
 Tapir 1.7.0 source links. It is documentation/source-derived, **not a live capture**.
@@ -860,3 +860,14 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+## Explicit project saving and revisions
+
+`save_project_as` saves the in-memory project to a new absolute PLN path.
+`save_next_project_revision` proposes the next R/REV in the current folder, then
+archives the previous PLN in `Anteriores` after verifying the native saved path
+and a nonempty file. Both require preview, explicit port and one-use token, the
+updated companion add-on and server on the Archicad computer. No overwrite/Undo;
+never blindly retry an unknown save. `inspect_project_save` is read-only recovery
+inspection. Native build and live acceptance are pending; see
+[save/revision documentation](docs/PROJECT_SAVE_REVISIONS.md).

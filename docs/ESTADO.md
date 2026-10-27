@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Salvar revisão / 27/10/2026:** implementação isolada de Save As PLN nativo e
+  próxima revisão com arquivamento posterior em `Anteriores`. Prévia/token, identidade
+  nativa e recibos; falha/timeout não repete salvamento nem arquiva automaticamente.
+  Ver `PROJECT_SAVE_REVISIONS.md`. Validação offline; compilação/APX e teste real
+  ainda pendentes. Nenhum acesso ao Archicad aberto ou instalação de add-on nesta tarefa.
+  Suíte offline completa: 2.777 testes passaram (23,27 s); Ruff e formatação passaram.
+
 - **Conflito da #71 / 25/10/2026:** main atual (com #72 e #73) incorporada na branch.
   Conflitos somente no changelog e neste registro, resolvidos preservando os dois
   conteúdos. 2730 testes offline passaram em 22,81 s; Ruff e formatação passaram

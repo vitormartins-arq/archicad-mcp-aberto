@@ -4,6 +4,7 @@
 #include "ResourceIds.hpp"
 #include "CameraCommands.hpp"
 #include "GridCommands.hpp"
+#include "ProjectSaveCommands.hpp"
 
 template <typename CommandType>
 static GSErrCode InstallCommand ()
@@ -26,6 +27,9 @@ GSErrCode RegisterInterface (void)
 GSErrCode Initialize (void)
 {
     GSErrCode err = NoError;
+    err |= InitializeProjectSaveEvents ();
+    err |= InstallCommand<GetProjectSaveContextCommand> ();
+    err |= InstallCommand<SaveProjectAsPLNCommand> ();
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
     err |= InstallCommand<Save3DViewCommand> ();
@@ -43,5 +47,6 @@ GSErrCode Initialize (void)
 
 GSErrCode FreeData (void)
 {
+    FreeProjectSaveEvents ();
     return NoError;
 }

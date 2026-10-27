@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    project_save,
     property_definitions,
     read,
     write,
@@ -79,7 +80,10 @@ Archicad MCP (read tools and safe wall and slab creation).
   move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
   level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
   above each story. These need the ArchicadMcpAberto add-on (addon/).
-- Receipts are local. No tool saves the Archicad project. After any unknown outcome,
+- Only explicit save_project_as/save_next_project_revision save the project; all other
+  model operations leave it unsaved. Saving/archival cannot be undone. Never retry an
+  unknown save; use inspect_project_save and the receipt first.
+- Receipts are local. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
 
@@ -1978,6 +1982,45 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await hotlinks_tool.place_hotlinks(
             client_of(ctx), placements, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_project_as(
+        ctx: Context,
+        destination_path: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the in-memory project as a new absolute PLN on this computer.
+        Preview first, explicit port and one-use token to apply. No overwrite/Undo.
+        Requires the updated companion add-on; the server and Archicad must share files.
+        Never blindly retry an unknown save. No archival in this explicit-path tool."""
+        return await project_save.save_project_as(
+            client_of(ctx), destination_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_next_project_revision(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save next R/REV in the current folder, then move the previous PLN into
+        Anteriores only after native path and nonempty file verification. No overwrite,
+        no Undo. Preview/token/explicit port required. Untitled/Teamwork refused.
+        Requires updated companion add-on and server on the Archicad computer."""
+        return await project_save.save_next_project_revision(
+            client_of(ctx), port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_project_save(
+        ctx: Context, destination_path: str, port: int | None = None
+    ) -> dict:
+        """Read native save identity and destination file metadata after an unknown
+        result; never retries, saves or moves files. Requires companion add-on."""
+        return await project_save.inspect_project_save(client_of(ctx), destination_path, port)
 
     return mcp
 
