@@ -885,3 +885,35 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
   a rectangular hole 0.10 m x 0.30 m and an existing concrete building material.
   Open Profile Manager and confirm the outer size, hole, material and requested wall/beam
   availability. Confirm the receipt is `verified` and that the project was not saved.
+
+## Parâmetros de todas as ferramentas (validação ao vivo pendente)
+
+Ferramentas novas: `get_element_capabilities`, `inspect_element_parameters`,
+`set_element_parameters`; `get_gdl_parameters`/`set_gdl_parameters` agora aceitam portas,
+janelas e os outros elementos com GDL. Só testado no ArchiCAD simulado (fixture sintética
+de porta com nomes `fx_`, não de uma porta real). Pode ser no projeto em que o Vitor
+estiver trabalhando, com `begin_model_task` antes e `finish_model_task` no fim. Anotar
+versão, build, idioma do ArchiCAD e versão do Tapir (esperado 1.7.3).
+
+- [ ] **Caso principal: porta nativa do ArchiCAD 30.** Selecionar uma porta e pedir
+  "mostre os parâmetros de folha, marco, maçaneta, puxador, abertura e 2D/3D". Conferir
+  que os nomes, descrições e opções batem com a janela de configurações da porta e que
+  `group`/`parent` separam as páginas. Mudar um parâmetro disponível (ex.: tipo de
+  maçaneta) e conferir `verified`, a mesma porta (mesmo GUID) na mesma parede
+  (`identity_after.details.ownerElementId`) e nenhum `identity_changed`. Ctrl+Z desfaz.
+- [ ] **Dependência.** Mudar na porta um parâmetro que liga/desliga outros (ex.: com/sem
+  puxador) e conferir `dependent_changes` contra o que a janela da porta mostra.
+- [ ] **Valor recusado pelo script.** Pedir um valor fora do limite de um parâmetro
+  numérico: a prévia deve recusar, ou o recibo deve trazer `not_applied`, nunca `verified`.
+- [ ] **Lista de opções (enum)** e **array** (se a porta tiver) numa janela.
+- [ ] **Marcador da porta/janela**: mudar um parâmetro do marcador (target `marker`);
+  `undo_steps` 2 quando junto com GDL.
+- [ ] **Objeto e luminária**: um parâmetro de cada, relido `verified`.
+- [ ] **Ângulo**: um parâmetro do tipo Angle (ex.: abertura 3D) com Tapir 1.7.3; o valor
+  relido deve ser o pedido (em radianos).
+- [ ] **Bloqueados**: elemento travado, camada travada e elemento de hotlink devem ser
+  recusados na prévia; parâmetro oculto/travado aparece `editable: false` com o motivo.
+- [ ] **Campos nativos**: `inspect_element_parameters` numa parede, laje, zona, texto e
+  escada; `writable_by` aponta o `modify_*` certo e a escada traz a limitação.
+- [ ] **Capacidades**: `get_element_capabilities` com uma porta, uma parede e um painel de
+  parede-cortina; conferir que nada promete escrita onde não há.

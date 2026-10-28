@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, ArchicadError
-from archicad_mcp_aberto.tools import read, write
+from archicad_mcp_aberto.tools import gdl, read, write
 
 
 async def _editable(client, guids, port):
@@ -356,8 +356,10 @@ async def _gdl_rows(client, port, guids, timeout=None):
 async def _gdl_plan(client, changes, port, operation):
     guids = list(dict.fromkeys(c.element_guid for c in changes))
     port, target, details = await _editable(client, guids, port)
-    if any(row["type"] != "Object" for row in details):
-        raise ValueError("Only Object GDL parameters are supported.")
+    refused = sorted({row["type"] for row in details} - set(gdl.GDL_OWNER_TYPES))
+    if refused:
+        raise ValueError(f"{', '.join(refused)} elements have no GDL parameters in Tapir.")
+    tapir = gdl.tapir_version(target)
     by_guid = dict(zip(guids, details, strict=True))
     rows = await _gdl_rows(client, port, guids)
     items = []
@@ -371,6 +373,7 @@ async def _gdl_plan(client, changes, port, operation):
             raise ValueError(f"GDL parameter {change.name!r} does not exist or is ambiguous.")
         current = matches[0]
         value = _gdl_value(current, change.value)
+        wire = gdl._wire(current["type"], value, tapir)
         details = by_guid[change.element_guid]
         items.append(
             {
@@ -381,9 +384,10 @@ async def _gdl_plan(client, changes, port, operation):
                 "layerIndex": details.get("layerIndex"),
                 "before": deepcopy(current),
                 "expected_type": current["type"],
+                "expected_value": value,
                 "parameters": {
                     "elementId": {"guid": change.element_guid},
-                    "gdlParameters": [{"name": change.name, "value": value}],
+                    "gdlParameters": [{"name": change.name, "value": wire}],
                 },
             }
         )
@@ -402,10 +406,9 @@ async def _verify_gdl(client, receipt, items):
         matches = [p for p in parameters if p.get("name") == requested["name"]]
         actual = matches[0] if len(matches) == 1 else {}
         item["after"] = actual
-        differences = write._mismatches(
-            {"type": item["expected_type"], "value": requested["value"]}, actual
-        )
-        if isinstance(requested["value"], bool) and actual.get("value") is not requested["value"]:
+        wanted = item.get("expected_value", requested["value"])
+        differences = write._mismatches({"type": item["expected_type"], "value": wanted}, actual)
+        if isinstance(wanted, bool) and actual.get("value") is not wanted:
             differences.append("value.type")
         item["status"] = "verification_failed" if differences else "verified"
         if differences:
@@ -425,7 +428,10 @@ async def set_gdl_parameters(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview/apply up to 100 existing scalar Object parameters, by element/name/value.
+    """Preview/apply up to 100 existing scalar GDL parameters, by element/name/value.
+
+    Any type in gdl.GDL_OWNER_TYPES (objects, lamps, doors, windows...). For arrays,
+    markers, dependency reports and identity checks use set_element_parameters.
 
     Metres/radians. Refuses fixed/hidden/locked/disabled/array parameters, hotlinks and
     locked elements. Shared token, explicit port and per-change receipts; never saves.

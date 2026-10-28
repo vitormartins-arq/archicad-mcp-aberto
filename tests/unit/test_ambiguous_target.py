@@ -45,6 +45,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     object_replacement,
     openings,
+    parameters,
     preview_images,
     profiles,
     project_info,
@@ -310,6 +311,9 @@ INPUTS = {
     "modify_lamps": {"lamps": [{"guid": GUID, "lightIsOn": False}]},
     "get_gdl_parameters": {"element_guids": [GUID]},
     "set_gdl_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
+    "get_element_capabilities": {"element_guids": [GUID]},
+    "inspect_element_parameters": {"element_guids": [GUID]},
+    "set_element_parameters": {"changes": [{"element_guid": GUID, "name": "A", "value": 2.0}]},
     "rotate_elements": {
         "rotations": [{"guid": GUID, "center": {"x": 0, "y": 0}, "angle": 1.5707963267948966}]
     },
@@ -513,6 +517,8 @@ INPUTS = {
     },
 }
 REMOVALS = ("remove_solid_operations", "remove_trims")
+GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters"}
+
 TARGETED = {
     name: function
     for module in (
@@ -553,6 +559,7 @@ TARGETED = {
         navigator,
         grids,
         navigator_moves,
+        parameters,
         openings,
         preview_images,
         object_replacement,
@@ -667,7 +674,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name in {"modify_walls", "create_windows", "create_doors", "create_associative_dimensions"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
-    if name in {"get_gdl_parameters", "set_gdl_parameters"}:
+    if name in GDL_TOOLS:
         for instance in (first, second):
             instance.elements[GUID] = "Object"
     if name in MODIFY_TYPES:
@@ -765,7 +772,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     result_port = result["target"]["port"] if "target" in result else result["port"]
     assert result_port == port
     assert selected.calls and untouched.calls == []
-    expected_type = "Object" if name in {"get_gdl_parameters", "set_gdl_parameters"} else "Wall"
+    expected_type = "Object" if name in GDL_TOOLS else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
     extra = {
         "create_groups": {PROP: "Wall"},

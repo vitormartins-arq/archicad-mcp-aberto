@@ -31,8 +31,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **163 registered tools**: **59 read-only**, **3 view/session actions** and
-**101 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **166 registered tools**: **61 read-only**, **3 view/session actions** and
+**102 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -74,7 +74,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `get_bounding_boxes` | Read | 2D/3D boxes in metres, with per-element errors | no |
 | `list_building_materials` | Read | Material GUIDs/indices/names and cut-fill pens | yes |
 | `find_elements` | Read | Type/story/layer/property filters and pagination | for details |
-| `get_gdl_parameters` | Read | Object GDL values/types/flags, up to 100 GUIDs | yes |
+| `get_gdl_parameters` | Read | GDL values/types/flags of objects, lamps, doors, windows and other GDL elements, up to 100 GUIDs | yes |
+| `get_element_capabilities` | Read | Which settings of an element or type are readable/writable, by which mechanism and tool | yes |
+| `inspect_element_parameters` | Read | GDL and marker parameters with description, unit, options, limits, edit state; native fields | yes |
 | `run_read_command` | Read | One read-only official or Tapir command from a closed list, raw response | some |
 | `list_library_parts` | Read | Loaded part names/GUIDs/types, with partial-inventory diagnostics | yes |
 | `list_classifications` | Read | Classification systems, or one system's items as a flat tree | no |
@@ -126,7 +128,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_layers` | Write | Up to 50 new layers; existing names are refused | yes |
 | `set_element_layers` | Write | Move up to 100 editable elements to existing layers | yes |
 | `rotate_elements` | Write | Rotate up to 50 editable elements with geometry checks | yes |
-| `set_gdl_parameters` | Write | Edit existing scalar Object GDL values with read-back | yes |
+| `set_gdl_parameters` | Write | Edit existing scalar GDL values with read-back | yes |
+| `set_element_parameters` | Write | Edit GDL/marker parameters (arrays too) with dependency report and identity check | yes |
 | `modify_walls` | Write | Limited edits of up to 50 straight walls, read back after apply | yes |
 | `modify_slabs` | Write | Thickness and level of up to 50 slabs, read back after apply | yes |
 | `modify_columns` | Write | Position, base, height and section of up to 50 columns | yes |
@@ -434,7 +437,7 @@ and open to everyone's contributions.
 
 - `rotate_elements` previews up to 50 `rotations` (`guid`, `center:{x,y}` in metres, `angle` in radians). No copies/saves/unlocking. Refuses nonexistent/hotlinked/non-editable elements. Shared confirmation, receipts and timeout. Verifies endpoints or origin/angle where available; box-only verification supports multiples of pi/2 within 1 mm, because rotating an AABB cannot predict arbitrary shapes at other angles.
 
-- `get_gdl_parameters` reads up to 100 Object GUIDs, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
+- `get_gdl_parameters` reads up to 100 GUIDs of objects, lamps, doors, windows, skylights, zones, symbol labels, drawing titles and curtain wall parts, preserving GDL types, dimensions, flags, values and per-item errors. `set_gdl_parameters` previews up to 100 `{element_guid,name,value}` changes to existing scalar parameters, then verifies read-back. `get_element_capabilities`, `inspect_element_parameters` and `set_element_parameters` add markers, arrays, options/limits, dependency reports and identity checks; see [docs/PARAMETERS.md](docs/PARAMETERS.md). Rejects arrays/dictionaries, hidden/fixed/disabled/locked parameters, hotlinks and locked elements. Strings, booleans and finite numeric values must match the parameter type; LightSwitch booleans map to On/Off. Metres/radians; token, explicit port, receipts and timeout shared; never saves.
 
 - `modify_walls` accepts up to 50 `walls` entries with `guid` and at least one of `height`, `thickness`, `bottomOffset`, `begCoordinate`, `endCoordinate` (metres, native camelCase). Preview shows existing details and requested fields. Refuses curved/trapezoidal/polygonal, hotlinked, locked or missing walls and zero-length results. Direct thickness edits require Basic walls; height unlinks the top-story setting as the native command does. Single-use confirmation, explicit port, per-wall receipts, errors and read-back verification; never saves.
 

@@ -61,6 +61,7 @@ from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
+from archicad_mcp_aberto.tools import parameters as parameters_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import room_views as room_views_tool
@@ -96,6 +97,9 @@ Archicad MCP (read tools and safe wall and slab creation).
   move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
   level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
   above each story. These need the ArchicadMcpAberto add-on (addon/).
+- To change an existing element: get_element_capabilities, inspect_element_parameters,
+  then set_element_parameters (GDL/marker) or the modify_* tool it names. Use only the
+  parameter names and options the inspection returns; never invent them.
 - Receipts are local. No tool saves the Archicad project. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
@@ -795,7 +799,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     async def get_gdl_parameters(
         ctx: Context, element_guids: list[str], port: int | None = None
     ) -> dict:
-        """Read GDL parameter values/types/flags for up to 100 Objects. Requires Tapir."""
+        """Read GDL parameters of up to 100 objects, lamps, doors, windows, skylights,
+        zones, symbol labels, drawing titles and curtain wall parts. Requires Tapir.
+        For descriptions, units, options, limits and edit state use inspect_element_parameters.
+        """
         return await read.get_gdl_parameters(client_of(ctx), element_guids, port)
 
     @mcp.tool(annotations=WRITE)
@@ -806,11 +813,65 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/change existing scalar Object parameters; requires explicit port/token.
-        Refuses fixed/hidden/locked parameters; verifies each value. Never saves.
+        """Preview/change existing scalar GDL parameters of any GDL element; explicit port/token.
+        Refuses fixed/hidden/locked parameters; verifies each value. Never saves. Prefer
+        set_element_parameters (arrays, markers, dependencies and identity checks).
         """
         return await edit.set_gdl_parameters(
             client_of(ctx), changes, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_capabilities(
+        ctx: Context,
+        element_guids: list[str] | None = None,
+        element_types: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Which settings of each element (or element type) can be read or changed, and
+        by which mechanism: GDL parameters, door/window marker, native fields (with the
+        modify_* tool and the Tapir-only fields not exposed yet), layer, classification,
+        properties. States hotlink/lock blocks and the API limitations by type.
+        """
+        return await parameters_tool.get_element_capabilities(
+            client_of(ctx), element_guids, element_types, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_element_parameters(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        name_contains: str | None = None,
+        include_native: bool = True,
+        include_marker: bool = True,
+    ) -> dict:
+        """Inspect up to 20 existing elements: GDL and marker parameters (internal name,
+        description, type, unit, value, options, limits, arrays, group, edit state) and
+        native fields with the tool that edits each. name_contains filters parameters by
+        name/description (e.g. a door's handle or leaf). Never guess parameter names.
+        """
+        return await parameters_tool.inspect_element_parameters(
+            client_of(ctx), element_guids, port, name_contains, include_native, include_marker
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def set_element_parameters(
+        ctx: Context,
+        changes: list[parameters_tool.ParameterChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+        run_parameter_script: bool = False,
+    ) -> dict:
+        """Change GDL (target "gdl") or door/window marker (target "marker") parameters of
+        existing elements without recreating them. Dry run shows only the differences;
+        apply with explicit port and token. Reads back after the parameter script, lists
+        dependent changes and checks GUID/host/placement/layer/classification. An unknown
+        outcome is never retried: inspect first. Never saves (use begin/finish_model_task).
+        """
+        return await parameters_tool.set_element_parameters(
+            client_of(ctx), changes, port, dry_run, confirmation_token, run_parameter_script
         )
 
     @mcp.tool(annotations=WRITE)
