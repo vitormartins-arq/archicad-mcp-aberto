@@ -27,6 +27,10 @@
   with an optional drawing scale and layer combination, in a folder named after the room,
   numbered "AMP 01 - <room>". Uses the new `SaveStoryView` command of our add-on; each
   saved view's zoom, scale and layers are read back. Not tested live yet.
+- Add experimental `inspect_object_replacements` and `replace_object_libraries` with
+  exact library identity, explicit mounting references, stale-state checks, native
+  Undo batching and independent readback. Target GDL defaults replace parameters
+  other than A/B/ZZYZX. See `docs/OBJECT_REPLACEMENT.md`; live acceptance is pending.
 
 - Add `list_grid_elements` and `create_grid_elements` (`tools/grids.py`): grid lines
   (Grid Tool elements) through our add-on, which now carries `GetGridElementDefaults`,

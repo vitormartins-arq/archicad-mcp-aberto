@@ -702,6 +702,14 @@
     {
       "name": "finish_model_task",
       "description": "Save the completed task to the same working PLN."
+    },
+    {
+      "name": "inspect_object_replacements",
+      "description": "Read object replacement state and exact target defaults without writing."
+    },
+    {
+      "name": "replace_object_libraries",
+      "description": "Preview or replace existing Object libraries using explicit mounting references."
     }
   ],
   "compatibility": {

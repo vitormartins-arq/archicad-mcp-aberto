@@ -43,6 +43,7 @@ from archicad_mcp_aberto.tools import (
     morphs,
     navigator,
     navigator_moves,
+    object_replacement,
     openings,
     preview_images,
     profiles,
@@ -107,6 +108,17 @@ INPUTS = {
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
     "inspect_project_save": {"destination_path": "example.pln"},
+    "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
+    "replace_object_libraries": {
+        "replacements": [
+            {
+                "guid": GUID,
+                "target_unid": "EXACT-UNID",
+                "source_mount": {"x": 0.1, "y": 0.0, "z": 0.0},
+                "target_mount": {"x": 0.2, "y": 0.0, "z": 0.0},
+            }
+        ]
+    },
     "read_scene_model": {},
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
@@ -543,6 +555,7 @@ TARGETED = {
         navigator_moves,
         openings,
         preview_images,
+        object_replacement,
         project_info,
         project_save,
         project_location,
@@ -731,6 +744,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
             assert not untouched.calls
+            return
+        if name in {"inspect_object_replacements", "replace_object_libraries"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            # General fake intentionally lacks the new native command. Dedicated
+            # contract stubs test replacement separately; here verify routing and
+            # fail-closed behavior with an old companion add-on.
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetObjectReplacementData"]
+            assert untouched.calls == untouched.own_addon_calls == []
+            assert selected.elements == untouched.elements == {GUID: "Wall"}
             return
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     if isinstance(result, tuple):  # shoot_3d_scenes: (report, images)
