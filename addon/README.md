@@ -41,6 +41,10 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
 - `Show3DAll`: Show All in 3D and, optionally, Fit in Window, for when the model
   disappears from the 3D window.
 - `Get3DWindowImage` (Archicad 30 only): the 3D window as base64 PNG or JPG.
+- `SaveStoryView`: `{"storyIndex", "name", "folderPath"?, "zoom": {xMin, yMin, xMax,
+  yMax}, "drawingScale"?, "layerCombination"?}` saves the story's floor plan as a View
+  Map view with that zoom box (metres), scale denominator and layer combination, and
+  answers with the view settings read back. Folders as in `Save3DView`.
 - `GetGridElementDefaults`, `GetGridElements`, `CreateGridElements`: grid lines (Grid
   Tool elements), ported from Tapir's commands added after 1.7.2 (MIT). Coordinates in
   metres; `CreateGridElements` takes `begCoordinate`, `endCoordinate` and optional

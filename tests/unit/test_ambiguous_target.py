@@ -10,8 +10,11 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
+    camera_paths,
     classification_systems,
     classifications,
+    collisions,
     composites,
     design_option_create,
     design_options,
@@ -19,10 +22,12 @@ from archicad_mcp_aberto.tools import (
     drafting,
     drawings,
     edit,
+    element_structure,
     favorites,
     gateway,
     grids,
     hotlinks,
+    ifc,
     interior_elevations,
     issues,
     keynotes,
@@ -31,17 +36,26 @@ from archicad_mcp_aberto.tools import (
     layers,
     layout_book,
     locks,
+    mep,
     meshes,
+    model_tasks,
     modify,
     morphs,
     navigator,
     navigator_moves,
     openings,
+    preview_images,
+    profiles,
     project_info,
+    project_location,
+    project_resources,
+    project_save,
     property_definitions,
     read,
     renames,
+    revisions,
     roofs,
+    room_views,
     scenes,
     sections,
     selection,
@@ -56,6 +70,7 @@ from archicad_mcp_aberto.tools import (
     write,
     zone_categories,
     zones,
+    zones_read,
 )
 from tests.unit.fake_archicad import (
     BUILDING_MATERIALS_FIXTURE,
@@ -85,9 +100,45 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "list_camera_paths": {},
+    "create_camera_paths_from_views": {},
+    "begin_model_task": {},
+    "finish_model_task": {"task_token": "missing"},
+    "save_project_as": {"destination_path": "example.pln"},
+    "save_next_project_revision": {},
+    "inspect_project_save": {"destination_path": "example.pln"},
     "read_scene_model": {},
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
+    "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
+    "list_hotlinks": {},
+    "get_attribute_details": {"kind": "composites", "guids": []},
+    "get_ifc_of_elements": {"element_guids": [GUID]},
+    "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
+    "get_project_location": {},
+    "get_layout_settings": {"layout_database_guids": [GUID]},
+    "get_dimension_data": {"element_guids": [GUID]},
+    "get_model_view_options": {},
+    "list_libraries": {},
+    "get_element_preview": {"element_guids": [GUID]},
+    "get_zone_image": {"zone_guids": [GUID]},
+    "get_favorite_preview": {"favorite_names": ["Wall"]},
+    "get_zone_boundaries": {"zone_guids": [GUID]},
+    "get_zone_relations": {"zone_guids": [GUID]},
+    "create_layer_combinations": {
+        "combinations": [{"name": "New", "layers": [{"layer": "Walls"}]}]
+    },
+    "list_mep_systems": {},
+    "get_mep_elements": {},
+    "get_mep_preference_tables": {"domain": "Piping"},
+    "find_collisions": {"group1_guids": [GUID], "group2_guids": [PROP]},
+    "list_document_revisions": {},
+    "list_revision_issues": {},
+    "get_revision_changes": {},
+    "get_subelements": {"element_guids": [GUID]},
+    "get_element_trims": {"element_guids": [GUID]},
+    "get_solid_operation_links": {"element_guids": [GUID]},
+    "get_section_elements": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -200,6 +251,9 @@ INPUTS = {
     "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
     "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
     "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
+    "create_profiles": {
+        "profiles": [{"name": "New profile", "source_profile": "Rectangular 20x40"}]
+    },
     "rename_items": {"kind": "layers", "find": "Walls", "replace": "Paredes"},
     "create_property_groups": {"groups": [{"name": "Obra"}]},
     "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
@@ -450,18 +504,28 @@ REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
+        camera_paths,
+        model_tasks,
         attribute_properties,
+        attributes_details,
         attributes,
         classification_systems,
         classifications,
+        collisions,
+        collisions,
         design_options,
         documents,
         drafting,
+        drawings,
         renames,
         edit,
+        element_structure,
+        element_structure,
         favorites,
         gateway,
         hotlinks,
+        ifc,
+        ifc,
         interior_elevations,
         issues,
         keynotes,
@@ -470,6 +534,7 @@ TARGETED = {
         layers,
         layout_book,
         locks,
+        mep,
         meshes,
         modify,
         morphs,
@@ -477,10 +542,20 @@ TARGETED = {
         grids,
         navigator_moves,
         openings,
+        preview_images,
         project_info,
+        project_save,
+        project_location,
+        project_location,
+        project_resources,
+        project_resources,
+        profiles,
         property_definitions,
         read,
+        revisions,
+        revisions,
         roofs,
+        room_views,
         scenes,
         sections,
         selection,
@@ -498,6 +573,7 @@ TARGETED = {
         composites,
         design_option_create,
         drawings,
+        zones_read,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__
@@ -617,11 +693,45 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     if name == "update_zones":
         for instance in (first, second):
             instance.elements[PROP] = "Zone"
+    if name == "save_room_plan_views":
+        for instance in (first, second):
+            instance.elements[PROP] = "Zone"
+            instance.details[PROP] = {"type": "Zone", "floorIndex": 0}
+            instance.bounding_boxes_3d[PROP] = {
+                "boundingBox3D": {"xMin": 0, "yMin": 0, "zMin": 0, "xMax": 4, "yMax": 3, "zMax": 3}
+            }
+            for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
+                instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {
+            "list_camera_paths",
+            "begin_model_task",
+            "finish_model_task",
+            "create_camera_paths_from_views",
+        }:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises((AddOnError, ValueError)):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.calls and not untouched.calls
+            assert not any(
+                command.startswith(("Save", "Create")) for command in selected.own_addon_calls
+            )
+            return
+        if name in {"save_project_as", "save_next_project_revision", "inspect_project_save"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
         result = await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
     if isinstance(result, tuple):  # shoot_3d_scenes: (report, images)
         result = result[0]
@@ -634,6 +744,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     extra = {
         "create_groups": {PROP: "Wall"},
         "update_zones": {PROP: "Zone"},
+        "save_room_plan_views": {PROP: "Zone"},
         "create_solid_operations": {PROP: "Roof"},
         "trim_to_roof": {PROP: "Roof"},
         "remove_solid_operations": {PROP: "Roof"},
@@ -679,6 +790,18 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
     arguments = deepcopy(INPUTS[name])
+    if name == "create_camera_paths_from_views":
+
+        async def camera_plan(c, port, path_name, view_guids):
+            return {
+                "target": {"port": port},
+                "path_name": path_name,
+                "groups": [],
+                "skipped": [],
+                "note": "Target selection fixture",
+            }
+
+        monkeypatch.setattr(camera_paths, "_plan", camera_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
         first.calls.clear()

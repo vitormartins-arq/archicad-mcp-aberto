@@ -1,5 +1,43 @@
 # Estado atual
 
+- **Camera context stabilization / 28 October 2026:** R13 live inventory and
+  capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
+  was created: deferred view notifications invalidated the save context. A distinct
+  inspected native same-path save passed. Added bounded context stabilization and
+  native sealing against element/attribute versions before camera creation.
+  3,004 offline tests, Ruff and AC30 native compilation passed. Corrected native
+  delivery/reload and live creation remain pending. User authorizes R06_DELETAR.
+
+- **Physical cameras / 27 October 2026:** draft PR #93 implements native
+  Camera/CamSet capture/create/readback, source UUID deduplication, representation
+  grouping and automatic verified task backup with final same-path PLN saving.
+  2,999 offline tests passed; Ruff check/format passed. AC30 native compilation
+  passed. No live camera creation or installation has been performed yet.
+  LAB Tools integration and live verification remain pending.
+
+- **Teste autorizado da revisão / 27/10/2026:** na cópia descartável em Downloads,
+  AC30 build 3001 BRA / Tapir 1.7.3 / LAB Tools R12 com complemento R11 integrado,
+  Save As da próxima revisão e arquivamento passaram; SHA-256 do arquivo antigo
+  arquivado idêntico ao original. Arquivo novo confirmado como projeto atual.
+  Prévia recusa destino ocupado. Corrigido incremento com sufixo de teste após R05;
+  2.794 testes offline e Ruff/formatação passaram. Reabertura e delta intencional
+  não salvo ainda pendentes. Executado pelo checkout isolado, sem alterar configuração
+  do servidor MCP do cliente. Nenhum teste em projeto de produção.
+
+- **Integração da #92 / 27/10/2026:** main `713406c` incorporada na branch da PR,
+  preservando SaveStoryView/ampliações e salvamento de revisões. Conflitos resolvidos;
+  2.791 testes offline passaram (27,47 s), Ruff e formatação passaram (169 arquivos).
+  Corrigidas a declaração do callback de eventos e a conversão UTF-8 para filesystem
+  C++20 após a primeira compilação CI. Teste real continua pendente; nenhum acesso
+  ao Archicad aberto, instalação de APX ou merge da PR no GitHub.
+
+- **Salvar revisão / 27/10/2026:** implementação isolada de Save As PLN nativo e
+  próxima revisão com arquivamento posterior em `00 - Anteriores`. Prévia/token, identidade
+  nativa e recibos; falha/timeout não repete salvamento nem arquiva automaticamente.
+  Ver `PROJECT_SAVE_REVISIONS.md`. Validação offline; compilação/APX e teste real
+  ainda pendentes. Nenhum acesso ao Archicad aberto ou instalação de add-on nesta tarefa.
+  Suíte offline completa: 2.777 testes passaram (23,27 s); Ruff e formatação passaram.
+
 - **Conflito da #71 / 25/10/2026:** main atual (com #72 e #73) incorporada na branch.
   Conflitos somente no changelog e neste registro, resolvidos preservando os dois
   conteúdos. 2730 testes offline passaram em 22,81 s; Ruff e formatação passaram
@@ -807,6 +845,18 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - origin/main c491e2c integrada por merge, sem rebase. Conflitos resolvidos preservando as ferramentas e correções do PR #61 e as do #62, mais ambas as documentações e registros de validação. Manifesto e teste de registro combinados: 90 ferramentas. Nenhuma chamada ao Archicad real nesta integração; nenhum merge de PR pelo Codex.
 - Validação após resolver os conflitos: 2113 testes simulados passaram e uv run ruff check . passou (Windows/Python 3.12.10).
 
+## 2026-10-16 — Codex / inventário de módulos vinculados e XRefs
+
+- Branch `codex/t28-hotlinks-read`, saindo da `main` após os PRs #61 e #62.
+  `list_hotlinks` transforma a árvore de `GetHotlinks` em lista ordenada com GUID do nó,
+  nome, tipo Module/XRef, caminho, pai e profundidade; busca e paginação não perdem a
+  relação original. Respostas malformadas, tipos desconhecidos e GUIDs duplicados são
+  recusados por inteiro.
+- Contrato conferido em `ProjectCommands.cpp` e `CommonSchemaDefinitions.json` do Tapir
+  1.7.0/02691b5d. Fixture documental com caminhos e GUIDs sintéticos, marcado
+  `live_capture: false`. Nenhum Archicad real foi aberto.
+- Registro passa a 91 ferramentas, 29 de leitura. As tarefas C5–C8 do Claude e
+  `docs/FILA.md` permaneceram intactas.
 
 ## 2026-10-15 — Claude / C5 notas-chave (rodada automática, lote 3)
 
@@ -1019,6 +1069,60 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Tapir diz que a IFCAPI do ArchiCAD 28+ não tem função de escrita de propriedade IFC
   (vale também para add-on próprio; conferir no DevKit 29 quando der).
 
+- **Claude / vistas de ampliação, 27/10/2026 (branch `claude/project-thread-pvslgt`,
+  recriada da `main` depois do merge do PR #71):** o Vitor pediu para automatizar as vistas
+  de ampliação (abrir, salvar na pasta do ambiente, numerar) e escolheu vista de planta
+  enquadrada. Comando novo `SaveStoryView` no add-on (`addon/Sources/PlanViewCommands.cpp`:
+  clona o pavimento do Mapa do Projeto para o Mapa de Vistas e grava zoom, escala e
+  combinação de vegetais pela `API_NavigatorView`) e a ferramenta `save_room_plan_views`
+  (`tools/room_views.py`). Testes simulados passaram; nada testado ao vivo (VALIDAR, C38).
+  A thread ficou parada de 23 a 27/10 pelo limite de uso da organização.
+## 2026-10-21 — Codex / T29 detalhes de atributos
+
+- Branch `codex/t29-attribute-details`, somente leitura. `get_attribute_details` cobre
+  composites, profiles, surfaces, building material physics, zone categories, pen
+  tables, lines e fills pelos oito comandos do Tapir 1.7.0. Até 500 GUIDs, lotes de
+  100 e erro nativo por item. Fixture source-derived, not a live capture.
+## 2026-10-21 — T33 IFC element data
+- Added bounded IFC type, identifier, property and reverse GlobalId lookups; no export paths.
+## 2026-10-21 — T34 project location
+- Added read-only project geolocation/calculation units and bounded layout settings queries.
+## 2026-10-21 — T38 dimensions, MVO and libraries
+- Added three read-only project-resource tools from Tapir 1.7.0 schemas.
+## 2026-10-21 — T39 preview images
+- Added three read-only PNG preview tools with MCP image content, ten-target and size limits.
+## 2026-10-21 — T30 zone boundaries
+- Added bounded, read-only zone boundary and relation queries using Tapir 1.7.0 source schemas.
+- Fixtures are source-derived, not live captures; invalid zones remain aligned as error rows.
+## 2026-10-21 — T35 layer combinations
+- Added creation of up to 20 new layer combinations with source-derived Tapir 1.7.0 fields, name/layer validation and full read-back. No overwrite, delete or save path.
+## 2026-10-21 — T36 MEP reads
+- Added bounded MEP system/distribution, element/routing/port and preference-table reads from Tapir 1.7.0 source schemas.
+## 2026-10-21 — T31 collisions
+- Added read-only collision detection for two groups of up to 500 GUIDs with explicit SI tolerances.
+## 2026-10-21 — T32 revisions
+- Added read-only revision, issue and change inventory from Tapir 1.7.0 source schemas.
+## 2026-10-21 — T37 element structure
+- Added four bounded, read-only structure/relationship queries from Tapir 1.7.0 schemas.
+- **Codex / drawings on layouts, 23/10/2026:** `create_drawings` uses Tapir 1.7.0
+  `CreateDrawings` to place existing View Map views on existing layouts. It resolves
+  names to Navigator/database GUIDs during preview, uses the common single-use token
+  and receipt flow, and reads every result back as type Drawing. Simulated only; live
+  placement, scale, rotation and positioning still need visual confirmation.
+- **Codex / exact floor-plan framing, 23/10/2026:** `set_view_settings` now exposes
+  Tapir 1.7.0's stored zoom box in model metres and view rotation in radians. This is
+  the missing generic step for framing each room enlargement without moving the user's
+  current window. Simulated only; framing and rotation still need live visual checks.
+- **Codex / complex profile copies, 23/10/2026:** `create_profiles` copies the complete
+  geometry of an existing profile into a new, uniquely named profile and optionally
+  changes its wall/beam/column/handrail/object availability. It never overwrites and
+  reads the new scalar settings back. Simulated only; compare geometry live in Profile
+  Manager. Creating arbitrary new skin polygons remains a later extension.
+- **Codex / caller-authored profile skins, 23/10/2026:** `create_profiles` now also
+  sends Tapir 1.7.0 `newSkins` with arbitrary polygon contours and holes in profile-local
+  metres. Each skin resolves an existing building material by name; a copied source is
+  optional and can be combined with the new geometry. The fake shape is source-derived,
+  not a live capture. Simulated tests pass; live Profile Manager comparison is pending.
 
 - **Codex / nomes de distribuição, 26/10/2026:** proposta em `codex/material-revision-names`.
   Revisão única em `distribution.json`; empacotamento gera nome + revisão, recibo SHA-256

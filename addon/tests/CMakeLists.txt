@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(CameraAngleTests LANGUAGES CXX)
+enable_testing()
+add_executable(camera-angle-tests CameraAngleConversionTests.cpp)
+target_compile_features(camera-angle-tests PRIVATE cxx_std_17)
+add_test(NAME camera-angle-conversion COMMAND camera-angle-tests)

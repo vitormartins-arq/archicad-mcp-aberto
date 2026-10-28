@@ -50,8 +50,13 @@ disk.
   11/10/2026). Codex never merges.
 - Only report tests you actually ran. Say which Archicad version, build, language and
   Tapir version a live test used. Visual approval in Archicad is Vitor's.
-- Live tests run only on a test project. Never change or save Vitor's real projects
-  without his explicit ok in that conversation.
+- Vitor's current policy (27 October 2026): work in the project he requests, including
+  saved/working projects. Do not require an untitled/test file or manual Save As.
+  Before a requested editing task, preserve and verify an automatic _backup PLN
+  in Anteriores; include the current in-memory state, then save the result to the
+  SAME working PLN at task completion. No automatic revision bump. His request
+  authorizes this backup/save workflow; do not ask for it repeatedly. Do not save
+  for read-only operations, silently switch projects or blindly retry unknown writes.
 - With several Archicad instances open, never pick one: use `resolve_port`.
 - Lengths in meters, angles in radians.
 - When the fake Archicad learns a command, copy the response shape from a real Archicad.

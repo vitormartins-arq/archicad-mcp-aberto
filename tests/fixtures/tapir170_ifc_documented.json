@@ -1,0 +1,8 @@
+{
+  "provenance": {"kind": "source-derived, not a live capture", "live_capture": false, "tapir_tag": "1.7.0", "tapir_commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8", "source": "archicad-addon/Sources/IFCCommands.cpp"},
+  "element_guid": "11111111-1111-1111-1111-111111111111",
+  "ifc_id": "2O2Fr$t4X7Zf8NOew3FNvQ",
+  "elementIFCTypes": {"elementId": {"guid": "11111111-1111-1111-1111-111111111111"}, "ifcType": "IfcWall", "typeObjectIFCType": "IfcWallType"},
+  "elementIFCIds": {"elementId": {"guid": "11111111-1111-1111-1111-111111111111"}, "ifcId": "2O2Fr$t4X7Zf8NOew3FNvQ", "externalIFCId": ""},
+  "elementIFCProperties": {"elementId": {"guid": "11111111-1111-1111-1111-111111111111"}, "ifcProperties": [{"propertySetName": "Pset_WallCommon", "propertyName": "IsExternal", "propertyValue": "True"}]}
+}
