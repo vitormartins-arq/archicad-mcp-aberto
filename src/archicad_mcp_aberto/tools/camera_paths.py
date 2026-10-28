@@ -44,7 +44,11 @@ async def list_camera_paths(client, port: int | None = None):
 
 async def _ordered_views(client, port, guids):
     rows = await navigator._view_tree(client, port, "PublicViewMap", write.write_timeout())
-    supported = [r for r in rows if r["type"].casefold() in {"perspective", "axonometry"}]
+    supported = [
+        r
+        for r in rows
+        if r["type"].casefold().removesuffix("item") in {"perspective", "axonometry"}
+    ]
     if guids is not None:
         if not guids:
             raise ValueError(

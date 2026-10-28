@@ -45,7 +45,7 @@ def native_cameras(native_task, monkeypatch):
             dict(
                 guid=r["sourceViewGuid"],
                 name=r["name"],
-                type="Perspective" if r["isPerspective"] else "Axonometry",
+                type="PerspectiveItem" if r["isPerspective"] else "AxonometryItem",
             )
             for r in rows
         ]
