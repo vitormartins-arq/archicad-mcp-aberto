@@ -686,6 +686,26 @@ OPERATIONS["create_grid_elements"] = (
     "grid_receipt_id",
     "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
 )
+OPERATIONS["save_project_as"] = (
+    "project save",
+    "save_receipt_id",
+    "Explicit Save As PLN; no Undo. Review destination.",
+)
+OPERATIONS["begin_model_task"] = (
+    "task checkpoint",
+    "checkpoint_receipt_id",
+    "Automatic verified backup before editing; stable working PLN name.",
+)
+OPERATIONS["finish_model_task"] = (
+    "task save",
+    "save_receipt_id",
+    "Save to the SAME working PLN after its verified task checkpoint.",
+)
+OPERATIONS["save_next_project_revision"] = (
+    "revision save",
+    "save_receipt_id",
+    "Explicit next revision and archival; no Undo. Review both paths.",
+)
 OPERATIONS["move_navigator_items"] = (
     "Navigator move",
     "navigator_move_receipt_id",
@@ -1133,6 +1153,7 @@ async def _write(
     *,
     planner_override=None,
     dispatcher_override=None,
+    completion_note: str | None = None,
 ) -> dict:
     if client.session_id is None:
         raise RuntimeError("ArchicadClient must be used inside 'async with'.")
@@ -1210,7 +1231,9 @@ async def _write(
             "verified" if receipt["counts"]["verified"] == len(receipt["items"]) else "needs_review"
         )
         receipt["finished_at"] = datetime.now(UTC).isoformat()
-        receipt["note"] = "No project was saved. Use Archicad Undo to revert this batch."
+        receipt["note"] = (
+            completion_note or "No project was saved. Use Archicad Undo to revert this batch."
+        )
         if receipt.get("revert_note"):
             receipt["note"] = "No project was saved. " + receipt["revert_note"]
 

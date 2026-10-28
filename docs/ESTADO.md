@@ -1,5 +1,43 @@
 # Estado atual
 
+- **Camera context stabilization / 28 October 2026:** R13 live inventory and
+  capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
+  was created: deferred view notifications invalidated the save context. A distinct
+  inspected native same-path save passed. Added bounded context stabilization and
+  native sealing against element/attribute versions before camera creation.
+  3,004 offline tests, Ruff and AC30 native compilation passed. Corrected native
+  delivery/reload and live creation remain pending. User authorizes R06_DELETAR.
+
+- **Physical cameras / 27 October 2026:** draft PR #93 implements native
+  Camera/CamSet capture/create/readback, source UUID deduplication, representation
+  grouping and automatic verified task backup with final same-path PLN saving.
+  2,999 offline tests passed; Ruff check/format passed. AC30 native compilation
+  passed. No live camera creation or installation has been performed yet.
+  LAB Tools integration and live verification remain pending.
+
+- **Teste autorizado da revisão / 27/10/2026:** na cópia descartável em Downloads,
+  AC30 build 3001 BRA / Tapir 1.7.3 / LAB Tools R12 com complemento R11 integrado,
+  Save As da próxima revisão e arquivamento passaram; SHA-256 do arquivo antigo
+  arquivado idêntico ao original. Arquivo novo confirmado como projeto atual.
+  Prévia recusa destino ocupado. Corrigido incremento com sufixo de teste após R05;
+  2.794 testes offline e Ruff/formatação passaram. Reabertura e delta intencional
+  não salvo ainda pendentes. Executado pelo checkout isolado, sem alterar configuração
+  do servidor MCP do cliente. Nenhum teste em projeto de produção.
+
+- **Integração da #92 / 27/10/2026:** main `713406c` incorporada na branch da PR,
+  preservando SaveStoryView/ampliações e salvamento de revisões. Conflitos resolvidos;
+  2.791 testes offline passaram (27,47 s), Ruff e formatação passaram (169 arquivos).
+  Corrigidas a declaração do callback de eventos e a conversão UTF-8 para filesystem
+  C++20 após a primeira compilação CI. Teste real continua pendente; nenhum acesso
+  ao Archicad aberto, instalação de APX ou merge da PR no GitHub.
+
+- **Salvar revisão / 27/10/2026:** implementação isolada de Save As PLN nativo e
+  próxima revisão com arquivamento posterior em `00 - Anteriores`. Prévia/token, identidade
+  nativa e recibos; falha/timeout não repete salvamento nem arquiva automaticamente.
+  Ver `PROJECT_SAVE_REVISIONS.md`. Validação offline; compilação/APX e teste real
+  ainda pendentes. Nenhum acesso ao Archicad aberto ou instalação de add-on nesta tarefa.
+  Suíte offline completa: 2.777 testes passaram (23,27 s); Ruff e formatação passaram.
+
 - **Conflito da #71 / 25/10/2026:** main atual (com #72 e #73) incorporada na branch.
   Conflitos somente no changelog e neste registro, resolvidos preservando os dois
   conteúdos. 2730 testes offline passaram em 22,81 s; Ruff e formatação passaram

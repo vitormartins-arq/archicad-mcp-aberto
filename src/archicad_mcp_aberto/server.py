@@ -15,6 +15,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     attributes_details,
+    camera_paths,
     classifications,
     collisions,
     design_options,
@@ -28,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     ifc,
     keynotes,
     locks,
+    model_tasks,
     modify,
     openings,
     preview_images,
@@ -35,6 +37,7 @@ from archicad_mcp_aberto.tools import (
     project_info,
     project_location,
     project_resources,
+    project_save,
     property_definitions,
     read,
     revisions,
@@ -1703,14 +1706,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
+        as_cameras: bool = True,
+        camera_path_name: str = scenes_tool.DEFAULT_CAMERA_PATH,
     ) -> dict:
-        """Preview/save up to 60 scenes (shoot_3d_scenes shape) as View Map views in
+        """Preview/save up to 60 scenes (shoot_3d_scenes shape) in the View Map, in
         folder_path + each scene's folder (one per room); folders are created when missing.
+        Every scene is saved as a 3D view; by default each perspective is also saved as a
+        camera of camera_path_name (BIMx loads cameras faster; two-point is not kept).
         Apply identical inputs with explicit port and one-use token. Puts the 3D window
-        back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
+        back. Never saves the project. Needs the ArchicadMcpAberto add-on."""
         return await scenes_tool.save_3d_scenes(
-            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
-        )
+            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token,
+            as_cameras, camera_path_name,
+        )  # fmt: skip
 
     @mcp.tool(annotations=WRITE)
     async def create_composites(
@@ -2285,6 +2293,96 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await profiles.create_profiles(
             client_of(ctx), profile_data, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_camera_paths(ctx: Context, port: int | None = None) -> dict:
+        """Read native camera paths, physical cameras and source-view identities."""
+        return await camera_paths.list_camera_paths(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_camera_paths_from_views(
+        ctx: Context,
+        path_name: str = "BIMx - Apresentação",
+        view_guids: list[str] | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Create physical cameras from saved perspectives in Navigator order.
+        Skip axonometries, separate representations, preserve existing cameras.
+        Apply checkpoints automatically and saves to the same PLN. No publishing.
+        Requires the updated native companion. Preview/token and explicit port to apply.
+        """
+        return await camera_paths.create_camera_paths_from_views(
+            client_of(ctx), path_name, view_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def begin_model_task(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preserve a verified pre-task PLN backup in 00 - Anteriores, including unsaved edits.
+        Keep the working filename. Internal preview/apply is covered by the user's
+        editing request; no manual Save As or test-project requirement.
+        """
+        return await model_tasks.begin_model_task(client_of(ctx), port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def finish_model_task(
+        ctx: Context,
+        task_token: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the completed editing task to the SAME PLN with its pre-task backup retained.
+        Requires a verified begin_model_task token. Never blindly retry an unknown save.
+        """
+        return await model_tasks.finish_model_task(
+            client_of(ctx), task_token, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_project_as(
+        ctx: Context,
+        destination_path: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the in-memory project as a new absolute PLN on this computer.
+        Preview first, explicit port and one-use token to apply. No overwrite/Undo.
+        Requires the updated companion add-on; the server and Archicad must share files.
+        Never blindly retry an unknown save. No archival in this explicit-path tool."""
+        return await project_save.save_project_as(
+            client_of(ctx), destination_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_next_project_revision(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save next R/REV in the current folder, then move the previous PLN into
+        00 - Anteriores only after native path and nonempty file verification. No overwrite,
+        no Undo. Preview/token/explicit port required. Untitled/Teamwork refused.
+        Requires updated companion add-on and server on the Archicad computer."""
+        return await project_save.save_next_project_revision(
+            client_of(ctx), port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_project_save(
+        ctx: Context, destination_path: str, port: int | None = None
+    ) -> dict:
+        """Read native save identity and destination file metadata after an unknown
+        result; never retries, saves or moves files. Requires companion add-on."""
+        return await project_save.inspect_project_save(client_of(ctx), destination_path, port)
 
     return mcp
 

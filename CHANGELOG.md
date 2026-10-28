@@ -11,6 +11,17 @@
 
 ## Unreleased
 
+- Preserve descriptive suffixes when incrementing the last R/REV token in project
+  revision names, including archived revision collision checks. Next-revision saving
+  and archival validated in an authorized disposable project using the combined
+  LAB Tools companion; reopening/content acceptance remains pending.
+
+- Add native `save_project_as`, `save_next_project_revision` and read-only
+  `inspect_project_save`. Preview binds native session/project epoch/stamp and paths;
+  saves the in-memory PLN, verifies path/file, then archives the previous revision in
+  `Anteriores`. Existing files are refused, archive collisions preserved, unknown saves
+  never retried. Requires rebuilt companion add-on; offline tested, native build/live
+  validation pending. See `docs/PROJECT_SAVE_REVISIONS.md` for API limitations and recovery.
 - Add `save_room_plan_views` (`tools/room_views.py`): room enlargement views. For each
   zone, its story's floor plan is saved in the View Map framed on the room plus a margin,
   with an optional drawing scale and layer combination, in a folder named after the room,

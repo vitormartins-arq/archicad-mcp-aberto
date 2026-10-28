@@ -674,6 +674,34 @@
     {
       "name": "create_profiles",
       "description": "Preview or create complex profiles by copying existing profile geometry."
+    },
+    {
+      "name": "save_project_as",
+      "description": "Preview native Save As PLN to a new explicit destination."
+    },
+    {
+      "name": "save_next_project_revision",
+      "description": "Preview the next project revision and archive the previous PLN after verified saving."
+    },
+    {
+      "name": "inspect_project_save",
+      "description": "Inspect native save context and destination metadata without retrying."
+    },
+    {
+      "name": "list_camera_paths",
+      "description": "Read physical cameras, paths and source-view identities."
+    },
+    {
+      "name": "create_camera_paths_from_views",
+      "description": "Create physical camera paths from saved perspectives with automatic backup and same-path save."
+    },
+    {
+      "name": "begin_model_task",
+      "description": "Preserve a verified pre-task backup in 00 - Anteriores without renaming the working PLN."
+    },
+    {
+      "name": "finish_model_task",
+      "description": "Save the completed task to the same working PLN."
     }
   ],
   "compatibility": {
