@@ -1129,3 +1129,14 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   metres. Each skin resolves an existing building material by name; a copied source is
   optional and can be combined with the new geometry. The fake shape is source-derived,
   not a live capture. Simulated tests pass; live Profile Manager comparison is pending.
+
+- **Codex / nomes de distribuição, 26/10/2026:** proposta em `codex/material-revision-names`.
+  Revisão única em `distribution.json`; empacotamento gera nome + revisão, recibo SHA-256
+  e fontes versionadas. R03 proposta, R01/R02 preservadas; nada instalado ou testado
+  no Archicad nesta mudança. Ver `docs/DISTRIBUTION.md`. Sem merge da PR #88.
+
+- Codex, 26/10/2026: Vitor requested the LAB prefix on all deliveries. Proposed R04; native display label updated in source only. No merge or installation.
+
+- Codex, 26/10/2026: proposed R05 adds self-contained Windows installation, same-MDID replacement, Include migration and recoverable backups. Core tests use temporary files only; Program Files/UAC/real loading acceptance pending. No merge or installed add-on changes.
+
+- Codex, 26/10/2026: R08 fixes installer failures reported by Vitor. Native Extensions selection is accepted/displayed; foreign Graphisoft APXs without MDID and stale removed-APX registrations are not own-product matches. Empty old folders are backed up. 31 local checks include real notebook read-only preflight for both products; no production write or merge.

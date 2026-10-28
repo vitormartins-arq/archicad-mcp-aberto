@@ -982,3 +982,9 @@ inspection. Native build and live acceptance are pending; see
   holes. A source profile is optional and, when supplied, the new skins are added to its
   copied geometry. New names only, at most 20 profiles per call; never overwrites or saves.
 
+## Distribution names
+
+User-facing files are generated from `distribution.json`: name plus material revision only.
+See [the distribution contract](docs/DISTRIBUTION.md) for packaging, immutable revisions,
+Archicad-major folders and the separate Main/test Drive delivery. R03 is proposed;
+existing R01/R02 files are unchanged.

@@ -27,7 +27,12 @@ jobs:
       - run: uv run ruff check .
       - run: uv run pytest
       - run: uv build
-      - run: npx -y @anthropic-ai/mcpb@2.1.2 pack . "dist/archicad-mcp-aberto-$VERSION.mcpb"
+      - name: Package revision-derived distribution
+        run: |
+          mkdir -p build
+          npx -y @anthropic-ai/mcpb@2.1.2 pack . "build/server.mcpb"
+          uv run python tools/distribution.py stage bundle --input build/server.mcpb --output dist
+          uv run python tools/distribution.py source server_source --output dist
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}

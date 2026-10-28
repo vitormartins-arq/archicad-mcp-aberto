@@ -2,10 +2,10 @@ name: Add-on
 
 on:
   pull_request:
-    paths: ["addon/**", ".github/workflows/addon.yml"]
+    paths: ["addon/**", "tools/distribution.py", "tools/installer/**", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
   push:
     branches: [main]
-    paths: ["addon/**", ".github/workflows/addon.yml"]
+    paths: ["addon/**", "tools/distribution.py", "tools/installer/**", "distribution.json", "tests/unit/test_distribution.py", ".github/workflows/addon.yml"]
 
 jobs:
   build_win:
@@ -21,13 +21,38 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check distribution contract
+        run: python -m unittest discover -s tests/unit -p test_distribution.py
+      - name: Changed material requires a newer revision
+        if: github.event_name == 'pull_request'
+        run: python tools/distribution.py check --base "${{ github.event.pull_request.base.sha }}"
       - name: Download Development Kit
         run: python addon/Tools/download_and_unzip.py ${{ matrix.params.devKitUrl }} addon/devkit/AC${{ matrix.params.acVersion }}
       - name: Generate project
         run: cmake -B addon/build -G "Visual Studio 17 2022" -A "x64" -T "v143" -DAC_VERSION=${{ matrix.params.acVersion }} -DAC_API_DEVKIT_DIR="addon/devkit/AC${{ matrix.params.acVersion }}/Support" addon
       - name: Build
         run: cmake --build addon/build --config RelWithDebInfo
+      - name: Package revision-derived files
+        run: |
+          python tools/distribution.py stage addon --input "addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx" --archicad ${{ matrix.params.acVersion }} --output packages
+          python tools/distribution.py source server_source --archicad ${{ matrix.params.acVersion }} --output packages
+      - name: Test safe Windows installation and build installer
+        shell: pwsh
+        run: |
+          $apx = "addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx"
+          $csc = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe"
+          & $csc /nologo /main:InstallerTests /out:InstallerTests.exe /r:System.Web.Extensions.dll /r:System.IO.Compression.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll (Resolve-Path tools/installer/InstallCore.cs).Path (Resolve-Path tools/installer/Mdid.cs).Path (Resolve-Path tools/installer/Installer.cs).Path (Resolve-Path tools/installer/InstallerTests.cs).Path
+          if ($LASTEXITCODE -ne 0) { throw 'Installer test compilation failed' }
+          ./InstallerTests.exe $apx
+          if ($LASTEXITCODE -ne 0) { throw 'Installer recovery tests failed' }
+          python -m unittest discover -s tools/installer -p test_builder.py
+          if ($LASTEXITCODE -ne 0) { throw 'Installer builder tests failed' }
+          $revision = (Get-Content distribution.json -Raw | ConvertFrom-Json).revision
+          python tools/installer/build_installer.py --root . --input $apx --archicad ${{ matrix.params.acVersion }} --payload-revision $revision --channel "em teste" --output packages
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: ArchicadMcpAberto AC${{ matrix.params.acVersion }} Win
-          path: addon/build/RelWithDebInfo/ArchicadMcpAberto_AC${{ matrix.params.acVersion }}_Win.apx
+          path: packages/Archicad ${{ matrix.params.acVersion }}/*
