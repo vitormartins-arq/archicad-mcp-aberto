@@ -129,6 +129,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `update_favorites_from_elements` | Write | Overwrites existing favorites from elements of their type | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_hotlinks` | Read | Linked Module and XRef nodes with GUID, source path and hierarchy | yes |
 | `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
@@ -158,6 +159,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
+| `get_attribute_details` | Read | Detailed composites, profiles, surfaces, material physics, zone categories, pen tables, lines or fills | yes |
 
 ### Reported live validation
 

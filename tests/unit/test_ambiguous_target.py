@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classification_systems,
     classifications,
     composites,
@@ -91,6 +92,8 @@ INPUTS = {
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
+    "list_hotlinks": {},
+    "get_attribute_details": {"kind": "composites", "guids": []},
     "get_ifc_of_elements": {"element_guids": [GUID]},
     "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
     "list_design_options": {},
@@ -456,6 +459,7 @@ TARGETED = {
     name: function
     for module in (
         attribute_properties,
+        attributes_details,
         attributes,
         classification_systems,
         classifications,
