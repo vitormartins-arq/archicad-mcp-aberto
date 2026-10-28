@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **161 registered tools**: **58 read-only**, **3 view/session actions** and
-**100 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **163 registered tools**: **59 read-only**, **3 view/session actions** and
+**101 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -50,7 +50,7 @@ Lengths use metres and angles use radians regardless of project display units.
   operations that the official JSON API and Tapir do not expose.
 - Run every automated test without Archicad against the simulated adapter; fixtures say
   whether they came from a live response or from the Tapir/API source contract.
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **58 read-only** tools and
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **59 read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
 and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad

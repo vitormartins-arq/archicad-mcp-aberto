@@ -168,14 +168,97 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 GS::String GetCameraViewsCommand::GetName () const { return "GetCameraViews"; }
 GS::Optional<GS::UniString> GetCameraViewsCommand::GetInputParametersSchema () const
 {
-    return R"({"type": "object", "properties": {}, "additionalProperties": false})";
+    return R"({
+        "type": "object",
+        "properties": {
+            "map": {"type": "string", "enum": ["ViewMap", "ProjectMap"], "description": "Navigator map to list (default ViewMap)."}
+        },
+        "additionalProperties": false
+    })";
 }
-GS::ObjectState GetCameraViewsCommand::Execute (const GS::ObjectState&, GS::ProcessControl&) const
+GS::ObjectState GetCameraViewsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
 {
+    GS::UniString map ("ViewMap");
+    parameters.Get ("map", map);
+    const API_NavigatorMapID mapId = map == "ProjectMap" ? API_ProjectMap : API_PublicViewMap;
     GS::ObjectState response;
     const auto& views = response.AddList<GS::ObjectState> ("views");
-    for (const API_NavigatorItem& item : CameraItems (API_PublicViewMap))
-        views (GS::ObjectState ("viewGuid", APIGuidToString (item.guid), "name", GS::UniString (item.uName),
-            "cameraGuid", APIGuidToString (item.camId)));
+    for (const API_NavigatorItem& item : CameraItems (mapId)) {
+        GS::ObjectState row ("viewGuid", APIGuidToString (item.guid), "name", GS::UniString (item.uName),
+            "cameraGuid", APIGuidToString (item.camId));
+        API_Element camera {};
+        camera.header.guid = item.camId;
+        if (ACAPI_Element_Get (&camera) == NoError) {
+            API_Element path {};
+            path.header.guid = camera.camera.camSetGuid;
+            row.Add ("pathGuid", APIGuidToString (camera.camera.camSetGuid));
+            if (ACAPI_Element_Get (&path) == NoError) row.Add ("pathName", GS::UniString (path.camset.name));
+            row.Add ("previousCameraGuid", APIGuidToString (camera.camera.perspCam.prevCam));
+        }
+        views (row);
+    }
+    return response;
+}
+
+GS::String RenameProjectMapItemsCommand::GetName () const { return "RenameProjectMapItems"; }
+GS::Optional<GS::UniString> RenameProjectMapItemsCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "items": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
+                "type": "object",
+                "properties": {
+                    "guid": {"type": "string", "description": "Project Map item GUID."},
+                    "name": {"type": "string", "description": "New name."}
+                },
+                "additionalProperties": false,
+                "required": ["guid", "name"]
+            }},
+            "dryRun": {"type": "boolean", "description": "Only read the current names (default false)."}
+        },
+        "additionalProperties": false,
+        "required": ["items"]
+    })";
+}
+// Tapir refuses to rename Project Map items ("The name and the ID of a Project Map item
+// cannot be changed"). Names given here reach the View Map and Publisher items that
+// follow the Project Map (Vitor's rule, 28/10/2026: rename views, sections and cameras
+// in the Project Map).
+GS::ObjectState RenameProjectMapItemsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
+{
+    GS::Array<GS::ObjectState> items;
+    parameters.Get ("items", items);
+    bool dryRun = false;
+    parameters.Get ("dryRun", dryRun);
+    GS::ObjectState response;
+    const auto& rows = response.AddList<GS::ObjectState> ("items");
+    for (const GS::ObjectState& entry : items) {
+        GS::UniString guidText, name;
+        entry.Get ("guid", guidText);
+        entry.Get ("name", name);
+        GS::ObjectState row ("guid", guidText);
+        API_NavigatorItem item {};
+        item.mapId = API_ProjectMap;
+        const API_Guid guid = APIGuidFromString (guidText.ToCStr ().Get ());
+        GSErrCode err = name.IsEmpty () || name.GetLength () >= API_UniLongNameLen - 1 ? APIERR_BADPARS : NoError;
+        if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &item);
+        if (err != NoError) {
+            row.Add ("error", GS::ObjectState ("code", err, "message", "Item missing or name invalid."));
+            rows (row);
+            continue;
+        }
+        row.Add ("before", GS::UniString (item.uName));
+        if (!dryRun) {
+            SetItemName (item, name);
+            err = ACAPI_Navigator_ChangeNavigatorItem (&item);
+            API_NavigatorItem after {};
+            after.mapId = API_ProjectMap;
+            if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &after);
+            if (err != NoError) row.Add ("error", GS::ObjectState ("code", err, "message", "Archicad refused the new name."));
+            else row.Add ("after", GS::UniString (after.uName));
+        }
+        rows (row);
+    }
     return response;
 }

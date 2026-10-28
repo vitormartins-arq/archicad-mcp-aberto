@@ -16,3 +16,10 @@ public:
     GS::Optional<GS::UniString> GetInputParametersSchema () const override;
     GS::ObjectState Execute (const GS::ObjectState&, GS::ProcessControl&) const override;
 };
+// Renames Project Map items (views, sections, cameras) and reads the names back.
+class RenameProjectMapItemsCommand : public CommandBase {
+public:
+    GS::String GetName () const override;
+    GS::Optional<GS::UniString> GetInputParametersSchema () const override;
+    GS::ObjectState Execute (const GS::ObjectState&, GS::ProcessControl&) const override;
+};

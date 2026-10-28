@@ -687,6 +687,8 @@ class FakeArchicad:
     cut_3d: dict = field(default_factory=lambda: {"enabled": False, "planes": []})
     saved_3d_views: list[dict] = field(default_factory=list)
     saved_cameras: list[dict] = field(default_factory=list)
+    project_map_names: dict[str, str] = field(default_factory=dict)  # item guid -> name
+    project_map_refused: set[str] = field(default_factory=set)  # guids Archicad refuses
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1155,6 +1157,37 @@ class FakeArchicad:
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
             return ok({"addOnCommandResponse": {"image": image}})
+        if name == "GetCameraViews":
+            # Shape of addon/Sources/CameraViewCommands.cpp; not a live capture.
+            if args.get("map") == "ProjectMap":
+                rows = [
+                    {
+                        "viewGuid": g,
+                        "name": n,
+                        "cameraGuid": g,
+                        "pathName": "00 BIMx - Apresentação",
+                    }
+                    for g, n in self.project_map_names.items()
+                ]
+            else:
+                rows = [{"viewGuid": c["viewGuid"], "name": c["name"]} for c in self.saved_cameras]
+            return ok({"addOnCommandResponse": {"views": rows}})
+        if name == "RenameProjectMapItems":
+            rows = []
+            for item in args["items"]:
+                guid = item["guid"]
+                if guid not in self.project_map_names:
+                    rows.append({"guid": guid, "error": {"code": -1, "message": "Item missing."}})
+                    continue
+                row = {"guid": guid, "before": self.project_map_names[guid]}
+                if not args.get("dryRun"):
+                    if guid in self.project_map_refused:
+                        row["error"] = {"code": -1, "message": "Archicad refused the new name."}
+                    else:
+                        self.project_map_names[guid] = item["name"]
+                        row["after"] = item["name"]
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"items": rows}})
         if name == "SaveCameraView":
             if not self.camera_3d["isPerspective"]:
                 error = {"code": -1, "message": "A camera needs a perspective."}

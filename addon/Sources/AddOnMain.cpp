@@ -37,6 +37,7 @@ GSErrCode Initialize (void)
     err |= InstallCommand<SealCameraPathCommand> ();
     err |= InstallCommand<SaveCameraViewCommand> ();
     err |= InstallCommand<GetCameraViewsCommand> ();
+    err |= InstallCommand<RenameProjectMapItemsCommand> ();
     err |= InstallCommand<GetProjectSaveContextCommand> ();
     err |= InstallCommand<SaveProjectAsPLNCommand> ();
     err |= InstallCommand<SaveCurrentProjectPLNCommand> ();

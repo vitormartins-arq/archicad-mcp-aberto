@@ -893,3 +893,4 @@ Simulado e compilado pelo CI, não testado ao vivo. Precisa do add-on recompilad
 - [ ] `save_3d_scenes` com 3 ou mais ambientes: todas as câmeras vão para um único percurso, "00 BIMx - Apresentação", com os nomes "1 RECEPÇÃO - 2P 01", "2 ..." e assim por diante.
 - [ ] No Mapa de projeto, as câmeras aparecem com esse nome, e não como "Câmera 1". No Mapa de vistas, nenhuma câmera solta e nenhuma pasta por ambiente.
 - [ ] Conjunto BIMx feito à mão, só com o percurso (mesma combinação 3D, "Adicionar câmeras como itens de galeria separados", céu branco, menor textura): um único modelo e a galeria com os nomes no celular.
+- [ ] `rename_project_map_items`: renomear as câmeras dos percursos "BIMx - Apresentação" (1 a 24) e "BIMx - Fachadas" (1 a 4) do WG Formosa_R05, numa cópia, pela lista do Drive (`bimx-conjunto-2026-10-28.md`). Conferir se o nome aparece no Mapa de vistas e no Publisher. Se o Archicad recusar, o item volta como `failed`.

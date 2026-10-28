@@ -1,5 +1,8 @@
 # Changelog
 
+- Add `list_project_map_cameras` and `rename_project_map_items`, through the new
+  `RenameProjectMapItems` add-on command: Tapir refuses to rename Project Map items, and
+  names given in the Project Map reach the View Map and the Publisher sets.
 - `save_3d_scenes` puts every camera in ONE path, "00 BIMx - Apresentação" by default,
   named "<number> <ROOM> - <name>", with no View Map item per room. `SaveCameraView`
   also names the camera's Project Map item, which was left as "Camera 1", "Camera 2"
