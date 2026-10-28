@@ -4,13 +4,26 @@
 #include "OnExit.hpp"
 
 namespace {
+// SearchNavigatorItem returned no camera items in AC30 (live test 28/10/2026), so walk the tree.
+void CollectCameras (API_NavigatorItem parent, GS::Array<API_NavigatorItem>& items, int depth)
+{
+    GS::Array<API_NavigatorItem> children;
+    if (depth > 16 || ACAPI_Navigator_GetNavigatorChildrenItems (&parent, &children) != NoError) return;
+    for (API_NavigatorItem& child : children) {
+        if (child.itemType == API_CameraNavItem) items.Push (child);
+        else CollectCameras (child, items, depth + 1);
+    }
+}
 GS::Array<API_NavigatorItem> CameraItems (API_NavigatorMapID map)
 {
-    API_NavigatorItem search {};
-    search.mapId = map;
-    search.itemType = API_CameraNavItem;
     GS::Array<API_NavigatorItem> items;
-    if (ACAPI_Navigator_SearchNavigatorItem (&search, &items) != NoError) items.Clear ();
+    API_NavigatorSet set {};
+    set.mapId = map;
+    if (ACAPI_Navigator_GetNavigatorSet (&set) != NoError) return items;
+    API_NavigatorItem root {};
+    root.guid = set.rootGuid;
+    root.mapId = map;
+    CollectCameras (root, items, 0);
     return items;
 }
 }
