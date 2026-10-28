@@ -424,6 +424,10 @@
       "description": "Preview or save one framed floor plan view per room, numbered, in a folder named after it (ArchicadMcpAberto add-on)."
     },
     {
+      "name": "list_project_map_cameras",
+      "description": "List the Project Map cameras with their path, read only (ArchicadMcpAberto add-on)."
+    },
+    {
       "name": "save_3d_scenes",
       "description": "Preview/save 3D scenes as View Map views, one folder per room; never saves the project."
     },

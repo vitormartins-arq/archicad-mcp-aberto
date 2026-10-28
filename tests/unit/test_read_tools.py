@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 166
+    assert len(tools) == 167
     writes = {
         "begin_model_task",
         "finish_model_task",
@@ -226,7 +226,7 @@ async def test_server_registers_current_tool_surface():
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 61
+    assert len(reads) == 62
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

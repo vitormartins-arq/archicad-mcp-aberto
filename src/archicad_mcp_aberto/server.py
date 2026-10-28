@@ -62,6 +62,7 @@ from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
 from archicad_mcp_aberto.tools import parameters as parameters_tool
+from archicad_mcp_aberto.tools import project_map_names as project_map_names_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import room_views as room_views_tool
@@ -1760,6 +1761,13 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             layer_combination, port, dry_run, confirmation_token,
         )  # fmt: skip
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_project_map_cameras(ctx: Context, port: int | None = None) -> dict:
+        """Every camera of the Project Map: item GUID, name, camera GUID and camera path.
+        Read only: Archicad refuses renaming Project Map cameras, so rename them by hand.
+        Needs the ArchicadMcpAberto add-on."""
+        return await project_map_names_tool.list_project_map_cameras(client_of(ctx), port)
+
     @mcp.tool(annotations=WRITE)
     async def save_3d_scenes(
         ctx: Context,
@@ -1770,16 +1778,18 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
         as_cameras: bool = True,
         camera_path_name: str = scenes_tool.DEFAULT_CAMERA_PATH,
+        first_camera_number: int = 1,
     ) -> dict:
         """Preview/save up to 60 scenes (shoot_3d_scenes shape) in the View Map, in
         folder_path + each scene's folder (one per room); folders are created when missing.
-        Every scene is saved as a 3D view; by default each perspective is also saved as a
-        camera of camera_path_name (BIMx loads cameras faster; two-point is not kept).
+        Every scene is saved as a 3D view; by default each perspective is also a camera of
+        ONE path camera_path_name, named "<n> <ROOM> - <name>", with no View Map item.
+        For BIMx put only that path in the Publisher set (one model, cameras as gallery).
         Apply identical inputs with explicit port and one-use token. Puts the 3D window
         back. Never saves the project. Needs the ArchicadMcpAberto add-on."""
         return await scenes_tool.save_3d_scenes(
             client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token,
-            as_cameras, camera_path_name,
+            as_cameras, camera_path_name, first_camera_number,
         )  # fmt: skip
 
     @mcp.tool(annotations=WRITE)

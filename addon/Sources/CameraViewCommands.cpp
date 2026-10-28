@@ -36,7 +36,8 @@ GS::Optional<GS::UniString> SaveCameraViewCommand::GetInputParametersSchema () c
         "properties": {
             "name": {"type": "string", "description": "Name of the camera and of its View Map item."},
             "folderPath": {"type": "array", "items": {"type": "string"}, "description": "View Map folders, as in Save3DView."},
-            "pathName": {"type": "string", "description": "Camera path to append to; created when missing."}
+            "pathName": {"type": "string", "description": "Camera path to append to; created when missing."},
+            "viewMap": {"type": "boolean", "description": "Also put the camera in the View Map under folderPath (default true)."}
         },
         "additionalProperties": false,
         "required": ["name", "pathName"]
@@ -49,6 +50,8 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
     parameters.Get ("pathName", pathName);
     GS::Array<GS::UniString> folderPath;
     parameters.Get ("folderPath", folderPath);
+    bool viewMap = true;
+    parameters.Get ("viewMap", viewMap);  // stays true when missing
     bool tooLong = name.GetLength () >= API_UniLongNameLen - 1 || pathName.GetLength () >= API_UniLongNameLen - 1;
     for (const GS::UniString& folder : folderPath) tooLong = tooLong || folder.GetLength () >= API_UniLongNameLen - 1;
     if (tooLong || name.IsEmpty () || pathName.IsEmpty ())
@@ -84,7 +87,7 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 
     API_Guid parentGuid = APINULLGuid;
     GS::UniString folderError;
-    if ((err = ResolveViewMapFolder (folderPath, parentGuid, folderError)) != NoError) return CreateErrorResponse (err, folderError);
+    if (viewMap && (err = ResolveViewMapFolder (folderPath, parentGuid, folderError)) != NoError) return CreateErrorResponse (err, folderError);
 
     // Same element setup as ApplyCameraPath, which was verified live in AC30 (28/10/2026).
     API_Element camera {};
@@ -122,17 +125,22 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
         if (item.camId == camera.header.guid) source = item.guid;
     if (source == APINULLGuid)
         return CreateErrorResponse (APIERR_GENERAL, "Created the camera but found no Project Map item for it.");
+    // The Project Map item shows the camera element's ID; Archicad refuses renaming it
+    // afterwards (ChangeMemo is ignored, ChangeNavigatorItem gives 0x81060065, AC30,
+    // 28/10/2026), so the name only comes from elemInfoString at creation.
     API_Guid createdGuid = APINULLGuid;
-    if ((err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&source, &parentGuid, &createdGuid)) != NoError)
-        return CreateErrorResponse (err, "Created the camera but failed to put it in the View Map.");
-    API_NavigatorItem created {};
-    created.mapId = API_PublicViewMap;
-    err = ACAPI_Navigator_GetNavigatorItem (&createdGuid, &created);
-    if (err == NoError) {
-        SetItemName (created, name);
-        err = ACAPI_Navigator_ChangeNavigatorItem (&created);
+    if (viewMap) {
+        if ((err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&source, &parentGuid, &createdGuid)) != NoError)
+            return CreateErrorResponse (err, "Created the camera but failed to put it in the View Map.");
+        API_NavigatorItem created {};
+        created.mapId = API_PublicViewMap;
+        err = ACAPI_Navigator_GetNavigatorItem (&createdGuid, &created);
+        if (err == NoError) {
+            SetItemName (created, name);
+            err = ACAPI_Navigator_ChangeNavigatorItem (&created);
+        }
+        if (err != NoError) return CreateErrorResponse (err, "Saved the camera view but failed to name it.");
     }
-    if (err != NoError) return CreateErrorResponse (err, "Saved the camera view but failed to name it.");
 
     // Vitor's rule: camera paths display "None", so cameras do not clutter the plan.
     // Same view option ApplyCameraPath sets (Path Options > Display Options).
@@ -153,14 +161,34 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 GS::String GetCameraViewsCommand::GetName () const { return "GetCameraViews"; }
 GS::Optional<GS::UniString> GetCameraViewsCommand::GetInputParametersSchema () const
 {
-    return R"({"type": "object", "properties": {}, "additionalProperties": false})";
+    return R"({
+        "type": "object",
+        "properties": {
+            "map": {"type": "string", "enum": ["ViewMap", "ProjectMap"], "description": "Navigator map to list (default ViewMap)."}
+        },
+        "additionalProperties": false
+    })";
 }
-GS::ObjectState GetCameraViewsCommand::Execute (const GS::ObjectState&, GS::ProcessControl&) const
+GS::ObjectState GetCameraViewsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
 {
+    GS::UniString map ("ViewMap");
+    parameters.Get ("map", map);
+    const API_NavigatorMapID mapId = map == "ProjectMap" ? API_ProjectMap : API_PublicViewMap;
     GS::ObjectState response;
     const auto& views = response.AddList<GS::ObjectState> ("views");
-    for (const API_NavigatorItem& item : CameraItems (API_PublicViewMap))
-        views (GS::ObjectState ("viewGuid", APIGuidToString (item.guid), "name", GS::UniString (item.uName),
-            "cameraGuid", APIGuidToString (item.camId)));
+    for (const API_NavigatorItem& item : CameraItems (mapId)) {
+        GS::ObjectState row ("viewGuid", APIGuidToString (item.guid), "name", GS::UniString (item.uName),
+            "cameraGuid", APIGuidToString (item.camId));
+        API_Element camera {};
+        camera.header.guid = item.camId;
+        if (ACAPI_Element_Get (&camera) == NoError) {
+            API_Element path {};
+            path.header.guid = camera.camera.camSetGuid;
+            row.Add ("pathGuid", APIGuidToString (camera.camera.camSetGuid));
+            if (ACAPI_Element_Get (&path) == NoError) row.Add ("pathName", GS::UniString (path.camset.name));
+            row.Add ("previousCameraGuid", APIGuidToString (camera.camera.perspCam.prevCam));
+        }
+        views (row);
+    }
     return response;
 }

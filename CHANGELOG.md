@@ -1,5 +1,12 @@
 # Changelog
 
+- Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
+  offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
+  add-on, so existing cameras are renamed by hand.
+- `save_3d_scenes` puts every camera in ONE path, "00 BIMx - Apresentação" by default,
+  named "<number> <ROOM> - <name>", with no View Map item per room. `SaveCameraView`
+  gives the name to the camera at creation and takes `viewMap: false`. Rule from the BIMx export of 28/10/2026: each
+  3D item or path in the Publisher set becomes a whole model.
 - Add `archicad-mcp-doctor`, a read-only setup diagnostic for local ports, Archicad
   instances, Tapir and the optional 3D companion add-on, with text and JSON output.
 - Refresh the English and Brazilian Portuguese project overview to reflect the 109

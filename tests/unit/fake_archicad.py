@@ -694,6 +694,7 @@ class FakeArchicad:
     cut_3d: dict = field(default_factory=lambda: {"enabled": False, "planes": []})
     saved_3d_views: list[dict] = field(default_factory=list)
     saved_cameras: list[dict] = field(default_factory=list)
+    project_map_names: dict[str, str] = field(default_factory=dict)  # item guid -> name
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1162,6 +1163,21 @@ class FakeArchicad:
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
             return ok({"addOnCommandResponse": {"image": image}})
+        if name == "GetCameraViews":
+            # Shape of addon/Sources/CameraViewCommands.cpp; not a live capture.
+            if args.get("map") == "ProjectMap":
+                rows = [
+                    {
+                        "viewGuid": g,
+                        "name": n,
+                        "cameraGuid": g,
+                        "pathName": "00 BIMx - Apresentação",
+                    }
+                    for g, n in self.project_map_names.items()
+                ]
+            else:
+                rows = [{"viewGuid": c["viewGuid"], "name": c["name"]} for c in self.saved_cameras]
+            return ok({"addOnCommandResponse": {"views": rows}})
         if name == "SaveCameraView":
             if not self.camera_3d["isPerspective"]:
                 error = {"code": -1, "message": "A camera needs a perspective."}
@@ -1173,10 +1189,18 @@ class FakeArchicad:
                     "name": args["name"],
                     "folderPath": list(args.get("folderPath", [])),
                     "pathName": args["pathName"],
+                    "viewMap": args.get("viewMap", True),
                     "camera": deepcopy(self.camera_3d),
                 }
             )
-            response = {"viewGuid": guid, "cameraGuid": str(uuid4()).upper(), "name": args["name"]}
+            # Shape of addon/Sources/CameraViewCommands.cpp; not a live capture.
+            response = {
+                "viewGuid": guid
+                if args.get("viewMap", True)
+                else "00000000-0000-0000-0000-000000000000",
+                "cameraGuid": str(uuid4()).upper(),
+                "name": args["name"],
+            }
             return ok({"addOnCommandResponse": response})
         if name == "Save3DView":
             guid = str(uuid4()).upper()
