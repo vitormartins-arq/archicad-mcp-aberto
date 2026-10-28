@@ -526,6 +526,20 @@ class FakeArchicad:
             }
         }
     )
+    profiles: dict[str, dict] = field(
+        default_factory=lambda: {
+            "56565656-5656-4656-8656-000000000001": {
+                "attributeId": {"guid": "56565656-5656-4656-8656-000000000001"},
+                "index": "1",
+                "name": "Rectangular 20x40",
+                "wallType": True,
+                "beamType": True,
+                "coluType": True,
+                "handrailType": False,
+                "otherGDLObjectType": False,
+            }
+        }
+    )
     zone_category_code_stored: str | None = None  # Archicad keeps this code instead
     lose_delete_response: bool = False
     delete_ignored: bool = False
@@ -602,6 +616,7 @@ class FakeArchicad:
     dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
     dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
     project_resources_fixture: bool = False  # GetDimensionData from the documented fixture
+    element_structure_fixture: bool = False  # GetElementTrims/GetSolidElementLinks fixture
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -1370,6 +1385,134 @@ class FakeArchicad:
             )
             key = "roomImage" if name == "GetRoomImage" else "previewImage"
             return ok({"addOnCommandResponse": {key: fixture["png"]}})
+        if name in {"GetZoneBoundaries", "GetRelationsOfElements"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_zone_boundaries_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            source = args.get("zones", args.get("elements", []))
+            key = "zoneBoundariesOfZones" if name == "GetZoneBoundaries" else "relations"
+            value = fixture["boundaries"] if name == "GetZoneBoundaries" else fixture["relations"]
+            rows = [
+                deepcopy(value)
+                if row["elementId"]["guid"] == fixture["zone_guid"]
+                else {"error": {"code": -2, "message": "Zone not found"}}
+                for row in source
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if name.startswith("GetMEP"):
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            mapping = {
+                "GetMEPSystems": ("mepSystems", [fixture["system"]]),
+                "GetMEPDistributionSystems": ("distributionSystems", [fixture["distribution"]]),
+                "GetMEPElements": ("elements", [fixture["element"]]),
+                "GetMEPPreferenceTables": ("tables", fixture["tables"]),
+            }
+            if name == "GetMEPRoutingElements":
+                key, rows = "routingElements", [fixture["routing"] for _ in args["elements"]]
+            elif name == "GetMEPPorts":
+                key, rows = "elementPorts", [fixture["ports"] for _ in args["elements"]]
+            else:
+                key, rows = mapping[name]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name == "GetAttributesByType" and args["attributeType"] == "MEPSystem":
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": fixture["system_guid"]},
+                                "index": 1,
+                                "name": "Domestic Water",
+                            }
+                        ]
+                    }
+                }
+            )
+        if name == "GetCollisions":
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_collisions_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            return ok({"addOnCommandResponse": {"collisions": [deepcopy(fixture["collision"])]}})
+        if name in {
+            "GetDocumentRevisions",
+            "GetRevisionIssues",
+            "GetRevisionChanges",
+            "GetRevisionChangesOfElements",
+            "GetCurrentRevisionChangesOfLayouts",
+        }:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_revisions_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetDocumentRevisions":
+                key, rows = "documentRevisions", fixture["documentRevisions"]
+            elif name == "GetRevisionIssues":
+                key, rows = "revisionIssues", fixture["revisionIssues"]
+            elif name == "GetRevisionChanges":
+                key, rows = "revisionChanges", fixture["revisionChanges"]
+            else:
+                source_key = (
+                    "elements" if name == "GetRevisionChangesOfElements" else "layoutDatabaseIds"
+                )
+                id_key = "elementId" if name == "GetRevisionChangesOfElements" else "databaseId"
+                key = (
+                    "revisionChangesOfElements"
+                    if name == "GetRevisionChangesOfElements"
+                    else "currentRevisionChangesOfLayouts"
+                )
+                rows = [
+                    {"revisionChanges": deepcopy(fixture["revisionChanges"])}
+                    if row[id_key]["guid"] != "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD"
+                    else {"error": {"code": -2, "message": "Entity not found"}}
+                    for row in args[source_key]
+                ]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name in {"GetSubelementsOfHierarchicalElements", "GetSectionElements"} or (
+            self.element_structure_fixture and name in {"GetElementTrims", "GetSolidElementLinks"}
+        ):
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_element_structure_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetSectionElements":
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "sectionElements": deepcopy(fixture["sectionElements"])
+                        }
+                    }
+                )
+            key = {
+                "GetSubelementsOfHierarchicalElements": "subelements",
+                "GetElementTrims": "elementTrims",
+                "GetSolidElementLinks": "solidLinks",
+            }[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":
@@ -1967,6 +2110,10 @@ class FakeArchicad:
                     continue
                 if not self.view_settings_ignored:
                     self.view_settings[guid].update(deepcopy(entry["viewSettings"]))
+                    # Tapir 1.7.0 sets saveZoom=true when all zoom bounds are present;
+                    # source-derived behavior, not a live capture.
+                    if "zoom" in entry["viewSettings"]:
+                        self.view_settings[guid]["saveZoom"] = True
                     if self.view_settings_reset_pen_set:
                         self.view_settings[guid]["penSetName"] = "Unexpected side effect"
                     if (
@@ -2138,6 +2285,27 @@ class FakeArchicad:
                         }
                     )
                 out.append({"attributeId": {"guid": layer_guid(target)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "CreateLayerCombinations" and not args.get("overwriteExisting", False):
+            out = []
+            for data in args["layerCombinationDataArray"]:
+                if any(
+                    row["name"].casefold() == data["name"].casefold()
+                    for row in self.layer_combinations.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Layer combination exists"}})
+                    continue
+                index = max(self.layer_combinations, default=0) + 1
+                states = {}
+                for layer in data["layers"]:
+                    layer_index = next(
+                        (i for i in self.layers if layer_guid(i) == layer["attributeId"]["guid"]),
+                        None,
+                    )
+                    if layer_index is not None:
+                        states[layer_index] = {k: v for k, v in layer.items() if k != "attributeId"}
+                self.layer_combinations[index] = {"name": data["name"], "layers": states}
+                out.append({"attributeId": {"guid": combination_guid(index)}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
@@ -2338,6 +2506,63 @@ class FakeArchicad:
                 }
                 out.append({"attributeId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Profile":
+            rows = [
+                {k: deepcopy(row[k]) for k in ("attributeId", "index", "name")}
+                for row in self.profiles.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "CreateProfiles":
+            # Source-derived from Tapir 1.7.0 AttributeCommands.cpp; not a live capture.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for data in args["profileDataArray"]:
+                source = data.get("sourceAttributeId", {}).get("attributeId", {}).get("guid")
+                if (source is not None and source not in self.profiles) or any(
+                    row["name"] == data["name"] for row in self.profiles.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Profile create failed."}})
+                    continue
+                guid = str(uuid4()).upper()
+                row = deepcopy(self.profiles[source]) if source is not None else {}
+                row.update(data)
+                row.pop("sourceAttributeId", None)
+                new_skins = row.pop("newSkins", [])
+                if new_skins:
+                    row.setdefault("skins", [])
+                    for skin_index, skin in enumerate(new_skins):
+                        contours = skin.pop("contours")
+                        outline = [{"x": 0.0, "y": 0.0}]
+                        ends = [0]
+                        for contour in contours:
+                            points = contour["polygonCoordinates"]
+                            outline.extend(points)
+                            outline.append(points[0])
+                            ends.append(len(outline) - 1)
+                        row["skins"].append(
+                            {
+                                "skinId": f"source-derived-{skin_index}",
+                                **skin,
+                                "outlineCoords": outline,
+                                "outlineSubPolyEnds": ends,
+                                "outlineArcs": [],
+                                "edges": [],
+                            }
+                        )
+                row.update(attributeId={"guid": guid}, index=str(len(self.profiles) + 1))
+                self.profiles[guid] = row
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetProfiles":
+            out = []
+            for item in args["attributeIds"]:
+                row = self.profiles.get(item["attributeId"]["guid"])
+                if row is None:
+                    out.append({"error": {"code": -1, "message": "Profile not found."}})
+                else:
+                    keys = {"attributeId", "index", "name", *args.get("fields", [])}
+                    out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"profiles": out}})
         if name == "GetComposites":
             out = []
             for entry in args["attributeIds"]:

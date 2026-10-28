@@ -454,6 +454,16 @@ OPERATIONS = {
         "layout_receipt_id",
         "New layouts take size and margins from their existing master layout.",
     ),
+    "create_drawings": (
+        "drawing",
+        "drawing_receipt_id",
+        "Places existing View Map views on existing layouts; positions are layout metres.",
+    ),
+    "create_profiles": (
+        "complex profile",
+        "profile_receipt_id",
+        "Copies geometry from an existing profile; never overwrites an attribute.",
+    ),
     "rename_items": (
         "rename",
         "rename_receipt_id",
@@ -2204,4 +2214,12 @@ OPERATIONS["create_classification_items"] = (
     "classification item",
     "classification_item_receipt_id",
     "Creates only under existing parents; each item is one native Undo step.",
+)
+
+# Appended operation registration for T35.
+OPERATIONS["create_layer_combinations"] = (
+    "layer combination",
+    "layer_combination_receipt_id",
+    "Creates new combinations only; existing names are refused and every requested "
+    "state is read back.",
 )

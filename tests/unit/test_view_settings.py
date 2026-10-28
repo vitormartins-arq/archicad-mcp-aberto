@@ -133,7 +133,6 @@ async def test_combination_can_be_selected_by_guid():
         [{"guid": FIRST, "drawing_scale": True}],
         [{"guid": FIRST, "drawing_scale": 1.5}],
         [{"guid": FIRST, "drawing_scale": 1000001}],
-        [{"guid": FIRST, "rotation": 1}],
         [{"guid": FIRST, "drawing_scale": 100}] * 2,
         [{"guid": FIRST, "drawing_scale": 100}] * 101,
     ],
@@ -159,6 +158,26 @@ async def test_missing_combination_or_view_refused_before_apply():
         with pytest.raises(ValueError, match="not a readable view"):
             await views.set_view_settings(c, [{"guid": folder, "drawing_scale": 50}], 19723)
     assert "SetViewSettings" not in fake.tapir_calls
+
+
+async def test_zoom_and_rotation_are_written_and_read_back():
+    fake = FakeArchicad(19723)
+    change = {
+        "guid": FIRST,
+        "zoom": {"x_min": 1.0, "y_min": 2.0, "x_max": 7.0, "y_max": 6.0},
+        "rotation": math.pi / 2,
+    }
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [change])
+    assert result["status"] == "verified"
+    assert result["items"][0]["after"]["zoom"] == {
+        "xMin": 1.0,
+        "yMin": 2.0,
+        "xMax": 7.0,
+        "yMax": 6.0,
+    }
+    assert result["items"][0]["after"]["saveZoom"] is True
+    assert result["items"][0]["after"]["rotation"] == math.pi / 2
 
 
 async def test_duplicate_native_combination_name_refused_even_with_guid():
