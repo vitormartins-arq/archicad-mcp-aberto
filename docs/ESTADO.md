@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Camera context stabilization / 28 October 2026:** R13 live inventory and
+  capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
+  was created: deferred view notifications invalidated the save context. A distinct
+  inspected native same-path save passed. Added bounded context stabilization and
+  native sealing against element/attribute versions before camera creation.
+  3,004 offline tests, Ruff and AC30 native compilation passed. Corrected native
+  delivery/reload and live creation remain pending. User authorizes R06_DELETAR.
+
 - **Physical cameras / 27 October 2026:** draft PR #93 implements native
   Camera/CamSet capture/create/readback, source UUID deduplication, representation
   grouping and automatic verified task backup with final same-path PLN saving.

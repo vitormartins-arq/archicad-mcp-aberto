@@ -35,6 +35,12 @@ def native_task(tmp_path, monkeypatch):
     )
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(state["receipts"]))
 
+    async def pause(_):
+        if state.get("view_updates"):
+            context["modificationStamp"] = str(state["view_updates"].pop(0))
+
+    monkeypatch.setattr(tasks, "_settle_pause", pause)
+
     async def addon(client, port, name, parameters=None, timeout=None):
         assert port == 19723
         state["calls"].append(name)
@@ -145,3 +151,31 @@ async def test_copy_never_replaces_existing_backup(tmp_path):
     with pytest.raises(FileExistsError):
         tasks._copy_verified(source, dest)
     assert dest.read_bytes() == b"preserve" and source.read_bytes() == b"source"
+
+
+async def test_settled_context_waits_for_deferred_view_notifications(native_task):
+    native_task["view_updates"] = [2, 3, 3, 3]
+    async with client() as c:
+        result = await tasks._settled_context(c, 19723)
+    assert result["modificationStamp"] == "3"
+    assert native_task["saves"] == 0
+
+
+async def test_continuously_changing_project_never_dispatches_save(native_task):
+    native_task["view_updates"] = list(range(2, 20))
+    async with client() as c:
+        with pytest.raises(ValueError, match="not settled"):
+            await tasks.begin_model_task(c, 19723)
+    assert native_task["saves"] == 0
+    assert not (native_task["source"].parent / "Anteriores").exists()
+
+
+async def test_project_switch_during_settling_is_rejected(native_task, monkeypatch):
+    async def switched(_):
+        native_task["context"]["projectEpoch"] = "other-project"
+
+    monkeypatch.setattr(tasks, "_settle_pause", switched)
+    async with client() as c:
+        with pytest.raises(ValueError, match="Project/session changed"):
+            await tasks.begin_model_task(c, 19723)
+    assert native_task["saves"] == 0

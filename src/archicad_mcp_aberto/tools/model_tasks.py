@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ from archicad_mcp_aberto.connection import ArchicadError, resolve_port
 from archicad_mcp_aberto.tools import grids, project_save, write
 
 _tasks: WeakKeyDictionary = WeakKeyDictionary()
+_settle_pause = asyncio.sleep
 
 
 class FinishRequest(write.InputModel):
@@ -20,6 +22,22 @@ class FinishRequest(write.InputModel):
 
 def _identity(context):
     return tuple(context[key] for key in ("sessionId", "projectEpoch", "projectPath"))
+
+
+async def _settled_context(client, port):
+    """Wait for deferred view updates, without accepting a project/session change."""
+    first = previous = await project_save._context(client, port)
+    matches = 0
+    for _ in range(12):
+        await _settle_pause(0.15)
+        current = await project_save._context(client, port)
+        if _identity(current) != _identity(first):
+            raise ValueError("Project/session changed while waiting for view updates.")
+        matches = matches + 1 if current == previous else 0
+        if matches >= 2:
+            return current
+        previous = current
+    raise ValueError("Project changes have not settled; no write dispatched.")
 
 
 def _hash(path: Path) -> str:
@@ -65,7 +83,7 @@ def _copy_verified(source: Path, destination: Path) -> dict:
 
 async def _checkpoint_plan(client, requests, port, operation):
     port = await resolve_port(client, port)
-    context = await project_save._context(client, port)
+    context = await _settled_context(client, port)
     source = project_save._path(context["projectPath"])
     if context["untitled"]:
         raise ValueError("An established working PLN path is needed for same-file saving.")
@@ -150,6 +168,8 @@ async def _checkpoint_dispatch(client, receipt):
     except (ArchicadError, OSError, ValueError) as exc:
         unknown = item.get("stage") == "checkpoint_save_dispatched"
         item.update(status="unknown" if unknown else "failed", error=str(exc))
+        if isinstance(exc, ArchicadError):
+            item.update(error_code=exc.code, error_detail=exc.detail)
         receipt["warning"] = (
             "No task edits may proceed. Preserve backups; "
             "inspect any unknown save without retrying."
@@ -195,7 +215,7 @@ async def _finish_plan(client, requests, port, operation):
     (request,) = requests
     port = await resolve_port(client, port)
     task = _task(client, request.task_token, port)
-    context = await project_save._context(client, port)
+    context = await _settled_context(client, port)
     if _identity(context) != _identity(task["project"]):
         raise ValueError("A different project/session is open; do not save this task there.")
     file = project_save._fingerprint(Path(context["projectPath"]))
@@ -228,6 +248,8 @@ async def _finish_dispatch(client, receipt):
         task["saved"] = True
     except (ArchicadError, OSError, ValueError) as exc:
         item.update(status="unknown", error=str(exc))
+        if isinstance(exc, ArchicadError):
+            item.update(error_code=exc.code, error_detail=exc.detail)
         receipt["warning"] = (
             "Final save outcome needs inspection; task backup remains preserved. "
             "Never retry blindly."

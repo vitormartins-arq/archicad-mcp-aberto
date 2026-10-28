@@ -100,9 +100,7 @@ def _groups(native, path_name):
     return groups, skipped
 
 
-async def _plan(client, port, name, guids):
-    rows = await _ordered_views(client, port, guids)
-    ordered = [row["guid"] for row in rows]
+async def _capture(client, port, name, ordered):
     native = await grids._addon(
         client,
         port,
@@ -113,14 +111,32 @@ async def _plan(client, port, name, guids):
         },
         write.write_timeout(),
     )
-    if native.get("stateRestored") is not True or len(native.get("views", [])) != len(rows):
+    if native.get("stateRestored") is not True or len(native.get("views", [])) != len(ordered):
         raise ValueError("Source capture/restoration was not confirmed; no cameras may be written.")
     if [v["sourceViewGuid"].upper() for v in native["views"]] != ordered:
         raise ValueError("Native source identity/order differs from Navigator.")
-    groups, skipped = _groups(native, name)
-    context = await project_save._context(client, port)
+    context = await model_tasks._settled_context(client, port)
     if model_tasks._identity(context) != model_tasks._identity(native["context"]):
         raise ValueError("Project changed during source capture.")
+    sealed = await grids._addon(
+        client,
+        port,
+        "SealCameraPath",
+        {"nativeToken": native["nativeToken"], "context": context},
+        write.write_timeout(),
+    )
+    if sealed.get("sealed") is not True or sealed.get("context") != context:
+        raise ValueError("Stable native camera context was not sealed; no cameras written.")
+    native["context"] = context
+    return native
+
+
+async def _plan(client, port, name, guids):
+    rows = await _ordered_views(client, port, guids)
+    ordered = [row["guid"] for row in rows]
+    native = await _capture(client, port, name, ordered)
+    groups, skipped = _groups(native, name)
+    context = native["context"]
     source = project_save._path(context["projectPath"])
     inventory = await grids._addon(client, port, "GetCameraPaths")
     return {
@@ -266,15 +282,11 @@ async def create_camera_paths_from_views(
                     "Source views/inventory changed during checkpoint; no cameras written."
                 )
             for group in refreshed["groups"]:
-                native = await grids._addon(
+                native = await _capture(
                     client,
                     port,
-                    "PrepareCameraPath",
-                    {
-                        "pathName": group["path_name"],
-                        "viewGuids": group["view_guids"],
-                    },
-                    write.write_timeout(),
+                    group["path_name"],
+                    group["view_guids"],
                 )
                 if _sources_signature(native["views"]) != _sources_signature(group["views"]):
                     raise ValueError("Source capture differs before path dispatch.")
@@ -314,6 +326,8 @@ async def create_camera_paths_from_views(
                     "Never retry an uncertain camera/save token."
                 ),
             )
+            if isinstance(exc, ArchicadError):
+                receipt.update(error_code=exc.code, error_detail=exc.detail)
         try:
             receipt["receipt_path"] = write._journal(receipt, "result")
         except OSError as exc:

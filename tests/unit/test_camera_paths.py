@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from archicad_mcp_aberto.connection import ArchicadError
+from archicad_mcp_aberto.connection import AddOnError, ArchicadError
 from archicad_mcp_aberto.tools import camera_paths as cameras
 from tests.unit.test_model_tasks import client
 from tests.unit.test_model_tasks import native_task as native_task
@@ -66,6 +66,9 @@ def native_cameras(native_task, monkeypatch):
             ]
             token = str(uuid4())
             tokens[token] = {"rows": selected, "name": parameters["pathName"]}
+            if state.get("deferred_view_updates"):
+                current = int(state["context"]["modificationStamp"])
+                state["view_updates"] = [current + 1, current + 3, current + 3, current + 3]
             return dict(
                 views=selected,
                 nativeToken=token,
@@ -73,6 +76,14 @@ def native_cameras(native_task, monkeypatch):
                 stateRestored=state["prepare_restored"],
                 inventory=deepcopy(inventory),
             )
+        if name == "SealCameraPath":
+            if state.get("reject_seal"):
+                raise AddOnError(
+                    "Model changed", detail={"message": "Model changed during capture"}
+                )
+            assert parameters["context"] == state["context"]
+            tokens[parameters["nativeToken"]]["sealed"] = True
+            return dict(sealed=True, context=deepcopy(state["context"]))
         assert name == "ApplyCameraPath"
         assert list(state["receipts"].glob("*.path-*-prepared.json"))
         assert any(
@@ -80,6 +91,7 @@ def native_cameras(native_task, monkeypatch):
             for p in (state["source"].parent / "Anteriores").glob("*.pln")
         )
         plan = tokens.pop(parameters["nativeToken"])
+        assert plan["sealed"]
         path = next((p for p in inventory["paths"] if p["name"] == plan["name"]), None)
         if path is None:
             path = dict(guid=str(uuid4()), name=plan["name"])
@@ -160,6 +172,27 @@ async def test_requested_sources_are_sorted_in_navigator_order(native_cameras):
             c, view_guids=[IDS[2], IDS[0]], port=19723
         )
     assert [v["sourceViewGuid"] for v in plan["groups"][0]["views"]] == [IDS[0], IDS[2]]
+
+
+async def test_deferred_view_updates_are_sealed_before_checkpoint_and_creation(native_cameras):
+    native_cameras["deferred_view_updates"] = True
+    async with client() as c:
+        preview = await cameras.create_camera_paths_from_views(c, port=19723)
+        result = await cameras.create_camera_paths_from_views(
+            c, port=19723, dry_run=False, confirmation_token=preview["confirmation_token"]
+        )
+    assert result["status"] == "verified"
+    assert native_cameras["creates"] == 3
+    assert native_cameras["saves"] == 2
+
+
+async def test_native_model_change_refuses_seal_before_any_backup_or_creation(native_cameras):
+    native_cameras["reject_seal"] = True
+    async with client() as c:
+        with pytest.raises(AddOnError, match="Model changed"):
+            await cameras.create_camera_paths_from_views(c, port=19723)
+    assert native_cameras["creates"] == native_cameras["saves"] == 0
+    assert not (native_cameras["source"].parent / "Anteriores").exists()
 
 
 async def test_failed_state_restoration_blocks_preview(native_cameras):

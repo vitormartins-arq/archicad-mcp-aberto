@@ -293,9 +293,63 @@ struct Prepared {
     std::vector<SourceView> views;
     GS::ObjectState context;
     std::string inventory;
+    std::string model;
+    bool sealed = false;
     Clock::time_point expires;
 };
 std::map<std::string,std::shared_ptr<Prepared>> prepared;
+
+std::string ModelState ()
+{
+    API_DatabaseInfo original {};
+    Check (ACAPI_Database_GetCurrentDatabase (&original));
+    API_DatabaseInfo floor {};
+    floor.typeID = APIWind_FloorPlanID;
+    Check (ACAPI_Database_ChangeCurrentDatabase (&floor));
+    const GS::OnExit restore ([&] { ACAPI_Database_ChangeCurrentDatabase (&original); });
+    GS::Array<API_Guid> ids;
+    Check (ACAPI_Element_GetElemList (API_ZombieElemID, &ids));
+    std::map<std::string,std::string> versions;
+    for (const auto& id : ids) {
+        API_Elem_Head head {};
+        head.guid = id;
+        Check (ACAPI_Element_GetHeader (&head));
+        versions.emplace (Utf8 (APIGuidToString (id)), std::to_string (head.modiStamp));
+    }
+    GS::ObjectState result;
+    const auto& elements = result.AddList<GS::ObjectState> ("elements");
+    for (const auto& row : versions)
+        elements (GS::ObjectState ("guid", GS::UniString (row.first.c_str ()),
+            "stamp", GS::UniString (row.second.c_str ())));
+    const auto& attributes = result.AddList<GS::ObjectState> ("attributes");
+    for (int i = API_FirstAttributeID; i <= API_LastAttributeID; ++i) {
+        GS::Array<API_Attribute> rows;
+        Check (ACAPI_Attribute_GetAttributesByType (static_cast<API_AttrTypeID> (i), rows));
+        std::map<std::string,GS::ObjectState> sorted;
+        for (const auto& row : rows) {
+            GS::ObjectState item ("type", i, "index", row.header.index.ToInt32_Deprecated (),
+                "guid", APIGuidToString (row.header.guid));
+            // Layer visibility is reapplied by GoToView. Compare its content after
+            // restoration, rather than its timestamp, which can change internally.
+            if (i == API_LayerID) {
+                item.Add ("flags", static_cast<Int32> (row.header.flags));
+                item.Add ("name", GS::UniString (row.header.name, CC_UTF8));
+            } else item.Add ("stamp", GS::UniString (std::to_string (row.header.modiTime).c_str ()));
+            sorted.emplace (Utf8 (APIGuidToString (row.header.guid)), item);
+        }
+        for (const auto& row : sorted) attributes (row.second);
+    }
+    return Json (result);
+}
+bool SameContext (const GS::ObjectState& a, const GS::ObjectState& b, bool includeStamp)
+{
+    for (const char* key : {"sessionId", "projectEpoch", "projectPath", "modificationStamp"}) {
+        if (!includeStamp && std::string (key) == "modificationStamp") continue;
+        GS::UniString x, y;
+        if (!a.Get (key, x) || !b.Get (key, y) || x != y) return false;
+    }
+    return true;
+}
 }
 
 GS::String GetCameraPathsCommand::GetName () const { return "GetCameraPaths"; }
@@ -326,6 +380,7 @@ GS::ObjectState PrepareCameraPathCommand::Execute (const GS::ObjectState& parame
         if (!parameters.Get ("pathName", plan->name) || !parameters.Get ("viewGuids", plan->ids) ||
             plan->ids.IsEmpty () || plan->ids.GetSize () > 60 || plan->name.IsEmpty ())
             throw std::runtime_error ("Invalid path name or view list.");
+        plan->model = ModelState ();
         plan->views = Capture (plan->ids);
         plan->context = ProjectContext (process);
         const auto inventory = ReadInventory ();
@@ -344,6 +399,34 @@ GS::ObjectState PrepareCameraPathCommand::Execute (const GS::ObjectState& parame
     } catch (const std::exception& e) { return CreateErrorResponse (APIERR_GENERAL, GS::UniString (e.what ())); }
 }
 
+GS::String SealCameraPathCommand::GetName () const { return "SealCameraPath"; }
+GS::Optional<GS::UniString> SealCameraPathCommand::GetInputParametersSchema () const
+{
+    return GS::UniString (R"({"type":"object","properties":{"nativeToken":{"type":"string"},"context":{"type":"object"}},"required":["nativeToken","context"],"additionalProperties":false})");
+}
+GS::ObjectState SealCameraPathCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& process) const
+{
+    try {
+        GS::UniString token;
+        GS::ObjectState expected;
+        if (!parameters.Get ("nativeToken", token) || !parameters.Get ("context", expected))
+            throw std::runtime_error ("Missing seal context/token.");
+        const auto found = prepared.find (Utf8 (token));
+        if (found == prepared.end () || found->second->expires <= Clock::now () || found->second->sealed)
+            throw std::runtime_error ("Native preview missing, expired or already sealed.");
+        const auto current = ProjectContext (process);
+        const auto& plan = found->second;
+        if (!SameContext (current, expected, true) || !SameContext (current, plan->context, false))
+            throw std::runtime_error ("Project or stable context changed before sealing.");
+        if (ModelState () != plan->model || Json (ReadInventory ().Describe ()) != plan->inventory)
+            throw std::runtime_error ("Model/attributes/cameras changed during view capture.");
+        plan->context = current;
+        plan->sealed = true;
+        return GS::ObjectState ("sealed", true, "context", current);
+    } catch (const std::exception& e) { return CreateErrorResponse (APIERR_GENERAL, GS::UniString (e.what ()));
+    }
+}
+
 GS::String ApplyCameraPathCommand::GetName () const { return "ApplyCameraPath"; }
 GS::Optional<GS::UniString> ApplyCameraPathCommand::GetInputParametersSchema () const
 {
@@ -359,11 +442,13 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
     const auto plan = found->second;
     prepared.erase (found); // Consume even when validation or creation fails. Never blindly retry.
     try {
+        if (!plan->sealed) throw std::runtime_error ("Native preview must be sealed after view updates settle.");
         if (Json (ProjectContext (process)) != Json (plan->context))
             throw std::runtime_error ("Project/session/stamp changed after preview.");
         auto inventory = ReadInventory ();
         if (Json (inventory.Describe ()) != plan->inventory)
             throw std::runtime_error ("Camera paths changed after preview.");
+        if (ModelState () != plan->model) throw std::runtime_error ("Model/attributes changed after preview.");
         const auto currentViews = Capture (plan->ids);
         if (currentViews.size () != plan->views.size ()) throw std::runtime_error ("Source view count changed.");
         std::string representation;
@@ -376,6 +461,7 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
             else if (currentViews[i].representation != representation)
                 throw std::runtime_error ("Separate camera paths are required for different model representations.");
         }
+        if (ModelState () != plan->model) throw std::runtime_error ("Model/attributes changed during final capture.");
         API_Guid pathGuid = APINULLGuid;
         API_Guid tail = APINULLGuid;
         int matchedPaths = 0;
