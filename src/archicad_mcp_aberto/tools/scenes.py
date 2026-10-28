@@ -42,7 +42,7 @@ from archicad_mcp_aberto.tools.write import PREVIEW_SECONDS, _digest
 
 MAX_SHOTS = 8
 MAX_VIEWS = 60
-DEFAULT_CAMERA_PATH = "BIMx - Câmeras"
+DEFAULT_CAMERA_PATH = "00 BIMx - Apresentação"
 MAX_ELEMENTS_PER_TYPE = 2000
 ELEMENT_TYPES = ("Wall", "Column", "Object", "Door", "Window", "CurtainWall")
 ZONE_PROPERTIES = ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea")
@@ -553,11 +553,14 @@ async def save_3d_scenes(
     confirmation_token: str | None = None,
     as_cameras: bool = True,
     camera_path_name: str = DEFAULT_CAMERA_PATH,
+    first_camera_number: int = 1,
 ) -> dict:
     """Save scenes in the View Map under folder_path + each scene's folder.
 
     Every scene is saved as a 3D view. With as_cameras (the default) each perspective is
-    also saved as a camera of camera_path_name, with its View Map item in the same folder.
+    also a camera of the single path camera_path_name, named "<number> <room> - <name>"
+    ("3 RECEPÇÃO - 2P 01"). Cameras get no View Map item: in the BIMx Publisher set only
+    the path goes in, with "add cameras as separate gallery items" (Vitor, 28/10/2026).
     Dry run first; apply the same inputs with the explicit port and the one-use token.
     """
     entries = _scenes(scenes, MAX_VIEWS)
@@ -568,6 +571,8 @@ async def save_3d_scenes(
     port = await resolve_port(client, port)
     if as_cameras and (not camera_path_name or len(camera_path_name) > 200):
         raise ValueError("camera_path_name needs 1 to 200 characters.")
+    if type(first_camera_number) is not int or not 1 <= first_camera_number <= 9999:
+        raise ValueError("first_camera_number goes from 1 to 9999.")
     plan = [
         {
             "name": s.name,
@@ -576,6 +581,15 @@ async def save_3d_scenes(
         }
         for s in entries
     ]
+    number = first_camera_number
+    for scene, row in zip(entries, plan, strict=True):
+        if row["kind"] == "camera":
+            label = scene.name
+            if scene.folder and label.casefold().startswith(f"{scene.folder} - ".casefold()):
+                label = label[len(scene.folder) + 3 :]  # "Peso Livre - 1P 01" -> "1P 01"
+            room = f"{scene.folder} - " if scene.folder else ""
+            row["camera_name"] = f"{number} {room}{label}"
+            number += 1
     digest = _digest(
         {
             "port": port,
@@ -621,9 +635,15 @@ async def save_3d_scenes(
                 done = {**row, "status": "saved", "view_guid": result.get("viewGuid")}
                 if row["kind"] == "camera":
                     camera = await _addon(
-                        client, port, "SaveCameraView", {**arguments, "pathName": camera_path_name}
+                        client,
+                        port,
+                        "SaveCameraView",
+                        {
+                            "name": row["camera_name"],
+                            "pathName": camera_path_name,
+                            "viewMap": False,
+                        },
                     )
-                    done["camera_view_guid"] = camera.get("viewGuid")
                     done["camera_guid"] = camera.get("cameraGuid")
                 saved.append(done)
             except ArchicadError as exc:

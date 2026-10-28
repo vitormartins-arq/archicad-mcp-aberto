@@ -6,10 +6,6 @@ preview safe model changes with explicit confirmation, per-item receipts and ver
 
 [Leia em português](docs/LEIA-ME.pt-BR.md)
 
-Experimental [object library replacement](docs/OBJECT_REPLACEMENT.md) preserves existing
-instances using explicit mounting references. It requires the updated native companion
-and live acceptance testing before production use.
-
 > Not an official Graphisoft product and not affiliated with Graphisoft or Nemetschek.
 > Archicad is a trademark of Graphisoft SE.
 
@@ -31,7 +27,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **163 registered tools**: **59 read-only**, **3 view/session actions** and
+Pre-alpha with **164 registered tools**: **60 read-only**, **3 view/session actions** and
 **101 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -54,7 +50,7 @@ Lengths use metres and angles use radians regardless of project display units.
   operations that the official JSON API and Tapir do not expose.
 - Run every automated test without Archicad against the simulated adapter; fixtures say
   whether they came from a live response or from the Tapir/API source contract.
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with ** read-only** tools and
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **60 read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
 and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad
