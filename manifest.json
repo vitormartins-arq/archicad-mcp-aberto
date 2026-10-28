@@ -622,6 +622,10 @@
     {
       "name": "get_zone_relations",
       "description": "Read type-specific relations of zones."
+    },
+    {
+      "name": "create_layer_combinations",
+      "description": "Preview/create new layer combinations with explicit per-layer states."
     }
   ],
   "compatibility": {

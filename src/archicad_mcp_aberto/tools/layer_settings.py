@@ -237,3 +237,142 @@ async def set_layer_settings(
         planner_override=_plan,
         dispatcher_override=_dispatch,
     )
+
+
+class LayerCombinationLayer(write.InputModel):
+    layer: Annotated[str, Field(min_length=1, max_length=255)]
+    visible: bool = True
+    locked: bool = False
+    wireframe: bool = False
+    intersection_group: Annotated[int, Field(ge=0, le=32767)] = 1
+
+
+class LayerCombinationCreate(write.InputModel):
+    name: Annotated[str, Field(min_length=1, max_length=255)]
+    layers: list[LayerCombinationLayer]
+
+    @model_validator(mode="after")
+    def valid_combination(self):
+        if not self.name.strip():
+            raise ValueError("name must not be blank.")
+        if not self.layers:
+            raise ValueError("layers must not be empty.")
+        return self
+
+
+async def _plan_layer_combinations(client, combinations, port, operation):
+    port, target, _ = await write._context(client, port)
+    existing = await drafting._attributes(client, port, "LayerCombination")
+    existing_names = {row["name"].casefold() for row in existing}
+    layer_catalog = await drafting._attributes(client, port, "Layer")
+    requested_names: set[str] = set()
+    items = []
+    for index, combination in enumerate(combinations):
+        name = combination.name.strip()
+        folded = name.casefold()
+        if folded in existing_names or folded in requested_names:
+            raise ValueError(f"Layer combination {name!r} already exists or is duplicated.")
+        requested_names.add(folded)
+        selected = [_pick(layer_catalog, entry.layer) for entry in combination.layers]
+        guids = [str(UUID(row["attributeId"]["guid"])).upper() for row in selected]
+        if len(set(guids)) != len(guids):
+            raise ValueError(f"Layer combination {name!r} contains a duplicate layer.")
+        native_layers = [
+            {
+                "attributeId": {"guid": guid},
+                "isHidden": not entry.visible,
+                "isLocked": entry.locked,
+                "isWireframe": entry.wireframe,
+                "intersectionGroupNr": entry.intersection_group,
+            }
+            for entry, guid in zip(combination.layers, guids, strict=True)
+        ]
+        items.append(
+            {
+                "index": index,
+                "status": "ready",
+                "name": name,
+                "parameters": {"name": name, "layers": native_layers},
+                "expected_layers": native_layers,
+            }
+        )
+    return {"operation": operation, "target": target, "items": items}
+
+
+async def _dispatch_layer_combinations(client, receipt):
+    items, port = receipt["items"], receipt["target"]["port"]
+    timeout = receipt["write_timeout_seconds"]
+    try:
+        raw = await client.tapir(
+            port,
+            "CreateLayerCombinations",
+            {"layerCombinationDataArray": [item["parameters"] for item in items]},
+            timeout=timeout,
+        )
+    except ArchicadError as exc:
+        for item in items:
+            item.update(status="unknown", error=str(exc))
+        receipt["warning"] = "Creation outcome unknown. Inspect Archicad; do not retry this token."
+        return
+    rows = raw.get("attributeIds")
+    if not isinstance(rows, list) or len(rows) != len(items):
+        for item in items:
+            item.update(status="unknown", error="Unexpected creation response cardinality.")
+        return
+    for item, row in zip(items, rows, strict=True):
+        item["write_response"] = row
+        if isinstance(row, dict) and "error" in row:
+            item.update(status="failed", error=row["error"])
+        elif _guid(row.get("attributeId") if isinstance(row, dict) else None):
+            item["created_guid"] = _guid(row["attributeId"])
+            item["status"] = "unverified"
+        else:
+            item.update(status="unknown", error="Missing created layer-combination GUID.")
+    try:
+        after = await list_layer_combinations(client, port, include_layers=True)
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = str(exc)
+        return
+    by_name = {row["name"].casefold(): row for row in after["items"]}
+    for item in items:
+        if item["status"] != "unverified":
+            continue
+        found = by_name.get(item["name"].casefold())
+        item["after"] = found
+        if found is None or found.get("guid") != item["created_guid"]:
+            item.update(status="verification_failed", mismatches=["name/guid"])
+            continue
+        expected = {row["attributeId"]["guid"]: row for row in item["expected_layers"]}
+        actual = {row["attributeId"]["guid"]: row for row in found.get("layers", [])}
+        mismatches = [guid for guid, value in expected.items() if actual.get(guid) != value]
+        item["status"] = "verification_failed" if mismatches else "verified"
+        if mismatches:
+            item["mismatches"] = mismatches
+
+
+async def create_layer_combinations(
+    client: ArchicadClient,
+    combinations: list[dict | LayerCombinationCreate],
+    port: int | None = None,
+    dry_run: bool = True,
+    confirmation_token: str | None = None,
+) -> dict:
+    """Preview/create up to 20 new combinations; never overwrites, deletes or saves."""
+    if not 1 <= len(combinations) <= 20:
+        raise ValueError("Pass between 1 and 20 layer combinations.")
+    validated = [
+        row
+        if isinstance(row, LayerCombinationCreate)
+        else LayerCombinationCreate.model_validate(row)
+        for row in combinations
+    ]
+    return await write._write(
+        client,
+        validated,
+        port,
+        dry_run,
+        confirmation_token,
+        "create_layer_combinations",
+        planner_override=_plan_layer_combinations,
+        dispatcher_override=_dispatch_layer_combinations,
+    )

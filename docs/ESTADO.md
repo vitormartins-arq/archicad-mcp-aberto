@@ -1056,3 +1056,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 ## 2026-10-21 — T30 zone boundaries
 - Added bounded, read-only zone boundary and relation queries using Tapir 1.7.0 source schemas.
 - Fixtures are source-derived, not live captures; invalid zones remain aligned as error rows.
+## 2026-10-21 — T35 layer combinations
+- Added creation of up to 20 new layer combinations with source-derived Tapir 1.7.0 fields, name/layer validation and full read-back. No overwrite, delete or save path.

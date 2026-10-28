@@ -2140,6 +2140,27 @@ class FakeArchicad:
                     )
                 out.append({"attributeId": {"guid": layer_guid(target)}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "CreateLayerCombinations" and not args.get("overwriteExisting", False):
+            out = []
+            for data in args["layerCombinationDataArray"]:
+                if any(
+                    row["name"].casefold() == data["name"].casefold()
+                    for row in self.layer_combinations.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Layer combination exists"}})
+                    continue
+                index = max(self.layer_combinations, default=0) + 1
+                states = {}
+                for layer in data["layers"]:
+                    layer_index = next(
+                        (i for i in self.layers if layer_guid(i) == layer["attributeId"]["guid"]),
+                        None,
+                    )
+                    if layer_index is not None:
+                        states[layer_index] = {k: v for k, v in layer.items() if k != "attributeId"}
+                self.layer_combinations[index] = {"name": data["name"], "layers": states}
+                out.append({"attributeId": {"guid": combination_guid(index)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True
         ):

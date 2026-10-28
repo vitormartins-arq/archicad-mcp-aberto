@@ -852,3 +852,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
   external flag, neighbouring zone, area and polygon coordinates with the 3D model.
 - [ ] Query relations with and without an element-type filter and confirm invalid zone GUIDs
   return an error for that row without failing the other zones.
+## T35 — Layer combinations
+- [ ] Create a combination with visible/hidden, locked, wireframe and intersection-group variants and compare every layer in Layer Settings.
+- [ ] Confirm an existing combination name and a missing layer are refused before applying.

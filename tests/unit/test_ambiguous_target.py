@@ -110,6 +110,9 @@ INPUTS = {
     "get_favorite_preview": {"favorite_names": ["Wall"]},
     "get_zone_boundaries": {"zone_guids": [GUID]},
     "get_zone_relations": {"zone_guids": [GUID]},
+    "create_layer_combinations": {
+        "combinations": [{"name": "New", "layers": [{"layer": "Walls"}]}]
+    },
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]

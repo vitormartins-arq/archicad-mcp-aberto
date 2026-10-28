@@ -2151,6 +2151,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             client_of(ctx), zone_guids, other_element_type, port
         )
 
+    @mcp.tool(annotations=WRITE)
+    async def create_layer_combinations(
+        ctx: Context,
+        combinations: list[layer_settings_tool.LayerCombinationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 new layer combinations. Every named layer must
+        exist. Existing combination names are refused. Explicit apply port, one-use token,
+        receipt and read-back; never overwrites, deletes or saves."""
+        return await layer_settings_tool.create_layer_combinations(
+            client_of(ctx), combinations, port, dry_run, confirmation_token
+        )
+
     return mcp
 
 
