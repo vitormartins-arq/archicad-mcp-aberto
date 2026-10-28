@@ -1058,3 +1058,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Fixtures are source-derived, not live captures; invalid zones remain aligned as error rows.
 ## 2026-10-21 — T35 layer combinations
 - Added creation of up to 20 new layer combinations with source-derived Tapir 1.7.0 fields, name/layer validation and full read-back. No overwrite, delete or save path.
+## 2026-10-21 — T36 MEP reads
+- Added bounded MEP system/distribution, element/routing/port and preference-table reads from Tapir 1.7.0 source schemas.

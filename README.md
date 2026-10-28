@@ -903,3 +903,7 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   refused. Apply uses an explicit port and one-use token, then reads every requested state
   back; it never overwrites, deletes or saves. The fake schema is source-derived, not a
   live capture. Registry: **99 tools (29 reads, 70 writes/interactions)**.
+- `list_mep_systems`, `get_mep_elements` and `get_mep_preference_tables` expose bounded,
+  read-only MEP systems, distributions, routing details, ports and circular preference
+  tables through Tapir 1.7.0. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.

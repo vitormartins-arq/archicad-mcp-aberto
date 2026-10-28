@@ -33,6 +33,7 @@ from archicad_mcp_aberto.tools import (
     layers,
     layout_book,
     locks,
+    mep,
     meshes,
     modify,
     morphs,
@@ -113,6 +114,9 @@ INPUTS = {
     "create_layer_combinations": {
         "combinations": [{"name": "New", "layers": [{"layer": "Walls"}]}]
     },
+    "list_mep_systems": {},
+    "get_mep_elements": {},
+    "get_mep_preference_tables": {"domain": "Piping"},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -498,6 +502,7 @@ TARGETED = {
         layers,
         layout_book,
         locks,
+        mep,
         meshes,
         modify,
         morphs,

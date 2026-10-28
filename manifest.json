@@ -626,6 +626,18 @@
     {
       "name": "create_layer_combinations",
       "description": "Preview/create new layer combinations with explicit per-layer states."
+    },
+    {
+      "name": "list_mep_systems",
+      "description": "Read MEP systems and distribution systems."
+    },
+    {
+      "name": "get_mep_elements",
+      "description": "Read MEP elements, routing details and ports."
+    },
+    {
+      "name": "get_mep_preference_tables",
+      "description": "Read MEP segment preference tables."
     }
   ],
   "compatibility": {

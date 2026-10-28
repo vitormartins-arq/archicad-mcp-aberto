@@ -546,3 +546,5 @@
 - Add read-only `get_zone_boundaries` and `get_zone_relations` tools from Tapir 1.7.0 source.
 ### Layer combination creation
 - Add safe preview/token/receipt creation for new layer combinations with per-layer states.
+### MEP reading
+- Add read-only MEP systems, elements, ports, routes and preference tables.

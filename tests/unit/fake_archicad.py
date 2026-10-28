@@ -1371,6 +1371,44 @@ class FakeArchicad:
                 for row in source
             ]
             return ok({"addOnCommandResponse": {key: rows}})
+        if name.startswith("GetMEP"):
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            mapping = {
+                "GetMEPSystems": ("mepSystems", [fixture["system"]]),
+                "GetMEPDistributionSystems": ("distributionSystems", [fixture["distribution"]]),
+                "GetMEPElements": ("elements", [fixture["element"]]),
+                "GetMEPPreferenceTables": ("tables", fixture["tables"]),
+            }
+            if name == "GetMEPRoutingElements":
+                key, rows = "routingElements", [fixture["routing"] for _ in args["elements"]]
+            elif name == "GetMEPPorts":
+                key, rows = "elementPorts", [fixture["ports"] for _ in args["elements"]]
+            else:
+                key, rows = mapping[name]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name == "GetAttributesByType" and args["attributeType"] == "MEPSystem":
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": fixture["system_guid"]},
+                                "index": 1,
+                                "name": "Domestic Water",
+                            }
+                        ]
+                    }
+                }
+            )
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

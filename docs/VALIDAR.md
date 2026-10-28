@@ -855,3 +855,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T35 — Layer combinations
 - [ ] Create a combination with visible/hidden, locked, wireframe and intersection-group variants and compare every layer in Layer Settings.
 - [ ] Confirm an existing combination name and a missing layer are refused before applying.
+## T36 — MEP reads
+- [ ] Compare MEP systems/distributions, routing details and ports in an Archicad 28+ MEP model.
+- [ ] Compare Piping and Ventilation circular preference-table diameters and descriptions.
