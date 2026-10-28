@@ -271,6 +271,16 @@ ROOFS_TEXTS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
     ).read_text(encoding="utf-8")
 )
+HOTLINKS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_hotlinks_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+ATTRIBUTE_DETAILS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_attribute_details_documented.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def ok(result: Any) -> dict:
@@ -381,6 +391,8 @@ class FakeArchicad:
     )
     # Hotlink nodes in the GetHotlinks shape (Tapir 1.7.0 ProjectCommands.cpp); synthetic.
     hotlink_nodes: list[dict] = field(default_factory=list)
+    # list_hotlinks tests: answer GetHotlinks from the source-derived fixture instead.
+    hotlinks_fixture: bool = False
     missing_hotlink_files: set[str] = field(default_factory=set)
     # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
     solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
@@ -589,6 +601,7 @@ class FakeArchicad:
     dimension_floor_shift: int = 0
     dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
     dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
+    project_resources_fixture: bool = False  # GetDimensionData from the documented fixture
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -633,6 +646,8 @@ class FakeArchicad:
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
     own_addon_loaded: bool = True
+    # get_attribute_details tests: answer the eight detail commands from one fixture row.
+    attribute_details_fixture: bool = False
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
@@ -1199,6 +1214,163 @@ class FakeArchicad:
             rows = [{"elementId": {"guid": g}} for g in self.layout_drawings.get(database, [])]
             return ok({"addOnCommandResponse": {"elements": rows,
                        "executionResultForDatabases": [result]}})  # fmt: skip
+        if name == "GetHotlinks" and self.hotlinks_fixture:
+            return ok({"addOnCommandResponse": deepcopy(HOTLINKS_FIXTURE["response"])})
+        if self.attribute_details_fixture and name in ATTRIBUTE_DETAILS_FIXTURE["rows"]:
+            row = ATTRIBUTE_DETAILS_FIXTURE["rows"][name]
+            key = {
+                "GetComposites": "composites",
+                "GetProfiles": "profiles",
+                "GetSurfaces": "surfaces",
+                "GetBuildingMaterialPhysicalProperties": "properties",
+                "GetZoneCategories": "zoneCategories",
+                "GetPenTables": "penTables",
+                "GetLines": "lines",
+                "GetFills": "fills",
+            }[name]
+            requested = [item["attributeId"]["guid"] for item in args["attributeIds"]]
+            rows = [
+                deepcopy(row)
+                if guid == ATTRIBUTE_DETAILS_FIXTURE["guid"]
+                else {"error": {"code": -2, "message": "Attribute not found"}}
+                for guid in requested
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if (
+            self.attribute_details_fixture
+            and name == "GetAttributesByType"
+            and args["attributeType"]
+            in {
+                "Composite",
+                "Profile",
+                "ZoneCategory",
+                "PenTable",
+                "Line",
+            }
+        ):
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": ATTRIBUTE_DETAILS_FIXTURE["guid"]},
+                                "index": 1,
+                                "name": args["attributeType"],
+                            }
+                        ]
+                    }
+                }
+            )
+        if name in {
+            "GetIFCTypeOfElements",
+            "GetIFCIdsOfElements",
+            "GetIFCPropertiesOfElements",
+            "GetElementsByIFCIds",
+        }:
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_ifc_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            if name == "GetElementsByIFCIds":
+                rows = [
+                    {
+                        "ifcId": value,
+                        "elements": [{"elementId": {"guid": fixture["element_guid"]}}]
+                        if value == fixture["ifc_id"]
+                        else [],
+                    }
+                    for value in args["ifcIds"]
+                ]
+                return ok({"addOnCommandResponse": {"elementsByIFCIds": rows}})
+            keys = {
+                "GetIFCTypeOfElements": "elementIFCTypes",
+                "GetIFCIdsOfElements": "elementIFCIds",
+                "GetIFCPropertiesOfElements": "elementIFCProperties",
+            }
+            key = keys[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["element_guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if name in {"GetGeoLocation", "GetCalculationUnits", "GetLayoutSettings"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_project_location_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetGeoLocation":
+                return ok({"addOnCommandResponse": deepcopy(fixture["geolocation"])})
+            if name == "GetCalculationUnits":
+                return ok({"addOnCommandResponse": deepcopy(fixture["calculationUnits"])})
+            rows = [
+                deepcopy(fixture["layoutSettings"])
+                if row["databaseId"]["guid"] == fixture["layout_guid"]
+                else {"error": {"code": -2, "message": "Layout not found"}}
+                for row in args["layoutDatabaseIds"]
+            ]
+            return ok({"addOnCommandResponse": {"layoutSettings": rows}})
+        if name in {"GetModelViewOptions", "GetLibraries", "GetSpecialFolders"} or (
+            name == "GetDimensionData" and self.project_resources_fixture
+        ):
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_project_resources_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetDimensionData":
+                rows = [
+                    deepcopy(fixture["dimension"])
+                    if r["elementId"]["guid"] == fixture["guid"]
+                    else {"error": {"code": -2, "message": "Dimension not found"}}
+                    for r in args["elements"]
+                ]
+                key = "dimensionsData"
+            elif name == "GetModelViewOptions":
+                key, rows = "modelViewOptions", fixture["modelViewOptions"]
+            elif name == "GetLibraries":
+                key, rows = "libraries", fixture["libraries"]
+            else:
+                key, rows = (
+                    "folderPaths",
+                    [deepcopy(fixture["folder"]) for _ in args["folderTypes"]],
+                )
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name in {"GetElementPreviewImage", "GetRoomImage", "GetFavoritePreviewImage"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_preview_images_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            key = "roomImage" if name == "GetRoomImage" else "previewImage"
+            return ok({"addOnCommandResponse": {key: fixture["png"]}})
+        if name in {"GetZoneBoundaries", "GetRelationsOfElements"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_zone_boundaries_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            source = args.get("zones", args.get("elements", []))
+            key = "zoneBoundariesOfZones" if name == "GetZoneBoundaries" else "relations"
+            value = fixture["boundaries"] if name == "GetZoneBoundaries" else fixture["relations"]
+            rows = [
+                deepcopy(value)
+                if row["elementId"]["guid"] == fixture["zone_guid"]
+                else {"error": {"code": -2, "message": "Zone not found"}}
+                for row in source
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name.startswith("GetMEP"):
             fixture = json.loads(
                 (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
@@ -2005,6 +2177,27 @@ class FakeArchicad:
                         }
                     )
                 out.append({"attributeId": {"guid": layer_guid(target)}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "CreateLayerCombinations" and not args.get("overwriteExisting", False):
+            out = []
+            for data in args["layerCombinationDataArray"]:
+                if any(
+                    row["name"].casefold() == data["name"].casefold()
+                    for row in self.layer_combinations.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Layer combination exists"}})
+                    continue
+                index = max(self.layer_combinations, default=0) + 1
+                states = {}
+                for layer in data["layers"]:
+                    layer_index = next(
+                        (i for i in self.layers if layer_guid(i) == layer["attributeId"]["guid"]),
+                        None,
+                    )
+                    if layer_index is not None:
+                        states[layer_index] = {k: v for k, v in layer.items() if k != "attributeId"}
+                self.layer_combinations[index] = {"name": data["name"], "layers": states}
+                out.append({"attributeId": {"guid": combination_guid(index)}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name in RENAME_COMMANDS or (
             name in RENAME_OVERWRITES and args.get("overwriteExisting") is True

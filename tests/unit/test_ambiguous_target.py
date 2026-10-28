@@ -10,6 +10,7 @@ from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classification_systems,
     classifications,
     composites,
@@ -23,6 +24,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    ifc,
     interior_elevations,
     issues,
     keynotes,
@@ -38,7 +40,10 @@ from archicad_mcp_aberto.tools import (
     navigator,
     navigator_moves,
     openings,
+    preview_images,
     project_info,
+    project_location,
+    project_resources,
     property_definitions,
     read,
     renames,
@@ -58,6 +63,7 @@ from archicad_mcp_aberto.tools import (
     write,
     zone_categories,
     zones,
+    zones_read,
 )
 from tests.unit.fake_archicad import (
     BUILDING_MATERIALS_FIXTURE,
@@ -91,6 +97,23 @@ INPUTS = {
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
+    "list_hotlinks": {},
+    "get_attribute_details": {"kind": "composites", "guids": []},
+    "get_ifc_of_elements": {"element_guids": [GUID]},
+    "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
+    "get_project_location": {},
+    "get_layout_settings": {"layout_database_guids": [GUID]},
+    "get_dimension_data": {"element_guids": [GUID]},
+    "get_model_view_options": {},
+    "list_libraries": {},
+    "get_element_preview": {"element_guids": [GUID]},
+    "get_zone_image": {"zone_guids": [GUID]},
+    "get_favorite_preview": {"favorite_names": ["Wall"]},
+    "get_zone_boundaries": {"zone_guids": [GUID]},
+    "get_zone_relations": {"zone_guids": [GUID]},
+    "create_layer_combinations": {
+        "combinations": [{"name": "New", "layers": [{"layer": "Walls"}]}]
+    },
     "list_mep_systems": {},
     "get_mep_elements": {},
     "get_mep_preference_tables": {"domain": "Piping"},
@@ -457,6 +480,7 @@ TARGETED = {
     name: function
     for module in (
         attribute_properties,
+        attributes_details,
         attributes,
         classification_systems,
         classifications,
@@ -468,6 +492,8 @@ TARGETED = {
         favorites,
         gateway,
         hotlinks,
+        ifc,
+        ifc,
         interior_elevations,
         issues,
         keynotes,
@@ -484,7 +510,12 @@ TARGETED = {
         grids,
         navigator_moves,
         openings,
+        preview_images,
         project_info,
+        project_location,
+        project_location,
+        project_resources,
+        project_resources,
         property_definitions,
         read,
         roofs,
@@ -506,6 +537,7 @@ TARGETED = {
         composites,
         design_option_create,
         drawings,
+        zones_read,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__

@@ -14,6 +14,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classifications,
     design_options,
     documents,
@@ -21,11 +22,16 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    hotlinks,
+    ifc,
     keynotes,
     locks,
     modify,
     openings,
+    preview_images,
     project_info,
+    project_location,
+    project_resources,
     property_definitions,
     read,
     write,
@@ -63,6 +69,7 @@ from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
+from archicad_mcp_aberto.tools import zones_read as zones_read_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -1491,6 +1498,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=READ_ONLY)
+    async def list_hotlinks(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List linked Module and XRef nodes in tree order with GUID, source path,
+        parent and depth. Query matches name, type or path; pages up to 500. Read-only,
+        requires Tapir 1.7.0.
+        """
+        return await hotlinks.list_hotlinks(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
     async def list_keynotes(ctx: Context, port: int | None = None) -> dict:
         """Keynote folders and items (Archicad 28+): GUID, parent folder GUID, key path,
         key, title, description and reference. Requires Tapir."""
@@ -2005,6 +2026,145 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         token; each instance is read back. Requires Tapir. Never saves."""
         return await hotlinks_tool.place_hotlinks(
             client_of(ctx), placements, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_attribute_details(
+        ctx: Context,
+        kind: attributes_details.AttributeKind,
+        guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read details for up to 500 composites, profiles, surfaces, building material
+        physics, zone categories, pen tables, line types or fill types. Omit guids to
+        read that whole attribute kind. Native errors remain per item; never writes."""
+        return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_ifc_of_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read IFC type, IDs and properties for up to 100 elements. No export."""
+        return await ifc.get_ifc_of_elements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements_by_ifc_ids(
+        ctx: Context, ifc_ids: list[str], port: int | None = None
+    ) -> dict:
+        """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
+        return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_location(ctx: Context, port: int | None = None) -> dict:
+        """Read geolocation, survey point and calculation units; north is radians."""
+        return await project_location.get_project_location(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_layout_settings(
+        ctx: Context, layout_database_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read sizes, margins, numbering and custom data for up to 100 layouts."""
+        return await project_location.get_layout_settings(
+            client_of(ctx), layout_database_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_data(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read source-derived dimension data for up to 100 elements."""
+        return await project_resources.get_dimension_data(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_model_view_options(ctx: Context, port: int | None = None) -> dict:
+        """List the project's model-view-option combinations."""
+        return await project_resources.get_model_view_options(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_libraries(
+        ctx: Context, folder_types: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """List project libraries and requested Archicad special folders."""
+        return await project_resources.list_libraries(client_of(ctx), folder_types, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_preview(
+        ctx: Context,
+        element_guids: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 element previews."""
+        result = await preview_images.get_element_preview(
+            client_of(ctx), element_guids, image_type, width, height, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_image(
+        ctx: Context,
+        zone_guids: list[str],
+        width: int = 256,
+        height: int = 256,
+        offset: float = 0.001,
+        scale: float = 0.005,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 zone plan images."""
+        result = await preview_images.get_zone_image(
+            client_of(ctx), zone_guids, width, height, offset, scale, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_favorite_preview(
+        ctx: Context,
+        favorite_names: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 favorite previews."""
+        result = await preview_images.get_favorite_preview(
+            client_of(ctx), favorite_names, image_type, width, height, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_boundaries(
+        ctx: Context, zone_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read Tapir boundary surfaces for up to 100 zones, in metres."""
+        return await zones_read_tool.get_zone_boundaries(client_of(ctx), zone_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_relations(
+        ctx: Context,
+        zone_guids: list[str],
+        other_element_type: str | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read type-specific relations for up to 100 zones; optional type filter."""
+        return await zones_read_tool.get_zone_relations(
+            client_of(ctx), zone_guids, other_element_type, port
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layer_combinations(
+        ctx: Context,
+        combinations: list[layer_settings_tool.LayerCombinationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 new layer combinations. Every named layer must
+        exist. Existing combination names are refused. Explicit apply port, one-use token,
+        receipt and read-back; never overwrites, deletes or saves."""
+        return await layer_settings_tool.create_layer_combinations(
+            client_of(ctx), combinations, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

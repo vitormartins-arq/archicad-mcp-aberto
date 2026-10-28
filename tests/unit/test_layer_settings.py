@@ -310,3 +310,55 @@ async def test_shared_timeout_applies_to_write_and_layer_readback(monkeypatch):
         and ("CreateLayers", 45) in seen
         and ("GetLayers", 45) in seen
     )
+
+
+async def test_create_layer_combinations_preview_apply_and_verify():
+    fake = model()
+    data = [
+        {
+            "name": "Presentation",
+            "layers": [
+                {
+                    "layer": "Editable",
+                    "visible": False,
+                    "locked": True,
+                    "wireframe": True,
+                    "intersection_group": 7,
+                }
+            ],
+        }
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await layer_settings.create_layer_combinations(c, data, 19723)
+        assert "CreateLayerCombinations" not in fake.tapir_calls
+        result = await layer_settings.create_layer_combinations(
+            c, data, 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["status"] == "verified"
+    sent = next(row for row in fake.tapir_requests if row["command"] == "CreateLayerCombinations")
+    assert sent["parameters"]["layerCombinationDataArray"][0]["layers"][0]["isHidden"] is True
+    assert sent["parameters"].get("overwriteExisting") is None
+
+
+async def test_create_layer_combinations_refuses_existing_name_and_missing_layer():
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        with pytest.raises(ValueError, match="already exists"):
+            await layer_settings.create_layer_combinations(
+                c,
+                [{"name": "1ª ETAPA | CADASTRO", "layers": [{"layer": "Editable"}]}],
+                19723,
+            )
+        with pytest.raises(ValueError, match="does not exist"):
+            await layer_settings.create_layer_combinations(
+                c, [{"name": "New", "layers": [{"layer": "Missing"}]}], 19723
+            )
+
+
+async def test_create_layer_combinations_limit():
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        with pytest.raises(ValueError):
+            await layer_settings.create_layer_combinations(c, [], 19723)
+        with pytest.raises(ValueError):
+            await layer_settings.create_layer_combinations(
+                c, [{"name": f"C{i}", "layers": [{"layer": "Editable"}]} for i in range(21)], 19723
+            )
