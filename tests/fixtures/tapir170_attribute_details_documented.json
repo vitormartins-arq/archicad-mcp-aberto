@@ -1,0 +1,20 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "kind": "source-derived, not a live capture",
+    "tapir_version": "1.7.0",
+    "commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8",
+    "source": "archicad-addon/Sources/AttributeCommands.cpp"
+  },
+  "guid": "A1000000-0000-4000-8000-000000000001",
+  "rows": {
+    "GetComposites": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Wall composite", "skins": []},
+    "GetProfiles": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Profile", "useWith": []},
+    "GetSurfaces": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Paint", "materialType": "General"},
+    "GetBuildingMaterialPhysicalProperties": {"properties": {"thermalConductivity": 1.2, "density": 2200.0, "heatCapacity": 1000.0, "embodiedEnergy": 0.0, "embodiedCarbon": 0.0}},
+    "GetZoneCategories": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Residential", "categoryCode": "01"},
+    "GetPenTables": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Architecture", "pens": []},
+    "GetLines": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Solid", "lineType": "SolidLine"},
+    "GetFills": {"attributeId": {"guid": "A1000000-0000-4000-8000-000000000001"}, "index": 1, "name": "Solid Fill", "subType": "SolidFill"}
+  }
+}
