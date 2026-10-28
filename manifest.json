@@ -670,6 +670,10 @@
     {
       "name": "get_section_elements",
       "description": "Read section elements and their model owners."
+    },
+    {
+      "name": "create_profiles",
+      "description": "Preview or create complex profiles by copying existing profile geometry."
     }
   ],
   "compatibility": {

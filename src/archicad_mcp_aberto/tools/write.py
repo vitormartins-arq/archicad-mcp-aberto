@@ -454,6 +454,16 @@ OPERATIONS = {
         "layout_receipt_id",
         "New layouts take size and margins from their existing master layout.",
     ),
+    "create_drawings": (
+        "drawing",
+        "drawing_receipt_id",
+        "Places existing View Map views on existing layouts; positions are layout metres.",
+    ),
+    "create_profiles": (
+        "complex profile",
+        "profile_receipt_id",
+        "Copies geometry from an existing profile; never overwrites an attribute.",
+    ),
     "rename_items": (
         "rename",
         "rename_receipt_id",

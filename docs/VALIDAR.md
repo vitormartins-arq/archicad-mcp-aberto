@@ -867,3 +867,21 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T37 — Element structure
 - [ ] Compare curtain-wall/stair/railing subelements, trim and solid-operation links with the model.
 - [ ] In section/elevation databases, compare generated element GUIDs and their model owners.
+- [ ] **create_drawings.** In an unsaved test project, create a layout and use an
+  existing View Map view. Preview one drawing with a custom name, position in metres,
+  drawing scale and angle; apply it, confirm the source view, layout, visible position,
+  scale, rotation and custom name. Confirm that the project was not saved.
+- [ ] **set_view_settings zoom.** Clone a floor-plan view, apply a small zoom box around
+  one room and a nonzero rotation, then open the saved view. Confirm its framing and
+  rotation and that the previously open window did not change.
+- [ ] **create_profiles.** Copy one existing complex profile under a new name in an
+  unsaved test project. Compare its cross-section and wall/beam/column availability in
+  Profile Manager. Confirm that the source stayed unchanged and the project was not saved.
+
+## Codex: caller-authored complex profile
+
+- [ ] **create_profiles with skins.** In an unsaved Archicad 30 test project, create a
+  profile named `MCP TESTE PERFIL VAZADO` with one rectangular skin 0.20 m x 0.40 m,
+  a rectangular hole 0.10 m x 0.30 m and an existing concrete building material.
+  Open Profile Manager and confirm the outer size, hole, material and requested wall/beam
+  availability. Confirm the receipt is `verified` and that the project was not saved.

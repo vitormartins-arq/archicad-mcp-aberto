@@ -526,6 +526,20 @@ class FakeArchicad:
             }
         }
     )
+    profiles: dict[str, dict] = field(
+        default_factory=lambda: {
+            "56565656-5656-4656-8656-000000000001": {
+                "attributeId": {"guid": "56565656-5656-4656-8656-000000000001"},
+                "index": "1",
+                "name": "Rectangular 20x40",
+                "wallType": True,
+                "beamType": True,
+                "coluType": True,
+                "handrailType": False,
+                "otherGDLObjectType": False,
+            }
+        }
+    )
     zone_category_code_stored: str | None = None  # Archicad keeps this code instead
     lose_delete_response: bool = False
     delete_ignored: bool = False
@@ -2079,6 +2093,10 @@ class FakeArchicad:
                     continue
                 if not self.view_settings_ignored:
                     self.view_settings[guid].update(deepcopy(entry["viewSettings"]))
+                    # Tapir 1.7.0 sets saveZoom=true when all zoom bounds are present;
+                    # source-derived behavior, not a live capture.
+                    if "zoom" in entry["viewSettings"]:
+                        self.view_settings[guid]["saveZoom"] = True
                     if self.view_settings_reset_pen_set:
                         self.view_settings[guid]["penSetName"] = "Unexpected side effect"
                     if (
@@ -2471,6 +2489,63 @@ class FakeArchicad:
                 }
                 out.append({"attributeId": {"guid": guid}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetAttributesByType" and args["attributeType"] == "Profile":
+            rows = [
+                {k: deepcopy(row[k]) for k in ("attributeId", "index", "name")}
+                for row in self.profiles.values()
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
+        if name == "CreateProfiles":
+            # Source-derived from Tapir 1.7.0 AttributeCommands.cpp; not a live capture.
+            assert args.get("overwriteExisting") is False
+            out = []
+            for data in args["profileDataArray"]:
+                source = data.get("sourceAttributeId", {}).get("attributeId", {}).get("guid")
+                if (source is not None and source not in self.profiles) or any(
+                    row["name"] == data["name"] for row in self.profiles.values()
+                ):
+                    out.append({"error": {"code": -1, "message": "Profile create failed."}})
+                    continue
+                guid = str(uuid4()).upper()
+                row = deepcopy(self.profiles[source]) if source is not None else {}
+                row.update(data)
+                row.pop("sourceAttributeId", None)
+                new_skins = row.pop("newSkins", [])
+                if new_skins:
+                    row.setdefault("skins", [])
+                    for skin_index, skin in enumerate(new_skins):
+                        contours = skin.pop("contours")
+                        outline = [{"x": 0.0, "y": 0.0}]
+                        ends = [0]
+                        for contour in contours:
+                            points = contour["polygonCoordinates"]
+                            outline.extend(points)
+                            outline.append(points[0])
+                            ends.append(len(outline) - 1)
+                        row["skins"].append(
+                            {
+                                "skinId": f"source-derived-{skin_index}",
+                                **skin,
+                                "outlineCoords": outline,
+                                "outlineSubPolyEnds": ends,
+                                "outlineArcs": [],
+                                "edges": [],
+                            }
+                        )
+                row.update(attributeId={"guid": guid}, index=str(len(self.profiles) + 1))
+                self.profiles[guid] = row
+                out.append({"attributeId": {"guid": guid}})
+            return ok({"addOnCommandResponse": {"attributeIds": out}})
+        if name == "GetProfiles":
+            out = []
+            for item in args["attributeIds"]:
+                row = self.profiles.get(item["attributeId"]["guid"])
+                if row is None:
+                    out.append({"error": {"code": -1, "message": "Profile not found."}})
+                else:
+                    keys = {"attributeId", "index", "name", *args.get("fields", [])}
+                    out.append({k: deepcopy(v) for k, v in row.items() if k in keys})
+            return ok({"addOnCommandResponse": {"profiles": out}})
         if name == "GetComposites":
             out = []
             for entry in args["attributeIds"]:

@@ -31,6 +31,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     preview_images,
+    profiles,
     project_info,
     project_location,
     project_resources,
@@ -1284,10 +1285,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/set drawing_scale denominator and/or existing layer_combination by
-        name/GUID for up to 100 PublicViewMap views. Read-back checks settings unchanged
-        except requested fields. No guaranteed Navigator Undo; previous values retained.
-        Explicit apply port, single-use token and receipt; never saves or publishes.
+        """Preview/set drawing_scale, layer_combination, zoom box in model metres and/or
+        rotation in radians for up to 100 PublicViewMap views. Read-back checks settings
+        unchanged except requested fields. No guaranteed Navigator Undo; previous values
+        retained. Explicit apply port, single-use token and receipt; never saves/publishes.
         """
         return await views_tool.set_view_settings(
             client_of(ctx), changes, port, dry_run, confirmation_token
@@ -2267,6 +2268,23 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Read generated section elements and their model owners in up to 100 databases."""
         return await element_structure.get_section_elements(client_of(ctx), database_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_profiles(
+        ctx: Context,
+        profile_data: list[profiles.ProfileCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview creating up to 20 complex profiles from an existing profile and/or
+        caller-authored polygon skins. Skin contours use local metres; later contours
+        are holes. Optionally control wall/beam/column/handrail/object use. Existing
+        names are refused. Explicit apply port and single-use token; read-back
+        verification; never overwrites or saves. Requires Tapir 1.7.0."""
+        return await profiles.create_profiles(
+            client_of(ctx), profile_data, port, dry_run, confirmation_token
+        )
 
     return mcp
 

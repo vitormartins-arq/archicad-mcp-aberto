@@ -1066,3 +1066,22 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Added read-only revision, issue and change inventory from Tapir 1.7.0 source schemas.
 ## 2026-10-21 — T37 element structure
 - Added four bounded, read-only structure/relationship queries from Tapir 1.7.0 schemas.
+- **Codex / drawings on layouts, 23/10/2026:** `create_drawings` uses Tapir 1.7.0
+  `CreateDrawings` to place existing View Map views on existing layouts. It resolves
+  names to Navigator/database GUIDs during preview, uses the common single-use token
+  and receipt flow, and reads every result back as type Drawing. Simulated only; live
+  placement, scale, rotation and positioning still need visual confirmation.
+- **Codex / exact floor-plan framing, 23/10/2026:** `set_view_settings` now exposes
+  Tapir 1.7.0's stored zoom box in model metres and view rotation in radians. This is
+  the missing generic step for framing each room enlargement without moving the user's
+  current window. Simulated only; framing and rotation still need live visual checks.
+- **Codex / complex profile copies, 23/10/2026:** `create_profiles` copies the complete
+  geometry of an existing profile into a new, uniquely named profile and optionally
+  changes its wall/beam/column/handrail/object availability. It never overwrites and
+  reads the new scalar settings back. Simulated only; compare geometry live in Profile
+  Manager. Creating arbitrary new skin polygons remains a later extension.
+- **Codex / caller-authored profile skins, 23/10/2026:** `create_profiles` now also
+  sends Tapir 1.7.0 `newSkins` with arbitrary polygon contours and holes in profile-local
+  metres. Each skin resolves an existing building material by name; a copied source is
+  optional and can be combined with the new geometry. The fake shape is source-derived,
+  not a live capture. Simulated tests pass; live Profile Manager comparison is pending.

@@ -43,6 +43,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     openings,
     preview_images,
+    profiles,
     project_info,
     project_location,
     project_resources,
@@ -240,6 +241,9 @@ INPUTS = {
     "create_worksheets": {"worksheets": [{"name": "Rascunho", "reference_id": "W2"}]},
     "create_details": {"details": [{"name": "Detalhe da escada", "reference_id": "D1"}]},
     "create_layouts": {"layouts": [{"name": "Cortes", "master": "A3 Paisagem"}]},
+    "create_profiles": {
+        "profiles": [{"name": "New profile", "source_profile": "Rectangular 20x40"}]
+    },
     "rename_items": {"kind": "layers", "find": "Walls", "replace": "Paredes"},
     "create_property_groups": {"groups": [{"name": "Obra"}]},
     "create_properties": {"properties": [{"name": "Lote", "group": "Projeto", "type": "string"}]},
@@ -500,6 +504,7 @@ TARGETED = {
         design_options,
         documents,
         drafting,
+        drawings,
         renames,
         edit,
         element_structure,
@@ -531,6 +536,7 @@ TARGETED = {
         project_location,
         project_resources,
         project_resources,
+        profiles,
         property_definitions,
         read,
         revisions,
