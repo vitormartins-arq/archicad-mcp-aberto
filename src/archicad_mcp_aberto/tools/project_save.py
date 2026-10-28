@@ -10,7 +10,7 @@ from pathlib import Path
 from archicad_mcp_aberto.connection import ArchicadError, resolve_port
 from archicad_mcp_aberto.tools import grids, write
 
-REVISION = re.compile(r"^(.*?)([ _-](?:REV|R))(\d+)$", re.IGNORECASE)
+REVISION = re.compile(r"^(.*)([ _-](?:REV|R))(\d+)([ _-].*)?$", re.IGNORECASE)
 
 
 class SaveRequest(write.InputModel):
@@ -52,16 +52,19 @@ def _fingerprint(path: Path) -> dict | None:
 
 def _revision_path(source: Path, archive: Path) -> Path:
     match = REVISION.fullmatch(source.stem)
-    stem, label, digits = match.groups() if match else (source.stem, "_R", "00")
+    stem, label, digits, suffix = match.groups() if match else (source.stem, "_R", "00", "")
+    suffix = suffix or ""
     highest = int(digits)
-    pattern = re.compile(re.escape(stem + label) + r"(\d+)\.pln", re.IGNORECASE)
+    pattern = re.compile(
+        re.escape(stem + label) + r"(\d+)" + re.escape(suffix) + r"\.pln", re.IGNORECASE
+    )
     for folder in (source.parent, archive):
         if folder.exists():
             for child in folder.iterdir():
                 found = pattern.fullmatch(child.name)
                 if found:
                     highest = max(highest, int(found[1]))
-    return source.with_name(f"{stem}{label}{highest + 1:0{max(2, len(digits))}d}.pln")
+    return source.with_name(f"{stem}{label}{highest + 1:0{max(2, len(digits))}d}{suffix}.pln")
 
 
 def _archive_path(source: Path, folder: Path) -> Path:

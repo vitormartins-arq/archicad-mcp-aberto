@@ -1,5 +1,14 @@
 # Estado atual
 
+- **Teste autorizado da revisão / 27/10/2026:** na cópia descartável em Downloads,
+  AC30 build 3001 BRA / Tapir 1.7.3 / LAB Tools R12 com complemento R11 integrado,
+  Save As da próxima revisão e arquivamento passaram; SHA-256 do arquivo antigo
+  arquivado idêntico ao original. Arquivo novo confirmado como projeto atual.
+  Prévia recusa destino ocupado. Corrigido incremento com sufixo de teste após R05;
+  2.794 testes offline e Ruff/formatação passaram. Reabertura e delta intencional
+  não salvo ainda pendentes. Executado pelo checkout isolado, sem alterar configuração
+  do servidor MCP do cliente. Nenhum teste em projeto de produção.
+
 - **Integração da #92 / 27/10/2026:** main `713406c` incorporada na branch da PR,
   preservando SaveStoryView/ampliações e salvamento de revisões. Conflitos resolvidos;
   2.791 testes offline passaram (27,47 s), Ruff e formatação passaram (169 arquivos).

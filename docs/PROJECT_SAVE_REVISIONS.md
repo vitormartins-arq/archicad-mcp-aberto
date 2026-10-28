@@ -13,8 +13,9 @@ model, including unsaved changes, through `ACAPI_ProjectOperation_Save` with
 This is not a disk copy. Save runs directly on Archicad's main thread, outside any
 Undo/non-Undo command wrapper. Saving and filesystem archival have no Archicad Undo.
 
-The final `_R04`, `-R04`, ` R04` or corresponding `REV` suffix is incremented, keeping
-its label and numeric width. Without one, append `_R01`. Existing matching revisions
+The last `_R04`, `-R04`, ` R04` or corresponding `REV` token is incremented, keeping
+its label and numeric width, plus any trailing description (for example,
+`Example_R05_TEST.pln` becomes `Example_R06_TEST.pln`). Without one, append `_R01`. Existing matching revisions
 in both folders advance the number; do not fill gaps or replace existing files.
 An archive-name collision gets `__archive_001`, etc.; existing archives stay intact.
 
@@ -63,3 +64,22 @@ installed or loaded during this change; no live Archicad was queried.
   Do not simulate timeouts by interrupting a real user's production save.
 
 No live test is marked complete. Native build/runtime validation is pending.
+
+## Live validation on 27 October 2026 (Brazil)
+
+Authorized disposable PLN in Downloads; Archicad 30 build 3001 BRA, Tapir 1.7.3,
+LAB Tools R12 combined native companion R11 (private source 16d33d4, importing
+public strict save implementation 74f026b). Invoked the public Python tool function
+through the isolated terminal checkout; this does not claim the running AI client's
+MCP server configuration was upgraded.
+
+Verified native context, next revision with a trailing test suffix, native Save As,
+new nonempty PLN/current project path, same session/epoch, and archival after save.
+The archived old PLN's SHA-256 matched the pre-save original exactly. An occupied
+destination was rejected in preview without writing. No production project was used.
+
+The preview exposed a suffix naming bug (R05_TEST previously appended R01), fixed
+before writing; 2794 full offline tests and Ruff/format passed after the fix.
+Reopening both PLNs, checking an intentional unsaved model edit and exercising native
+failure/permission paths live remain pending. These results validate the combined
+LAB Tools companion, not an independent loading test of the standalone public APX.

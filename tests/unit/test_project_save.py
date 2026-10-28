@@ -84,6 +84,9 @@ async def test_next_revision_saves_in_memory_before_archiving(native):
         ("Example_REV099.pln", "Example_REV100.pln", "Example_REV101.pln"),
         ("Example.pln", "Example_R03.pln", "Example_R04.pln"),
         ("Example_R99.pln", "unrelated_R999.pln", "Example_R100.pln"),
+        ("Example_R05_TEST.pln", "Example_R09_TEST.pln", "Example_R10_TEST.pln"),
+        ("Example_R05_TEST.pln", "Example_R99_OTHER.pln", "Example_R06_TEST.pln"),
+        ("Example_R01_REV005 Test.pln", "unrelated.pln", "Example_R01_REV006 Test.pln"),
     ],
 )
 async def test_revision_avoids_existing_current_and_archived_numbers(
