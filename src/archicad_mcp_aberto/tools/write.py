@@ -706,6 +706,11 @@ OPERATIONS["save_next_project_revision"] = (
     "save_receipt_id",
     "Explicit next revision and archival; no Undo. Review both paths.",
 )
+OPERATIONS["replace_object_libraries"] = (
+    "object library replacement",
+    "replacement_receipt_id",
+    "Target GDL defaults replace source parameters except A/B/ZZYZX. One native Undo batch.",
+)
 OPERATIONS["move_navigator_items"] = (
     "Navigator move",
     "navigator_move_receipt_id",
