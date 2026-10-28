@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Physical cameras / 27 October 2026:** draft PR #93 implements native
+  Camera/CamSet capture/create/readback, source UUID deduplication, representation
+  grouping and automatic verified task backup with final same-path PLN saving.
+  2,999 offline tests passed; Ruff check/format passed. AC30 native compilation
+  passed. No live camera creation or installation has been performed yet.
+  LAB Tools integration and live verification remain pending.
+
 - **Teste autorizado da revisão / 27/10/2026:** na cópia descartável em Downloads,
   AC30 build 3001 BRA / Tapir 1.7.3 / LAB Tools R12 com complemento R11 integrado,
   Save As da próxima revisão e arquivamento passaram; SHA-256 do arquivo antigo

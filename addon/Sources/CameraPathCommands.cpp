@@ -53,11 +53,11 @@ GS::ObjectState Perspective (const API_PerspPars& p)
 }
 bool SamePerspective (const API_PerspPars& a, const API_PerspPars& b)
 {
-    auto near = [] (double x, double y) { return std::isfinite (x) && std::isfinite (y) && std::abs (x-y) <= 1e-7; };
-    return near (a.pos.x,b.pos.x) && near (a.pos.y,b.pos.y) && near (a.cameraZ,b.cameraZ) &&
-        near (a.target.x,b.target.x) && near (a.target.y,b.target.y) && near (a.targetZ,b.targetZ) &&
-        near (a.viewCone,b.viewCone) && near (a.rollAngle,b.rollAngle) && near (a.azimuth,b.azimuth) &&
-        near (a.distance,b.distance) && a.isTwoPointPersp == b.isTwoPointPersp;
+    auto closeValue = [] (double x, double y) { return std::isfinite (x) && std::isfinite (y) && std::abs (x-y) <= 1e-7; };
+    return closeValue (a.pos.x,b.pos.x) && closeValue (a.pos.y,b.pos.y) && closeValue (a.cameraZ,b.cameraZ) &&
+        closeValue (a.target.x,b.target.x) && closeValue (a.target.y,b.target.y) && closeValue (a.targetZ,b.targetZ) &&
+        closeValue (a.viewCone,b.viewCone) && closeValue (a.rollAngle,b.rollAngle) && closeValue (a.azimuth,b.azimuth) &&
+        closeValue (a.distance,b.distance) && a.isTwoPointPersp == b.isTwoPointPersp;
 }
 GS::ObjectState Cutting (const API_3DCutPlanesInfo& cut)
 {
@@ -128,6 +128,7 @@ struct ViewState {
     bool stored = false;
     ViewState ()
     {
+      try {
         Check (ACAPI_Window_GetCurrentWindow (&window));
         Check (ACAPI_View_Get3DProjectionSets (&projection));
         Check (ACAPI_View_Get3DImageSets (&filter));
@@ -135,6 +136,12 @@ struct ViewState {
         const auto err = ACAPI_Selection_Get (&selection, &neigs, false);
         if (err != NoError && err != APIERR_NOSEL) throw std::runtime_error ("Cannot preserve selection.");
         Check (ACAPI_View_StoreViewSettings (true)); stored = true;
+    }
+    catch (...) {
+        if (cut.shapes) BMKillHandle (reinterpret_cast<GSHandle*> (&cut.shapes));
+        if (selection.marquee.coords) BMKillHandle (reinterpret_cast<GSHandle*> (&selection.marquee.coords));
+        throw;
+      }
     }
     GSErrCode Restore ()
     {
@@ -233,7 +240,7 @@ void SetSource (API_Element& element, const API_Guid& source)
     API_ElementUserData data {};
     data.dataVersion = 1;
     data.platformSign = GS::Act_Platform_Sign;
-    data.dataHdl = BMAllocateHandle (value.size (), ALLOCATE_CLEAR, 0);
+    data.dataHdl = BMAllocateHandle (static_cast<GS::GSSize> (value.size ()), ALLOCATE_CLEAR, 0);
     if (!data.dataHdl) throw std::runtime_error ("Cannot allocate camera source metadata.");
     const GS::OnExit release ([&] { BMKillHandle (&data.dataHdl); });
     std::memcpy (*data.dataHdl, value.data (), value.size ());
@@ -459,6 +466,17 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
                 throw std::runtime_error ("Created camera projection/source/order could not be verified.");
             previous = camera->second.header.guid;
         }
+        API_Guid expectedNext = APINULLGuid;
+        for (auto view = currentViews.rbegin (); view != currentViews.rend (); ++view) {
+            const auto& camera = actual.at (Utf8 (APIGuidToString (view->guid)));
+            if (camera.camera.perspCam.nextCam != expectedNext)
+                throw std::runtime_error ("Camera forward-link read-back differs.");
+            expectedNext = camera.header.guid;
+        }
+        const auto actualPath = std::find_if (after.paths.begin (), after.paths.end (),
+            [&] (const auto& path) { return path.header.guid == pathGuid; });
+        if (actualPath == after.paths.end () || actualPath->camset.firstCam != expectedNext)
+            throw std::runtime_error ("Camera path first-camera read-back differs.");
         bool hide = true;
         parameters.Get ("hideInPlan", hide);
         GSErrCode visibilityError = NoError;

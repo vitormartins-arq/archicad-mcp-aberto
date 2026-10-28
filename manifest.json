@@ -626,7 +626,22 @@
     {
       "name": "get_favorite_preview",
       "description": "Return PNG favorite previews as MCP image content."
-
+    },
+    {
+      "name": "list_camera_paths",
+      "description": "Read physical cameras, paths and source-view identities."
+    },
+    {
+      "name": "create_camera_paths_from_views",
+      "description": "Create physical camera paths from saved perspectives with automatic backup and same-path save."
+    },
+    {
+      "name": "begin_model_task",
+      "description": "Preserve a verified pre-task backup in Anteriores without renaming the working PLN."
+    },
+    {
+      "name": "finish_model_task",
+      "description": "Save the completed task to the same working PLN."
     }
   ],
   "compatibility": {

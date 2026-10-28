@@ -15,6 +15,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     attributes_details,
+    camera_paths,
     classifications,
     design_options,
     documents,
@@ -26,13 +27,14 @@ from archicad_mcp_aberto.tools import (
     ifc,
     keynotes,
     locks,
+    model_tasks,
     modify,
     openings,
     preview_images,
     project_info,
-    project_save,
     project_location,
     project_resources,
+    project_save,
     property_definitions,
     read,
     write,
@@ -87,9 +89,14 @@ Archicad MCP (read tools and safe wall and slab creation).
   move or drop the bad ones), then save_3d_scenes, following docs/3D_SCENES.md: mostly
   level one-point interiors, a few two-point, a general isometric and one cut 1.50 m
   above each story. These need the ArchicadMcpAberto add-on (addon/).
-- Only explicit save_project_as/save_next_project_revision save the project; all other
-  model operations leave it unsaved. Saving/archival cannot be undone. Never retry an
-  unknown save; use inspect_project_save and the receipt first.
+- Work in the project the user requests, including saved working files. Before the
+  first edit in a logical task, use begin_model_task to preserve a verified backup in
+  Anteriores, including current in-memory edits; finish_model_task saves to the SAME
+  working PLN. The editing request authorizes this internal backup/save workflow:
+  do not require a test file, manual Save As or repeated backup approval. Reads do
+  not save. create_camera_paths_from_views performs its checkpoint and final save
+  internally; do not nest another task checkpoint around it. Other editing tools
+  do not save by themselves. Never retry an unknown write or save blindly.
 - Receipts are local. After any unknown outcome,
   inspect the model before preparing a new plan; never blindly retry a write.
 """
@@ -2028,6 +2035,57 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         token; each instance is read back. Requires Tapir. Never saves."""
         return await hotlinks_tool.place_hotlinks(
             client_of(ctx), placements, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_camera_paths(ctx: Context, port: int | None = None) -> dict:
+        """Read native camera paths, physical cameras and source-view identities."""
+        return await camera_paths.list_camera_paths(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_camera_paths_from_views(
+        ctx: Context,
+        path_name: str = "BIMx - Apresentação",
+        view_guids: list[str] | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Create physical cameras from saved perspectives in Navigator order.
+        Skip axonometries, separate representations, preserve existing cameras.
+        Apply checkpoints automatically and saves to the same PLN. No publishing.
+        Requires the updated native companion. Preview/token and explicit port to apply.
+        """
+        return await camera_paths.create_camera_paths_from_views(
+            client_of(ctx), path_name, view_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def begin_model_task(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preserve a verified pre-task PLN backup in Anteriores, including unsaved edits.
+        Keep the working filename. Internal preview/apply is covered by the user's
+        editing request; no manual Save As or test-project requirement.
+        """
+        return await model_tasks.begin_model_task(client_of(ctx), port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def finish_model_task(
+        ctx: Context,
+        task_token: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the completed editing task to the SAME PLN with its pre-task backup retained.
+        Requires a verified begin_model_task token. Never blindly retry an unknown save.
+        """
+        return await model_tasks.finish_model_task(
+            client_of(ctx), task_token, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)
