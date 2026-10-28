@@ -522,5 +522,23 @@
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
 
+### Read linked modules and XRefs
+
+- Add read-only `list_hotlinks`, backed by Tapir 1.7.0 `GetHotlinks`. It flattens the
+  native node tree in preorder and returns each Module/XRef GUID, name, source path,
+  parent GUID and depth. Search matches name, type or path before pagination. The full
+  response is validated, including unique non-null GUIDs and valid node types. Its
+  source-derived fixture is explicitly synthetic and not a live Archicad capture.
+### Read detailed attributes
+
+- Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir
+  1.7.0 attribute commands. Optional GUIDs preserve order and native per-item errors;
+  omission inventories the kind first. Calls are bounded to 500 and batched by 100.
+### IFC reading
+- Add read-only IFC metadata and GlobalId lookup tools from Tapir 1.7.0.
+### Project location and layouts
+- Add read-only geolocation, calculation-unit and layout-setting tools from Tapir 1.7.0.
+### Dimension, MVO and library reading
+- Add read-only dimension data, model-view-option, library and special-folder queries.
 ### Preview images
 - Add bounded element, zone and favorite PNG previews as MCP image content.
