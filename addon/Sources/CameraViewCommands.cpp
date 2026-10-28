@@ -250,8 +250,22 @@ GS::ObjectState RenameProjectMapItemsCommand::Execute (const GS::ObjectState& pa
         }
         row.Add ("before", GS::UniString (item.uName));
         if (!dryRun) {
-            SetItemName (item, name);
-            err = ACAPI_Navigator_ChangeNavigatorItem (&item);
+            // A camera item shows the camera element's ID, not uName (AC30, 28/10/2026),
+            // so change the ID first, re-read the item and then set its name.
+            if (item.itemType == API_CameraNavItem && item.camId != APINULLGuid) {
+                API_Guid camId = item.camId;
+                err = ACAPI_CallUndoableCommand ("Rename MCP camera", [&] () -> GSErrCode {
+                    API_ElementMemo memo {};
+                    memo.elemInfoString = new GS::UniString (name);
+                    const GS::OnExit freeMemo ([&] { ACAPI_DisposeElemMemoHdls (&memo); });
+                    return ACAPI_Element_ChangeMemo (camId, APIMemoMask_ElemInfoString, &memo);
+                });
+                if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &item);
+            }
+            if (err == NoError) {
+                SetItemName (item, name);
+                err = ACAPI_Navigator_ChangeNavigatorItem (&item);
+            }
             API_NavigatorItem after {};
             after.mapId = API_ProjectMap;
             if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &after);
