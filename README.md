@@ -887,3 +887,8 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   model-view options, loaded libraries and official special-folder paths. Dimension calls
   accept up to 100 GUIDs. Fixtures are source-derived, not a live capture. Registry:
   **101 tools (32 reads, 69 writes/interactions)**.
+- `get_element_preview`, `get_zone_image` and `get_favorite_preview` return real MCP PNG
+  image content for up to 10 targets. Dimensions are capped at 1024 × 1024 and decoded
+  images at 5 MiB. Each target also gets metadata or its own error. Fixtures are
+  source-derived, not a live capture. Registry: **101 tools (32 reads, 69
+  writes/interactions)**.

@@ -602,6 +602,18 @@
     {
       "name": "list_libraries",
       "description": "List project libraries and special folders."
+    },
+    {
+      "name": "get_element_preview",
+      "description": "Return PNG previews of elements as MCP image content."
+    },
+    {
+      "name": "get_zone_image",
+      "description": "Return PNG zone plan images as MCP image content."
+    },
+    {
+      "name": "get_favorite_preview",
+      "description": "Return PNG favorite previews as MCP image content."
     }
   ],
   "compatibility": {

@@ -540,3 +540,5 @@
 - Add read-only geolocation, calculation-unit and layout-setting tools from Tapir 1.7.0.
 ### Dimension, MVO and library reading
 - Add read-only dimension data, model-view-option, library and special-folder queries.
+### Preview images
+- Add bounded element, zone and favorite PNG previews as MCP image content.

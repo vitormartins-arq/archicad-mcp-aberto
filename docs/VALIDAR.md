@@ -844,3 +844,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T38 — Dimensions, MVO and libraries
 - [ ] Compare linear/radial/angular dimension details and invalid-element errors.
 - [ ] Compare MVO names, loaded/missing library metadata and requested special-folder paths.
+## T39 — Preview images
+- [ ] Compare 2D/section/3D element and favorite PNG previews with Archicad.
+- [ ] Compare zone plan images at different scale/offset values and confirm failures remain per target.

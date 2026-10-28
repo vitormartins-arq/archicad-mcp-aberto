@@ -39,6 +39,7 @@ from archicad_mcp_aberto.tools import (
     navigator,
     navigator_moves,
     openings,
+    preview_images,
     project_info,
     project_location,
     project_resources,
@@ -103,6 +104,9 @@ INPUTS = {
     "get_dimension_data": {"element_guids": [GUID]},
     "get_model_view_options": {},
     "list_libraries": {},
+    "get_element_preview": {"element_guids": [GUID]},
+    "get_zone_image": {"zone_guids": [GUID]},
+    "get_favorite_preview": {"favorite_names": ["Wall"]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -495,6 +499,7 @@ TARGETED = {
         grids,
         navigator_moves,
         openings,
+        preview_images,
         project_info,
         project_location,
         project_location,

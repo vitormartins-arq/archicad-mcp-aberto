@@ -1343,6 +1343,16 @@ class FakeArchicad:
                     [deepcopy(fixture["folder"]) for _ in args["folderTypes"]],
                 )
             return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name in {"GetElementPreviewImage", "GetRoomImage", "GetFavoritePreviewImage"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_preview_images_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            key = "roomImage" if name == "GetRoomImage" else "previewImage"
+            return ok({"addOnCommandResponse": {key: fixture["png"]}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

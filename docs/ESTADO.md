@@ -1051,3 +1051,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Added read-only project geolocation/calculation units and bounded layout settings queries.
 ## 2026-10-21 — T38 dimensions, MVO and libraries
 - Added three read-only project-resource tools from Tapir 1.7.0 schemas.
+## 2026-10-21 — T39 preview images
+- Added three read-only PNG preview tools with MCP image content, ten-target and size limits.
