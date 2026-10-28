@@ -23,6 +23,7 @@ from archicad_mcp_aberto.tools import (
     favorites,
     gateway,
     hotlinks,
+    ifc,
     keynotes,
     locks,
     modify,
@@ -2033,6 +2034,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         physics, zone categories, pen tables, line types or fill types. Omit guids to
         read that whole attribute kind. Native errors remain per item; never writes."""
         return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_ifc_of_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read IFC type, IDs and properties for up to 100 elements. No export."""
+        return await ifc.get_ifc_of_elements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements_by_ifc_ids(
+        ctx: Context, ifc_ids: list[str], port: int | None = None
+    ) -> dict:
+        """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
+        return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
 
     return mcp
 

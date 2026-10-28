@@ -1045,3 +1045,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   composites, profiles, surfaces, building material physics, zone categories, pen
   tables, lines e fills pelos oito comandos do Tapir 1.7.0. Até 500 GUIDs, lotes de
   100 e erro nativo por item. Fixture source-derived, not a live capture.
+## 2026-10-21 — T33 IFC element data
+- Added bounded IFC type, identifier, property and reverse GlobalId lookups; no export paths.

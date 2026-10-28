@@ -1260,6 +1260,41 @@ class FakeArchicad:
                     }
                 }
             )
+        if name in {
+            "GetIFCTypeOfElements",
+            "GetIFCIdsOfElements",
+            "GetIFCPropertiesOfElements",
+            "GetElementsByIFCIds",
+        }:
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_ifc_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            if name == "GetElementsByIFCIds":
+                rows = [
+                    {
+                        "ifcId": value,
+                        "elements": [{"elementId": {"guid": fixture["element_guid"]}}]
+                        if value == fixture["ifc_id"]
+                        else [],
+                    }
+                    for value in args["ifcIds"]
+                ]
+                return ok({"addOnCommandResponse": {"elementsByIFCIds": rows}})
+            keys = {
+                "GetIFCTypeOfElements": "elementIFCTypes",
+                "GetIFCIdsOfElements": "elementIFCIds",
+                "GetIFCPropertiesOfElements": "elementIFCProperties",
+            }
+            key = keys[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["element_guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

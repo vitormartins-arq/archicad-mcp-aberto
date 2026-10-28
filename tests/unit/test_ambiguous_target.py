@@ -24,6 +24,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    ifc,
     interior_elevations,
     issues,
     keynotes,
@@ -93,6 +94,8 @@ INPUTS = {
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
     "list_hotlinks": {},
     "get_attribute_details": {"kind": "composites", "guids": []},
+    "get_ifc_of_elements": {"element_guids": [GUID]},
+    "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -468,6 +471,8 @@ TARGETED = {
         favorites,
         gateway,
         hotlinks,
+        ifc,
+        ifc,
         interior_elevations,
         issues,
         keynotes,

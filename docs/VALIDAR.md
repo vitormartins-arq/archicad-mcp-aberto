@@ -835,3 +835,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 - [ ] Em cópia de teste, consultar os oito `kind` com e sem GUIDs; comparar nomes,
   skins, cores, texturas, propriedades físicas, penas, linhas e hachuras com os diálogos
   de atributos. Conferir GUID inexistente como erro isolado. Somente leitura.
+## T33 — IFC element data
+- [ ] Compare IFC type, type-object type, internal/external ID and properties for mapped elements.
+- [ ] Resolve valid, missing and duplicate IFC GlobalIds and confirm their row alignment.

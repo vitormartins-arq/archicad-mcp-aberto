@@ -534,3 +534,5 @@
 - Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir
   1.7.0 attribute commands. Optional GUIDs preserve order and native per-item errors;
   omission inventories the kind first. Calls are bounded to 500 and batched by 100.
+### IFC reading
+- Add read-only IFC metadata and GlobalId lookup tools from Tapir 1.7.0.
