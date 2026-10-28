@@ -864,3 +864,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T32 — Revisions
 - [ ] Compare document revisions, issue status and custom data with the Change Manager.
 - [ ] Confirm current changes for valid/invalid element and layout GUIDs stay row-aligned.
+## T37 — Element structure
+- [ ] Compare curtain-wall/stair/railing subelements, trim and solid-operation links with the model.
+- [ ] In section/elevation databases, compare generated element GUIDs and their model owners.

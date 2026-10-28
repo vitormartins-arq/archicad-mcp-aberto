@@ -654,6 +654,22 @@
     {
       "name": "get_revision_changes",
       "description": "Read global, element and layout revision changes."
+    },
+    {
+      "name": "get_subelements",
+      "description": "Read hierarchical element subelements."
+    },
+    {
+      "name": "get_element_trims",
+      "description": "Read element trim relationships."
+    },
+    {
+      "name": "get_solid_operation_links",
+      "description": "Read solid-operation target/operator links."
+    },
+    {
+      "name": "get_section_elements",
+      "description": "Read section elements and their model owners."
     }
   ],
   "compatibility": {

@@ -917,3 +917,7 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   revision data without emitting or changing revisions. Entity lists accept at most 100
   GUIDs and preserve aligned errors. Fixtures are source-derived, not a live capture.
   Registry: **101 tools (32 reads, 69 writes/interactions)**.
+- `get_subelements`, `get_element_trims`, `get_solid_operation_links` and
+  `get_section_elements` expose bounded, aligned structural relationships through Tapir
+  1.7.0. Each element/database list accepts at most 100 GUIDs. Fixtures are source-derived,
+  not a live capture. Registry: **102 tools (33 reads, 69 writes/interactions)**.

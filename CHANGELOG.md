@@ -552,3 +552,5 @@
 - Add bounded, read-only `find_collisions` using Tapir 1.7.0 `GetCollisions`.
 ### Revision reading
 - Add read-only document revision, revision issue, and revision change tools.
+### Element structure reading
+- Add hierarchical subelement, trim, solid-operation and section-owner queries.

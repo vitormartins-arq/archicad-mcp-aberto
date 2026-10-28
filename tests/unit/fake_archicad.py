@@ -602,6 +602,7 @@ class FakeArchicad:
     dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
     dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
     project_resources_fixture: bool = False  # GetDimensionData from the documented fixture
+    element_structure_fixture: bool = False  # GetElementTrims/GetSolidElementLinks fixture
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -1451,6 +1452,36 @@ class FakeArchicad:
                     for row in args[source_key]
                 ]
             return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
+        if name in {"GetSubelementsOfHierarchicalElements", "GetSectionElements"} or (
+            self.element_structure_fixture and name in {"GetElementTrims", "GetSolidElementLinks"}
+        ):
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_element_structure_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetSectionElements":
+                return ok(
+                    {
+                        "addOnCommandResponse": {
+                            "sectionElements": deepcopy(fixture["sectionElements"])
+                        }
+                    }
+                )
+            key = {
+                "GetSubelementsOfHierarchicalElements": "subelements",
+                "GetElementTrims": "elementTrims",
+                "GetSolidElementLinks": "solidLinks",
+            }[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

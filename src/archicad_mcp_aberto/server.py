@@ -21,6 +21,7 @@ from archicad_mcp_aberto.tools import (
     documents,
     drafting,
     edit,
+    element_structure,
     favorites,
     gateway,
     hotlinks,
@@ -2236,6 +2237,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await revisions.get_revision_changes(
             client_of(ctx), element_guids, layout_database_guids, port
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_subelements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read subelements of up to 100 curtain walls, stairs or railings."""
+        return await element_structure.get_subelements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_trims(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read trim relationships for up to 100 elements."""
+        return await element_structure.get_element_trims(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_solid_operation_links(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read target/operator solid-operation links for up to 100 elements."""
+        return await element_structure.get_solid_operation_links(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_section_elements(
+        ctx: Context, database_guids: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """Read generated section elements and their model owners in up to 100 databases."""
+        return await element_structure.get_section_elements(client_of(ctx), database_guids, port)
 
     return mcp
 

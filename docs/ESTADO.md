@@ -1064,3 +1064,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Added read-only collision detection for two groups of up to 500 GUIDs with explicit SI tolerances.
 ## 2026-10-21 — T32 revisions
 - Added read-only revision, issue and change inventory from Tapir 1.7.0 source schemas.
+## 2026-10-21 — T37 element structure
+- Added four bounded, read-only structure/relationship queries from Tapir 1.7.0 schemas.

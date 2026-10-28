@@ -21,6 +21,7 @@ from archicad_mcp_aberto.tools import (
     drafting,
     drawings,
     edit,
+    element_structure,
     favorites,
     gateway,
     grids,
@@ -123,6 +124,10 @@ INPUTS = {
     "list_document_revisions": {},
     "list_revision_issues": {},
     "get_revision_changes": {},
+    "get_subelements": {"element_guids": [GUID]},
+    "get_element_trims": {"element_guids": [GUID]},
+    "get_solid_operation_links": {"element_guids": [GUID]},
+    "get_section_elements": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -497,6 +502,8 @@ TARGETED = {
         drafting,
         renames,
         edit,
+        element_structure,
+        element_structure,
         favorites,
         gateway,
         hotlinks,
