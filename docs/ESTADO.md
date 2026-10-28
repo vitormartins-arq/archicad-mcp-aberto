@@ -807,6 +807,18 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - origin/main c491e2c integrada por merge, sem rebase. Conflitos resolvidos preservando as ferramentas e correções do PR #61 e as do #62, mais ambas as documentações e registros de validação. Manifesto e teste de registro combinados: 90 ferramentas. Nenhuma chamada ao Archicad real nesta integração; nenhum merge de PR pelo Codex.
 - Validação após resolver os conflitos: 2113 testes simulados passaram e uv run ruff check . passou (Windows/Python 3.12.10).
 
+## 2026-10-16 — Codex / inventário de módulos vinculados e XRefs
+
+- Branch `codex/t28-hotlinks-read`, saindo da `main` após os PRs #61 e #62.
+  `list_hotlinks` transforma a árvore de `GetHotlinks` em lista ordenada com GUID do nó,
+  nome, tipo Module/XRef, caminho, pai e profundidade; busca e paginação não perdem a
+  relação original. Respostas malformadas, tipos desconhecidos e GUIDs duplicados são
+  recusados por inteiro.
+- Contrato conferido em `ProjectCommands.cpp` e `CommonSchemaDefinitions.json` do Tapir
+  1.7.0/02691b5d. Fixture documental com caminhos e GUIDs sintéticos, marcado
+  `live_capture: false`. Nenhum Archicad real foi aberto.
+- Registro passa a 91 ferramentas, 29 de leitura. As tarefas C5–C8 do Claude e
+  `docs/FILA.md` permaneceram intactas.
 
 ## 2026-10-15 — Claude / C5 notas-chave (rodada automática, lote 3)
 

@@ -271,6 +271,11 @@ ROOFS_TEXTS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
     ).read_text(encoding="utf-8")
 )
+HOTLINKS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_hotlinks_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
 ATTRIBUTE_DETAILS_FIXTURE = json.loads(
     (
         Path(__file__).parents[1] / "fixtures" / "tapir170_attribute_details_documented.json"
@@ -386,6 +391,8 @@ class FakeArchicad:
     )
     # Hotlink nodes in the GetHotlinks shape (Tapir 1.7.0 ProjectCommands.cpp); synthetic.
     hotlink_nodes: list[dict] = field(default_factory=list)
+    # list_hotlinks tests: answer GetHotlinks from the source-derived fixture instead.
+    hotlinks_fixture: bool = False
     missing_hotlink_files: set[str] = field(default_factory=set)
     # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
     solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
@@ -1206,6 +1213,8 @@ class FakeArchicad:
             rows = [{"elementId": {"guid": g}} for g in self.layout_drawings.get(database, [])]
             return ok({"addOnCommandResponse": {"elements": rows,
                        "executionResultForDatabases": [result]}})  # fmt: skip
+        if name == "GetHotlinks" and self.hotlinks_fixture:
+            return ok({"addOnCommandResponse": deepcopy(HOTLINKS_FIXTURE["response"])})
         if self.attribute_details_fixture and name in ATTRIBUTE_DETAILS_FIXTURE["rows"]:
             row = ATTRIBUTE_DETAILS_FIXTURE["rows"][name]
             key = {

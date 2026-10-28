@@ -568,6 +568,10 @@
       "description": "Preview or overwrite existing favorites from elements of their type."
     },
     {
+      "name": "list_hotlinks",
+      "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
+    },
+    {
       "name": "get_attribute_details",
       "description": "Read detailed composites, profiles, surfaces, physical properties, zone categories, pen tables, lines or fills."
     }

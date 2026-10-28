@@ -22,6 +22,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    hotlinks,
     keynotes,
     locks,
     modify,
@@ -1489,6 +1490,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await interior_elevations_tool.create_interior_elevations(
             client_of(ctx), interior_elevations, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_hotlinks(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List linked Module and XRef nodes in tree order with GUID, source path,
+        parent and depth. Query matches name, type or path; pages up to 500. Read-only,
+        requires Tapir 1.7.0.
+        """
+        return await hotlinks.list_hotlinks(client_of(ctx), port, query, offset, limit)
 
     @mcp.tool(annotations=READ_ONLY)
     async def list_keynotes(ctx: Context, port: int | None = None) -> dict:

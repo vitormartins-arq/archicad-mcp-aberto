@@ -1,0 +1,36 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.0",
+    "commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8",
+    "sources": [
+      "archicad-addon/Sources/ProjectCommands.cpp: GetHotlinksCommand, DumpHotlinkWithChildren",
+      "archicad-addon/Sources/RFIX/Images/CommonSchemaDefinitions.json: Hotlinks, Hotlink"
+    ],
+    "note": "Source-derived response shape with synthetic GUIDs, paths and names; NOT a live Archicad capture."
+  },
+  "response": {
+    "hotlinks": [
+      {
+        "hotlinkNodeId": {"guid": "10000000-0000-4000-8000-000000000001"},
+        "name": "Apartment module",
+        "type": "Module",
+        "location": "C:\\BIM\\Apartment.mod",
+        "children": [
+          {
+            "hotlinkNodeId": {"guid": "10000000-0000-4000-8000-000000000002"},
+            "name": "Kitchen nested module",
+            "type": "Module",
+            "location": "C:\\BIM\\Kitchen.mod"
+          }
+        ]
+      },
+      {
+        "hotlinkNodeId": {"guid": "20000000-0000-4000-8000-000000000001"},
+        "name": "Survey",
+        "type": "XRef",
+        "location": "C:\\BIM\\Survey.dwg"
+      }
+    ]
+  }
+}

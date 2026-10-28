@@ -522,6 +522,13 @@
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
 
+### Read linked modules and XRefs
+
+- Add read-only `list_hotlinks`, backed by Tapir 1.7.0 `GetHotlinks`. It flattens the
+  native node tree in preorder and returns each Module/XRef GUID, name, source path,
+  parent GUID and depth. Search matches name, type or path before pagination. The full
+  response is validated, including unique non-null GUIDs and valid node types. Its
+  source-derived fixture is explicitly synthetic and not a live Archicad capture.
 ### Read detailed attributes
 
 - Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir

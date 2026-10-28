@@ -91,6 +91,7 @@ INPUTS = {
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
+    "list_hotlinks": {},
     "get_attribute_details": {"kind": "composites", "guids": []},
     "list_design_options": {},
     "get_elements_of_design_options": {
