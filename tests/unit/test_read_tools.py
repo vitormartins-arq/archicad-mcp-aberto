@@ -113,10 +113,10 @@ async def test_stories_and_project():
         assert (await read.get_stories(c))["stories"][0]["name"] == "Térreo"
 
 
-async def test_server_registers_eleven_read_only_tools_and_wall_creation():
+async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 130
+    assert len(tools) == 157
     writes = {
         "save_project_as",
         "save_next_project_revision",
@@ -172,6 +172,8 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "create_worksheets",
         "create_details",
         "create_layouts",
+        "create_drawings",
+        "create_profiles",
         "rename_items",
         "modify_labels",
         "create_meshes",
@@ -199,7 +201,6 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "save_3d_scenes",
         "save_room_plan_views",
         "create_composites",
-        "create_drawings",
         "add_stories",
         "create_design_options",
         "move_to_design_options",
@@ -216,10 +217,11 @@ async def test_server_registers_eleven_read_only_tools_and_wall_creation():
         "move_navigator_items",
         "update_favorites_from_elements",
         "create_grid_elements",
+        "create_layer_combinations",
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 32
+    assert len(reads) == 57
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

@@ -568,6 +568,114 @@
       "description": "Preview or overwrite existing favorites from elements of their type."
     },
     {
+      "name": "list_hotlinks",
+      "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
+    },
+    {
+      "name": "get_attribute_details",
+      "description": "Read detailed composites, profiles, surfaces, physical properties, zone categories, pen tables, lines or fills."
+    },
+    {
+      "name": "get_ifc_of_elements",
+      "description": "Read IFC type, IDs and properties for elements."
+    },
+    {
+      "name": "find_elements_by_ifc_ids",
+      "description": "Find elements by IFC GlobalId."
+    },
+    {
+      "name": "get_project_location",
+      "description": "Read geolocation, survey point and calculation units."
+    },
+    {
+      "name": "get_layout_settings",
+      "description": "Read layout dimensions, margins, numbering and custom data."
+    },
+    {
+      "name": "get_dimension_data",
+      "description": "Read dimension data for elements."
+    },
+    {
+      "name": "get_model_view_options",
+      "description": "List model view options."
+    },
+    {
+      "name": "list_libraries",
+      "description": "List project libraries and special folders."
+    },
+    {
+      "name": "get_element_preview",
+      "description": "Return PNG previews of elements as MCP image content."
+    },
+    {
+      "name": "get_zone_image",
+      "description": "Return PNG zone plan images as MCP image content."
+    },
+    {
+      "name": "get_favorite_preview",
+      "description": "Return PNG favorite previews as MCP image content."
+    },
+    {
+      "name": "get_zone_boundaries",
+      "description": "Read zone boundary surfaces and connected elements."
+    },
+    {
+      "name": "get_zone_relations",
+      "description": "Read type-specific relations of zones."
+    },
+    {
+      "name": "create_layer_combinations",
+      "description": "Preview/create new layer combinations with explicit per-layer states."
+    },
+    {
+      "name": "list_mep_systems",
+      "description": "Read MEP systems and distribution systems."
+    },
+    {
+      "name": "get_mep_elements",
+      "description": "Read MEP elements, routing details and ports."
+    },
+    {
+      "name": "get_mep_preference_tables",
+      "description": "Read MEP segment preference tables."
+    },
+    {
+      "name": "find_collisions",
+      "description": "Read collisions between two bounded element groups."
+    },
+    {
+      "name": "list_document_revisions",
+      "description": "Read document revisions and layouts."
+    },
+    {
+      "name": "list_revision_issues",
+      "description": "Read revision issues without issuing."
+    },
+    {
+      "name": "get_revision_changes",
+      "description": "Read global, element and layout revision changes."
+    },
+    {
+      "name": "get_subelements",
+      "description": "Read hierarchical element subelements."
+    },
+    {
+      "name": "get_element_trims",
+      "description": "Read element trim relationships."
+    },
+    {
+      "name": "get_solid_operation_links",
+      "description": "Read solid-operation target/operator links."
+    },
+    {
+      "name": "get_section_elements",
+      "description": "Read section elements and their model owners."
+    },
+    {
+      "name": "create_profiles",
+      "description": "Preview or create complex profiles by copying existing profile geometry."
+    },
+    {
       "name": "save_project_as",
       "description": "Preview native Save As PLN to a new explicit destination."
     },

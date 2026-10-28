@@ -12,7 +12,7 @@ from copy import deepcopy
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient, resolve_port
 from archicad_mcp_aberto.tools import drafting, edit, modify, navigator, renames, write
@@ -24,9 +24,24 @@ REVERT_NOTE = (
 )
 
 
+class ViewZoom(write.InputModel):
+    x_min: float
+    y_min: float
+    x_max: float
+    y_max: float
+
+    @model_validator(mode="after")
+    def ordered(self) -> ViewZoom:
+        if self.x_max <= self.x_min or self.y_max <= self.y_min:
+            raise ValueError("zoom maximums must be greater than minimums")
+        return self
+
+
 class ViewSettingsChange(modify._Edit):
     drawing_scale: Annotated[int, Field(ge=1, le=1000000)] | None = None
     layer_combination: Annotated[str, Field(min_length=1, max_length=255)] | None = None
+    zoom: ViewZoom | None = None
+    rotation: Annotated[float, Field(ge=-math.tau, le=math.tau)] | None = None
 
 
 def _guids(values):
@@ -128,6 +143,18 @@ async def _plan(client, changes, port, operation):
             row = _combination(catalog, change.layer_combination)
             native["layerCombination"] = row["name"]
             selected[row["attributeId"]["guid"].upper()] = row
+        if change.zoom is not None:
+            native["zoom"] = {
+                "xMin": change.zoom.x_min,
+                "yMin": change.zoom.y_min,
+                "xMax": change.zoom.x_max,
+                "yMax": change.zoom.y_max,
+            }
+        if change.rotation is not None:
+            native["rotation"] = change.rotation
+        expected = {**deepcopy(before), **native}
+        if change.zoom is not None:
+            expected["saveZoom"] = True
         items.append(
             {
                 "index": i,
@@ -137,7 +164,7 @@ async def _plan(client, changes, port, operation):
                 "navigator_item": nodes[change.guid],
                 "before": deepcopy(before),
                 "new": change.model_dump(exclude={"guid"}, exclude_none=True),
-                "expected": {**deepcopy(before), **native},
+                "expected": expected,
                 "parameters": {"navigatorItemId": {"guid": change.guid}, "viewSettings": native},
             }
         )
@@ -216,9 +243,9 @@ async def set_view_settings(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview/set scale denominator and/or an existing layer combination for up to
-    100 views. Preserves other readable settings, checks them after apply. No guaranteed
-    Undo: restore from before values using a new preview or View Settings. Never saves.
+    """Preview/set scale, layer combination, zoom box in model metres and/or rotation
+    in radians for up to 100 views. Preserves other readable settings and checks them
+    after apply. No guaranteed Undo: restore from the receipt or View Settings. Never saves.
     """
     entries = [
         c if isinstance(c, ViewSettingsChange) else ViewSettingsChange.model_validate(c)

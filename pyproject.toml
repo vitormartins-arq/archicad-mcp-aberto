@@ -24,6 +24,7 @@ dependencies = [
 
 [project.scripts]
 archicad-mcp-aberto = "archicad_mcp_aberto.server:main"
+archicad-mcp-doctor = "archicad_mcp_aberto.doctor:main"
 
 [dependency-groups]
 dev = [
