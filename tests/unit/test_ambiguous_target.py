@@ -40,6 +40,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     openings,
     project_info,
+    project_location,
     property_definitions,
     read,
     renames,
@@ -96,6 +97,8 @@ INPUTS = {
     "get_attribute_details": {"kind": "composites", "guids": []},
     "get_ifc_of_elements": {"element_guids": [GUID]},
     "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
+    "get_project_location": {},
+    "get_layout_settings": {"layout_database_guids": [GUID]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -489,6 +492,8 @@ TARGETED = {
         navigator_moves,
         openings,
         project_info,
+        project_location,
+        project_location,
         property_definitions,
         read,
         roofs,

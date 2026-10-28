@@ -838,3 +838,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T33 — IFC element data
 - [ ] Compare IFC type, type-object type, internal/external ID and properties for mapped elements.
 - [ ] Resolve valid, missing and duplicate IFC GlobalIds and confirm their row alignment.
+## T34 — Project location, units and layouts
+- [ ] Compare longitude, latitude, altitude, north angle, survey point and CRS with Location Settings.
+- [ ] Compare calculation units and layout size, margins, numbering and custom data; include an invalid layout GUID.

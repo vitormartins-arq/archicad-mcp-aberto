@@ -1047,3 +1047,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   100 e erro nativo por item. Fixture source-derived, not a live capture.
 ## 2026-10-21 — T33 IFC element data
 - Added bounded IFC type, identifier, property and reverse GlobalId lookups; no export paths.
+## 2026-10-21 — T34 project location
+- Added read-only project geolocation/calculation units and bounded layout settings queries.

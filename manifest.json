@@ -582,6 +582,14 @@
     {
       "name": "find_elements_by_ifc_ids",
       "description": "Find elements by IFC GlobalId."
+    },
+    {
+      "name": "get_project_location",
+      "description": "Read geolocation, survey point and calculation units."
+    },
+    {
+      "name": "get_layout_settings",
+      "description": "Read layout dimensions, margins, numbering and custom data."
     }
   ],
   "compatibility": {

@@ -536,3 +536,5 @@
   omission inventories the kind first. Calls are bounded to 500 and batched by 100.
 ### IFC reading
 - Add read-only IFC metadata and GlobalId lookup tools from Tapir 1.7.0.
+### Project location and layouts
+- Add read-only geolocation, calculation-unit and layout-setting tools from Tapir 1.7.0.

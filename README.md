@@ -878,3 +878,8 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   accepts up to 100 inputs and preserves aligned results; neither exports IFC. Fixtures
   are source-derived, not a live capture. Registry: **100 tools (31 reads, 69
   writes/interactions)**.
+- `get_project_location(port?)` reads Tapir geolocation, survey point and calculation
+  units; altitude and coordinates use metres and north uses radians. `get_layout_settings`
+  reads dimensions, margins, numbering and custom data for up to 100 layout database GUIDs,
+  preserving errors. Fixtures are source-derived, not a live capture. Registry: **100 tools
+  (31 reads, 69 writes/interactions)**.

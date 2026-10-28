@@ -1295,6 +1295,25 @@ class FakeArchicad:
                 for row in args["elements"]
             ]
             return ok({"addOnCommandResponse": {key: rows}})
+        if name in {"GetGeoLocation", "GetCalculationUnits", "GetLayoutSettings"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_project_location_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetGeoLocation":
+                return ok({"addOnCommandResponse": deepcopy(fixture["geolocation"])})
+            if name == "GetCalculationUnits":
+                return ok({"addOnCommandResponse": deepcopy(fixture["calculationUnits"])})
+            rows = [
+                deepcopy(fixture["layoutSettings"])
+                if row["databaseId"]["guid"] == fixture["layout_guid"]
+                else {"error": {"code": -2, "message": "Layout not found"}}
+                for row in args["layoutDatabaseIds"]
+            ]
+            return ok({"addOnCommandResponse": {"layoutSettings": rows}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

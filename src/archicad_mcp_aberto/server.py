@@ -29,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     modify,
     openings,
     project_info,
+    project_location,
     property_definitions,
     read,
     write,
@@ -2048,6 +2049,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
         return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_location(ctx: Context, port: int | None = None) -> dict:
+        """Read geolocation, survey point and calculation units; north is radians."""
+        return await project_location.get_project_location(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_layout_settings(
+        ctx: Context, layout_database_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read sizes, margins, numbering and custom data for up to 100 layouts."""
+        return await project_location.get_layout_settings(
+            client_of(ctx), layout_database_guids, port
+        )
 
     return mcp
 
