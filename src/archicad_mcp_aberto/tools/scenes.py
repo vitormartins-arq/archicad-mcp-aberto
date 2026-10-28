@@ -7,12 +7,14 @@ Three steps, the workflow of docs/3D_SCENES.md:
    only, and suggests a first camera per room from its box.
 2. ``shoot_3d_scenes`` sets each camera and returns the 3D window images, so the model
    can look at them, move the bad ones once and drop the rest.
-3. ``save_3d_scenes`` saves the kept scenes as View Map views, one folder per room.
+3. ``save_3d_scenes`` saves the kept scenes in the View Map, one folder per room:
+   every scene as a 3D view and each perspective also as a camera of one camera path
+   (BIMx loads cameras faster than saved 3D views).
 
 Shooting and saving use the ArchicadMcpAberto add-on (addon/): Get3DCamera, Set3DCamera,
-Get3DCutPlanes, Set3DCutPlanes, Show3DAll, Get3DWindowImage and Save3DView. Both put the
-3D camera and cut back as they found them. Nothing here edits elements or saves the
-project; saved views are View Map items, outside Archicad's Undo.
+Get3DCutPlanes, Set3DCutPlanes, Show3DAll, Get3DWindowImage, Save3DView and SaveCameraView.
+Both put the 3D camera and cut back as they found them. Nothing here saves the project;
+View Map items are outside Archicad's Undo, the camera elements are inside it.
 """
 
 from __future__ import annotations
@@ -40,6 +42,7 @@ from archicad_mcp_aberto.tools.write import PREVIEW_SECONDS, _digest
 
 MAX_SHOTS = 8
 MAX_VIEWS = 60
+DEFAULT_CAMERA_PATH = "BIMx - Câmeras"
 MAX_ELEMENTS_PER_TYPE = 2000
 ELEMENT_TYPES = ("Wall", "Column", "Object", "Door", "Window", "CurtainWall")
 ZONE_PROPERTIES = ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea")
@@ -416,7 +419,11 @@ async def read_scene_model(
 
 
 async def _addon(client, port, name, parameters=None):
-    timeout = SLOW_COMMAND_TIMEOUT if name in {"Get3DWindowImage", "Save3DView"} else None
+    timeout = (
+        SLOW_COMMAND_TIMEOUT
+        if name in {"Get3DWindowImage", "Save3DView", "SaveCameraView"}
+        else None
+    )
     try:
         return await client.own_addon(port, name, parameters, timeout=timeout)
     except CommandNotRegistered as exc:
@@ -544,9 +551,13 @@ async def save_3d_scenes(
     port: int | None = None,
     dry_run: bool = True,
     confirmation_token: str | None = None,
+    as_cameras: bool = True,
+    camera_path_name: str = DEFAULT_CAMERA_PATH,
 ) -> dict:
-    """Save scenes as View Map views under folder_path + each scene's folder.
+    """Save scenes in the View Map under folder_path + each scene's folder.
 
+    Every scene is saved as a 3D view. With as_cameras (the default) each perspective is
+    also saved as a camera of camera_path_name, with its View Map item in the same folder.
     Dry run first; apply the same inputs with the explicit port and the one-use token.
     """
     entries = _scenes(scenes, MAX_VIEWS)
@@ -555,11 +566,24 @@ async def save_3d_scenes(
     if not dry_run and port is None:
         raise ValueError("Saving views requires the explicit port of the dry run.")
     port = await resolve_port(client, port)
+    if as_cameras and (not camera_path_name or len(camera_path_name) > 200):
+        raise ValueError("camera_path_name needs 1 to 200 characters.")
     plan = [
-        {"name": s.name, "folder_path": folder_path + ([s.folder] if s.folder else [])}
+        {
+            "name": s.name,
+            "folder_path": folder_path + ([s.folder] if s.folder else []),
+            "kind": "camera" if as_cameras and s.parallel is None else "view",
+        }
         for s in entries
     ]
-    digest = _digest({"port": port, "scenes": [s.model_dump() for s in entries], "plan": plan})
+    digest = _digest(
+        {
+            "port": port,
+            "scenes": [s.model_dump() for s in entries],
+            "plan": plan,
+            "camera_path": camera_path_name if as_cameras else None,
+        }
+    )
     previews = _previews.setdefault(client, {})
     now = time.monotonic()
     for token in [t for t, (expiry, _) in previews.items() if expiry <= now]:
@@ -572,6 +596,7 @@ async def save_3d_scenes(
             "port": port,
             "dry_run": True,
             "views": plan,
+            "camera_path": camera_path_name if as_cameras else None,
             "confirmation_token": token,
             "expires_in_seconds": PREVIEW_SECONDS,
             "note": (
@@ -591,13 +616,16 @@ async def save_3d_scenes(
         for scene, row in zip(entries, plan, strict=True):
             try:
                 await _set_scene(client, port, scene)
-                result = await _addon(
-                    client,
-                    port,
-                    "Save3DView",
-                    {"name": scene.name, "folderPath": row["folder_path"]},
-                )
-                saved.append({**row, "status": "saved", "view_guid": result.get("viewGuid")})
+                arguments = {"name": scene.name, "folderPath": row["folder_path"]}
+                result = await _addon(client, port, "Save3DView", arguments)
+                done = {**row, "status": "saved", "view_guid": result.get("viewGuid")}
+                if row["kind"] == "camera":
+                    camera = await _addon(
+                        client, port, "SaveCameraView", {**arguments, "pathName": camera_path_name}
+                    )
+                    done["camera_view_guid"] = camera.get("viewGuid")
+                    done["camera_guid"] = camera.get("cameraGuid")
+                saved.append(done)
             except ArchicadError as exc:
                 saved.append({**row, "status": "failed", "error": str(exc)})
     finally:
@@ -610,6 +638,7 @@ async def save_3d_scenes(
         "restored": True,
         "note": (
             "New views appear at the top of their folder. View Map changes are outside Undo; "
-            "remove unwanted views by hand. The project was not saved."
+            "remove unwanted views by hand. Cameras keep position, target and view cone but "
+            "not two-point perspective. The project was not saved."
         ),
     }

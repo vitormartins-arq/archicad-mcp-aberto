@@ -1,0 +1,7 @@
+{
+  "provenance": {"kind": "source-derived, not a live capture", "live_capture": false, "tapir_tag": "1.7.0", "tapir_commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8", "sources": ["archicad-addon/Sources/ProjectCommands.cpp", "archicad-addon/Sources/DocumentCreationCommands.cpp"]},
+  "layout_guid": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
+  "geolocation": {"projectLocation": {"longitude": -46.6333, "latitude": -23.5505, "altitude": 760.0, "north": 0.25}, "surveyPoint": {"position": {"eastings": 333000.0, "northings": 7394000.0, "elevation": 760.0}, "positionInProject": {"x": 0.0, "y": 0.0, "z": 0.0}, "geoReferencingParameters": {"crsName": "SIRGAS 2000"}}},
+  "calculationUnits": {"length": {"unit": "Meter", "accuracy": "0.01", "decimals": 2}, "area": {"unit": "SquareMeter", "accuracy": "0.01", "decimals": 2}, "volume": {"unit": "CubicMeter", "accuracy": "0.01", "decimals": 2}, "angle": {"unit": "DecimalDegree", "accuracy": "0.01", "decimals": 2}},
+  "layoutSettings": {"layoutName": "A-01 Floor Plan", "horizontalSize": 0.841, "verticalSize": 0.594, "leftMargin": 0.01, "topMargin": 0.01, "rightMargin": 0.01, "bottomMargin": 0.01, "customLayoutNumber": "A-01", "customLayoutNumbering": true, "doNotIncludeInNumbering": false, "displayMasterLayoutBelow": true, "customData": []}
+}

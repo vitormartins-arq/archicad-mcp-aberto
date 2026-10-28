@@ -31,9 +31,32 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **14 read-only** tools and
+Pre-alpha with **163 registered tools**: **59 read-only**, **3 view/session actions** and
+**101 project or model writes**. The broad surface is already useful, but pre-alpha is
+intentional: older tools have recorded live validation while several newer tools still
+need operator checks in Archicad. The table below is the current registered surface, and
+the manifest test prevents it from drifting away from the server.
+
+Writes preview by default and require a single-use confirmation token and an explicit
+Archicad port to apply. They produce per-item results and receipts and read the result
+back whenever the available API exposes enough information. No tool saves the project.
+Lengths use metres and angles use radians regardless of project display units.
+
+### Capabilities at a glance
+
+- Inspect elements, properties, classifications, attributes, libraries, stories,
+  Navigator trees, views, issues, Design Options and 3D scene geometry.
+- Create and edit common BIM elements, 2D documentation, properties, classifications,
+  layers, favorites, project information and issue data.
+- Create worksheets, details, sections, interior elevations, View Map content, layouts
+  and placed drawings, with saved-view settings and associative dimensions.
+- Use an optional native companion add-on for 3D camera, cut-plane, image and saved-scene
+  operations that the official JSON API and Tapir do not expose.
+- Run every automated test without Archicad against the simulated adapter; fixtures say
+  whether they came from a live response or from the Tapir/API source contract.
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with ** read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
-and explicit port to apply. No tool saves the project. Rotation, GDL parameters and
+and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad
 in this delivery; operator live validation of these additions remains pending.
 
@@ -97,6 +120,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_worksheets` | Write | Up to 20 empty independent worksheets in the Project Map | yes |
 | `create_details` | Write | Up to 20 empty independent details in the Project Map | yes |
 | `create_layouts` | Write | Up to 20 layouts on an existing master layout | yes |
+| `create_drawings` | Write | Place up to 20 existing views on existing layouts | yes |
+| `create_profiles` | Write | New complex profiles copied from existing profile geometry | yes |
 | `rename_items` | Write | Rename template items in bulk: Navigator, favorites, classifications, properties, attributes, layer combinations, attribute folders | yes |
 | `create_layers` | Write | Up to 50 new layers; existing names are refused | yes |
 | `set_element_layers` | Write | Move up to 100 editable elements to existing layers | yes |
@@ -133,6 +158,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `update_favorites_from_elements` | Write | Overwrites existing favorites from elements of their type | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_hotlinks` | Read | Linked Module and XRef nodes with GUID, source path and hierarchy | yes |
 | `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
@@ -142,7 +168,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 | `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
-| `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `save_3d_scenes` | Write | Saves 3D scenes in the View Map, one folder per room: 3D views, plus a camera for each perspective (BIMx) | no (own add-on) |
+| `save_room_plan_views` | Write | Room enlargement views: a framed floor plan view per room, numbered, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
 | `update_drawings` | Write | Updates every Drawing on layouts from its source view | yes |
@@ -161,6 +188,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
+| `get_attribute_details` | Read | Detailed composites, profiles, surfaces, material physics, zone categories, pen tables, lines or fills | yes |
 
 ### Reported live validation
 
@@ -194,6 +222,17 @@ incomplete inventory as proof that an object name is absent.
 
 Requires [uv](https://docs.astral.sh/uv/) and, for most tools, the
 [Tapir](https://github.com/ENZYME-APD/tapir-archicad-automation/releases) add-on in Archicad.
+
+After installation, open Archicad and run:
+
+```bash
+uv run archicad-mcp-doctor
+```
+
+The doctor scans the configured local ports and reports the Archicad version, project,
+Tapir version and optional companion add-on state, followed by a concrete action for
+each problem. It is read-only and never changes the project, view or selection. Use
+`--json` for support logs and `--ports 19723-19730` to override the scan range.
 
 ### Claude Desktop (one click)
 
@@ -256,7 +295,7 @@ order configured.
 - "Busy" (error 4001) is reported as busy, not as a missing add-on.
 - Heavy reads (floor plan polygons) only run when asked for.
 - `create_walls` dry-runs by default. Review the plan with the user before applying;
-  writes have per-wall receipts and a geometry check after applying. No tool saves the project.
+  writes have per-wall receipts and a geometry check after applying. These model-editing tools do not save the project.
 
 ## Wall creation
 
@@ -300,7 +339,7 @@ written, creation is blocked. If the response is lost, the outcome is `unknown`;
 inspect the model and do not retry the same batch. Writes and their verification wait up to 120 s
 (set `ARCHICAD_MCP_WRITE_TIMEOUT` in seconds); reads keep the 12 s default. `unverified` and
 `verification_failed` also require review. Partial successes are not rolled back
-automatically. The server never saves the Archicad project.
+automatically. These model-editing operations never save the Archicad project.
 
 This create-only implementation is tested against the fake Archicad. Its response
 fixtures reuse earlier captured Tapir 1.7.0 responses; no new live tests were run for
@@ -315,7 +354,7 @@ local receipts and post-write verification. Pass up to 20 `slabs`, each with `ou
 Straight edges and simple concave polygons are supported; no holes or arcs.
 The top reference plane is explicit. Layer, material and structure inherit defaults;
 incompatible defaults or changed geometry are reported by verification.
-Each slab has its own `slab_receipt_id`. The server never saves the project.
+Each slab has its own `slab_receipt_id`. This slab operation never saves the project.
 
 The fixture `tests/fixtures/tapir170_create_slabs_documented.json` records pinned
 Tapir 1.7.0 source links. It is documentation/source-derived, **not a live capture**.
@@ -427,6 +466,9 @@ and open to everyone's contributions.
 - `list_property_groups` lists the groups of Options > Property Manager with their GUID, whether each is custom and how many properties it holds. `create_property_groups` previews up to 20 new, empty custom groups (`name`, optional `description`); a name already in use is refused. `create_properties` previews up to 50 custom properties, each in an existing custom group (by name or GUID): `type` is one of Tapir's `number`, `integer`, `string`, `boolean`, `length`, `area`, `volume`, `angle`, their `...List` forms, `singleEnum` or `multiEnum`; optional `description`, `editable` (default true) and `default` (meters and radians; an enum default names its options); `enum_values` for enums; and where it is available, as classification items by GUID, id or name (`available_for`) and/or every item of one classification system (`available_for_system`). A property available for no classification is created, with a warning, because Archicad only shows custom properties on elements whose classification they are available for. Built-in groups and names already in the group are refused; nothing existing is changed or deleted. Each new group and property is read back with `GetAllProperties` (type, group, editability, description, options, availability and enum default). Tapir 1.7.0 `GetAllProperties`, `CreatePropertyGroups` and `CreatePropertyDefinitions`; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.
 
 - `create_worksheets` and `create_details` preview up to 20 empty independent Worksheet or Detail viewpoints, each with `name` and `reference_id`; one that already has the same name and ID is refused. `create_layouts` previews up to 20 layouts, each with `name` and `master` (the name of an existing master layout, case ignored, ambiguous names refused). Tapir's `CreateLayout` would quietly create a master layout that does not exist, so the MCP always sends the master's Navigator ID and refuses a missing master; size and margins come from the master. A layout name already in the Layout Book is refused. Each new database is found back in the Navigator (`GetNavigatorItemTree` and `GetDatabaseIdFromNavigatorItemId`) and its name (and ID, for worksheets and details) compared. Tapir 1.7.0 `CreateWorksheets`, `CreateDetails` and `CreateLayout`; never saves. Tested live on Archicad 30 build 3001 BRA with Tapir 1.7.0.
+- `create_drawings` previews up to 20 existing View Map views placed on existing layouts. Identify both by name and give the layout position in metres; optional fields include custom name, scale, drawing scale and angle in radians. The preview resolves the source Navigator GUID and destination layout database GUID, application needs the same explicit port and single-use token, and every returned element is read back as a Drawing. Tapir 1.7.0 `CreateDrawings`; never saves. Live verification is pending.
+- `set_view_settings` can store an exact 2D zoom box (`x_min`, `y_min`, `x_max`, `y_max`, in model metres) and rotation in radians. This allows a cloned floor-plan view to be framed around a room without changing the user's current window. Tapir 1.7.0 `SetViewSettings`; live visual verification is pending.
+- `create_profiles` creates up to 20 new complex profiles by copying the complete cross-section geometry of an existing profile. It can independently enable use with walls, beams, columns, handrails and GDL objects. Existing names are refused and never overwritten; every scalar setting is read back. Tapir 1.7.0 `CreateProfiles`; live verification of copied geometry is pending.
 
 - `rename_items` renames template items of one `kind` in bulk: `view_map`, `project_map` or `layout_book` items (the map's root is left alone), `favorites`, `classification_systems`, `classification_items` (both the id, which BRA uses for the item text, and the name), custom `property_groups` and `properties` (built-in ones are left alone), `building_materials`, `layers`, `layer_combinations` (each layer's hidden, locked, wireframe and intersection group state is compared before and after, so a rename that changed them reads as `verification_failed`) or `attribute_folders` (the folders of the layer, layer combination, building material, surface... dialogs; `scope` names the attribute type, such as `Layer`; the root folder is left alone, and names must be unique within their parent folder and must not start or end with a space). Pass either `find` and `replace` (every name that contains `find`; an empty `replace` removes it) or `renames`, a list of exact `{old, new}` names; `scope` narrows classification items to one system, properties to one group and favorites to one element type. Each item keeps its GUID, so elements, views and schedules that use it follow the new name; a renamed Navigator item gets a custom name, as when renamed by hand. Names that would clash (attributes, favorites, systems and groups across the project, item ids within a system, properties within a group) and blank names are refused; up to 500 renames per call. Every name is read back. Tapir 1.7.0 `RenameNavigatorItem`, `RenameFavorites`, `UpdateClassificationSystems`, `UpdateClassificationItems`, `UpdatePropertyGroups`, `UpdatePropertyDefinitions`, `CreateBuildingMaterials`/`CreateLayers`/`CreateLayerCombinations` with `overwriteExisting` and the attribute's GUID (only the name is sent, plus the empty `layers` list that `CreateLayerCombinations` requires; Tapir seeds an overwritten combination from its own layer table), and the official `API.GetAttributeFolderStructure` and `API.RenameAttributeFolders` for folders. Model View Options, Graphic Overrides and their rules have no Tapir 1.7.0 command, so they cannot be renamed yet. `surfaces` is refused: in the live test `CreateSurfaces` with only the name also changed each surface's texture. A call Archicad refuses outright (`succeeded: false`) is reported as `failed`, not `unknown`. Never saves. Tested live on 14/10/2026 (Archicad 30 build 3001 BRA, Tapir 1.7.0) except `layer_combinations`, which failed there before the `layers` fix.
 
@@ -666,11 +708,22 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `shoot_3d_scenes(scenes, port?, image_format?)` sets up to 8 scenes and returns their
   images; a scene is `{name, folder?, camera, target, view_cone?, two_point?}` or
   `{name, folder?, parallel: {azimuth?}, cut_height?}` (a horizontal 3D cut, absolute
-  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?)`
-  saves up to 60 as View Map views in `folder_path + [folder]`, creating missing folders;
+  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?,
+  as_cameras?, camera_path_name?)` saves up to 60 in `folder_path + [folder]`, creating
+  missing folders: each as a 3D view and, by default, each perspective also as a camera
+  of one camera path (BIMx loads them faster; two-point perspective is not kept);
   the first folder name is found at any depth. Both put the 3D camera and cut back. They
   need this project's own add-on (`addon/`); the photographer rules are in
   `docs/3D_SCENES.md`.
+- `save_room_plan_views(folder_path, rooms?, stories?, prefix?, first_number?, margin?,
+  scale?, layer_combination?, port?, dry_run?, confirmation_token?)` saves room
+  enlargement views: for each zone (all, or `rooms` by name, label or number, on
+  `stories`), its story's floor plan as a View Map view framed on the zone's box plus
+  `margin` metres (0.5 by default), at `scale` (25 for 1:25 by default, `null` keeps the
+  story's) and an optional existing `layer_combination`. Views go into `folder_path +
+  [room]` and are numbered by story and zone number: "AMP 01 - BANHO", "AMP 02 -
+  COZINHA". Preview first; each saved view's zoom, scale and layers are read back. It
+  needs the add-on's `SaveStoryView`; View Map changes are outside Undo.
 - `create_walls`, `create_slabs`, `create_columns` and `create_beams` take an optional
   `favorite`: the name of a favorite of that tool in the open project (case and outer
   spaces ignored; the preview refuses a name that is missing or of another type). Tapir
@@ -864,3 +917,68 @@ recovery guidance and never changes defaults or retries automatically.
 Attribute properties of type number/integer accept equivalent unitless ASCII decimal
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
+
+## Explicit project saving and revisions
+
+`save_project_as` saves the in-memory project to a new absolute PLN path.
+`save_next_project_revision` proposes the next R/REV in the current folder, then
+archives the previous PLN in `00 - Anteriores` after verifying the native saved path
+and a nonempty file. Both require preview, explicit port and one-use token, the
+updated companion add-on and server on the Archicad computer. No overwrite/Undo;
+never blindly retry an unknown save. `inspect_project_save` is read-only recovery
+inspection. Native build and live acceptance are pending; see
+[save/revision documentation](docs/PROJECT_SAVE_REVISIONS.md).
+- `get_ifc_of_elements(element_guids, port?)` reads IFC type, IDs and properties, while
+  `find_elements_by_ifc_ids(ifc_ids, port?)` resolves IFC GlobalIds to elements. Each
+  accepts up to 100 inputs and preserves aligned results; neither exports IFC. Fixtures
+  are source-derived, not a live capture. Registry: **100 tools (31 reads, 69
+  writes/interactions)**.
+- `get_project_location(port?)` reads Tapir geolocation, survey point and calculation
+  units; altitude and coordinates use metres and north uses radians. `get_layout_settings`
+  reads dimensions, margins, numbering and custom data for up to 100 layout database GUIDs,
+  preserving errors. Fixtures are source-derived, not a live capture. Registry: **100 tools
+  (31 reads, 69 writes/interactions)**.
+- `get_dimension_data`, `get_model_view_options` and `list_libraries` read dimensions,
+  model-view options, loaded libraries and official special-folder paths. Dimension calls
+  accept up to 100 GUIDs. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.
+- `get_element_preview`, `get_zone_image` and `get_favorite_preview` return real MCP PNG
+  image content for up to 10 targets. Dimensions are capped at 1024 × 1024 and decoded
+  images at 5 MiB. Each target also gets metadata or its own error. Fixtures are
+  source-derived, not a live capture. Registry: **101 tools (32 reads, 69
+  writes/interactions)**.
+- `get_zone_boundaries(zone_guids, port?)` reads Tapir 1.7.0 zone boundary surfaces for up
+  to 100 zones. `get_zone_relations(zone_guids, other_element_type?, port?)` reads their
+  type-specific relations. Both preserve an error row for each invalid zone. Coordinates,
+  lengths and areas use SI units. Fixtures are source-derived, not live captures. Registry:
+  **98 tools (31 reads, 67 writes/interactions)**.
+- `create_layer_combinations([{name, layers: [{layer, visible?, locked?, wireframe?,
+  intersection_group?}]}], port?, dry_run?, confirmation_token?)` previews and creates
+  up to 20 new combinations from existing layers. Existing names and missing layers are
+  refused. Apply uses an explicit port and one-use token, then reads every requested state
+  back; it never overwrites, deletes or saves. The fake schema is source-derived, not a
+  live capture. Registry: **99 tools (29 reads, 70 writes/interactions)**.
+- `list_mep_systems`, `get_mep_elements` and `get_mep_preference_tables` expose bounded,
+  read-only MEP systems, distributions, routing details, ports and circular preference
+  tables through Tapir 1.7.0. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.
+- `find_collisions(group1_guids, group2_guids, volume_tolerance?, perform_surface_check?,
+  surface_tolerance?, port?)` runs Tapir 1.7.0 `GetCollisions` for at most 500 elements
+  per group. Tolerances are SI (m³ volume and m² surface); it never edits the model.
+  Fixtures are source-derived, not a live capture. Registry: **99 tools (30 reads,
+  69 writes/interactions)**.
+- `list_document_revisions(port?)`, `list_revision_issues(port?)` and
+  `get_revision_changes(element_guids?, layout_database_guids?, port?)` expose Tapir 1.7.0
+  revision data without emitting or changing revisions. Entity lists accept at most 100
+  GUIDs and preserve aligned errors. Fixtures are source-derived, not a live capture.
+  Registry: **101 tools (32 reads, 69 writes/interactions)**.
+- `get_subelements`, `get_element_trims`, `get_solid_operation_links` and
+  `get_section_elements` expose bounded, aligned structural relationships through Tapir
+  1.7.0. Each element/database list accepts at most 100 GUIDs. Fixtures are source-derived,
+  not a live capture. Registry: **102 tools (33 reads, 69 writes/interactions)**.
+- `create_profiles` also accepts caller-authored `skins` on Archicad 27 or later. Each
+  skin names an existing building material and supplies one or more local-coordinate
+  contours in metres; the first contour is the outer boundary and later contours are
+  holes. A source profile is optional and, when supplied, the new skins are added to its
+  copied geometry. New names only, at most 20 profiles per call; never overwrites or saves.
+

@@ -14,21 +14,34 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
+    camera_paths,
     classifications,
+    collisions,
     design_options,
     documents,
     drafting,
     edit,
+    element_structure,
     favorites,
     gateway,
+    hotlinks,
+    ifc,
     keynotes,
     locks,
+    model_tasks,
     modify,
     object_replacement,
     openings,
+    preview_images,
+    profiles,
     project_info,
+    project_location,
+    project_resources,
+    project_save,
     property_definitions,
     read,
+    revisions,
     write,
 )
 from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
@@ -43,12 +56,14 @@ from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import layout_book as layout_book_tool
+from archicad_mcp_aberto.tools import mep as mep_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
+from archicad_mcp_aberto.tools import room_views as room_views_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
@@ -62,6 +77,7 @@ from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
+from archicad_mcp_aberto.tools import zones_read as zones_read_tool
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -1273,10 +1289,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/set drawing_scale denominator and/or existing layer_combination by
-        name/GUID for up to 100 PublicViewMap views. Read-back checks settings unchanged
-        except requested fields. No guaranteed Navigator Undo; previous values retained.
-        Explicit apply port, single-use token and receipt; never saves or publishes.
+        """Preview/set drawing_scale, layer_combination, zoom box in model metres and/or
+        rotation in radians for up to 100 PublicViewMap views. Read-back checks settings
+        unchanged except requested fields. No guaranteed Navigator Undo; previous values
+        retained. Explicit apply port, single-use token and receipt; never saves/publishes.
         """
         return await views_tool.set_view_settings(
             client_of(ctx), changes, port, dry_run, confirmation_token
@@ -1490,6 +1506,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=READ_ONLY)
+    async def list_hotlinks(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List linked Module and XRef nodes in tree order with GUID, source path,
+        parent and depth. Query matches name, type or path; pages up to 500. Read-only,
+        requires Tapir 1.7.0.
+        """
+        return await hotlinks.list_hotlinks(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
     async def list_keynotes(ctx: Context, port: int | None = None) -> dict:
         """Keynote folders and items (Archicad 28+): GUID, parent folder GUID, key path,
         key, title, description and reference. Requires Tapir."""
@@ -1644,6 +1674,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return content
 
     @mcp.tool(annotations=WRITE)
+    async def save_room_plan_views(
+        ctx: Context,
+        folder_path: list[str],
+        rooms: list[str] | None = None,
+        stories: list[int] | None = None,
+        prefix: str = "AMP",
+        first_number: int = 1,
+        margin: float = 0.5,
+        scale: int | None = 25,
+        layer_combination: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Room enlargement views: per zone (all, or rooms by name or number, on stories),
+        save its story's floor plan in the View Map framed on the room plus margin (m),
+        at scale (25 = 1:25) and an optional layer_combination, in folder_path + a folder
+        named after the room, numbered "AMP 01 - <room>" by story and zone number.
+        Preview first; apply with explicit port and token. Needs the ArchicadMcpAberto
+        add-on. Outside Undo; never saves."""
+        return await room_views_tool.save_room_plan_views(
+            client_of(ctx), folder_path, rooms, stories, prefix, first_number, margin, scale,
+            layer_combination, port, dry_run, confirmation_token,
+        )  # fmt: skip
+
+    @mcp.tool(annotations=WRITE)
     async def save_3d_scenes(
         ctx: Context,
         scenes: list[scenes_tool.Scene],
@@ -1651,14 +1707,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
+        as_cameras: bool = True,
+        camera_path_name: str = scenes_tool.DEFAULT_CAMERA_PATH,
     ) -> dict:
-        """Preview/save up to 60 scenes (shoot_3d_scenes shape) as View Map views in
+        """Preview/save up to 60 scenes (shoot_3d_scenes shape) in the View Map, in
         folder_path + each scene's folder (one per room); folders are created when missing.
+        Every scene is saved as a 3D view; by default each perspective is also saved as a
+        camera of camera_path_name (BIMx loads cameras faster; two-point is not kept).
         Apply identical inputs with explicit port and one-use token. Puts the 3D window
-        back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
+        back. Never saves the project. Needs the ArchicadMcpAberto add-on."""
         return await scenes_tool.save_3d_scenes(
-            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
-        )
+            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token,
+            as_cameras, camera_path_name,
+        )  # fmt: skip
 
     @mcp.tool(annotations=WRITE)
     async def create_composites(
@@ -1891,41 +1952,6 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Grid Tool defaults. Needs the ArchicadMcpAberto add-on."""
         return await grids_tool.list_grid_elements(client_of(ctx), port, include_parameters)
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def inspect_object_replacements(
-        ctx: Context,
-        guids: list[str],
-        target_unid: str | None = None,
-        port: int | None = None,
-        target_index: int | None = None,
-    ) -> dict:
-        """Read current object libraries, transforms, GDL parameters and exact target
-        defaults. Supply either full target_unid or target_index from list_library_parts;
-        index lookup resolves the full immutable ID to use in replacement previews.
-        Use before retrying an unknown replacement outcome. No writes."""
-        return await object_replacement.inspect_object_replacements(
-            client_of(ctx), guids, target_unid, port, target_index
-        )
-
-    @mcp.tool(annotations=WRITE)
-    async def replace_object_libraries(
-        ctx: Context,
-        replacements: list[object_replacement.Replacement],
-        port: int | None = None,
-        dry_run: bool = True,
-        confirmation_token: str | None = None,
-    ) -> dict:
-        """Replace library parts of existing standalone Objects, preserving GUID and
-        final dimensions. Requires the updated companion add-on, one exact target_unid
-        per batch and explicit source_mount/target_mount {x,y,z} measured in metres in
-        final-sized local axes before reflection/rotation. Never infer mounting points.
-        Preview discloses parameter resets and anchor changes. Apply requires explicit
-        port and single-use confirmation; inspect the receipt before retrying unknown
-        results. One Undo batch; never imports or saves a project."""
-        return await object_replacement.replace_object_libraries(
-            client_of(ctx), replacements, port, dry_run, confirmation_token
-        )
-
     @mcp.tool(annotations=WRITE)
     async def create_grid_elements(
         ctx: Context,
@@ -2013,6 +2039,385 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         token; each instance is read back. Requires Tapir. Never saves."""
         return await hotlinks_tool.place_hotlinks(
             client_of(ctx), placements, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_attribute_details(
+        ctx: Context,
+        kind: attributes_details.AttributeKind,
+        guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read details for up to 500 composites, profiles, surfaces, building material
+        physics, zone categories, pen tables, line types or fill types. Omit guids to
+        read that whole attribute kind. Native errors remain per item; never writes."""
+        return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_ifc_of_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read IFC type, IDs and properties for up to 100 elements. No export."""
+        return await ifc.get_ifc_of_elements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements_by_ifc_ids(
+        ctx: Context, ifc_ids: list[str], port: int | None = None
+    ) -> dict:
+        """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
+        return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_location(ctx: Context, port: int | None = None) -> dict:
+        """Read geolocation, survey point and calculation units; north is radians."""
+        return await project_location.get_project_location(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_layout_settings(
+        ctx: Context, layout_database_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read sizes, margins, numbering and custom data for up to 100 layouts."""
+        return await project_location.get_layout_settings(
+            client_of(ctx), layout_database_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_data(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read source-derived dimension data for up to 100 elements."""
+        return await project_resources.get_dimension_data(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_model_view_options(ctx: Context, port: int | None = None) -> dict:
+        """List the project's model-view-option combinations."""
+        return await project_resources.get_model_view_options(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_libraries(
+        ctx: Context, folder_types: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """List project libraries and requested Archicad special folders."""
+        return await project_resources.list_libraries(client_of(ctx), folder_types, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_preview(
+        ctx: Context,
+        element_guids: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 element previews."""
+        result = await preview_images.get_element_preview(
+            client_of(ctx), element_guids, image_type, width, height, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_image(
+        ctx: Context,
+        zone_guids: list[str],
+        width: int = 256,
+        height: int = 256,
+        offset: float = 0.001,
+        scale: float = 0.005,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 zone plan images."""
+        result = await preview_images.get_zone_image(
+            client_of(ctx), zone_guids, width, height, offset, scale, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_favorite_preview(
+        ctx: Context,
+        favorite_names: list[str],
+        image_type: Literal["2D", "Section", "3D"] = "3D",
+        width: int = 128,
+        height: int = 128,
+        port: int | None = None,
+    ) -> list:
+        """Return PNG MCP image content for up to 10 favorite previews."""
+        result = await preview_images.get_favorite_preview(
+            client_of(ctx), favorite_names, image_type, width, height, port
+        )
+        return result["content"]
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_boundaries(
+        ctx: Context, zone_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read Tapir boundary surfaces for up to 100 zones, in metres."""
+        return await zones_read_tool.get_zone_boundaries(client_of(ctx), zone_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_zone_relations(
+        ctx: Context,
+        zone_guids: list[str],
+        other_element_type: str | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read type-specific relations for up to 100 zones; optional type filter."""
+        return await zones_read_tool.get_zone_relations(
+            client_of(ctx), zone_guids, other_element_type, port
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_layer_combinations(
+        ctx: Context,
+        combinations: list[layer_settings_tool.LayerCombinationCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/create up to 20 new layer combinations. Every named layer must
+        exist. Existing combination names are refused. Explicit apply port, one-use token,
+        receipt and read-back; never overwrites, deletes or saves."""
+        return await layer_settings_tool.create_layer_combinations(
+            client_of(ctx), combinations, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_mep_systems(ctx: Context, port: int | None = None, limit: int = 100) -> dict:
+        """List up to 100 MEP systems and project distribution systems."""
+        return await mep_tool.list_mep_systems(client_of(ctx), port, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_mep_elements(
+        ctx: Context,
+        element_types: list[str] | None = None,
+        domains: list[str] | None = None,
+        limit: int = 100,
+        port: int | None = None,
+    ) -> dict:
+        """List up to 100 MEP elements with routing details and aligned ports."""
+        return await mep_tool.get_mep_elements(client_of(ctx), element_types, domains, limit, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_mep_preference_tables(
+        ctx: Context, domain: Literal["Piping", "Ventilation"], port: int | None = None
+    ) -> dict:
+        """Read circular segment preference tables for one MEP domain."""
+        return await mep_tool.get_mep_preference_tables(client_of(ctx), domain, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_collisions(
+        ctx: Context,
+        group1_guids: list[str],
+        group2_guids: list[str],
+        volume_tolerance: float = 0.001,
+        perform_surface_check: bool = False,
+        surface_tolerance: float = 0.001,
+        port: int | None = None,
+    ) -> dict:
+        """Find collisions between two groups of up to 500 elements. Tolerances use
+        project-independent SI: volume in m³ and surface area in m². Read-only."""
+        return await collisions.find_collisions(
+            client_of(ctx),
+            group1_guids,
+            group2_guids,
+            volume_tolerance,
+            perform_surface_check,
+            surface_tolerance,
+            port,
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_document_revisions(ctx: Context, port: int | None = None) -> dict:
+        """List document revisions and their layout information; read-only."""
+        return await revisions.list_document_revisions(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_revision_issues(ctx: Context, port: int | None = None) -> dict:
+        """List revision issues and issuance state; never issues a revision."""
+        return await revisions.list_revision_issues(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_revision_changes(
+        ctx: Context,
+        element_guids: list[str] | None = None,
+        layout_database_guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """List revision changes and optionally aligned changes for up to 100 elements
+        and 100 layout databases. Read-only; never emits or modifies a revision."""
+        return await revisions.get_revision_changes(
+            client_of(ctx), element_guids, layout_database_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_subelements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read subelements of up to 100 curtain walls, stairs or railings."""
+        return await element_structure.get_subelements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_element_trims(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read trim relationships for up to 100 elements."""
+        return await element_structure.get_element_trims(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_solid_operation_links(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read target/operator solid-operation links for up to 100 elements."""
+        return await element_structure.get_solid_operation_links(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_section_elements(
+        ctx: Context, database_guids: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """Read generated section elements and their model owners in up to 100 databases."""
+        return await element_structure.get_section_elements(client_of(ctx), database_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_profiles(
+        ctx: Context,
+        profile_data: list[profiles.ProfileCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview creating up to 20 complex profiles from an existing profile and/or
+        caller-authored polygon skins. Skin contours use local metres; later contours
+        are holes. Optionally control wall/beam/column/handrail/object use. Existing
+        names are refused. Explicit apply port and single-use token; read-back
+        verification; never overwrites or saves. Requires Tapir 1.7.0."""
+        return await profiles.create_profiles(
+            client_of(ctx), profile_data, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_camera_paths(ctx: Context, port: int | None = None) -> dict:
+        """Read native camera paths, physical cameras and source-view identities."""
+        return await camera_paths.list_camera_paths(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_camera_paths_from_views(
+        ctx: Context,
+        path_name: str = "BIMx - Apresentação",
+        view_guids: list[str] | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Create physical cameras from saved perspectives in Navigator order.
+        Skip axonometries, separate representations, preserve existing cameras.
+        Apply checkpoints automatically and saves to the same PLN. No publishing.
+        Requires the updated native companion. Preview/token and explicit port to apply.
+        """
+        return await camera_paths.create_camera_paths_from_views(
+            client_of(ctx), path_name, view_guids, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def begin_model_task(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preserve a verified pre-task PLN backup in 00 - Anteriores, including unsaved edits.
+        Keep the working filename. Internal preview/apply is covered by the user's
+        editing request; no manual Save As or test-project requirement.
+        """
+        return await model_tasks.begin_model_task(client_of(ctx), port, dry_run, confirmation_token)
+
+    @mcp.tool(annotations=WRITE)
+    async def finish_model_task(
+        ctx: Context,
+        task_token: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the completed editing task to the SAME PLN with its pre-task backup retained.
+        Requires a verified begin_model_task token. Never blindly retry an unknown save.
+        """
+        return await model_tasks.finish_model_task(
+            client_of(ctx), task_token, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_project_as(
+        ctx: Context,
+        destination_path: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save the in-memory project as a new absolute PLN on this computer.
+        Preview first, explicit port and one-use token to apply. No overwrite/Undo.
+        Requires the updated companion add-on; the server and Archicad must share files.
+        Never blindly retry an unknown save. No archival in this explicit-path tool."""
+        return await project_save.save_project_as(
+            client_of(ctx), destination_path, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_next_project_revision(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save next R/REV in the current folder, then move the previous PLN into
+        00 - Anteriores only after native path and nonempty file verification. No overwrite,
+        no Undo. Preview/token/explicit port required. Untitled/Teamwork refused.
+        Requires updated companion add-on and server on the Archicad computer."""
+        return await project_save.save_next_project_revision(
+            client_of(ctx), port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_project_save(
+        ctx: Context, destination_path: str, port: int | None = None
+    ) -> dict:
+        """Read native save identity and destination file metadata after an unknown
+        result; never retries, saves or moves files. Requires companion add-on."""
+        return await project_save.inspect_project_save(client_of(ctx), destination_path, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_object_replacements(
+        ctx: Context,
+        guids: list[str],
+        target_unid: str | None = None,
+        port: int | None = None,
+        target_index: int | None = None,
+    ) -> dict:
+        """Read current object libraries, transforms, GDL parameters and exact target
+        defaults. Supply either full target_unid or target_index from list_library_parts;
+        index lookup resolves the full immutable ID to use in replacement previews.
+        Use before retrying an unknown replacement outcome. No writes."""
+        return await object_replacement.inspect_object_replacements(
+            client_of(ctx), guids, target_unid, port, target_index
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def replace_object_libraries(
+        ctx: Context,
+        replacements: list[object_replacement.Replacement],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Replace library parts of existing standalone Objects, preserving GUID and
+        final dimensions. Requires the updated companion add-on, one exact target_unid
+        per batch and explicit source_mount/target_mount {x,y,z} measured in metres in
+        final-sized local axes before reflection/rotation. Never infer mounting points.
+        Preview discloses parameter resets and anchor changes. Apply requires explicit
+        port and single-use confirmation; inspect the receipt before retrying unknown
+        results. One Undo batch; never imports or saves a project."""
+        return await object_replacement.replace_object_libraries(
+            client_of(ctx), replacements, port, dry_run, confirmation_token
         )
 
     return mcp

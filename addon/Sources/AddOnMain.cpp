@@ -4,6 +4,10 @@
 #include "ResourceIds.hpp"
 #include "CameraCommands.hpp"
 #include "GridCommands.hpp"
+#include "ProjectSaveCommands.hpp"
+#include "PlanViewCommands.hpp"
+#include "CameraPathCommands.hpp"
+#include "CameraViewCommands.hpp"
 #include "ObjectReplacementCommands.hpp"
 
 template <typename CommandType>
@@ -27,6 +31,16 @@ GSErrCode RegisterInterface (void)
 GSErrCode Initialize (void)
 {
     GSErrCode err = NoError;
+    err |= InitializeProjectSaveEvents ();
+    err |= InstallCommand<GetCameraPathsCommand> ();
+    err |= InstallCommand<PrepareCameraPathCommand> ();
+    err |= InstallCommand<ApplyCameraPathCommand> ();
+    err |= InstallCommand<SealCameraPathCommand> ();
+    err |= InstallCommand<SaveCameraViewCommand> ();
+    err |= InstallCommand<GetCameraViewsCommand> ();
+    err |= InstallCommand<GetProjectSaveContextCommand> ();
+    err |= InstallCommand<SaveProjectAsPLNCommand> ();
+    err |= InstallCommand<SaveCurrentProjectPLNCommand> ();
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
     err |= InstallCommand<Save3DViewCommand> ();
@@ -36,6 +50,7 @@ GSErrCode Initialize (void)
     err |= InstallCommand<GetGridElementDefaultsCommand> ();
     err |= InstallCommand<GetGridElementsCommand> ();
     err |= InstallCommand<CreateGridElementsCommand> ();
+    err |= InstallCommand<SaveStoryViewCommand> ();
     err |= InstallCommand<GetObjectReplacementDataCommand> ();
     err |= InstallCommand<ReplaceObjectLibrariesCommand> ();
 #ifdef ServerMainVers_3000
@@ -46,5 +61,6 @@ GSErrCode Initialize (void)
 
 GSErrCode FreeData (void)
 {
+    FreeProjectSaveEvents ();
     return NoError;
 }

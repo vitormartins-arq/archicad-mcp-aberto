@@ -1,0 +1,23 @@
+{
+  "provenance": {
+    "kind": "source-derived, not a live capture",
+    "live_capture": false,
+    "tapir_tag": "1.7.0",
+    "tapir_commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8",
+    "source": "archicad-addon/Sources/ElementCommands.cpp"
+  },
+  "zone_guid": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
+  "wall_guid": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
+  "boundaries": {
+    "zoneBoundaries": [{
+      "connectedElementId": {"guid": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"},
+      "isExternal": false,
+      "neighbouringZoneElementId": {"guid": "00000000-0000-0000-0000-000000000000"},
+      "area": 12.5,
+      "polygonOutline": [{"x": 0.0, "y": 0.0, "z": 0.0}, {"x": 1.0, "y": 0.0, "z": 0.0}]
+    }]
+  },
+  "relations": {
+    "elements": [{"elementId": {"guid": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"}}]
+  }
+}

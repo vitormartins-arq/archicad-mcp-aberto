@@ -1,7 +1,32 @@
 # Changelog
 
+- Add `archicad-mcp-doctor`, a read-only setup diagnostic for local ports, Archicad
+  instances, Tapir and the optional 3D companion add-on, with text and JSON output.
+- Refresh the English and Brazilian Portuguese project overview to reflect the 109
+  registered tools, the current safety protocol, capability groups and live-validation
+  status without presenting simulated coverage as an Archicad live test.
+- Add safe `create_drawings` previews for placing existing View Map views on existing layouts through Tapir 1.7.0 `CreateDrawings`, with explicit destinations, single-use tokens, receipts and type verification.
+- Extend `set_view_settings` with stored 2D zoom boxes and rotation, both read back after applying.
+- Add safe creation of complex profiles by copying existing profile geometry and use flags.
+
 ## Unreleased
 
+- Preserve descriptive suffixes when incrementing the last R/REV token in project
+  revision names, including archived revision collision checks. Next-revision saving
+  and archival validated in an authorized disposable project using the combined
+  LAB Tools companion; reopening/content acceptance remains pending.
+
+- Add native `save_project_as`, `save_next_project_revision` and read-only
+  `inspect_project_save`. Preview binds native session/project epoch/stamp and paths;
+  saves the in-memory PLN, verifies path/file, then archives the previous revision in
+  `Anteriores`. Existing files are refused, archive collisions preserved, unknown saves
+  never retried. Requires rebuilt companion add-on; offline tested, native build/live
+  validation pending. See `docs/PROJECT_SAVE_REVISIONS.md` for API limitations and recovery.
+- Add `save_room_plan_views` (`tools/room_views.py`): room enlargement views. For each
+  zone, its story's floor plan is saved in the View Map framed on the room plus a margin,
+  with an optional drawing scale and layer combination, in a folder named after the room,
+  numbered "AMP 01 - <room>". Uses the new `SaveStoryView` command of our add-on; each
+  saved view's zoom, scale and layers are read back. Not tested live yet.
 - Add experimental `inspect_object_replacements` and `replace_object_libraries` with
   exact library identity, explicit mounting references, stale-state checks, native
   Undo batching and independent readback. Target GDL defaults replace parameters
@@ -520,3 +545,41 @@
 - Explain Section marker/default recovery on APIERR_BADID without changing defaults or retrying.
 - Verify equivalent scalar numeric attribute values despite decimal padding; retain raw text
   and strict checks for other types/formats. Add an AC30 build 3001 BRA live capture.
+
+### Read linked modules and XRefs
+
+- Add read-only `list_hotlinks`, backed by Tapir 1.7.0 `GetHotlinks`. It flattens the
+  native node tree in preorder and returns each Module/XRef GUID, name, source path,
+  parent GUID and depth. Search matches name, type or path before pagination. The full
+  response is validated, including unique non-null GUIDs and valid node types. Its
+  source-derived fixture is explicitly synthetic and not a live Archicad capture.
+### Read detailed attributes
+
+- Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir
+  1.7.0 attribute commands. Optional GUIDs preserve order and native per-item errors;
+  omission inventories the kind first. Calls are bounded to 500 and batched by 100.
+### IFC reading
+- Add read-only IFC metadata and GlobalId lookup tools from Tapir 1.7.0.
+### Project location and layouts
+- Add read-only geolocation, calculation-unit and layout-setting tools from Tapir 1.7.0.
+### Dimension, MVO and library reading
+- Add read-only dimension data, model-view-option, library and special-folder queries.
+### Preview images
+- Add bounded element, zone and favorite PNG previews as MCP image content.
+### Zone boundaries and relations
+- Add read-only `get_zone_boundaries` and `get_zone_relations` tools from Tapir 1.7.0 source.
+### Layer combination creation
+- Add safe preview/token/receipt creation for new layer combinations with per-layer states.
+### MEP reading
+- Add read-only MEP systems, elements, ports, routes and preference tables.
+### Collision reading
+- Add bounded, read-only `find_collisions` using Tapir 1.7.0 `GetCollisions`.
+### Revision reading
+- Add read-only document revision, revision issue, and revision change tools.
+### Element structure reading
+- Add hierarchical subelement, trim, solid-operation and section-owner queries.
+### Complex profile polygons — 2026-10-23
+- Extend `create_profiles` with Tapir 1.7.0 `newSkins`: new profiles can be built from
+  local-coordinate polygon contours and holes with named building materials, optionally
+  combined with copied profile geometry. Read back skin count, material data and outlines;
+  keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.

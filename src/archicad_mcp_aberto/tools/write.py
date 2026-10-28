@@ -454,6 +454,16 @@ OPERATIONS = {
         "layout_receipt_id",
         "New layouts take size and margins from their existing master layout.",
     ),
+    "create_drawings": (
+        "drawing",
+        "drawing_receipt_id",
+        "Places existing View Map views on existing layouts; positions are layout metres.",
+    ),
+    "create_profiles": (
+        "complex profile",
+        "profile_receipt_id",
+        "Copies geometry from an existing profile; never overwrites an attribute.",
+    ),
     "rename_items": (
         "rename",
         "rename_receipt_id",
@@ -675,6 +685,26 @@ OPERATIONS["create_grid_elements"] = (
     "grid line",
     "grid_receipt_id",
     "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
+)
+OPERATIONS["save_project_as"] = (
+    "project save",
+    "save_receipt_id",
+    "Explicit Save As PLN; no Undo. Review destination.",
+)
+OPERATIONS["begin_model_task"] = (
+    "task checkpoint",
+    "checkpoint_receipt_id",
+    "Automatic verified backup before editing; stable working PLN name.",
+)
+OPERATIONS["finish_model_task"] = (
+    "task save",
+    "save_receipt_id",
+    "Save to the SAME working PLN after its verified task checkpoint.",
+)
+OPERATIONS["save_next_project_revision"] = (
+    "revision save",
+    "save_receipt_id",
+    "Explicit next revision and archival; no Undo. Review both paths.",
 )
 OPERATIONS["replace_object_libraries"] = (
     "object library replacement",
@@ -1128,6 +1158,7 @@ async def _write(
     *,
     planner_override=None,
     dispatcher_override=None,
+    completion_note: str | None = None,
 ) -> dict:
     if client.session_id is None:
         raise RuntimeError("ArchicadClient must be used inside 'async with'.")
@@ -1205,7 +1236,9 @@ async def _write(
             "verified" if receipt["counts"]["verified"] == len(receipt["items"]) else "needs_review"
         )
         receipt["finished_at"] = datetime.now(UTC).isoformat()
-        receipt["note"] = "No project was saved. Use Archicad Undo to revert this batch."
+        receipt["note"] = (
+            completion_note or "No project was saved. Use Archicad Undo to revert this batch."
+        )
         if receipt.get("revert_note"):
             receipt["note"] = "No project was saved. " + receipt["revert_note"]
 
@@ -2186,4 +2219,12 @@ OPERATIONS["create_classification_items"] = (
     "classification item",
     "classification_item_receipt_id",
     "Creates only under existing parents; each item is one native Undo step.",
+)
+
+# Appended operation registration for T35.
+OPERATIONS["create_layer_combinations"] = (
+    "layer combination",
+    "layer_combination_receipt_id",
+    "Creates new combinations only; existing names are refused and every requested "
+    "state is read back.",
 )
