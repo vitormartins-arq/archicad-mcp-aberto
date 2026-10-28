@@ -2,12 +2,12 @@
 
 `save_project_as(destination_path, port)` previews an explicit absolute PLN destination.
 `save_next_project_revision(port)` previews the next revision in the current folder and
-the previous file's destination in its `Anteriores` subfolder. Both default to dry run;
+the previous file's destination in its `00 - Anteriores` subfolder. Both default to dry run;
 apply identical inputs with `dry_run=false`, the explicit port and single-use token.
 These are the only tools that explicitly save the project. Other model writes do not save.
 
 For example `Example_R04.pln` becomes `Example_R05.pln`; after verification the old
-file moves to `Anteriores/Example_R04.pln`. The new file contains the current in-memory
+file moves to `00 - Anteriores/Example_R04.pln`. The new file contains the current in-memory
 model, including unsaved changes, through `ACAPI_ProjectOperation_Save` with
 `API_FileSavePars.fileTypeID=APIFType_PlanFile` and an explicit `IO::Location`.
 This is not a disk copy. Save runs directly on Archicad's main thread, outside any
@@ -57,7 +57,7 @@ installed or loaded during this change; no live Archicad was queried.
 - [ ] Live test: after coordinating a convenient time, load the rebuilt companion add-on
   **only in a disposable project**. Save a standalone `Example_R04.pln` in a test folder,
   edit the model without saving, preview/apply next revision, check R05 is current and
-  contains that edit, and reopen both files to confirm old R04 content in `Anteriores`.
+  contains that edit, and reopen both files to confirm old R04 content in `00 - Anteriores`.
 - [ ] Confirm read-only/locked/occupied destinations fail without replacing files, an
   edit after preview refuses apply, and an existing archive is preserved under collision.
 - [ ] Confirm a failed archive leaves both the saved new PLN and the old PLN recoverable.

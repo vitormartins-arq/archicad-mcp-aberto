@@ -691,6 +691,16 @@ OPERATIONS["save_project_as"] = (
     "save_receipt_id",
     "Explicit Save As PLN; no Undo. Review destination.",
 )
+OPERATIONS["begin_model_task"] = (
+    "task checkpoint",
+    "checkpoint_receipt_id",
+    "Automatic verified backup before editing; stable working PLN name.",
+)
+OPERATIONS["finish_model_task"] = (
+    "task save",
+    "save_receipt_id",
+    "Save to the SAME working PLN after its verified task checkpoint.",
+)
 OPERATIONS["save_next_project_revision"] = (
     "revision save",
     "save_receipt_id",

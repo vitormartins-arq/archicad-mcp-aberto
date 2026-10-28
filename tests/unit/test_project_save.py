@@ -63,13 +63,13 @@ async def test_next_revision_saves_in_memory_before_archiving(native):
     source, state, control = native
     async with client() as c:
         plan = await save.save_next_project_revision(c, 19723)
-        assert source.exists() and not source.with_name("Anteriores").exists()
+        assert source.exists() and not source.with_name("00 - Anteriores").exists()
         result = await save.save_next_project_revision(c, 19723, False, plan["confirmation_token"])
         with pytest.raises(ValueError, match="consumed"):
             await save.save_next_project_revision(c, 19723, False, plan["confirmation_token"])
     destination = source.with_name("Example_R05.pln")
     assert destination.read_bytes() == b"CURRENT_IN_MEMORY_WITH_UNSAVED_CHANGES"
-    assert (source.parent / "Anteriores" / source.name).read_bytes() == b"OLD_DISK_REVISION"
+    assert (source.parent / "00 - Anteriores" / source.name).read_bytes() == b"OLD_DISK_REVISION"
     assert not source.exists() and control["calls"] == 1
     assert result["status"] == "verified"
     assert result["items"][0]["archive_verified"]
@@ -94,7 +94,7 @@ async def test_revision_avoids_existing_current_and_archived_numbers(
 ):
     source = tmp_path / name
     source.write_bytes(b"source")
-    archive = tmp_path / "Anteriores"
+    archive = tmp_path / "00 - Anteriores"
     archive.mkdir()
     (archive / other).write_bytes(b"keep")
     assert save._revision_path(source, archive).name == expected
@@ -103,7 +103,7 @@ async def test_revision_avoids_existing_current_and_archived_numbers(
 
 async def test_archive_collision_preserves_both_files(native):
     source, _, _ = native
-    archive = source.parent / "Anteriores"
+    archive = source.parent / "00 - Anteriores"
     archive.mkdir()
     (archive / source.name).write_bytes(b"EXISTING_ARCHIVE")
     async with client() as c:
@@ -153,7 +153,7 @@ async def test_uncertain_save_or_verification_failure_never_archives(native, mod
         plan = await save.save_next_project_revision(c, 19723)
         result = await save.save_next_project_revision(c, 19723, False, plan["confirmation_token"])
         inspection = await save.inspect_project_save(c, plan["items"][0]["destination_path"], 19723)
-    assert source.exists() and not (source.parent / "Anteriores").exists()
+    assert source.exists() and not (source.parent / "00 - Anteriores").exists()
     assert result["status"] == "needs_review" and control["calls"] == 1
     assert inspection["file"] is not None
     assert result["items"][0]["status"] == (

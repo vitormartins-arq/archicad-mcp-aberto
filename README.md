@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **157 registered tools**: **57 read-only**, **3 view/session actions** and
-**97 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **161 registered tools**: **58 read-only**, **3 view/session actions** and
+**100 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -50,7 +50,7 @@ Lengths use metres and angles use radians regardless of project display units.
   operations that the official JSON API and Tapir do not expose.
 - Run every automated test without Archicad against the simulated adapter; fixtures say
   whether they came from a live response or from the Tapir/API source contract.
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **57 read-only** tools and
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **58 read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
 and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad
@@ -164,7 +164,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 | `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
-| `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `save_3d_scenes` | Write | Saves 3D scenes in the View Map, one folder per room: 3D views, plus a camera for each perspective (BIMx) | no (own add-on) |
 | `save_room_plan_views` | Write | Room enlargement views: a framed floor plan view per room, numbered, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
@@ -704,8 +704,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `shoot_3d_scenes(scenes, port?, image_format?)` sets up to 8 scenes and returns their
   images; a scene is `{name, folder?, camera, target, view_cone?, two_point?}` or
   `{name, folder?, parallel: {azimuth?}, cut_height?}` (a horizontal 3D cut, absolute
-  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?)`
-  saves up to 60 as View Map views in `folder_path + [folder]`, creating missing folders;
+  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?,
+  as_cameras?, camera_path_name?)` saves up to 60 in `folder_path + [folder]`, creating
+  missing folders: each as a 3D view and, by default, each perspective also as a camera
+  of one camera path (BIMx loads them faster; two-point perspective is not kept);
   the first folder name is found at any depth. Both put the 3D camera and cut back. They
   need this project's own add-on (`addon/`); the photographer rules are in
   `docs/3D_SCENES.md`.
@@ -912,6 +914,16 @@ Attribute properties of type number/integer accept equivalent unitless ASCII dec
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
 
+## Explicit project saving and revisions
+
+`save_project_as` saves the in-memory project to a new absolute PLN path.
+`save_next_project_revision` proposes the next R/REV in the current folder, then
+archives the previous PLN in `00 - Anteriores` after verifying the native saved path
+and a nonempty file. Both require preview, explicit port and one-use token, the
+updated companion add-on and server on the Archicad computer. No overwrite/Undo;
+never blindly retry an unknown save. `inspect_project_save` is read-only recovery
+inspection. Native build and live acceptance are pending; see
+[save/revision documentation](docs/PROJECT_SAVE_REVISIONS.md).
 - `get_ifc_of_elements(element_guids, port?)` reads IFC type, IDs and properties, while
   `find_elements_by_ifc_ids(ifc_ids, port?)` resolves IFC GlobalIds to elements. Each
   accepts up to 100 inputs and preserves aligned results; neither exports IFC. Fixtures
@@ -965,13 +977,4 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   contours in metres; the first contour is the outer boundary and later contours are
   holes. A source profile is optional and, when supplied, the new skins are added to its
   copied geometry. New names only, at most 20 profiles per call; never overwrites or saves.
-## Explicit project saving and revisions
 
-`save_project_as` saves the in-memory project to a new absolute PLN path.
-`save_next_project_revision` proposes the next R/REV in the current folder, then
-archives the previous PLN in `Anteriores` after verifying the native saved path
-and a nonempty file. Both require preview, explicit port and one-use token, the
-updated companion add-on and server on the Archicad computer. No overwrite/Undo;
-never blindly retry an unknown save. `inspect_project_save` is read-only recovery
-inspection. Native build and live acceptance are pending; see
-[save/revision documentation](docs/PROJECT_SAVE_REVISIONS.md).

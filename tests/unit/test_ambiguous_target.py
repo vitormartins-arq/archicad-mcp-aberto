@@ -11,6 +11,7 @@ from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
     attributes_details,
+    camera_paths,
     classification_systems,
     classifications,
     collisions,
@@ -37,6 +38,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     mep,
     meshes,
+    model_tasks,
     modify,
     morphs,
     navigator,
@@ -98,6 +100,10 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "list_camera_paths": {},
+    "create_camera_paths_from_views": {},
+    "begin_model_task": {},
+    "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
     "inspect_project_save": {"destination_path": "example.pln"},
@@ -498,6 +504,8 @@ REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
+        camera_paths,
+        model_tasks,
         attribute_properties,
         attributes_details,
         attributes,
@@ -536,12 +544,12 @@ TARGETED = {
         openings,
         preview_images,
         project_info,
+        project_save,
         project_location,
         project_location,
         project_resources,
         project_resources,
         profiles,
-        project_save,
         property_definitions,
         read,
         revisions,
@@ -699,6 +707,22 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {
+            "list_camera_paths",
+            "begin_model_task",
+            "finish_model_task",
+            "create_camera_paths_from_views",
+        }:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises((AddOnError, ValueError)):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.calls and not untouched.calls
+            assert not any(
+                command.startswith(("Save", "Create")) for command in selected.own_addon_calls
+            )
+            return
         if name in {"save_project_as", "save_next_project_revision", "inspect_project_save"}:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -766,6 +790,18 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
     arguments = deepcopy(INPUTS[name])
+    if name == "create_camera_paths_from_views":
+
+        async def camera_plan(c, port, path_name, view_guids):
+            return {
+                "target": {"port": port},
+                "path_name": path_name,
+                "groups": [],
+                "skipped": [],
+                "note": "Target selection fixture",
+            }
+
+        monkeypatch.setattr(camera_paths, "_plan", camera_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
         first.calls.clear()
