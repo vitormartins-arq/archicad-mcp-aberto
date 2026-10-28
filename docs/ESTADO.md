@@ -32,7 +32,7 @@
   ao Archicad aberto, instalação de APX ou merge da PR no GitHub.
 
 - **Salvar revisão / 27/10/2026:** implementação isolada de Save As PLN nativo e
-  próxima revisão com arquivamento posterior em `Anteriores`. Prévia/token, identidade
+  próxima revisão com arquivamento posterior em `00 - Anteriores`. Prévia/token, identidade
   nativa e recibos; falha/timeout não repete salvamento nem arquiva automaticamente.
   Ver `PROJECT_SAVE_REVISIONS.md`. Validação offline; compilação/APX e teste real
   ainda pendentes. Nenhum acesso ao Archicad aberto ou instalação de add-on nesta tarefa.

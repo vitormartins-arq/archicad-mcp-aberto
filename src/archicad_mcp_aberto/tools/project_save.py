@@ -110,9 +110,9 @@ async def _plan(client, requests, port, operation):
     source = _path(context["projectPath"]) if context["projectPath"] else None
     if request.archive_previous and (source is None or context["untitled"] is not False):
         raise ValueError("Save the untitled project to an explicit PLN path first.")
-    folder = source.parent / "Anteriores" if source else None
+    folder = source.parent / "00 - Anteriores" if source else None
     if request.archive_previous and folder and folder.exists() and not folder.is_dir():
-        raise ValueError("Anteriores already exists and is not a folder.")
+        raise ValueError("00 - Anteriores already exists and is not a folder.")
     destination = (
         _path(request.destination_path)
         if request.destination_path

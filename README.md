@@ -918,7 +918,7 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
 
 `save_project_as` saves the in-memory project to a new absolute PLN path.
 `save_next_project_revision` proposes the next R/REV in the current folder, then
-archives the previous PLN in `Anteriores` after verifying the native saved path
+archives the previous PLN in `00 - Anteriores` after verifying the native saved path
 and a nonempty file. Both require preview, explicit port and one-use token, the
 updated companion add-on and server on the Archicad computer. No overwrite/Undo;
 never blindly retry an unknown save. `inspect_project_save` is read-only recovery

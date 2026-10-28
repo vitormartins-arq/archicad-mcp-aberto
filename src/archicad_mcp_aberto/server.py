@@ -2324,7 +2324,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preserve a verified pre-task PLN backup in Anteriores, including unsaved edits.
+        """Preserve a verified pre-task PLN backup in 00 - Anteriores, including unsaved edits.
         Keep the working filename. Internal preview/apply is covered by the user's
         editing request; no manual Save As or test-project requirement.
         """
@@ -2369,7 +2369,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Save next R/REV in the current folder, then move the previous PLN into
-        Anteriores only after native path and nonempty file verification. No overwrite,
+        00 - Anteriores only after native path and nonempty file verification. No overwrite,
         no Undo. Preview/token/explicit port required. Untitled/Teamwork refused.
         Requires updated companion add-on and server on the Archicad computer."""
         return await project_save.save_next_project_revision(

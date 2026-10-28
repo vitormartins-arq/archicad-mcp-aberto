@@ -95,7 +95,7 @@ async def test_checkpoint_preview_has_no_save_or_files(native_task):
     async with client() as c:
         preview = await tasks.begin_model_task(c, 19723)
     assert preview["dry_run"] is True and native_task["saves"] == 0
-    assert not (native_task["source"].parent / "Anteriores").exists()
+    assert not (native_task["source"].parent / "00 - Anteriores").exists()
 
 
 async def test_changed_context_prevents_checkpoint_apply(native_task):
@@ -167,7 +167,7 @@ async def test_continuously_changing_project_never_dispatches_save(native_task):
         with pytest.raises(ValueError, match="not settled"):
             await tasks.begin_model_task(c, 19723)
     assert native_task["saves"] == 0
-    assert not (native_task["source"].parent / "Anteriores").exists()
+    assert not (native_task["source"].parent / "00 - Anteriores").exists()
 
 
 async def test_project_switch_during_settling_is_rejected(native_task, monkeypatch):

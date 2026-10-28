@@ -90,7 +90,7 @@ async def _checkpoint_plan(client, requests, port, operation):
     current = project_save._fingerprint(source)
     if not current or current["size"] == 0:
         raise ValueError("Working PLN is missing or empty.")
-    folder = source.parent / "Anteriores"
+    folder = source.parent / "00 - Anteriores"
     stamp = context["modificationStamp"]
     disk = project_save._archive_path(source.with_name(f"{source.stem}_backup_{stamp}.pln"), folder)
     model = project_save._archive_path(

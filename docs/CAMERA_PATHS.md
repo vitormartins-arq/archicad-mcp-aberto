@@ -23,7 +23,7 @@ visibility uses onScreenViewOpt.camPathViewMode=API_CamPath_None without editing
 No Publisher modification, publication, upload or deletion.
 
 The authorized workflow maintains the working PLN name: verified _backup copies in
-Anteriores before model changes, then native same-path save. This supersedes revision
+00 - Anteriores before model changes, then native same-path save. This supersedes revision
 increments as the owner's normal workflow. Never ask the owner to manufacture an
 untitled/test project or manually rename/save files for an already authorized task.
 Do not conflate an old disk copy with pending in-memory edits; preserve disk baseline
