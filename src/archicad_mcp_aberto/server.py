@@ -1708,14 +1708,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
+        as_cameras: bool = True,
+        camera_path_name: str = scenes_tool.DEFAULT_CAMERA_PATH,
     ) -> dict:
-        """Preview/save up to 60 scenes (shoot_3d_scenes shape) as View Map views in
+        """Preview/save up to 60 scenes (shoot_3d_scenes shape) in the View Map, in
         folder_path + each scene's folder (one per room); folders are created when missing.
+        By default perspectives are saved as cameras of camera_path_name (BIMx loads them
+        faster; two-point perspective is not kept) and parallel views as 3D views.
         Apply identical inputs with explicit port and one-use token. Puts the 3D window
-        back. Outside Undo; never saves the project. Needs the ArchicadMcpAberto add-on."""
+        back. Never saves the project. Needs the ArchicadMcpAberto add-on."""
         return await scenes_tool.save_3d_scenes(
-            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token
-        )
+            client_of(ctx), scenes, folder_path, port, dry_run, confirmation_token,
+            as_cameras, camera_path_name,
+        )  # fmt: skip
 
     @mcp.tool(annotations=WRITE)
     async def create_composites(

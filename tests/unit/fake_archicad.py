@@ -671,6 +671,7 @@ class FakeArchicad:
     )
     cut_3d: dict = field(default_factory=lambda: {"enabled": False, "planes": []})
     saved_3d_views: list[dict] = field(default_factory=list)
+    saved_cameras: list[dict] = field(default_factory=list)
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1139,6 +1140,22 @@ class FakeArchicad:
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="
             return ok({"addOnCommandResponse": {"image": image}})
+        if name == "SaveCameraView":
+            if not self.camera_3d["isPerspective"]:
+                error = {"code": -1, "message": "A camera needs a perspective."}
+                return ok({"addOnCommandResponse": {"error": error}})
+            guid = str(uuid4()).upper()
+            self.saved_cameras.append(
+                {
+                    "viewGuid": guid,
+                    "name": args["name"],
+                    "folderPath": list(args.get("folderPath", [])),
+                    "pathName": args["pathName"],
+                    "camera": deepcopy(self.camera_3d),
+                }
+            )
+            response = {"viewGuid": guid, "cameraGuid": str(uuid4()).upper(), "name": args["name"]}
+            return ok({"addOnCommandResponse": response})
         if name == "Save3DView":
             guid = str(uuid4()).upper()
             self.saved_3d_views.append(

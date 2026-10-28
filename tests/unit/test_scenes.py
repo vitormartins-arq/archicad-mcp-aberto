@@ -200,7 +200,7 @@ async def test_save_previews_then_saves_one_folder_per_room():
     fake = model()
     folder = ["02 | MODELO 3D", "AMBIENTES"]
     async with client(fake) as c:
-        preview = await scenes.save_3d_scenes(c, [ONE_POINT, ISOMETRIC], folder)
+        preview = await scenes.save_3d_scenes(c, [ONE_POINT, ISOMETRIC], folder, as_cameras=False)
         assert fake.saved_3d_views == []
         assert preview["views"][0]["folder_path"] == [*folder, "PESO LIVRE"]
         result = await scenes.save_3d_scenes(
@@ -210,6 +210,7 @@ async def test_save_previews_then_saves_one_folder_per_room():
             port=19723,
             dry_run=False,
             confirmation_token=preview["confirmation_token"],
+            as_cameras=False,
         )
         assert result["saved"] == 2
         with pytest.raises(ValueError, match="consumed"):
@@ -220,6 +221,7 @@ async def test_save_previews_then_saves_one_folder_per_room():
                 port=19723,
                 dry_run=False,
                 confirmation_token=preview["confirmation_token"],
+                as_cameras=False,
             )
     first, second = fake.saved_3d_views
     assert first["folderPath"] == [*folder, "PESO LIVRE"]
@@ -227,6 +229,42 @@ async def test_save_previews_then_saves_one_folder_per_room():
     assert second["folderPath"] == folder
     assert not second["camera"]["isPerspective"] and second["cut"]["planes"][0]["pd"] == 1.5
     assert fake.camera_3d["isPerspective"] and fake.cut_3d["enabled"] is False
+
+
+async def test_save_makes_perspectives_cameras_by_default():
+    fake = model()
+    folder = ["02 | MODELO 3D", "CÂMERAS BIMx"]
+    async with client(fake) as c:
+        preview = await scenes.save_3d_scenes(c, [ONE_POINT, ISOMETRIC], folder)
+        assert [v["kind"] for v in preview["views"]] == ["camera", "view"]
+        assert preview["camera_path"] == "BIMx - Câmeras"
+        result = await scenes.save_3d_scenes(
+            c,
+            [ONE_POINT, ISOMETRIC],
+            folder,
+            port=19723,
+            dry_run=False,
+            confirmation_token=preview["confirmation_token"],
+        )
+    assert result["saved"] == 2 and result["views"][0]["camera_guid"]
+    (camera,) = fake.saved_cameras
+    assert camera["name"] == "Peso Livre - 1P 01"
+    assert camera["folderPath"] == [*folder, "PESO LIVRE"]
+    assert camera["pathName"] == "BIMx - Câmeras"
+    (view,) = fake.saved_3d_views
+    assert view["name"] == "ISOMETRICA TERREO" and not view["camera"]["isPerspective"]
+
+
+async def test_save_refuses_a_changed_camera_choice():
+    fake = model()
+    async with client(fake) as c:
+        preview = await scenes.save_3d_scenes(c, [ONE_POINT], ["AMBIENTES"])
+        with pytest.raises(ValueError, match="changed"):
+            await scenes.save_3d_scenes(
+                c, [ONE_POINT], ["AMBIENTES"], port=19723, dry_run=False,
+                confirmation_token=preview["confirmation_token"], as_cameras=False,
+            )  # fmt: skip
+    assert fake.saved_cameras == [] and fake.saved_3d_views == []
 
 
 async def test_save_refuses_changed_inputs_and_missing_port():

@@ -413,7 +413,7 @@
     },
     {
       "name": "save_3d_scenes",
-      "description": "Preview/save 3D scenes as View Map views, one folder per room; never saves the project."
+      "description": "Preview/save 3D scenes in the View Map, one folder per room: perspectives as cameras (BIMx), parallel views as 3D views; never saves the project."
     },
     {
       "name": "modify_meshes",

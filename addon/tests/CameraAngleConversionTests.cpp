@@ -17,6 +17,7 @@ int main ()
     assert (std::abs (camera.rollAngle + 0.5235987755982988) < 1e-12);
     assert (std::abs (camera.azimuth - 4.569651488434038) < 1e-9);
     assert (camera.distance == source.distance && camera.cameraZ == source.cameraZ);
-    assert (camera.isTwoPointPersp && camera.sunAltitude == source.sunAltitude);
+    assert (!camera.isTwoPointPersp && camera.sunAltitude == source.sunAltitude);
+    assert (source.isTwoPointPersp);
     assert (source.viewCone == 75.0);
 }

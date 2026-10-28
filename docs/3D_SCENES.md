@@ -2,7 +2,7 @@
 
 Guide for the model when it is asked to "generate nice 3D views" of a project and save
 them in the View Map. It uses the add-on commands in `addon/` (`Set3DCamera`,
-`Get3DWindowImage`, `Save3DView`, `Get3DCutPlanes`, `Set3DCutPlanes`). Lengths in
+`Get3DWindowImage`, `SaveCameraView`, `Save3DView`, `Get3DCutPlanes`, `Set3DCutPlanes`). Lengths in
 metres, angles in radians at the MCP side. Working scripts and the live-test findings:
 `examples/scene_generator/`.
 
@@ -18,7 +18,11 @@ The MCP tools: `read_scene_model` (step 1, with a suggested first camera per roo
 3. For each camera: `Set3DCamera`, `Get3DWindowImage`, look at the image. Keep it, move
    it once (step back, shift sideways, turn a little) or drop it. Never more than two
    tries per camera: an hour of trial and error is worse than a few good shots.
-4. Save the kept ones with `Save3DView` into one folder per room.
+4. Save the kept ones into one folder per room. Perspectives are saved as cameras of
+   one camera path (`SaveCameraView`, default path "BIMx - Câmeras"), because BIMx
+   loads cameras faster than saved 3D views; the camera keeps position, target and view
+   cone but not two-point perspective. Parallel views stay 3D views (`Save3DView`).
+   `as_cameras=false` saves everything as 3D views.
 5. Show the user a contact sheet (all images with their view names) before they save
    the project. Never save the project.
 

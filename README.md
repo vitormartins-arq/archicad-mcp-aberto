@@ -139,7 +139,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
 | `read_scene_model` | Read | Rooms with suggested cameras and element boxes, to plan 3D scenes | no |
 | `shoot_3d_scenes` | View | Sets 3D cameras and cuts and returns the 3D window images; puts the 3D window back | no (own add-on) |
-| `save_3d_scenes` | Write | Saves 3D scenes as View Map views, one folder per room | no (own add-on) |
+| `save_3d_scenes` | Write | Saves 3D scenes in the View Map, one folder per room: perspectives as cameras (BIMx), parallel views as 3D views | no (own add-on) |
 | `save_room_plan_views` | Write | Room enlargement views: a framed floor plan view per room, numbered, one folder per room | no (own add-on) |
 | `create_composites` | Write | New composites from skins (building material by name, thickness, type, pen); only adds | yes |
 | `create_drawings` | Write | Places views on existing layouts as Drawings | yes |
@@ -665,8 +665,10 @@ this does not imply live or visual approval. See docs/VALIDAR.md for the operato
   `shoot_3d_scenes(scenes, port?, image_format?)` sets up to 8 scenes and returns their
   images; a scene is `{name, folder?, camera, target, view_cone?, two_point?}` or
   `{name, folder?, parallel: {azimuth?}, cut_height?}` (a horizontal 3D cut, absolute
-  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?)`
-  saves up to 60 as View Map views in `folder_path + [folder]`, creating missing folders;
+  metres). `save_3d_scenes(scenes, folder_path, port?, dry_run?, confirmation_token?,
+  as_cameras?, camera_path_name?)` saves up to 60 in `folder_path + [folder]`, creating
+  missing folders: by default perspectives as cameras of one camera path (BIMx loads
+  them faster; two-point perspective is not kept), parallel views as 3D views;
   the first folder name is found at any depth. Both put the 3D camera and cut back. They
   need this project's own add-on (`addon/`); the photographer rules are in
   `docs/3D_SCENES.md`.
