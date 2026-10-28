@@ -237,7 +237,8 @@ async def test_save_adds_a_camera_to_each_perspective_by_default():
     async with client(fake) as c:
         preview = await scenes.save_3d_scenes(c, [ONE_POINT, ISOMETRIC], folder)
         assert [v["kind"] for v in preview["views"]] == ["camera", "view"]
-        assert preview["camera_path"] == "BIMx - Câmeras"
+        assert preview["camera_path"] == "00 BIMx - Apresentação"
+        assert preview["views"][0]["camera_name"] == "1 PESO LIVRE - 1P 01"
         result = await scenes.save_3d_scenes(
             c,
             [ONE_POINT, ISOMETRIC],
@@ -248,9 +249,11 @@ async def test_save_adds_a_camera_to_each_perspective_by_default():
         )
     assert result["saved"] == 2 and result["views"][0]["camera_guid"]
     (camera,) = fake.saved_cameras
-    assert camera["name"] == "Peso Livre - 1P 01"
-    assert camera["folderPath"] == [*folder, "PESO LIVRE"]
-    assert camera["pathName"] == "BIMx - Câmeras"
+    # One path for every room, numbered with the room name; no View Map item, no folder.
+    assert camera["name"] == "1 PESO LIVRE - 1P 01"
+    assert camera["folderPath"] == [] and camera["viewMap"] is False
+    assert camera["pathName"] == "00 BIMx - Apresentação"
+    assert result["views"][0]["camera_name_set"] is True
     assert [v["name"] for v in fake.saved_3d_views] == ["Peso Livre - 1P 01", "ISOMETRICA TERREO"]
     assert result["views"][1].get("camera_guid") is None
 

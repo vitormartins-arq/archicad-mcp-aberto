@@ -36,7 +36,8 @@ GS::Optional<GS::UniString> SaveCameraViewCommand::GetInputParametersSchema () c
         "properties": {
             "name": {"type": "string", "description": "Name of the camera and of its View Map item."},
             "folderPath": {"type": "array", "items": {"type": "string"}, "description": "View Map folders, as in Save3DView."},
-            "pathName": {"type": "string", "description": "Camera path to append to; created when missing."}
+            "pathName": {"type": "string", "description": "Camera path to append to; created when missing."},
+            "viewMap": {"type": "boolean", "description": "Also put the camera in the View Map under folderPath (default true)."}
         },
         "additionalProperties": false,
         "required": ["name", "pathName"]
@@ -49,6 +50,8 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
     parameters.Get ("pathName", pathName);
     GS::Array<GS::UniString> folderPath;
     parameters.Get ("folderPath", folderPath);
+    bool viewMap = true;
+    parameters.Get ("viewMap", viewMap);  // stays true when missing
     bool tooLong = name.GetLength () >= API_UniLongNameLen - 1 || pathName.GetLength () >= API_UniLongNameLen - 1;
     for (const GS::UniString& folder : folderPath) tooLong = tooLong || folder.GetLength () >= API_UniLongNameLen - 1;
     if (tooLong || name.IsEmpty () || pathName.IsEmpty ())
@@ -84,7 +87,7 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 
     API_Guid parentGuid = APINULLGuid;
     GS::UniString folderError;
-    if ((err = ResolveViewMapFolder (folderPath, parentGuid, folderError)) != NoError) return CreateErrorResponse (err, folderError);
+    if (viewMap && (err = ResolveViewMapFolder (folderPath, parentGuid, folderError)) != NoError) return CreateErrorResponse (err, folderError);
 
     // Same element setup as ApplyCameraPath, which was verified live in AC30 (28/10/2026).
     API_Element camera {};
@@ -122,17 +125,28 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
         if (item.camId == camera.header.guid) source = item.guid;
     if (source == APINULLGuid)
         return CreateErrorResponse (APIERR_GENERAL, "Created the camera but found no Project Map item for it.");
-    API_Guid createdGuid = APINULLGuid;
-    if ((err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&source, &parentGuid, &createdGuid)) != NoError)
-        return CreateErrorResponse (err, "Created the camera but failed to put it in the View Map.");
-    API_NavigatorItem created {};
-    created.mapId = API_PublicViewMap;
-    err = ACAPI_Navigator_GetNavigatorItem (&createdGuid, &created);
-    if (err == NoError) {
-        SetItemName (created, name);
-        err = ACAPI_Navigator_ChangeNavigatorItem (&created);
+    // The Project Map item carries the camera's name in the path and in the BIMx gallery;
+    // without this it stays "Camera 1", "Camera 2"... (Vitor, 28/10/2026).
+    API_NavigatorItem projectItem {};
+    projectItem.mapId = API_ProjectMap;
+    GSErrCode nameError = ACAPI_Navigator_GetNavigatorItem (&source, &projectItem);
+    if (nameError == NoError) {
+        SetItemName (projectItem, name);
+        nameError = ACAPI_Navigator_ChangeNavigatorItem (&projectItem);
     }
-    if (err != NoError) return CreateErrorResponse (err, "Saved the camera view but failed to name it.");
+    API_Guid createdGuid = APINULLGuid;
+    if (viewMap) {
+        if ((err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&source, &parentGuid, &createdGuid)) != NoError)
+            return CreateErrorResponse (err, "Created the camera but failed to put it in the View Map.");
+        API_NavigatorItem created {};
+        created.mapId = API_PublicViewMap;
+        err = ACAPI_Navigator_GetNavigatorItem (&createdGuid, &created);
+        if (err == NoError) {
+            SetItemName (created, name);
+            err = ACAPI_Navigator_ChangeNavigatorItem (&created);
+        }
+        if (err != NoError) return CreateErrorResponse (err, "Saved the camera view but failed to name it.");
+    }
 
     // Vitor's rule: camera paths display "None", so cameras do not clutter the plan.
     // Same view option ApplyCameraPath sets (Path Options > Display Options).
@@ -147,7 +161,8 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 
     return GS::ObjectState ("viewGuid", APIGuidToString (createdGuid), "cameraGuid", APIGuidToString (camera.header.guid),
         "pathGuid", APIGuidToString (pathGuid), "name", name, "folderGuid", APIGuidToString (parentGuid),
-        "twoPointLost", info.u.persp.isTwoPointPersp, "pathHiddenInPlan", hideError == NoError);
+        "twoPointLost", info.u.persp.isTwoPointPersp, "pathHiddenInPlan", hideError == NoError,
+        "projectMapNamed", nameError == NoError);
 }
 
 GS::String GetCameraViewsCommand::GetName () const { return "GetCameraViews"; }

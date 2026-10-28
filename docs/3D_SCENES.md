@@ -19,9 +19,15 @@ The MCP tools: `read_scene_model` (step 1, with a suggested first camera per roo
    it once (step back, shift sideways, turn a little) or drop it. Never more than two
    tries per camera: an hour of trial and error is worse than a few good shots.
 4. Save the kept ones into one folder per room, each as a 3D view (`Save3DView`). Each
-   perspective is also saved as a camera of one camera path (`SaveCameraView`, default
-   path "BIMx - Câmeras"), because BIMx loads cameras faster than saved 3D views; the
-   camera keeps position, target and view cone but not two-point perspective.
+   perspective is also saved as a camera of ONE camera path for all rooms
+   (`SaveCameraView`, default path "00 BIMx - Apresentação"), named
+   "<number> <ROOM> - <name>" (for example "3 RECEPÇÃO - 2P 01"), with no View Map item
+   and no folder per room. The camera keeps position, target and view cone but not
+   two-point perspective. For BIMx, the Publisher set holds only this path (same 3D
+   layer combination, "add cameras as separate gallery items", white sky, lowest
+   texture quality): every 3D item or path in the set becomes a whole model of its own
+   (28/10/2026, 24 cameras = 24 models of 133 MB). Those set options are manual; the
+   API does not read them.
    `as_cameras=false` saves the 3D views only.
 5. Show the user a contact sheet (all images with their view names) before they save
    the project. Never save the project.

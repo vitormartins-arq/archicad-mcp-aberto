@@ -1,5 +1,10 @@
 # Changelog
 
+- `save_3d_scenes` puts every camera in ONE path, "00 BIMx - Apresentação" by default,
+  named "<number> <ROOM> - <name>", with no View Map item per room. `SaveCameraView`
+  also names the camera's Project Map item, which was left as "Camera 1", "Camera 2"
+  and so on, and takes `viewMap: false`. Rule from the BIMx export of 28/10/2026: each
+  3D item or path in the Publisher set becomes a whole model.
 - Add `archicad-mcp-doctor`, a read-only setup diagnostic for local ports, Archicad
   instances, Tapir and the optional 3D companion add-on, with text and JSON output.
 - Refresh the English and Brazilian Portuguese project overview to reflect the 109

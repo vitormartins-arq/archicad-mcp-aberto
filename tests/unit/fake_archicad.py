@@ -1166,10 +1166,19 @@ class FakeArchicad:
                     "name": args["name"],
                     "folderPath": list(args.get("folderPath", [])),
                     "pathName": args["pathName"],
+                    "viewMap": args.get("viewMap", True),
                     "camera": deepcopy(self.camera_3d),
                 }
             )
-            response = {"viewGuid": guid, "cameraGuid": str(uuid4()).upper(), "name": args["name"]}
+            # Shape of addon/Sources/CameraViewCommands.cpp; not a live capture.
+            response = {
+                "viewGuid": guid
+                if args.get("viewMap", True)
+                else "00000000-0000-0000-0000-000000000000",
+                "cameraGuid": str(uuid4()).upper(),
+                "name": args["name"],
+                "projectMapNamed": True,
+            }
             return ok({"addOnCommandResponse": response})
         if name == "Save3DView":
             guid = str(uuid4()).upper()

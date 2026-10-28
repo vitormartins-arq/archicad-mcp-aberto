@@ -885,3 +885,11 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
   a rectangular hole 0.10 m x 0.30 m and an existing concrete building material.
   Open Profile Manager and confirm the outer size, hole, material and requested wall/beam
   availability. Confirm the receipt is `verified` and that the project was not saved.
+
+## Lote do Claude C39: percurso único de câmeras para o BIMx
+
+Simulado e compilado pelo CI, não testado ao vivo. Precisa do add-on recompilado (SaveCameraView com `viewMap` e nome no Mapa de projeto).
+
+- [ ] `save_3d_scenes` com 3 ou mais ambientes: todas as câmeras vão para um único percurso, "00 BIMx - Apresentação", com os nomes "1 RECEPÇÃO - 2P 01", "2 ..." e assim por diante.
+- [ ] No Mapa de projeto, as câmeras aparecem com esse nome, e não como "Câmera 1". No Mapa de vistas, nenhuma câmera solta e nenhuma pasta por ambiente.
+- [ ] Conjunto BIMx feito à mão, só com o percurso (mesma combinação 3D, "Adicionar câmeras como itens de galeria separados", céu branco, menor textura): um único modelo e a galeria com os nomes no celular.
