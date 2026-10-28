@@ -134,9 +134,20 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
     }
     if (err != NoError) return CreateErrorResponse (err, "Saved the camera view but failed to name it.");
 
+    // Vitor's rule: camera paths display "None", so cameras do not clutter the plan.
+    // Same view option ApplyCameraPath sets (Path Options > Display Options).
+    API_ViewOptions options {};
+    short modelViewIndex = 0;
+    const GS::OnExit freeOptions ([&] { ACAPI_FreeGDLModelViewOptionsPtr (&options.modelViewOpt.gdlOptions); });
+    GSErrCode hideError = ACAPI_Navigator_GetViewOptions (&options, &modelViewIndex);
+    if (hideError == NoError && options.onScreenViewOpt.camPathViewMode != API_CamPath_None) {
+        options.onScreenViewOpt.camPathViewMode = API_CamPath_None;
+        hideError = ACAPI_Navigator_ChangeViewOptions (&options, &modelViewIndex);
+    }
+
     return GS::ObjectState ("viewGuid", APIGuidToString (createdGuid), "cameraGuid", APIGuidToString (camera.header.guid),
         "pathGuid", APIGuidToString (pathGuid), "name", name, "folderGuid", APIGuidToString (parentGuid),
-        "twoPointLost", info.u.persp.isTwoPointPersp);
+        "twoPointLost", info.u.persp.isTwoPointPersp, "pathHiddenInPlan", hideError == NoError);
 }
 
 GS::String GetCameraViewsCommand::GetName () const { return "GetCameraViews"; }
