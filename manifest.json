@@ -568,6 +568,22 @@
       "description": "Preview or overwrite existing favorites from elements of their type."
     },
     {
+      "name": "list_hotlinks",
+      "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
+    },
+    {
+      "name": "get_attribute_details",
+      "description": "Read detailed composites, profiles, surfaces, physical properties, zone categories, pen tables, lines or fills."
+    },
+    {
+      "name": "get_ifc_of_elements",
+      "description": "Read IFC type, IDs and properties for elements."
+    },
+    {
+      "name": "find_elements_by_ifc_ids",
+      "description": "Find elements by IFC GlobalId."
+    },
+    {
       "name": "get_project_location",
       "description": "Read geolocation, survey point and calculation units."
     },

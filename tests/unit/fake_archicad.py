@@ -271,6 +271,16 @@ ROOFS_TEXTS_FIXTURE = json.loads(
         Path(__file__).parents[1] / "fixtures" / "tapir170_create_roofs_texts_documented.json"
     ).read_text(encoding="utf-8")
 )
+HOTLINKS_FIXTURE = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "tapir170_hotlinks_documented.json").read_text(
+        encoding="utf-8"
+    )
+)
+ATTRIBUTE_DETAILS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_attribute_details_documented.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def ok(result: Any) -> dict:
@@ -381,6 +391,8 @@ class FakeArchicad:
     )
     # Hotlink nodes in the GetHotlinks shape (Tapir 1.7.0 ProjectCommands.cpp); synthetic.
     hotlink_nodes: list[dict] = field(default_factory=list)
+    # list_hotlinks tests: answer GetHotlinks from the source-derived fixture instead.
+    hotlinks_fixture: bool = False
     missing_hotlink_files: set[str] = field(default_factory=set)
     # Solid operations and trims (Tapir 1.7.0 SolidElementOperationCommands.cpp).
     solid_links: dict[tuple[str, str], dict] = field(default_factory=dict)  # (target, op)
@@ -633,6 +645,8 @@ class FakeArchicad:
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
     own_addon_loaded: bool = True
+    # get_attribute_details tests: answer the eight detail commands from one fixture row.
+    attribute_details_fixture: bool = False
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
@@ -1199,6 +1213,88 @@ class FakeArchicad:
             rows = [{"elementId": {"guid": g}} for g in self.layout_drawings.get(database, [])]
             return ok({"addOnCommandResponse": {"elements": rows,
                        "executionResultForDatabases": [result]}})  # fmt: skip
+        if name == "GetHotlinks" and self.hotlinks_fixture:
+            return ok({"addOnCommandResponse": deepcopy(HOTLINKS_FIXTURE["response"])})
+        if self.attribute_details_fixture and name in ATTRIBUTE_DETAILS_FIXTURE["rows"]:
+            row = ATTRIBUTE_DETAILS_FIXTURE["rows"][name]
+            key = {
+                "GetComposites": "composites",
+                "GetProfiles": "profiles",
+                "GetSurfaces": "surfaces",
+                "GetBuildingMaterialPhysicalProperties": "properties",
+                "GetZoneCategories": "zoneCategories",
+                "GetPenTables": "penTables",
+                "GetLines": "lines",
+                "GetFills": "fills",
+            }[name]
+            requested = [item["attributeId"]["guid"] for item in args["attributeIds"]]
+            rows = [
+                deepcopy(row)
+                if guid == ATTRIBUTE_DETAILS_FIXTURE["guid"]
+                else {"error": {"code": -2, "message": "Attribute not found"}}
+                for guid in requested
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if (
+            self.attribute_details_fixture
+            and name == "GetAttributesByType"
+            and args["attributeType"]
+            in {
+                "Composite",
+                "Profile",
+                "ZoneCategory",
+                "PenTable",
+                "Line",
+            }
+        ):
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": ATTRIBUTE_DETAILS_FIXTURE["guid"]},
+                                "index": 1,
+                                "name": args["attributeType"],
+                            }
+                        ]
+                    }
+                }
+            )
+        if name in {
+            "GetIFCTypeOfElements",
+            "GetIFCIdsOfElements",
+            "GetIFCPropertiesOfElements",
+            "GetElementsByIFCIds",
+        }:
+            fixture = json.loads(
+                (Path(__file__).parents[1] / "fixtures" / "tapir170_ifc_documented.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            if name == "GetElementsByIFCIds":
+                rows = [
+                    {
+                        "ifcId": value,
+                        "elements": [{"elementId": {"guid": fixture["element_guid"]}}]
+                        if value == fixture["ifc_id"]
+                        else [],
+                    }
+                    for value in args["ifcIds"]
+                ]
+                return ok({"addOnCommandResponse": {"elementsByIFCIds": rows}})
+            keys = {
+                "GetIFCTypeOfElements": "elementIFCTypes",
+                "GetIFCIdsOfElements": "elementIFCIds",
+                "GetIFCPropertiesOfElements": "elementIFCProperties",
+            }
+            key = keys[name]
+            rows = [
+                deepcopy(fixture[key])
+                if row["elementId"]["guid"] == fixture["element_guid"]
+                else {"error": {"code": -2, "message": "Element not found"}}
+                for row in args["elements"]
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name in {"GetGeoLocation", "GetCalculationUnits", "GetLayoutSettings"}:
             fixture = json.loads(
                 (

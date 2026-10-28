@@ -14,6 +14,7 @@ from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
     attribute_properties,
     attributes,
+    attributes_details,
     classifications,
     design_options,
     documents,
@@ -21,6 +22,8 @@ from archicad_mcp_aberto.tools import (
     edit,
     favorites,
     gateway,
+    hotlinks,
+    ifc,
     keynotes,
     locks,
     modify,
@@ -1491,6 +1494,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=READ_ONLY)
+    async def list_hotlinks(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> dict:
+        """List linked Module and XRef nodes in tree order with GUID, source path,
+        parent and depth. Query matches name, type or path; pages up to 500. Read-only,
+        requires Tapir 1.7.0.
+        """
+        return await hotlinks.list_hotlinks(client_of(ctx), port, query, offset, limit)
+
+    @mcp.tool(annotations=READ_ONLY)
     async def list_keynotes(ctx: Context, port: int | None = None) -> dict:
         """Keynote folders and items (Archicad 28+): GUID, parent folder GUID, key path,
         key, title, description and reference. Requires Tapir."""
@@ -2006,6 +2023,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await hotlinks_tool.place_hotlinks(
             client_of(ctx), placements, port, dry_run, confirmation_token
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_attribute_details(
+        ctx: Context,
+        kind: attributes_details.AttributeKind,
+        guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """Read details for up to 500 composites, profiles, surfaces, building material
+        physics, zone categories, pen tables, line types or fill types. Omit guids to
+        read that whole attribute kind. Native errors remain per item; never writes."""
+        return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_ifc_of_elements(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read IFC type, IDs and properties for up to 100 elements. No export."""
+        return await ifc.get_ifc_of_elements(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_elements_by_ifc_ids(
+        ctx: Context, ifc_ids: list[str], port: int | None = None
+    ) -> dict:
+        """Find Archicad elements for up to 100 IFC GlobalIds; read-only."""
+        return await ifc.find_elements_by_ifc_ids(client_of(ctx), ifc_ids, port)
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_project_location(ctx: Context, port: int | None = None) -> dict:

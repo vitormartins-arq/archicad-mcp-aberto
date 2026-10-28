@@ -513,6 +513,15 @@ AC30 build 3001 BRA/Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Und
 - [ ] Vitor: conferir desenho, marcador/profundidade do corte, favorito e vistas internas.
 AC30 build 3001 BRA, Tapir 1.7.0, Windows, Sem Nome/19724; sem salvar/excluir/Undo.
 
+## Módulos vinculados e XRefs — validação ao vivo pendente
+
+- [ ] Em projeto de teste com pelo menos um módulo vinculado, chamar `list_hotlinks` e
+  conferir GUID, nome, tipo `Module`, caminho e hierarquia com o Gestor de Módulos
+  Vinculados. Se houver módulo aninhado, conferir `parent_guid` e `depth`.
+- [ ] Se houver XRef de teste, conferir que aparece como `XRef`; testar busca por parte
+  do nome e do caminho e paginação com `limit=1`.
+- [ ] Registrar Archicad/build/idioma/Tapir. A ferramenta é somente leitura; não
+  atualizar, relincar, incorporar, excluir nem salvar.
 ## Lote do Claude C8: aberturas (ferramenta Abertura)
 
 - [ ] **create_openings em parede.** No projeto novo sem nome, com uma parede reta ao
@@ -821,6 +830,14 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
   ambiente com folga, em 1:25 e com a combinação pedida, e o recibo dá `verified`.
   Anotar se o enquadramento ao abrir a vista bate com o ambiente (o zoom salvo pode
   ajustar à proporção da janela).
+## T29 — detalhes de atributos
+
+- [ ] Em cópia de teste, consultar os oito `kind` com e sem GUIDs; comparar nomes,
+  skins, cores, texturas, propriedades físicas, penas, linhas e hachuras com os diálogos
+  de atributos. Conferir GUID inexistente como erro isolado. Somente leitura.
+## T33 — IFC element data
+- [ ] Compare IFC type, type-object type, internal/external ID and properties for mapped elements.
+- [ ] Resolve valid, missing and duplicate IFC GlobalIds and confirm their row alignment.
 ## T34 — Project location, units and layouts
 - [ ] Compare longitude, latitude, altitude, north angle, survey point and CRS with Location Settings.
 - [ ] Compare calculation units and layout size, margins, numbering and custom data; include an invalid layout GUID.
