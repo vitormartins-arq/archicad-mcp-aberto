@@ -8,8 +8,8 @@ Three steps, the workflow of docs/3D_SCENES.md:
 2. ``shoot_3d_scenes`` sets each camera and returns the 3D window images, so the model
    can look at them, move the bad ones once and drop the rest.
 3. ``save_3d_scenes`` saves the kept scenes in the View Map, one folder per room:
-   perspectives as cameras of one camera path (BIMx loads cameras faster than saved
-   3D views), parallel views as saved 3D views.
+   every scene as a 3D view and each perspective also as a camera of one camera path
+   (BIMx loads cameras faster than saved 3D views).
 
 Shooting and saving use the ArchicadMcpAberto add-on (addon/): Get3DCamera, Set3DCamera,
 Get3DCutPlanes, Set3DCutPlanes, Show3DAll, Get3DWindowImage, Save3DView and SaveCameraView.
@@ -556,8 +556,8 @@ async def save_3d_scenes(
 ) -> dict:
     """Save scenes in the View Map under folder_path + each scene's folder.
 
-    With as_cameras (the default) perspectives become cameras of camera_path_name, each
-    with its View Map item; parallel views stay saved 3D views. Dry run first; apply the
+    Every scene is saved as a 3D view. With as_cameras (the default) each perspective is
+    also saved as a camera of camera_path_name, with its View Map item in the same folder. Dry run first; apply the
     same inputs with the explicit port and the one-use token.
     """
     entries = _scenes(scenes, MAX_VIEWS)
@@ -617,21 +617,15 @@ async def save_3d_scenes(
             try:
                 await _set_scene(client, port, scene)
                 arguments = {"name": scene.name, "folderPath": row["folder_path"]}
+                result = await _addon(client, port, "Save3DView", arguments)
+                done = {**row, "status": "saved", "view_guid": result.get("viewGuid")}
                 if row["kind"] == "camera":
-                    result = await _addon(
+                    camera = await _addon(
                         client, port, "SaveCameraView", {**arguments, "pathName": camera_path_name}
                     )
-                    saved.append(
-                        {
-                            **row,
-                            "status": "saved",
-                            "view_guid": result.get("viewGuid"),
-                            "camera_guid": result.get("cameraGuid"),
-                        }
-                    )
-                    continue
-                result = await _addon(client, port, "Save3DView", arguments)
-                saved.append({**row, "status": "saved", "view_guid": result.get("viewGuid")})
+                    done["camera_view_guid"] = camera.get("viewGuid")
+                    done["camera_guid"] = camera.get("cameraGuid")
+                saved.append(done)
             except ArchicadError as exc:
                 saved.append({**row, "status": "failed", "error": str(exc)})
     finally:

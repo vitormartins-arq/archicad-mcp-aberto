@@ -231,7 +231,7 @@ async def test_save_previews_then_saves_one_folder_per_room():
     assert fake.camera_3d["isPerspective"] and fake.cut_3d["enabled"] is False
 
 
-async def test_save_makes_perspectives_cameras_by_default():
+async def test_save_adds_a_camera_to_each_perspective_by_default():
     fake = model()
     folder = ["02 | MODELO 3D", "CÂMERAS BIMx"]
     async with client(fake) as c:
@@ -251,8 +251,8 @@ async def test_save_makes_perspectives_cameras_by_default():
     assert camera["name"] == "Peso Livre - 1P 01"
     assert camera["folderPath"] == [*folder, "PESO LIVRE"]
     assert camera["pathName"] == "BIMx - Câmeras"
-    (view,) = fake.saved_3d_views
-    assert view["name"] == "ISOMETRICA TERREO" and not view["camera"]["isPerspective"]
+    assert [v["name"] for v in fake.saved_3d_views] == ["Peso Livre - 1P 01", "ISOMETRICA TERREO"]
+    assert result["views"][1].get("camera_guid") is None
 
 
 async def test_save_refuses_a_changed_camera_choice():
