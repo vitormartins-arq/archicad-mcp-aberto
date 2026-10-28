@@ -2182,3 +2182,11 @@ OPERATIONS["create_classification_items"] = (
     "classification_item_receipt_id",
     "Creates only under existing parents; each item is one native Undo step.",
 )
+
+# Appended operation registration for T35.
+OPERATIONS["create_layer_combinations"] = (
+    "layer combination",
+    "layer_combination_receipt_id",
+    "Creates new combinations only; existing names are refused and every requested "
+    "state is read back.",
+)

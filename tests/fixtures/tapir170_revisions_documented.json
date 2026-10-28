@@ -1,0 +1,6 @@
+{
+  "provenance": {"kind": "source-derived, not a live capture", "live_capture": false, "tapir_tag": "1.7.0", "tapir_commit": "02691b5d680b60c73317e8e49b78ab14dfd4c9d8", "source": "archicad-addon/Sources/RevisionCommands.cpp"},
+  "documentRevisions": [{"revisionId": {"guid": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"}, "id": "01", "finalId": "A", "ownerUser": "Architect", "status": "Actual", "changes": [{"id": "CH-01"}], "layoutInfo": {"id": "A-01", "databaseId": {"guid": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"}, "name": "Plan", "masterLayoutName": "A1", "width": 0.841, "height": 0.594, "subsetId": "A", "subsetName": "Plans", "ownerUser": "Architect"}}],
+  "revisionIssues": [{"revisionIssueId": {"guid": "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"}, "id": "ISS-01", "description": "Issued", "issueTime": "2026-10-21", "issuedByUser": "Architect", "overrideRevisionIDOfAllIncludedLayouts": false, "createNewRevisionInAllIncludedLayouts": true, "markersVisibleSinceIndex": 0, "isIssued": true}],
+  "revisionChanges": [{"id": "CH-01", "description": "Wall moved", "lastModifiedTime": "2026-10-21", "modifiedByUser": "Architect", "isIssued": false, "isArchived": false}]
+}
