@@ -557,8 +557,8 @@ async def save_3d_scenes(
     """Save scenes in the View Map under folder_path + each scene's folder.
 
     Every scene is saved as a 3D view. With as_cameras (the default) each perspective is
-    also saved as a camera of camera_path_name, with its View Map item in the same folder. Dry run first; apply the
-    same inputs with the explicit port and the one-use token.
+    also saved as a camera of camera_path_name, with its View Map item in the same folder.
+    Dry run first; apply the same inputs with the explicit port and the one-use token.
     """
     entries = _scenes(scenes, MAX_VIEWS)
     if not 1 <= len(folder_path) <= 8 or any(not f or len(f) > 200 for f in folder_path):
