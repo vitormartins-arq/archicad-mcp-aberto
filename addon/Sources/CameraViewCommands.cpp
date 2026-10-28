@@ -250,6 +250,21 @@ GS::ObjectState RenameProjectMapItemsCommand::Execute (const GS::ObjectState& pa
         }
         row.Add ("before", GS::UniString (item.uName));
         if (!dryRun) {
+            // A camera's Project Map name is its element ID (SaveCameraView writes it the same way).
+            if (item.itemType == API_CameraNavItem && item.camId != APINULLGuid) {
+                err = ACAPI_CallUndoableCommand ("Rename MCP camera", [&] () -> GSErrCode {
+                    API_ElementMemo memo {};
+                    memo.elemInfoString = new GS::UniString (name);
+                    const GS::OnExit freeMemo ([&] { ACAPI_DisposeElemMemoHdls (&memo); });
+                    return ACAPI_Element_ChangeMemo (item.camId, APIMemoMask_ElemInfoString, &memo);
+                });
+                if (err != NoError) {
+                    row.Add ("error", GS::ObjectState ("code", err, "message", "Archicad refused the camera ID."));
+                    rows (row);
+                    continue;
+                }
+                ACAPI_Navigator_GetNavigatorItem (&guid, &item);
+            }
             SetItemName (item, name);
             err = ACAPI_Navigator_ChangeNavigatorItem (&item);
             API_NavigatorItem after {};
