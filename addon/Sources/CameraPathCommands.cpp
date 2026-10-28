@@ -1,4 +1,5 @@
 #include "CameraPathCommands.hpp"
+#include "CameraAngleConversion.hpp"
 #include "ProjectSaveCommands.hpp"
 #include "OnExit.hpp"
 #include "ObjectStateJSONConversion.hpp"
@@ -44,7 +45,7 @@ GS::ObjectState ProjectContext (GS::ProcessControl& process)
 }
 GS::ObjectState Perspective (const API_PerspPars& p)
 {
-    // Native API values, without converting units between projection and camera APIs.
+    // Raw values: projection settings use degrees; camera elements use radians.
     return GS::ObjectState ("x", p.pos.x, "y", p.pos.y, "z", p.cameraZ,
         "targetX", p.target.x, "targetY", p.target.y, "targetZ", p.targetZ,
         "viewConeNative", p.viewCone, "rollNative", p.rollAngle, "azimuthNative", p.azimuth,
@@ -489,7 +490,7 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
             const auto old = bySource.find (Utf8 (APIGuidToString (view.guid)));
             if (old == bySource.end ()) break;
             if (old->second.camera.perspCam.prevCam != previous ||
-                !SamePerspective (old->second.camera.perspCam.persp, view.projection.u.persp))
+                !SamePerspective (old->second.camera.perspCam.persp, CameraPerspective (view.projection.u.persp)))
                 throw std::runtime_error ("Existing camera order/projection differs; no duplicates created.");
             previous = old->second.header.guid; ++reused;
         }
@@ -517,7 +518,7 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
                         camera.header.type = API_CameraID;
                         Check (ACAPI_Element_GetDefaults (&camera, nullptr));
                         camera.camera.camSetGuid = pathGuid;
-                        camera.camera.perspCam.persp = view.projection.u.persp;
+                        camera.camera.perspCam.persp = CameraPerspective (view.projection.u.persp);
                         camera.camera.perspCam.prevCam = tail;
                         camera.camera.perspCam.nextCam = APINULLGuid;
                         camera.camera.perspCam.active = true;
@@ -548,7 +549,7 @@ GS::ObjectState ApplyCameraPathCommand::Execute (const GS::ObjectState& paramete
             const auto key = Utf8 (APIGuidToString (currentViews[i].guid));
             const auto camera = actual.find (key);
             if (camera == actual.end () || camera->second.camera.perspCam.prevCam != previous ||
-                !SamePerspective (camera->second.camera.perspCam.persp, currentViews[i].projection.u.persp))
+                !SamePerspective (camera->second.camera.perspCam.persp, CameraPerspective (currentViews[i].projection.u.persp)))
                 throw std::runtime_error ("Created camera projection/source/order could not be verified.");
             previous = camera->second.header.guid;
         }
