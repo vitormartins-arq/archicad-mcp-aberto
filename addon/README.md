@@ -50,13 +50,12 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
   metres; `CreateGridElements` takes `begCoordinate`, `endCoordinate` and optional
   `floorIndex`, `layerIndex`, `lengthMode` and GDL `parameters`, all in one Undo step.
 - `SaveCameraView`: `{"name", "pathName", "folderPath"?, "viewMap"?}` saves the current
-  perspective as a camera at the end of a camera path (created when missing), names its
-  Project Map item and, unless `viewMap` is false, clones it into the View Map.
+  perspective as a camera at the end of a camera path (created when missing), with the
+  name as the camera ID, and, unless `viewMap` is false, clones it into the View Map.
 - `GetCameraViews`: `{"map"?: "ViewMap" | "ProjectMap"}` lists the camera items with
   their camera and camera path.
-- `RenameProjectMapItems`: `{"items": [{"guid", "name"}], "dryRun"?}` renames Project
-  Map items (views, sections, cameras) and reads the names back. Tapir refuses this
-  ("The name and the ID of a Project Map item cannot be changed"); suggested upstream.
+- Renaming Project Map cameras is not offered: Archicad refuses it even through the
+  API (ChangeMemo ignored, ChangeNavigatorItem 0x81060065, live AC30, 28/10/2026).
 
 Angles are in radians on the MCP side; Archicad keeps them in degrees and the commands
 convert. A perspective camera defaults to a 60 degree view cone. First live test

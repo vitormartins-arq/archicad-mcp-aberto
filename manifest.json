@@ -413,11 +413,7 @@
     },
     {
       "name": "list_project_map_cameras",
-      "description": "List the Project Map cameras with their path, to rename them (ArchicadMcpAberto add-on)."
-    },
-    {
-      "name": "rename_project_map_items",
-      "description": "Preview or rename Project Map views, sections and cameras by GUID, read back (ArchicadMcpAberto add-on)."
+      "description": "List the Project Map cameras with their path, read only (ArchicadMcpAberto add-on)."
     },
     {
       "name": "save_3d_scenes",

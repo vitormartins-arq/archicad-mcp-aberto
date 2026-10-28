@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 163
+    assert len(tools) == 162
     writes = {
         "begin_model_task",
         "finish_model_task",
@@ -203,7 +203,6 @@ async def test_server_registers_current_tool_surface():
         "shoot_3d_scenes",
         "save_3d_scenes",
         "save_room_plan_views",
-        "rename_project_map_items",
         "create_composites",
         "add_stories",
         "create_design_options",

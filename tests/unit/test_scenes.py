@@ -253,7 +253,6 @@ async def test_save_adds_a_camera_to_each_perspective_by_default():
     assert camera["name"] == "1 PESO LIVRE - 1P 01"
     assert camera["folderPath"] == [] and camera["viewMap"] is False
     assert camera["pathName"] == "00 BIMx - Apresentação"
-    assert result["views"][0]["camera_name_set"] is True
     assert [v["name"] for v in fake.saved_3d_views] == ["Peso Livre - 1P 01", "ISOMETRICA TERREO"]
     assert result["views"][1].get("camera_guid") is None
 

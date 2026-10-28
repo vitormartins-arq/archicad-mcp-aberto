@@ -644,7 +644,6 @@ async def save_3d_scenes(
                             "viewMap": False,
                         },
                     )
-                    done["camera_name_set"] = camera.get("projectMapNamed")
                     done["camera_guid"] = camera.get("cameraGuid")
                 saved.append(done)
             except ArchicadError as exc:

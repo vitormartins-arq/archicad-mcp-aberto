@@ -125,15 +125,9 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
         if (item.camId == camera.header.guid) source = item.guid;
     if (source == APINULLGuid)
         return CreateErrorResponse (APIERR_GENERAL, "Created the camera but found no Project Map item for it.");
-    // The Project Map item carries the camera's name in the path and in the BIMx gallery;
-    // without this it stays "Camera 1", "Camera 2"... (Vitor, 28/10/2026).
-    API_NavigatorItem projectItem {};
-    projectItem.mapId = API_ProjectMap;
-    GSErrCode nameError = ACAPI_Navigator_GetNavigatorItem (&source, &projectItem);
-    if (nameError == NoError) {
-        SetItemName (projectItem, name);
-        nameError = ACAPI_Navigator_ChangeNavigatorItem (&projectItem);
-    }
+    // The Project Map item shows the camera element's ID; Archicad refuses renaming it
+    // afterwards (ChangeMemo is ignored, ChangeNavigatorItem gives 0x81060065, AC30,
+    // 28/10/2026), so the name only comes from elemInfoString at creation.
     API_Guid createdGuid = APINULLGuid;
     if (viewMap) {
         if ((err = ACAPI_Navigator_CloneProjectMapItemToViewMap (&source, &parentGuid, &createdGuid)) != NoError)
@@ -161,8 +155,7 @@ GS::ObjectState SaveCameraViewCommand::Execute (const GS::ObjectState& parameter
 
     return GS::ObjectState ("viewGuid", APIGuidToString (createdGuid), "cameraGuid", APIGuidToString (camera.header.guid),
         "pathGuid", APIGuidToString (pathGuid), "name", name, "folderGuid", APIGuidToString (parentGuid),
-        "twoPointLost", info.u.persp.isTwoPointPersp, "pathHiddenInPlan", hideError == NoError,
-        "projectMapNamed", nameError == NoError);
+        "twoPointLost", info.u.persp.isTwoPointPersp, "pathHiddenInPlan", hideError == NoError);
 }
 
 GS::String GetCameraViewsCommand::GetName () const { return "GetCameraViews"; }
@@ -196,83 +189,6 @@ GS::ObjectState GetCameraViewsCommand::Execute (const GS::ObjectState& parameter
             row.Add ("previousCameraGuid", APIGuidToString (camera.camera.perspCam.prevCam));
         }
         views (row);
-    }
-    return response;
-}
-
-GS::String RenameProjectMapItemsCommand::GetName () const { return "RenameProjectMapItems"; }
-GS::Optional<GS::UniString> RenameProjectMapItemsCommand::GetInputParametersSchema () const
-{
-    return R"({
-        "type": "object",
-        "properties": {
-            "items": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
-                "type": "object",
-                "properties": {
-                    "guid": {"type": "string", "description": "Project Map item GUID."},
-                    "name": {"type": "string", "description": "New name."}
-                },
-                "additionalProperties": false,
-                "required": ["guid", "name"]
-            }},
-            "dryRun": {"type": "boolean", "description": "Only read the current names (default false)."}
-        },
-        "additionalProperties": false,
-        "required": ["items"]
-    })";
-}
-// Tapir refuses to rename Project Map items ("The name and the ID of a Project Map item
-// cannot be changed"). Names given here reach the View Map and Publisher items that
-// follow the Project Map (Vitor's rule, 28/10/2026: rename views, sections and cameras
-// in the Project Map).
-GS::ObjectState RenameProjectMapItemsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
-{
-    GS::Array<GS::ObjectState> items;
-    parameters.Get ("items", items);
-    bool dryRun = false;
-    parameters.Get ("dryRun", dryRun);
-    GS::ObjectState response;
-    const auto& rows = response.AddList<GS::ObjectState> ("items");
-    for (const GS::ObjectState& entry : items) {
-        GS::UniString guidText, name;
-        entry.Get ("guid", guidText);
-        entry.Get ("name", name);
-        GS::ObjectState row ("guid", guidText);
-        API_NavigatorItem item {};
-        item.mapId = API_ProjectMap;
-        const API_Guid guid = APIGuidFromString (guidText.ToCStr ().Get ());
-        GSErrCode err = name.IsEmpty () || name.GetLength () >= API_UniLongNameLen - 1 ? APIERR_BADPARS : NoError;
-        if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &item);
-        if (err != NoError) {
-            row.Add ("error", GS::ObjectState ("code", err, "message", "Item missing or name invalid."));
-            rows (row);
-            continue;
-        }
-        row.Add ("before", GS::UniString (item.uName));
-        if (!dryRun) {
-            // A camera item shows the camera element's ID, not uName (AC30, 28/10/2026),
-            // so change the ID first, re-read the item and then set its name.
-            if (item.itemType == API_CameraNavItem && item.camId != APINULLGuid) {
-                API_Guid camId = item.camId;
-                err = ACAPI_CallUndoableCommand ("Rename MCP camera", [&] () -> GSErrCode {
-                    API_ElementMemo memo {};
-                    memo.elemInfoString = new GS::UniString (name);
-                    const GS::OnExit freeMemo ([&] { ACAPI_DisposeElemMemoHdls (&memo); });
-                    return ACAPI_Element_ChangeMemo (camId, APIMemoMask_ElemInfoString, &memo);
-                });
-                if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &item);
-            }
-            if (err == NoError) {
-                SetItemName (item, name);
-                err = ACAPI_Navigator_ChangeNavigatorItem (&item);
-            }
-            API_NavigatorItem after {};
-            after.mapId = API_ProjectMap;
-            if (err == NoError) err = ACAPI_Navigator_GetNavigatorItem (&guid, &after);
-            if (err != NoError) row.Add ("error", GS::ObjectState ("code", err, "message", "Archicad refused the new name."));
-            else row.Add ("after", GS::UniString (after.uName));
-        }
-        rows (row);
     }
     return response;
 }

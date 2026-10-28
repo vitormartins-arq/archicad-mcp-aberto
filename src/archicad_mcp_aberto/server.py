@@ -1701,26 +1701,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
 
     @mcp.tool(annotations=READ_ONLY)
     async def list_project_map_cameras(ctx: Context, port: int | None = None) -> dict:
-        """Every camera of the Project Map: item GUID (for rename_project_map_items),
-        name, camera GUID and camera path. Needs the ArchicadMcpAberto add-on."""
+        """Every camera of the Project Map: item GUID, name, camera GUID and camera path.
+        Read only: Archicad refuses renaming Project Map cameras, so rename them by hand.
+        Needs the ArchicadMcpAberto add-on."""
         return await project_map_names_tool.list_project_map_cameras(client_of(ctx), port)
-
-    @mcp.tool(annotations=WRITE)
-    async def rename_project_map_items(
-        ctx: Context,
-        items: list[dict],
-        port: int | None = None,
-        dry_run: bool = True,
-        confirmation_token: str | None = None,
-    ) -> dict:
-        """Rename up to 200 Project Map items (views, sections, cameras) given as
-        {guid, name}; Tapir refuses this. Rename in the Project Map so the name reaches the
-        View Map and Publisher sets. Preview shows the current names; apply with explicit
-        port and token; each name is read back. Needs the ArchicadMcpAberto add-on.
-        Outside Undo; never saves."""
-        return await project_map_names_tool.rename_project_map_items(
-            client_of(ctx), items, port, dry_run, confirmation_token
-        )
 
     @mcp.tool(annotations=WRITE)
     async def save_3d_scenes(

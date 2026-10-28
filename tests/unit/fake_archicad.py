@@ -688,7 +688,6 @@ class FakeArchicad:
     saved_3d_views: list[dict] = field(default_factory=list)
     saved_cameras: list[dict] = field(default_factory=list)
     project_map_names: dict[str, str] = field(default_factory=dict)  # item guid -> name
-    project_map_refused: set[str] = field(default_factory=set)  # guids Archicad refuses
 
     def __post_init__(self):
         # Preserve the existing ProjectMap/LayoutBook fake and add the two other maps.
@@ -1172,22 +1171,6 @@ class FakeArchicad:
             else:
                 rows = [{"viewGuid": c["viewGuid"], "name": c["name"]} for c in self.saved_cameras]
             return ok({"addOnCommandResponse": {"views": rows}})
-        if name == "RenameProjectMapItems":
-            rows = []
-            for item in args["items"]:
-                guid = item["guid"]
-                if guid not in self.project_map_names:
-                    rows.append({"guid": guid, "error": {"code": -1, "message": "Item missing."}})
-                    continue
-                row = {"guid": guid, "before": self.project_map_names[guid]}
-                if not args.get("dryRun"):
-                    if guid in self.project_map_refused:
-                        row["error"] = {"code": -1, "message": "Archicad refused the new name."}
-                    else:
-                        self.project_map_names[guid] = item["name"]
-                        row["after"] = item["name"]
-                rows.append(row)
-            return ok({"addOnCommandResponse": {"items": rows}})
         if name == "SaveCameraView":
             if not self.camera_3d["isPerspective"]:
                 error = {"code": -1, "message": "A camera needs a perspective."}
@@ -1210,7 +1193,6 @@ class FakeArchicad:
                 else "00000000-0000-0000-0000-000000000000",
                 "cameraGuid": str(uuid4()).upper(),
                 "name": args["name"],
-                "projectMapNamed": True,
             }
             return ok({"addOnCommandResponse": response})
         if name == "Save3DView":

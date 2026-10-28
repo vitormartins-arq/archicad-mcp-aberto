@@ -113,7 +113,6 @@ INPUTS = {
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
     "list_project_map_cameras": {},
-    "rename_project_map_items": {"items": [{"guid": GUID, "name": "1 SALA - 1P 01"}]},
     "list_hotlinks": {},
     "get_attribute_details": {"kind": "composites", "guids": []},
     "get_ifc_of_elements": {"element_guids": [GUID]},
