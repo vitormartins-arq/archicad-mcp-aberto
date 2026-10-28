@@ -538,3 +538,5 @@
 - Add read-only IFC metadata and GlobalId lookup tools from Tapir 1.7.0.
 ### Project location and layouts
 - Add read-only geolocation, calculation-unit and layout-setting tools from Tapir 1.7.0.
+### Dimension, MVO and library reading
+- Add read-only dimension data, model-view-option, library and special-folder queries.

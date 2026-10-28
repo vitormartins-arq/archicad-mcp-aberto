@@ -590,6 +590,18 @@
     {
       "name": "get_layout_settings",
       "description": "Read layout dimensions, margins, numbering and custom data."
+    },
+    {
+      "name": "get_dimension_data",
+      "description": "Read dimension data for elements."
+    },
+    {
+      "name": "get_model_view_options",
+      "description": "List model view options."
+    },
+    {
+      "name": "list_libraries",
+      "description": "List project libraries and special folders."
     }
   ],
   "compatibility": {

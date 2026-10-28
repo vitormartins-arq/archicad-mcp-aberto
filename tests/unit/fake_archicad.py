@@ -601,6 +601,7 @@ class FakeArchicad:
     dimension_floor_shift: int = 0
     dimension_witness_shift: float = 0.0  # Archicad reports witness points moved in x
     dimension_data: dict[str, dict] = field(default_factory=dict)  # GetDimensionData rows
+    project_resources_fixture: bool = False  # GetDimensionData from the documented fixture
     opening_unhosted: bool = False
     connected_error: bool = False
 
@@ -1314,6 +1315,34 @@ class FakeArchicad:
                 for row in args["layoutDatabaseIds"]
             ]
             return ok({"addOnCommandResponse": {"layoutSettings": rows}})
+        if name in {"GetModelViewOptions", "GetLibraries", "GetSpecialFolders"} or (
+            name == "GetDimensionData" and self.project_resources_fixture
+        ):
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_project_resources_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetDimensionData":
+                rows = [
+                    deepcopy(fixture["dimension"])
+                    if r["elementId"]["guid"] == fixture["guid"]
+                    else {"error": {"code": -2, "message": "Dimension not found"}}
+                    for r in args["elements"]
+                ]
+                key = "dimensionsData"
+            elif name == "GetModelViewOptions":
+                key, rows = "modelViewOptions", fixture["modelViewOptions"]
+            elif name == "GetLibraries":
+                key, rows = "libraries", fixture["libraries"]
+            else:
+                key, rows = (
+                    "folderPaths",
+                    [deepcopy(fixture["folder"]) for _ in args["folderTypes"]],
+                )
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

@@ -30,6 +30,7 @@ from archicad_mcp_aberto.tools import (
     openings,
     project_info,
     project_location,
+    project_resources,
     property_definitions,
     read,
     write,
@@ -2063,6 +2064,25 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await project_location.get_layout_settings(
             client_of(ctx), layout_database_guids, port
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_data(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read source-derived dimension data for up to 100 elements."""
+        return await project_resources.get_dimension_data(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_model_view_options(ctx: Context, port: int | None = None) -> dict:
+        """List the project's model-view-option combinations."""
+        return await project_resources.get_model_view_options(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_libraries(
+        ctx: Context, folder_types: list[str] | None = None, port: int | None = None
+    ) -> dict:
+        """List project libraries and requested Archicad special folders."""
+        return await project_resources.list_libraries(client_of(ctx), folder_types, port)
 
     return mcp
 

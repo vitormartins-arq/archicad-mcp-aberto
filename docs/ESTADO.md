@@ -1049,3 +1049,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Added bounded IFC type, identifier, property and reverse GlobalId lookups; no export paths.
 ## 2026-10-21 — T34 project location
 - Added read-only project geolocation/calculation units and bounded layout settings queries.
+## 2026-10-21 — T38 dimensions, MVO and libraries
+- Added three read-only project-resource tools from Tapir 1.7.0 schemas.

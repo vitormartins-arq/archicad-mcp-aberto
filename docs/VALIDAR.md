@@ -841,3 +841,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T34 — Project location, units and layouts
 - [ ] Compare longitude, latitude, altitude, north angle, survey point and CRS with Location Settings.
 - [ ] Compare calculation units and layout size, margins, numbering and custom data; include an invalid layout GUID.
+## T38 — Dimensions, MVO and libraries
+- [ ] Compare linear/radial/angular dimension details and invalid-element errors.
+- [ ] Compare MVO names, loaded/missing library metadata and requested special-folder paths.

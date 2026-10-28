@@ -41,6 +41,7 @@ from archicad_mcp_aberto.tools import (
     openings,
     project_info,
     project_location,
+    project_resources,
     property_definitions,
     read,
     renames,
@@ -99,6 +100,9 @@ INPUTS = {
     "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
     "get_project_location": {},
     "get_layout_settings": {"layout_database_guids": [GUID]},
+    "get_dimension_data": {"element_guids": [GUID]},
+    "get_model_view_options": {},
+    "list_libraries": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -494,6 +498,8 @@ TARGETED = {
         project_info,
         project_location,
         project_location,
+        project_resources,
+        project_resources,
         property_definitions,
         read,
         roofs,

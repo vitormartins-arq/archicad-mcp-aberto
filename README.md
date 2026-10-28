@@ -883,3 +883,7 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   reads dimensions, margins, numbering and custom data for up to 100 layout database GUIDs,
   preserving errors. Fixtures are source-derived, not a live capture. Registry: **100 tools
   (31 reads, 69 writes/interactions)**.
+- `get_dimension_data`, `get_model_view_options` and `list_libraries` read dimensions,
+  model-view options, loaded libraries and official special-folder paths. Dimension calls
+  accept up to 100 GUIDs. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.
