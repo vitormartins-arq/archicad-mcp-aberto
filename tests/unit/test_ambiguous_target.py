@@ -90,6 +90,7 @@ INPUTS = {
     "shoot_3d_scenes": {"scenes": [SCENE]},
     "save_3d_scenes": {"scenes": [SCENE], "folder_path": ["AMBIENTES"]},
     "save_room_plan_views": {"folder_path": ["AMPLIACOES"]},
+    "list_hotlinks": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]

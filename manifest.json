@@ -566,6 +566,10 @@
     {
       "name": "update_favorites_from_elements",
       "description": "Preview or overwrite existing favorites from elements of their type."
+    },
+    {
+      "name": "list_hotlinks",
+      "description": "List linked Module and XRef nodes with GUID, source path and hierarchy."
     }
   ],
   "compatibility": {
