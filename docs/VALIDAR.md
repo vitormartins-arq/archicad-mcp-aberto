@@ -830,3 +830,8 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
   ambiente com folga, em 1:25 e com a combinação pedida, e o recibo dá `verified`.
   Anotar se o enquadramento ao abrir a vista bate com o ambiente (o zoom salvo pode
   ajustar à proporção da janela).
+## T29 — detalhes de atributos
+
+- [ ] Em cópia de teste, consultar os oito `kind` com e sem GUIDs; comparar nomes,
+  skins, cores, texturas, propriedades físicas, penas, linhas e hachuras com os diálogos
+  de atributos. Conferir GUID inexistente como erro isolado. Somente leitura.

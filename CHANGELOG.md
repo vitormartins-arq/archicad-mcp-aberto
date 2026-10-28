@@ -529,3 +529,8 @@
   parent GUID and depth. Search matches name, type or path before pagination. The full
   response is validated, including unique non-null GUIDs and valid node types. Its
   source-derived fixture is explicitly synthetic and not a live Archicad capture.
+### Read detailed attributes
+
+- Add read-only `get_attribute_details` for eight closed-list kinds backed by Tapir
+  1.7.0 attribute commands. Optional GUIDs preserve order and native per-item errors;
+  omission inventories the kind first. Calls are bounded to 500 and batched by 100.

@@ -1039,3 +1039,9 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   combinação de vegetais pela `API_NavigatorView`) e a ferramenta `save_room_plan_views`
   (`tools/room_views.py`). Testes simulados passaram; nada testado ao vivo (VALIDAR, C38).
   A thread ficou parada de 23 a 27/10 pelo limite de uso da organização.
+## 2026-10-21 — Codex / T29 detalhes de atributos
+
+- Branch `codex/t29-attribute-details`, somente leitura. `get_attribute_details` cobre
+  composites, profiles, surfaces, building material physics, zone categories, pen
+  tables, lines e fills pelos oito comandos do Tapir 1.7.0. Até 500 GUIDs, lotes de
+  100 e erro nativo por item. Fixture source-derived, not a live capture.

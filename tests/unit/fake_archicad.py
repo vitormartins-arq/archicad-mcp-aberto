@@ -276,6 +276,11 @@ HOTLINKS_FIXTURE = json.loads(
         encoding="utf-8"
     )
 )
+ATTRIBUTE_DETAILS_FIXTURE = json.loads(
+    (
+        Path(__file__).parents[1] / "fixtures" / "tapir170_attribute_details_documented.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def ok(result: Any) -> dict:
@@ -640,6 +645,8 @@ class FakeArchicad:
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
     own_addon_loaded: bool = True
+    # get_attribute_details tests: answer the eight detail commands from one fixture row.
+    attribute_details_fixture: bool = False
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
@@ -1208,6 +1215,51 @@ class FakeArchicad:
                        "executionResultForDatabases": [result]}})  # fmt: skip
         if name == "GetHotlinks" and self.hotlinks_fixture:
             return ok({"addOnCommandResponse": deepcopy(HOTLINKS_FIXTURE["response"])})
+        if self.attribute_details_fixture and name in ATTRIBUTE_DETAILS_FIXTURE["rows"]:
+            row = ATTRIBUTE_DETAILS_FIXTURE["rows"][name]
+            key = {
+                "GetComposites": "composites",
+                "GetProfiles": "profiles",
+                "GetSurfaces": "surfaces",
+                "GetBuildingMaterialPhysicalProperties": "properties",
+                "GetZoneCategories": "zoneCategories",
+                "GetPenTables": "penTables",
+                "GetLines": "lines",
+                "GetFills": "fills",
+            }[name]
+            requested = [item["attributeId"]["guid"] for item in args["attributeIds"]]
+            rows = [
+                deepcopy(row)
+                if guid == ATTRIBUTE_DETAILS_FIXTURE["guid"]
+                else {"error": {"code": -2, "message": "Attribute not found"}}
+                for guid in requested
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
+        if (
+            self.attribute_details_fixture
+            and name == "GetAttributesByType"
+            and args["attributeType"]
+            in {
+                "Composite",
+                "Profile",
+                "ZoneCategory",
+                "PenTable",
+                "Line",
+            }
+        ):
+            return ok(
+                {
+                    "addOnCommandResponse": {
+                        "attributes": [
+                            {
+                                "attributeId": {"guid": ATTRIBUTE_DETAILS_FIXTURE["guid"]},
+                                "index": 1,
+                                "name": args["attributeType"],
+                            }
+                        ]
+                    }
+                }
+            )
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":
