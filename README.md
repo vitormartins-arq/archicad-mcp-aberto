@@ -129,6 +129,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `update_favorites_from_elements` | Write | Overwrites existing favorites from elements of their type | yes |
 | `set_attribute_property_values` | Write | Custom property values on building materials, composites, profiles and other attributes, as text | yes |
 | `create_interior_elevations` | Write | Interior elevations from a chain of points with a new name, read back on the story and in the Project Map | yes |
+| `list_hotlinks` | Read | Linked Module and XRef nodes with GUID, source path and hierarchy | yes |
 | `list_keynotes` | Read | Keynote folders and items with GUIDs and key paths (Archicad 28+) | yes |
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
@@ -158,6 +159,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_grid_elements` | Write | Draws grid lines from start and end points, with bubble text and other GDL parameters | no (own add-on) |
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
+| `get_attribute_details` | Read | Detailed composites, profiles, surfaces, material physics, zone categories, pen tables, lines or fills | yes |
 
 ### Reported live validation
 
@@ -871,6 +873,30 @@ Attribute properties of type number/integer accept equivalent unitless ASCII dec
 read-back (1235 -> 1235.000). Strings, units, ambiguous locale separators and changed
 numeric values remain strict. Receipt text preserves the actual Archicad response.
 
+- `get_ifc_of_elements(element_guids, port?)` reads IFC type, IDs and properties, while
+  `find_elements_by_ifc_ids(ifc_ids, port?)` resolves IFC GlobalIds to elements. Each
+  accepts up to 100 inputs and preserves aligned results; neither exports IFC. Fixtures
+  are source-derived, not a live capture. Registry: **100 tools (31 reads, 69
+  writes/interactions)**.
+- `get_project_location(port?)` reads Tapir geolocation, survey point and calculation
+  units; altitude and coordinates use metres and north uses radians. `get_layout_settings`
+  reads dimensions, margins, numbering and custom data for up to 100 layout database GUIDs,
+  preserving errors. Fixtures are source-derived, not a live capture. Registry: **100 tools
+  (31 reads, 69 writes/interactions)**.
+- `get_dimension_data`, `get_model_view_options` and `list_libraries` read dimensions,
+  model-view options, loaded libraries and official special-folder paths. Dimension calls
+  accept up to 100 GUIDs. Fixtures are source-derived, not a live capture. Registry:
+  **101 tools (32 reads, 69 writes/interactions)**.
+- `get_element_preview`, `get_zone_image` and `get_favorite_preview` return real MCP PNG
+  image content for up to 10 targets. Dimensions are capped at 1024 × 1024 and decoded
+  images at 5 MiB. Each target also gets metadata or its own error. Fixtures are
+  source-derived, not a live capture. Registry: **101 tools (32 reads, 69
+  writes/interactions)**.
+- `get_zone_boundaries(zone_guids, port?)` reads Tapir 1.7.0 zone boundary surfaces for up
+  to 100 zones. `get_zone_relations(zone_guids, other_element_type?, port?)` reads their
+  type-specific relations. Both preserve an error row for each invalid zone. Coordinates,
+  lengths and areas use SI units. Fixtures are source-derived, not live captures. Registry:
+  **98 tools (31 reads, 67 writes/interactions)**.
 - `create_layer_combinations([{name, layers: [{layer, visible?, locked?, wireframe?,
   intersection_group?}]}], port?, dry_run?, confirmation_token?)` previews and creates
   up to 20 new combinations from existing layers. Existing names and missing layers are
