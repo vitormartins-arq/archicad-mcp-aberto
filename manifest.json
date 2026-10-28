@@ -642,6 +642,18 @@
     {
       "name": "find_collisions",
       "description": "Read collisions between two bounded element groups."
+    },
+    {
+      "name": "list_document_revisions",
+      "description": "Read document revisions and layouts."
+    },
+    {
+      "name": "list_revision_issues",
+      "description": "Read revision issues without issuing."
+    },
+    {
+      "name": "get_revision_changes",
+      "description": "Read global, element and layout revision changes."
     }
   ],
   "compatibility": {

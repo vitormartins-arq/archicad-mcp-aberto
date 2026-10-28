@@ -1416,6 +1416,41 @@ class FakeArchicad:
                 ).read_text(encoding="utf-8")
             )
             return ok({"addOnCommandResponse": {"collisions": [deepcopy(fixture["collision"])]}})
+        if name in {
+            "GetDocumentRevisions",
+            "GetRevisionIssues",
+            "GetRevisionChanges",
+            "GetRevisionChangesOfElements",
+            "GetCurrentRevisionChangesOfLayouts",
+        }:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_revisions_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            if name == "GetDocumentRevisions":
+                key, rows = "documentRevisions", fixture["documentRevisions"]
+            elif name == "GetRevisionIssues":
+                key, rows = "revisionIssues", fixture["revisionIssues"]
+            elif name == "GetRevisionChanges":
+                key, rows = "revisionChanges", fixture["revisionChanges"]
+            else:
+                source_key = (
+                    "elements" if name == "GetRevisionChangesOfElements" else "layoutDatabaseIds"
+                )
+                id_key = "elementId" if name == "GetRevisionChangesOfElements" else "databaseId"
+                key = (
+                    "revisionChangesOfElements"
+                    if name == "GetRevisionChangesOfElements"
+                    else "currentRevisionChangesOfLayouts"
+                )
+                rows = [
+                    {"revisionChanges": deepcopy(fixture["revisionChanges"])}
+                    if row[id_key]["guid"] != "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD"
+                    else {"error": {"code": -2, "message": "Entity not found"}}
+                    for row in args[source_key]
+                ]
+            return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

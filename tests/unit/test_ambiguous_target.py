@@ -48,6 +48,7 @@ from archicad_mcp_aberto.tools import (
     property_definitions,
     read,
     renames,
+    revisions,
     roofs,
     room_views,
     scenes,
@@ -119,6 +120,9 @@ INPUTS = {
     "get_mep_elements": {},
     "get_mep_preference_tables": {"domain": "Piping"},
     "find_collisions": {"group1_guids": [GUID], "group2_guids": [PROP]},
+    "list_document_revisions": {},
+    "list_revision_issues": {},
+    "get_revision_changes": {},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -522,6 +526,8 @@ TARGETED = {
         project_resources,
         property_definitions,
         read,
+        revisions,
+        revisions,
         roofs,
         room_views,
         scenes,

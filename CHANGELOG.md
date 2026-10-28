@@ -550,3 +550,5 @@
 - Add read-only MEP systems, elements, ports, routes and preference tables.
 ### Collision reading
 - Add bounded, read-only `find_collisions` using Tapir 1.7.0 `GetCollisions`.
+### Revision reading
+- Add read-only document revision, revision issue, and revision change tools.

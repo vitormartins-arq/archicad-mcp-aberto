@@ -861,3 +861,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T31 — Collisions
 - [ ] Compare body collisions for intersecting and separated elements with Archicad's model.
 - [ ] Enable surface checking and confirm the volume (m³) and surface (m²) thresholds.
+## T32 — Revisions
+- [ ] Compare document revisions, issue status and custom data with the Change Manager.
+- [ ] Confirm current changes for valid/invalid element and layout GUIDs stay row-aligned.

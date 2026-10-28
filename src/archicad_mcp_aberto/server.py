@@ -35,6 +35,7 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     property_definitions,
     read,
+    revisions,
     write,
 )
 from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
@@ -2211,6 +2212,29 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             perform_surface_check,
             surface_tolerance,
             port,
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_document_revisions(ctx: Context, port: int | None = None) -> dict:
+        """List document revisions and their layout information; read-only."""
+        return await revisions.list_document_revisions(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_revision_issues(ctx: Context, port: int | None = None) -> dict:
+        """List revision issues and issuance state; never issues a revision."""
+        return await revisions.list_revision_issues(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_revision_changes(
+        ctx: Context,
+        element_guids: list[str] | None = None,
+        layout_database_guids: list[str] | None = None,
+        port: int | None = None,
+    ) -> dict:
+        """List revision changes and optionally aligned changes for up to 100 elements
+        and 100 layout databases. Read-only; never emits or modifies a revision."""
+        return await revisions.get_revision_changes(
+            client_of(ctx), element_guids, layout_database_guids, port
         )
 
     return mcp
