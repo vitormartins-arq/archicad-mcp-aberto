@@ -548,3 +548,5 @@
 - Add safe preview/token/receipt creation for new layer combinations with per-layer states.
 ### MEP reading
 - Add read-only MEP systems, elements, ports, routes and preference tables.
+### Collision reading
+- Add bounded, read-only `find_collisions` using Tapir 1.7.0 `GetCollisions`.

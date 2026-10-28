@@ -13,6 +13,7 @@ from archicad_mcp_aberto.tools import (
     attributes_details,
     classification_systems,
     classifications,
+    collisions,
     composites,
     design_option_create,
     design_options,
@@ -117,6 +118,7 @@ INPUTS = {
     "list_mep_systems": {},
     "get_mep_elements": {},
     "get_mep_preference_tables": {"domain": "Piping"},
+    "find_collisions": {"group1_guids": [GUID], "group2_guids": [PROP]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -484,6 +486,8 @@ TARGETED = {
         attributes,
         classification_systems,
         classifications,
+        collisions,
+        collisions,
         design_options,
         documents,
         drafting,

@@ -907,3 +907,8 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   read-only MEP systems, distributions, routing details, ports and circular preference
   tables through Tapir 1.7.0. Fixtures are source-derived, not a live capture. Registry:
   **101 tools (32 reads, 69 writes/interactions)**.
+- `find_collisions(group1_guids, group2_guids, volume_tolerance?, perform_surface_check?,
+  surface_tolerance?, port?)` runs Tapir 1.7.0 `GetCollisions` for at most 500 elements
+  per group. Tolerances are SI (m³ volume and m² surface); it never edits the model.
+  Fixtures are source-derived, not a live capture. Registry: **99 tools (30 reads,
+  69 writes/interactions)**.

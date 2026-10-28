@@ -16,6 +16,7 @@ from archicad_mcp_aberto.tools import (
     attributes,
     attributes_details,
     classifications,
+    collisions,
     design_options,
     documents,
     drafting,
@@ -2189,6 +2190,28 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """Read circular segment preference tables for one MEP domain."""
         return await mep_tool.get_mep_preference_tables(client_of(ctx), domain, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def find_collisions(
+        ctx: Context,
+        group1_guids: list[str],
+        group2_guids: list[str],
+        volume_tolerance: float = 0.001,
+        perform_surface_check: bool = False,
+        surface_tolerance: float = 0.001,
+        port: int | None = None,
+    ) -> dict:
+        """Find collisions between two groups of up to 500 elements. Tolerances use
+        project-independent SI: volume in m³ and surface area in m². Read-only."""
+        return await collisions.find_collisions(
+            client_of(ctx),
+            group1_guids,
+            group2_guids,
+            volume_tolerance,
+            perform_surface_check,
+            surface_tolerance,
+            port,
+        )
 
     return mcp
 

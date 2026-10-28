@@ -638,6 +638,10 @@
     {
       "name": "get_mep_preference_tables",
       "description": "Read MEP segment preference tables."
+    },
+    {
+      "name": "find_collisions",
+      "description": "Read collisions between two bounded element groups."
     }
   ],
   "compatibility": {

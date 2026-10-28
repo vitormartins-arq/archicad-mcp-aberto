@@ -1409,6 +1409,13 @@ class FakeArchicad:
                     }
                 }
             )
+        if name == "GetCollisions":
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1] / "fixtures" / "tapir170_collisions_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            return ok({"addOnCommandResponse": {"collisions": [deepcopy(fixture["collision"])]}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

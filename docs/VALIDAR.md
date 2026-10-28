@@ -858,3 +858,6 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T36 — MEP reads
 - [ ] Compare MEP systems/distributions, routing details and ports in an Archicad 28+ MEP model.
 - [ ] Compare Piping and Ventilation circular preference-table diameters and descriptions.
+## T31 — Collisions
+- [ ] Compare body collisions for intersecting and separated elements with Archicad's model.
+- [ ] Enable surface checking and confirm the volume (m³) and surface (m²) thresholds.
