@@ -81,7 +81,7 @@ async def build_report(client: ArchicadClient) -> dict[str, Any]:
         "problems": problems,
         "notes": [
             "The ArchicadMcpAberto companion add-on is optional and only needed "
-            "for 3D scene tools.",
+            "for the tools that use it (3D scenes, grids, room views, saves).",
             "The doctor is read-only and never changes the project, view or selection.",
         ],
     }
