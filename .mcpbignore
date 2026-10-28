@@ -20,3 +20,8 @@ SECURITY.md
 CHANGELOG.md
 .mcpbignore
 .gitignore
+
+# Build-only distribution tooling
+tools/
+packages/
+distribution.json

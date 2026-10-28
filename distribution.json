@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "revision": "R08",
+  "names": {
+    "addon": "LAB - Complemento MCP",
+    "bundle": "LAB - Servidor MCP",
+    "server_source": "LAB - Servidor MCP",
+    "addon_source": "LAB - Complemento MCP Fonte"
+  }
+}

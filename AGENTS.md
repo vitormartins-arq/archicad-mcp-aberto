@@ -66,3 +66,11 @@ disk.
   command to Tapir upstream as a suggestion, so it can replace ours later. The add-on
   needs a Graphisoft-issued MDID.
 - Never delete files on Vitor's computer.
+
+## Material revisions
+
+Read `docs/DISTRIBUTION.md` before preparing a delivery. Change the single revision
+in `distribution.json` when published material changes; generate names with
+`tools/distribution.py`. Preserve old revisions and keep Main/test and Archicad majors
+separate. Deliver verified APX and corresponding source copies to the authorized Drive
+folder; never include credentials, venv or a working clone. Do not modify LAB Blocos.

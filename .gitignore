@@ -9,3 +9,6 @@ build-cameras/
 receipts/
 addon/devkit/
 addon/build/
+
+# Generated distribution files
+packages/

@@ -1,6 +1,6 @@
 #include "ResourceIds.hpp"
 
 'STR#' ID_ADDON_INFO "Add-on Name and Description" {
-/* [  1] */		"Archicad MCP Aberto"
+/* [  1] */		"LAB - Complemento MCP"
 /* [  2] */		"Commands for archicad-mcp-aberto that Tapir does not have yet: 3D camera and 3D window image."
 }
