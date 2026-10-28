@@ -892,3 +892,8 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
   images at 5 MiB. Each target also gets metadata or its own error. Fixtures are
   source-derived, not a live capture. Registry: **101 tools (32 reads, 69
   writes/interactions)**.
+- `get_zone_boundaries(zone_guids, port?)` reads Tapir 1.7.0 zone boundary surfaces for up
+  to 100 zones. `get_zone_relations(zone_guids, other_element_type?, port?)` reads their
+  type-specific relations. Both preserve an error row for each invalid zone. Coordinates,
+  lengths and areas use SI units. Fixtures are source-derived, not live captures. Registry:
+  **98 tools (31 reads, 67 writes/interactions)**.

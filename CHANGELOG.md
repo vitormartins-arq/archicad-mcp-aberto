@@ -542,3 +542,5 @@
 - Add read-only dimension data, model-view-option, library and special-folder queries.
 ### Preview images
 - Add bounded element, zone and favorite PNG previews as MCP image content.
+### Zone boundaries and relations
+- Add read-only `get_zone_boundaries` and `get_zone_relations` tools from Tapir 1.7.0 source.

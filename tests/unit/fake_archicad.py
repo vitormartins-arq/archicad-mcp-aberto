@@ -1353,6 +1353,24 @@ class FakeArchicad:
             )
             key = "roomImage" if name == "GetRoomImage" else "previewImage"
             return ok({"addOnCommandResponse": {key: fixture["png"]}})
+        if name in {"GetZoneBoundaries", "GetRelationsOfElements"}:
+            fixture = json.loads(
+                (
+                    Path(__file__).parents[1]
+                    / "fixtures"
+                    / "tapir170_zone_boundaries_documented.json"
+                ).read_text(encoding="utf-8")
+            )
+            source = args.get("zones", args.get("elements", []))
+            key = "zoneBoundariesOfZones" if name == "GetZoneBoundaries" else "relations"
+            value = fixture["boundaries"] if name == "GetZoneBoundaries" else fixture["relations"]
+            rows = [
+                deepcopy(value)
+                if row["elementId"]["guid"] == fixture["zone_guid"]
+                else {"error": {"code": -2, "message": "Zone not found"}}
+                for row in source
+            ]
+            return ok({"addOnCommandResponse": {key: rows}})
         if name == "GetDesignOptionSets":
             return ok({"addOnCommandResponse": {"designOptionSets": deepcopy(self.do_sets)}})
         if name == "GetDesignOptions":

@@ -62,6 +62,7 @@ from archicad_mcp_aberto.tools import (
     write,
     zone_categories,
     zones,
+    zones_read,
 )
 from tests.unit.fake_archicad import (
     BUILDING_MATERIALS_FIXTURE,
@@ -107,6 +108,8 @@ INPUTS = {
     "get_element_preview": {"element_guids": [GUID]},
     "get_zone_image": {"zone_guids": [GUID]},
     "get_favorite_preview": {"favorite_names": ["Wall"]},
+    "get_zone_boundaries": {"zone_guids": [GUID]},
+    "get_zone_relations": {"zone_guids": [GUID]},
     "list_design_options": {},
     "get_elements_of_design_options": {
         "design_option_guids": ["20000000-0000-4000-8000-000000000001"]
@@ -526,6 +529,7 @@ TARGETED = {
         composites,
         design_option_create,
         drawings,
+        zones_read,
     )
     for name, function in inspect.getmembers(module, inspect.iscoroutinefunction)
     if function.__module__ == module.__name__

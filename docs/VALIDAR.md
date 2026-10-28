@@ -847,3 +847,8 @@ Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` do PR).
 ## T39 — Preview images
 - [ ] Compare 2D/section/3D element and favorite PNG previews with Archicad.
 - [ ] Compare zone plan images at different scale/offset values and confirm failures remain per target.
+## T30 — Zone boundaries and relations
+- [ ] In Archicad 28+, query adjacent and external zones and compare connected element,
+  external flag, neighbouring zone, area and polygon coordinates with the 3D model.
+- [ ] Query relations with and without an element-type filter and confirm invalid zone GUIDs
+  return an error for that row without failing the other zones.

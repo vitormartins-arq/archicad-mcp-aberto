@@ -614,6 +614,14 @@
     {
       "name": "get_favorite_preview",
       "description": "Return PNG favorite previews as MCP image content."
+    },
+    {
+      "name": "get_zone_boundaries",
+      "description": "Read zone boundary surfaces and connected elements."
+    },
+    {
+      "name": "get_zone_relations",
+      "description": "Read type-specific relations of zones."
     }
   ],
   "compatibility": {
