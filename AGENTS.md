@@ -22,7 +22,7 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
 1. `docs/ESTADO.md`: where the work stopped and what comes next. Update it before you
    finish a session, so the next agent (Codex or Claude) can continue.
 2. The lessons log on Vitor's Google Drive, when you can reach it:
-   `<Drive>\02 - Empresarial\Projetos - Lab\Archicad\Archicad MCP\MCP Comunidade\Licoes-aprendidas.md`
+   `<Drive>\02 - Empresarial\Projetos - Lab\Archicad\Add-Ons Archicad\ADD- ON - LAB Tools\Servidores MCP\SERVIDOR MCP - LAB Aberto\Documentos\01 - Lições Aprendidas.md`
    (`<Drive>` is `H:\Meu Drive` on one PC and may be `G:\Meu Drive` on the other).
    Add new lessons (LA-xxx) and open items (P-xxx) at the end; never renumber; re-read
    the file right before saving, because other agents edit it too.
@@ -84,3 +84,15 @@ in `distribution.json` when published material changes; generate names with
 `tools/distribution.py`. Preserve old revisions and keep Main/test and Archicad majors
 separate. Deliver verified APX and corresponding source copies to the authorized Drive
 folder; never include credentials, venv or a working clone. Do not modify LAB Blocos.
+
+
+## Distribution location — Vitor, 29 October 2026
+
+Relative to `Archicad/Add-Ons Archicad`, this product now lives at
+`ADD- ON - LAB Tools/Servidores MCP/SERVIDOR MCP - LAB Aberto`.
+Use `ADD- ON - LAB Tools/Documentos/MAPA DE CAMINHOS.md` as the canonical local map.
+Do not recreate previous sibling delivery folders. Keep installed paths and GitHub
+repositories independent; develop from a verified local clone outside Drive.
+This supersedes earlier distribution-location instructions, without authorizing a build,
+installation, merge or execution of the task queue. Current deliveries use Atual,
+Documentos and 00 - Anteriores; validation status belongs in README/receipts.
