@@ -301,11 +301,23 @@
     },
     {
       "name": "get_gdl_parameters",
-      "description": "Read Object GDL parameters and flags."
+      "description": "Read GDL parameters of objects, lamps, doors, windows and other GDL elements."
     },
     {
       "name": "set_gdl_parameters",
-      "description": "Preview/edit existing scalar Object GDL values with read-back verification."
+      "description": "Preview/edit existing scalar GDL values with read-back verification."
+    },
+    {
+      "name": "get_element_capabilities",
+      "description": "Report which element settings are readable/writable and by which mechanism."
+    },
+    {
+      "name": "inspect_element_parameters",
+      "description": "Inspect GDL, marker and native settings with units, options, limits and edit state."
+    },
+    {
+      "name": "set_element_parameters",
+      "description": "Preview/edit GDL and marker parameters with read-back, dependencies and identity check."
     },
     {
       "name": "modify_walls",

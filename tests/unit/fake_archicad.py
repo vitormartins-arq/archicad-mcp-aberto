@@ -572,6 +572,13 @@ class FakeArchicad:
     gdl_errors: dict[int, dict] = field(default_factory=dict)
     gdl_ignored: bool = False
     lose_gdl_response: bool = False
+    # Window/Door marker parameters, guid -> rows (Tapir 1.7.1+ source; not live captured).
+    marker_parameters: dict[str, list] = field(default_factory=dict)
+    lose_marker_response: bool = False
+    marker_refused: set[str] = field(default_factory=set)  # SetMarker fails for these
+    # Stand-in for a parameter script: f(guid, rows) runs after each GDL write/script run.
+    gdl_script: Any = None
+    run_script_calls: list[list[str]] = field(default_factory=list)
     lose_rotate_response: bool = False
     rotate_errors: dict[int, dict] = field(default_factory=dict)
     rotate_ignored: bool = False
@@ -2728,7 +2735,7 @@ class FakeArchicad:
         if name in MODIFY_COMMANDS:
             return self._modify(name, args)
         if name in {"GetGDLParametersOfElements", "SetGDLParametersOfElements"}:
-            # Official Tapir schema at 02691b5d; synthetic fixture, not live captured.
+            # Official Tapir schema at 02691b5d and 1.7.3; synthetic fixture, not live captured.
             fixture = json.loads(
                 (
                     Path(__file__).parents[1]
@@ -2736,12 +2743,19 @@ class FakeArchicad:
                     / "tapir170_gdl_parameters_documented.json"
                 ).read_text(encoding="utf-8")
             )
+            owners = {
+                "Object", "Lamp", "Window", "Door", "Skylight", "Zone", "Label", "Drawing",
+                "CurtainWallFrame", "CurtainWallPanel", "CurtainWallJunction",
+                "CurtainWallAccessory",
+            }  # fmt: skip
             if name == "GetGDLParametersOfElements":
                 rows = []
                 for element in args["elements"]:
                     guid = element["elementId"]["guid"]
-                    if self.elements.get(guid) not in ("Object", "Lamp"):  # Tapir 1.7.0 source
-                        rows.append({"error": {"code": -1, "message": "Not an Object"}})
+                    # Tapir 1.7.3 source: libInd is looked up for these types only.
+                    assert self.elements.get(guid) in owners | {None}, "unsafe type sent"
+                    if guid not in self.elements:
+                        rows.append({"error": {"code": -1, "message": "Not found element"}})
                     else:
                         parameters = self.gdl_parameters.setdefault(
                             guid, deepcopy(fixture["parameters"])
@@ -2749,20 +2763,78 @@ class FakeArchicad:
                         rows.append({"parameters": deepcopy(parameters)})
                 return ok({"addOnCommandResponse": {"gdlParametersOfElements": rows}})
             rows = []
+            old_angles = tuple(int(p) for p in (self.tapir_version or "0").split(".")) < (
+                1, 7, 3
+            )  # fmt: skip
             for index, entry in enumerate(args["elementsWithGDLParameters"]):
                 guid = entry["elementId"]["guid"]
                 if index in self.gdl_errors:
                     rows.append(deepcopy(self.gdl_errors[index]))
                     continue
                 parameters = self.gdl_parameters.get(guid, [])
-                wanted = entry["gdlParameters"][0]
-                matches = [p for p in parameters if p["name"] == wanted["name"]]
-                if len(matches) != 1 or guid in self.locked_elements:
+                failed = guid in self.locked_elements
+                staged = deepcopy(parameters)
+                for wanted in entry["gdlParameters"]:
+                    matches = [p for p in staged if p["name"] == wanted["name"]]
+                    if len(matches) != 1 or failed:
+                        failed = True
+                        break
+                    value = deepcopy(wanted["value"])
+                    if matches[0]["type"] == "Angle" and old_angles:
+                        value = math.radians(value)  # ChangeAParameter took degrees
+                    if not self.gdl_ignored:
+                        matches[0]["value"] = value
+                    if self.gdl_script is not None:
+                        self.gdl_script(guid, staged)
+                if failed:
                     rows.append(deepcopy(fixture["failure"]))
                 else:
-                    if not self.gdl_ignored:
-                        matches[0]["value"] = deepcopy(wanted["value"])
+                    parameters[:] = staged
                     rows.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name in {"GetMarkerParametersOfElements", "SetMarkerParametersOfElements"}:
+            # ElementGDLParameterCommands.cpp at Tapir 1.7.3; not a live capture.
+            not_opening = {"error": {"code": -2130313084, "message": "not a window or a door"}}
+            if name == "GetMarkerParametersOfElements":
+                rows = []
+                for element in args["elements"]:
+                    guid = element["elementId"]["guid"]
+                    if self.elements.get(guid) not in ("Window", "Door"):
+                        rows.append(deepcopy(not_opening))
+                    elif guid not in self.marker_parameters:
+                        rows.append({"error": {"code": -1, "message": "has no marker."}})
+                    else:
+                        rows.append(
+                            {
+                                "libPart": {"name": "Marcador fixture"},
+                                "parameters": deepcopy(self.marker_parameters[guid]),
+                            }
+                        )
+                return ok({"addOnCommandResponse": {"markerParametersOfElements": rows}})
+            rows = []
+            for entry in args["elementsWithMarkerParameters"]:
+                guid = entry["elementId"]["guid"]
+                parameters = self.marker_parameters.get(guid)
+                if parameters is None or guid in self.locked_elements | self.marker_refused:
+                    rows.append({"success": False, "error": {"code": -1, "message": "marker"}})
+                    continue
+                for wanted in entry["markerParameters"]:
+                    for row in parameters:
+                        if row["name"] == wanted["name"] and not self.gdl_ignored:
+                            row["value"] = deepcopy(wanted["value"])
+                rows.append({"success": True})
+            return ok({"addOnCommandResponse": {"executionResults": rows}})
+        if name == "RunParameterScriptOfElements":
+            guids = [e["elementId"]["guid"] for e in args["elements"]]
+            self.run_script_calls.append(guids)
+            rows = []
+            for guid in guids:
+                if guid not in self.elements:
+                    rows.append({"success": False, "error": {"code": -1, "message": "missing"}})
+                    continue
+                if self.gdl_script is not None and guid in self.gdl_parameters:
+                    self.gdl_script(guid, self.gdl_parameters[guid])
+                rows.append({"success": True})
             return ok({"addOnCommandResponse": {"executionResults": rows}})
         if name == "RotateElements":
             # Schema source-confirmed at 02691b5d; not a live capture.
@@ -3982,6 +4054,8 @@ def fake_transport(*instances: FakeArchicad) -> httpx.MockTransport:
             raise httpx.ReadTimeout(
                 "Injected lost element-edit response after model change", request=request
             )
+        if instance.lose_marker_response and command == "SetMarkerParametersOfElements":
+            raise httpx.ReadTimeout("Injected lost marker response", request=request)
         if instance.lose_gdl_response and command == "SetGDLParametersOfElements":
             raise httpx.ReadTimeout(
                 "Injected lost GDL response after model change", request=request

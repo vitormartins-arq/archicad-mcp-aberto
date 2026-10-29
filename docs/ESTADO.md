@@ -1,5 +1,16 @@
 # Estado atual
 
+- **Parâmetros de todas as ferramentas / 28/10/2026 (Claude, nuvem):** a recusa
+  "Element is missing or is not an Object" vinha do próprio MCP: o Tapir lê/grava GDL de
+  portas, janelas, claraboias, zonas, etiquetas símbolo, títulos de desenho e partes de
+  parede-cortina. Liberado em get/set_gdl_parameters e criada a camada geral
+  (`get_element_capabilities`, `inspect_element_parameters`, `set_element_parameters`)
+  com marcador, arrays, opções/limites, dependências e conferência de identidade. Matriz
+  e limitações em `docs/PARAMETERS.md`. 3.279 testes offline e Ruff passaram. Nada ao
+  vivo; lista em `VALIDAR.md` ("Parâmetros de todas as ferramentas"). Sem mudança no
+  add-on. Próximo passo possível: expor campos nativos que o Tapir 1.7.3 já tem
+  (`tapir_only_fields`) e, no add-on, GDL de escadas/guarda-corpos.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct

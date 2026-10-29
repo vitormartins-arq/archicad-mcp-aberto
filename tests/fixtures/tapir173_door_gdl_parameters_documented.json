@@ -1,0 +1,33 @@
+{
+  "provenance": {
+    "live_capture": false,
+    "tapir_version": "1.7.3",
+    "sources": [
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/1.7.3/archicad-addon/Sources/ElementGDLParameterCommands.cpp",
+      "https://github.com/ENZYME-APD/tapir-archicad-automation/blob/1.7.3/archicad-addon/Sources/ElementCommands.cpp"
+    ],
+    "note": "Key layout from the Tapir 1.7.3 source (displayName, index, flags, isLocked, possibleValues, canHaveCustomValue, valueDescription, dimension1/2, itemDescriptions). Names prefixed fx_ and every value are synthetic: they are NOT parameters of a real Archicad door. Replace with a live capture after the batch validation."
+  },
+  "parameters": [
+    {"name": "A", "displayName": "Width", "index": 0, "type": "Length", "value": 0.9, "flags": [], "isLocked": false},
+    {"name": "B", "displayName": "Height", "index": 1, "type": "Length", "value": 2.1, "flags": [], "isLocked": false},
+    {"name": "fx_leaf_title", "displayName": "LEAF", "index": 10, "type": "Title", "value": "", "flags": ["BoldName"], "isLocked": false},
+    {"name": "fx_leaf_style", "displayName": "Leaf style", "index": 11, "type": "Integer", "value": 1, "valueDescription": "Flush", "flags": [], "isLocked": false,
+     "possibleValues": [{"value": 1, "description": "Flush"}, {"value": 2, "description": "Panelled"}], "canHaveCustomValue": false},
+    {"name": "fx_leaf_thickness", "displayName": "Leaf thickness", "index": 12, "type": "Length", "value": 0.04, "flags": ["Child"], "isLocked": false,
+     "possibleValues": [{"value": 0.03, "flag": "GreaterThanOrEqual"}], "canHaveCustomValue": false},
+    {"name": "fx_handle_type", "displayName": "Handle type", "index": 13, "type": "String", "value": "Lever", "flags": [], "isLocked": false,
+     "possibleValues": ["Lever", "Knob", "Pull bar"], "canHaveCustomValue": false},
+    {"name": "fx_handle_height", "displayName": "Handle height", "index": 14, "type": "Length", "value": 1.05, "flags": ["Child"], "isLocked": false},
+    {"name": "fx_opening_angle", "displayName": "Opening angle 3D", "index": 20, "type": "Angle", "value": 0.0, "flags": [], "isLocked": false},
+    {"name": "fx_show_swing_2d", "displayName": "Show swing in 2D", "index": 21, "type": "Boolean", "value": true, "flags": [], "isLocked": false},
+    {"name": "fx_hidden_option", "displayName": "Hidden option", "index": 22, "type": "Boolean", "value": false, "flags": ["Hidden"], "isLocked": false},
+    {"name": "fx_script_locked", "displayName": "Script locked", "index": 23, "type": "Length", "value": 0.1, "flags": [], "isLocked": true},
+    {"name": "fx_frame_widths", "displayName": "Frame widths", "index": 24, "type": "Length", "dimension1": 2, "dimension2": 1, "value": [0.05, 0.07], "itemDescriptions": ["Left", "Right"], "flags": [], "isLocked": false},
+    {"name": "fx_settings", "displayName": "Settings", "index": 25, "type": "Dictionary", "flags": [], "isLocked": false}
+  ],
+  "marker": [
+    {"name": "fx_marker_text", "displayName": "Marker text", "index": 1, "type": "String", "value": "P1", "flags": [], "isLocked": false},
+    {"name": "fx_marker_size", "displayName": "Marker size", "index": 2, "type": "Length", "value": 0.1, "flags": [], "isLocked": false}
+  ]
+}
