@@ -43,6 +43,16 @@ uv run archicad-mcp-aberto   # the MCP server (stdio)
 Do not create the virtual environment inside Google Drive. Work from a clone on a local
 disk.
 
+## Test only what changed (Vitor, 29/10/2026)
+
+Full test runs take too long. While you work, run only the tests that cover what you
+changed: the test file of the tool you touched (`uv run pytest tests/unit/test_<tool>.py`),
+plus the tests of any shared module you edited (connection, gateway, fake Archicad). In a
+live test, check only the tools and behaviors the change touches. Run the full suite once
+at the end (before you open or update a PR), when shared code changed, or when Vitor asks.
+CI keeps running the full suite. Say in your report which tests you ran. This rule holds
+for all of Vitor's projects (blocks, add-ons, MCPs).
+
 ## Rules
 
 - Work on a branch and open a pull request to `main`. Claude merges a PR after its
