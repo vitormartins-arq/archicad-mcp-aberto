@@ -6,6 +6,14 @@ them in the View Map. It uses the add-on commands in `addon/` (`Set3DCamera`,
 metres, angles in radians at the MCP side. Working scripts and the live-test findings:
 `examples/scene_generator/`.
 
+## Standard (Vitor, 03/11/2026)
+
+- Saved scenes use the layer combination and model view options `0ª ETAPA | (3D) RENDER`.
+- Most photographs are one-point perspective; two-point is the exception.
+- Interior: lens equivalent of 16 mm (about 97 degrees). Exterior: 24 mm (about 74 degrees)
+  or 35 mm (about 54 degrees). `save_3d_scenes` and `shoot_3d_scenes` apply these when
+  `view_cone` is left out; `lens_mm` picks another lens. These replace the angles below.
+
 ## Workflow
 
 The MCP tools: `read_scene_model` (step 1, with a suggested first camera per room),

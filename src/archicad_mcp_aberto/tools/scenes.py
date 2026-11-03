@@ -57,7 +57,18 @@ BLOCKING_TYPES = ("Wall", "Column", "CurtainWall", "Object")
 SKIP_NAME_WORDS = {"DML", "DEPOSITO", "DEP", "ALMOXARIFADO", "SHAFT", "DESPENSA", "STORAGE"}
 # Grabbing or saving a view waits on a full 3D redraw; a big model took over 12 s live.
 SLOW_COMMAND_TIMEOUT = 60.0
-DEFAULT_VIEW_CONE = math.radians(60)
+# Vitor's photo standard (03/11/2026): full-frame lens equivalents, horizontal angle.
+INTERIOR_LENS_MM = 16
+EXTERIOR_LENS_MM = 24  # 35 mm is also accepted through lens_mm
+SCENE_VIEW_SETTINGS = "0ª ETAPA | (3D) RENDER"  # layer combination and model view options
+
+
+def lens_cone(lens_mm: float) -> float:
+    """Horizontal view cone in radians of a lens on a 36 mm wide sensor."""
+    return 2 * math.atan(18 / lens_mm)
+
+
+DEFAULT_VIEW_CONE = lens_cone(INTERIOR_LENS_MM)
 ADDON_MISSING = (
     "The ArchicadMcpAberto add-on is not loaded in this Archicad. Install the .apx of "
     "addon/ (Options > Add-On Manager, from a local copy) and restart Archicad."
@@ -90,13 +101,19 @@ class Scene(BaseModel):
     folder: Name | None = None
     camera: Point3 | None = None
     target: Target | None = None
-    view_cone: Annotated[float, Field(gt=0.2, lt=2.6)] = DEFAULT_VIEW_CONE
+    # Left out: lens_mm, else 24 mm for an EXTERNA folder or name and 16 mm inside.
+    view_cone: Annotated[float, Field(gt=0.2, lt=2.6)] | None = None
+    lens_mm: Annotated[float, Field(ge=10, le=200)] | None = None
     two_point: bool = False
     parallel: Parallel | None = None
     cut_height: float | None = None  # horizontal 3D cut, absolute metres; parallel only
 
     @model_validator(mode="after")
     def one_kind(self) -> Scene:
+        if self.view_cone is None:
+            exterior = (self.folder or self.name).casefold().startswith("extern")
+            default = EXTERIOR_LENS_MM if exterior else INTERIOR_LENS_MM
+            self.view_cone = lens_cone(self.lens_mm or default)
         if (self.parallel is None) == (self.camera is None):
             raise ValueError("Give either camera and target, or parallel.")
         if self.camera is not None:
@@ -290,7 +307,7 @@ def suggest_cameras(
                     candidates.append((point(x, start), point(x, end, False)))
     shots, notes = [], []
     picked = _pick(candidates, obstacles, rooms_inside)
-    cone = round(math.radians(60 if area >= 15 else 70), 4)
+    cone = round(lens_cone(INTERIOR_LENS_MM), 4)
     if picked is None:
         notes.append("no free spot for a one-point camera")
     else:
@@ -314,8 +331,7 @@ def suggest_cameras(
         picked = _pick(corners, obstacles, rooms_inside)
         if picked is not None:
             camera, target, blocked = picked
-            two = round(DEFAULT_VIEW_CONE, 4)
-            shots.append({"kind": "2P", "camera": camera, "target": target, "view_cone": two})
+            shots.append({"kind": "2P", "camera": camera, "target": target, "view_cone": cone})
             if blocked:
                 notes.append(f"2P sight line crosses {blocked} wall or column box(es)")
     if not shots:
@@ -496,6 +512,25 @@ async def _set_scene(client, port, scene: Scene) -> dict:
     )
 
 
+async def _apply_view_settings(client, port, view_guid) -> str:
+    """Give a saved view the standard combination; a project without it keeps its own."""
+    settings = {"layerCombination": SCENE_VIEW_SETTINGS, "modelViewOptions": SCENE_VIEW_SETTINGS}
+    try:
+        raw = await client.tapir(
+            port,
+            "SetViewSettings",
+            {
+                "navigatorItemIdsWithViewSettings": [
+                    {"navigatorItemId": {"guid": view_guid}, "viewSettings": settings}
+                ]
+            },
+        )
+    except ArchicadError as exc:
+        return f"not applied: {exc}"
+    result = raw["executionResults"][0]
+    return SCENE_VIEW_SETTINGS if result.get("success") else f"not applied: {result.get('error')}"
+
+
 def _scenes(values, limit) -> list[Scene]:
     if not 1 <= len(values) <= limit:
         raise ValueError(f"Pass between 1 and {limit} scenes.")
@@ -633,6 +668,9 @@ async def save_3d_scenes(
                 arguments = {"name": scene.name, "folderPath": row["folder_path"]}
                 result = await _addon(client, port, "Save3DView", arguments)
                 done = {**row, "status": "saved", "view_guid": result.get("viewGuid")}
+                done["view_settings"] = await _apply_view_settings(
+                    client, port, result.get("viewGuid")
+                )
                 if row["kind"] == "camera":
                     camera = await _addon(
                         client,

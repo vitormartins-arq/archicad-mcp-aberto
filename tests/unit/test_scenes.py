@@ -169,7 +169,7 @@ async def test_shoot_returns_images_and_puts_the_3d_window_back():
     perspective = sets[0]["perspective"]
     assert perspective["target"]["z"] == 1.3  # level camera
     assert perspective["twoPointPerspective"] is False
-    assert math.isclose(perspective["viewCone"], math.radians(60))
+    assert math.isclose(perspective["viewCone"], scenes.lens_cone(16))
     cuts = [r["parameters"] for r in fake.own_addon_requests if r["command"] == "Set3DCutPlanes"]
     assert cuts[0] == {"enabled": False}
     assert cuts[1]["planes"][0]["pd"] == 1.5
@@ -310,3 +310,13 @@ async def test_shoot_tool_returns_image_content():
     assert json.loads(blocks[0].text)["scenes"][0]["status"] == "shot"
     assert blocks[1].text == "Peso Livre - 1P 01"
     assert blocks[2].type == "image" and blocks[2].mimeType == "image/jpeg"
+
+
+def test_lens_defaults_follow_the_photo_standard():
+    base = {"camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
+    inside = scenes.Scene(name="SALA - 1P 01", folder="SALA", **base)
+    outside = scenes.Scene(name="FACHADA - 1P 01", folder="EXTERNA", **base)
+    chosen = scenes.Scene(name="FACHADA - 1P 02", folder="EXTERNA", lens_mm=35, **base)
+    assert inside.view_cone == pytest.approx(scenes.lens_cone(16))
+    assert outside.view_cone == pytest.approx(scenes.lens_cone(24))
+    assert chosen.view_cone == pytest.approx(scenes.lens_cone(35))
