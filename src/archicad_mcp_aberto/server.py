@@ -40,6 +40,7 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     project_save,
     property_definitions,
+    publisher,
     read,
     revisions,
     write,
@@ -2354,6 +2355,27 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await model_tasks.finish_model_task(
             client_of(ctx), task_token, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_publisher_sets(ctx: Context, port: int | None = None) -> dict:
+        """List publisher sets with their saved output path. Requires companion add-on."""
+        return await publisher.list_publisher_sets(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def publish_publisher_set(
+        ctx: Context,
+        publisher_set_name: str,
+        output_folder: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Publish one publisher set to an existing folder. Preview first, explicit port
+        and one-use token to apply. Reports files written and the saved path afterwards;
+        the API cannot change the saved path directly. No Undo. Requires companion add-on."""
+        return await publisher.publish_publisher_set(
+            client_of(ctx), publisher_set_name, output_folder, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

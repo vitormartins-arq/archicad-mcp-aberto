@@ -108,6 +108,8 @@ INPUTS = {
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
+    "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": "C:/x"},
+    "list_publisher_sets": {},
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
     "replace_object_libraries": {
@@ -516,6 +518,8 @@ INPUTS = {
 }
 REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
+    "list_publisher_sets",
+    "publish_publisher_set",
     name: function
     for module in (
         camera_paths,
