@@ -2,6 +2,7 @@
 
 import inspect
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -53,6 +54,7 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     project_save,
     property_definitions,
+    publisher,
     read,
     renames,
     revisions,
@@ -108,7 +110,7 @@ INPUTS = {
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
-    "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": "C:/x"},
+    "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
     "list_publisher_sets": {},
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
@@ -518,10 +520,9 @@ INPUTS = {
 }
 REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
-    "list_publisher_sets",
-    "publish_publisher_set",
     name: function
     for module in (
+        publisher,
         camera_paths,
         model_tasks,
         attribute_properties,
@@ -750,6 +751,15 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                 await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
+        if name in {"list_publisher_sets", "publish_publisher_set"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetPublisherSets"]
             assert not untouched.calls
             return
         if name in {"inspect_object_replacements", "replace_object_libraries"}:
