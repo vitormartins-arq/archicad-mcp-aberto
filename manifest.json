@@ -714,6 +714,14 @@
     {
       "name": "replace_object_libraries",
       "description": "Preview or replace existing Object libraries using explicit mounting references."
+    },
+    {
+      "name": "list_publisher_sets",
+      "description": "Read publisher sets with their saved output path."
+    },
+    {
+      "name": "publish_publisher_set",
+      "description": "Preview and publish one publisher set to an existing folder."
     }
   ],
   "compatibility": {

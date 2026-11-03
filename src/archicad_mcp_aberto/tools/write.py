@@ -701,6 +701,11 @@ OPERATIONS["finish_model_task"] = (
     "save_receipt_id",
     "Save to the SAME working PLN after its verified task checkpoint.",
 )
+OPERATIONS["publish_publisher_set"] = (
+    "publisher set publication",
+    "publish_receipt_id",
+    "Publishes files to the reviewed folder; no Undo.",
+)
 OPERATIONS["save_next_project_revision"] = (
     "revision save",
     "save_receipt_id",
