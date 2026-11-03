@@ -57,9 +57,9 @@ BLOCKING_TYPES = ("Wall", "Column", "CurtainWall", "Object")
 SKIP_NAME_WORDS = {"DML", "DEPOSITO", "DEP", "ALMOXARIFADO", "SHAFT", "DESPENSA", "STORAGE"}
 # Grabbing or saving a view waits on a full 3D redraw; a big model took over 12 s live.
 SLOW_COMMAND_TIMEOUT = 60.0
-# Vitor's photo standard (03/11/2026): full-frame lens equivalents, horizontal angle.
-INTERIOR_LENS_MM = 16
-EXTERIOR_LENS_MM = 24  # 35 mm is also accepted through lens_mm
+# Vitor's photo standard (03/11/2026, avoid distortion): full-frame lens equivalents, horizontal angle.
+INTERIOR_LENS_MM = 24  # 20 mm only for very tight rooms, through lens_mm
+EXTERIOR_LENS_MM = 35
 SCENE_VIEW_SETTINGS = "0ª ETAPA | (3D) RENDER"  # layer combination and model view options
 
 

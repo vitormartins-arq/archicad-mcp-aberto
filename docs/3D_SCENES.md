@@ -10,9 +10,11 @@ metres, angles in radians at the MCP side. Working scripts and the live-test fin
 
 - Saved scenes use the layer combination and model view options `0ª ETAPA | (3D) RENDER`.
 - Most photographs are one-point perspective; two-point is the exception.
-- Interior: lens equivalent of 16 mm (about 97 degrees). Exterior: 24 mm (about 74 degrees)
-  or 35 mm (about 54 degrees). `save_3d_scenes` and `shoot_3d_scenes` apply these when
-  `view_cone` is left out; `lens_mm` picks another lens. These replace the angles below.
+- Keep distortion as low as possible. Interior: lens equivalent of 24 mm (about 74 degrees),
+  20 mm (about 84 degrees) only in very tight rooms. Exterior: 35 mm (about 54 degrees),
+  stepping back rather than widening. 16 mm looked distorted in Archicad. `lens_mm` picks
+  another lens. These replace the angles below.
+- Camera height about the middle of the ceiling height, level.
 
 ## Workflow
 
