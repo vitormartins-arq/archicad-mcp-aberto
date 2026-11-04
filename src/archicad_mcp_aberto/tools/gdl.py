@@ -83,7 +83,9 @@ def tapir_version(target: dict) -> tuple[int, ...]:
     return version(tapir.get("version") if isinstance(tapir, dict) else None)
 
 
-def blocked_reason(parameter: dict, *, allow_script_hidden: bool = False) -> str | None:
+def blocked_reason(
+    parameter: dict, *, allow_script_hidden: bool = False, allow_hidden_length: bool = False
+) -> str | None:
     """Why a parameter must not be written, or None. Mirrors what the dialog lets a user do."""
     flags = parameter.get("flags", [])
     if not isinstance(flags, list) or not all(isinstance(flag, str) for flag in flags):
@@ -91,7 +93,14 @@ def blocked_reason(parameter: dict, *, allow_script_hidden: bool = False) -> str
     hit = [
         f
         for f in BLOCKING_FLAGS
-        if f in flags and not (f == "HiddenFromScript" and allow_script_hidden)
+        if f in flags
+        and not (f == "HiddenFromScript" and allow_script_hidden)
+        and not (
+            f == "Hidden"
+            and allow_hidden_length
+            and parameter.get("type") == "Length"
+            and not any(parameter.get(k, 0) for k in ("dimension1", "dimension2"))
+        )
     ]
     if hit:
         return f"Parameter is {'/'.join(hit)} in the parameter list."
@@ -247,13 +256,20 @@ def _accepted(value: Any, row: dict) -> str | None:
 
 
 def coerce(
-    raw: dict, value: Any, tapir: tuple[int, ...], *, allow_script_hidden: bool = False
+    raw: dict,
+    value: Any,
+    tapir: tuple[int, ...],
+    *,
+    allow_script_hidden: bool = False,
+    allow_hidden_length: bool = False,
 ) -> tuple[Any, Any]:
     """Validate a requested value; return (value as read back, value to send to Tapir).
 
     Angles are radians on both sides from Tapir 1.7.3; before it the write took degrees.
     """
-    reason = blocked_reason(raw, allow_script_hidden=allow_script_hidden)
+    reason = blocked_reason(
+        raw, allow_script_hidden=allow_script_hidden, allow_hidden_length=allow_hidden_length
+    )
     if reason:
         raise ValueError(reason)
     row = describe([raw])[0]

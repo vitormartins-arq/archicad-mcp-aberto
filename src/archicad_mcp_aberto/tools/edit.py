@@ -279,6 +279,14 @@ class GDLChange(write.InputModel):
     name: str
     value: str | bool | int | float
     allow_script_hidden: bool = False
+    allow_hidden_length: bool = False
+    hidden_edit_reason: str = ""
+
+    @model_validator(mode="after")
+    def explicit_hidden_length_consent(self):
+        if self.allow_hidden_length and not self.hidden_edit_reason.strip():
+            raise ValueError("A reviewed hotspot/authoring reason is required for hidden lengths.")
+        return self
 
     @field_validator("element_guid")
     @classmethod
@@ -293,16 +301,23 @@ class GDLChange(write.InputModel):
         return value
 
 
-def _gdl_value(parameter, value, *, allow_script_hidden=False):
+def _gdl_value(parameter, value, *, allow_script_hidden=False, allow_hidden_length=False):
     flags = parameter.get("flags", [])
     if not isinstance(flags, list) or not all(isinstance(f, str) for f in flags):
         raise ValueError("Unexpected GDL flags.")
     if parameter.get("isLocked") is True or set(flags) & {
         "Fixed",
-        "Hidden",
         "Disabled",
     }:
         raise ValueError("Fixed, hidden, disabled or locked GDL parameters are refused.")
+    if "Hidden" in flags and not (
+        allow_hidden_length
+        and parameter.get("type") == "Length"
+        and not any(parameter.get(k, 0) for k in ("dimension1", "dimension2"))
+    ):
+        raise ValueError(
+            "Hidden GDL parameter refused; authorize a reviewed scalar length explicitly."
+        )
     if "HiddenFromScript" in flags and not allow_script_hidden:
         raise ValueError("Script-hidden GDL parameter refused; authorize this change explicitly.")
     if any(parameter.get(k, 0) for k in ("dimension1", "dimension2")) or isinstance(
@@ -380,9 +395,18 @@ async def _gdl_plan(client, changes, port, operation):
         if len(matches) != 1 or "value" not in matches[0]:
             raise ValueError(f"GDL parameter {change.name!r} does not exist or is ambiguous.")
         current = matches[0]
-        value = _gdl_value(current, change.value, allow_script_hidden=change.allow_script_hidden)
+        value = _gdl_value(
+            current,
+            change.value,
+            allow_script_hidden=change.allow_script_hidden,
+            allow_hidden_length=change.allow_hidden_length,
+        )
         value, wire = gdl.coerce(
-            current, value, tapir, allow_script_hidden=change.allow_script_hidden
+            current,
+            value,
+            tapir,
+            allow_script_hidden=change.allow_script_hidden,
+            allow_hidden_length=change.allow_hidden_length,
         )
         details = by_guid[change.element_guid]
         items.append(
@@ -396,6 +420,8 @@ async def _gdl_plan(client, changes, port, operation):
                 "expected_type": current["type"],
                 "expected_value": value,
                 "allow_script_hidden": change.allow_script_hidden,
+                "allow_hidden_length": change.allow_hidden_length,
+                "hidden_edit_reason": change.hidden_edit_reason,
                 "identity_before": identity[change.element_guid],
                 "snapshot": deepcopy(parameters),
                 "parameters": {
@@ -479,8 +505,10 @@ async def set_gdl_parameters(
     Any type in gdl.GDL_OWNER_TYPES (objects, lamps, doors, windows...). For arrays,
     markers, dependency reports and identity checks use set_element_parameters.
 
-    Metres/radians. Refuses fixed/hidden/locked/disabled/array parameters, hotlinks and
-    locked elements. HiddenFromScript requires allow_script_hidden on that change.
+    Metres/radians. Refuses fixed/locked/disabled/array parameters and locked/hotlinked
+    elements. HiddenFromScript requires allow_script_hidden on that change. Hidden
+    scalar Length values require allow_hidden_length and a reviewed hidden_edit_reason;
+    this is explicit consent, not automatic proof of a graphical-only parameter.
     Native options/limits, identity and dependent values are checked. Never saves;
     use begin_model_task/finish_model_task around the authorized logical editing task.
     """

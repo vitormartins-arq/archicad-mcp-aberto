@@ -1,5 +1,18 @@
 # Estado atual
 
+- 04/11/2026: explicit per-change hidden scalar Length consent added to
+  set_gdl_parameters for source-reviewed editable hotspots. Requires a recorded
+  reason; Fixed/Disabled/isLocked, arrays and other hidden types remain blocked.
+  Preview/token, identity verification and receipts remain in the normal write path.
+  Instructions do not prove graphical-only behavior: inspect library source and
+  compare physical transformation. 87 targeted tests and the final 3319-test unit
+  suite passed, plus Ruff. Tests require an external temporary directory for the
+  smoke report fixtures. Live AC30 3001 BRA / Tapir 1.7.3: four source-reviewed
+  graphical offsets verified, no dependent GDL or physical detail changes; native
+  backups and same-path saves verified. Native room image confirms symbol separation
+  in the sampled room but omits text: plotted annotation legibility remains pending.
+  No add-on/library recompilation, publication or merge.
+
 - **Parâmetros de todas as ferramentas / 28/10/2026 (Claude, nuvem):** a recusa
   "Element is missing or is not an Object" vinha do próprio MCP: o Tapir lê/grava GDL de
   portas, janelas, claraboias, zonas, etiquetas símbolo, títulos de desenho e partes de

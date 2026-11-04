@@ -815,7 +815,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview/change existing scalar GDL parameters of any GDL element; explicit port/token.
-        Refuses fixed/hidden/locked parameters. A change may set allow_script_hidden=true
+        Fixed/disabled/locked fields remain refused. Reviewed editable-hotspot scalar
+        lengths may use allow_hidden_length=true with hidden_edit_reason; this does
+        not prove a parameter is graphical. Inspect its source and verify identity.
+        A change may set allow_script_hidden=true
         for an author-verified custom UI field; this only permits HiddenFromScript.
         Verifies value, identity and dependent changes. Never saves. Prefer
         set_element_parameters (arrays, markers, dependencies and identity checks).
