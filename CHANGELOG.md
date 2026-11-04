@@ -601,3 +601,5 @@
   local-coordinate polygon contours and holes with named building materials, optionally
   combined with copied profile geometry. Read back skin count, material data and outlines;
   keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.
+
+- Lamp GDL: per-change script-hidden consent, scalar enum/range validation, identity and dependency read-back; retain all other flags and explicit preview/token checks. Task checkpoints use Anteriores.

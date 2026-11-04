@@ -126,3 +126,34 @@ set_element_parameters(..., dry_run=false, confirmation_token="<token>")
 
 The receipt must show the change `verified`, `identity_after.details.ownerElementId`
 equal to the same wall and no `identity_changed`.
+
+## Lamp scalar edits and author-verified custom UI fields (4 November 2026)
+
+`get_gdl_parameters` reads Lamp through the same checked owner-type path as Object.
+`set_gdl_parameters` validates scalar types, reported options and limits, preserves
+per-change native errors, and now compares element identity and reports dependent
+parameter changes after the write. Dimensions are protected unless a sizing parameter
+(A, B or ZZYZX) was explicitly requested for that element.
+
+`HiddenFromScript` is distinct from `Hidden`, `Disabled`, `Fixed` and `isLocked`.
+The default remains refusal. When the object's author has verified a field in the
+custom interface, that **individual change** may contain `allow_script_hidden: true`.
+The flag is included in the preview/token comparison. It cannot bypass any other
+blocking flag, type, enum, range, editability or identity check. The same per-change
+option is supported by `set_element_parameters`. Never infer blanket consent from
+object ownership, and never clear native flags to force a write.
+
+A physical AC30 3001 BRA / Tapir 1.7.3 Lamp was read in its saved project. Its five
+custom UI fields returned HiddenFromScript without isLocked; its temperature list
+included integer 0 for RGB. Read-only previews passed using the corrected server.
+No real GDL write, backup or save was performed for this validation. Closed-range
+metadata still exposes only its lower bound in this Tapir version; do not invent an
+upper limit or claim the preview enforces a bound that was not returned. Read-back
+after the parameter script remains mandatory. Private library scripts stay private.
+
+Before actual edits use the existing `begin_model_task` checkpoint, which preserves
+both disk and unsaved state with verified copies in **Anteriores**, then re-preview
+parameter edits after the checkpoint and finish with `finish_model_task` to save the
+same PLN. These tools already exist in current source; an old editable installation
+can hide them. Updating the Python server does not require closing Archicad or a new
+APX when the installed native save commands are available.

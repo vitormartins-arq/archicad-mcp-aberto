@@ -278,6 +278,7 @@ class GDLChange(write.InputModel):
     element_guid: str
     name: str
     value: str | bool | int | float
+    allow_script_hidden: bool = False
 
     @field_validator("element_guid")
     @classmethod
@@ -292,17 +293,18 @@ class GDLChange(write.InputModel):
         return value
 
 
-def _gdl_value(parameter, value):
+def _gdl_value(parameter, value, *, allow_script_hidden=False):
     flags = parameter.get("flags", [])
     if not isinstance(flags, list) or not all(isinstance(f, str) for f in flags):
         raise ValueError("Unexpected GDL flags.")
     if parameter.get("isLocked") is True or set(flags) & {
         "Fixed",
         "Hidden",
-        "HiddenFromScript",
         "Disabled",
     }:
         raise ValueError("Fixed, hidden, disabled or locked GDL parameters are refused.")
+    if "HiddenFromScript" in flags and not allow_script_hidden:
+        raise ValueError("Script-hidden GDL parameter refused; authorize this change explicitly.")
     if any(parameter.get(k, 0) for k in ("dimension1", "dimension2")) or isinstance(
         parameter.get("value"), (list, dict)
     ):
@@ -354,6 +356,8 @@ async def _gdl_rows(client, port, guids, timeout=None):
 
 
 async def _gdl_plan(client, changes, port, operation):
+    from archicad_mcp_aberto.tools import parameters as parameter_tools
+
     guids = list(dict.fromkeys(c.element_guid for c in changes))
     port, target, details = await _editable(client, guids, port)
     refused = sorted({row["type"] for row in details} - set(gdl.GDL_OWNER_TYPES))
@@ -362,6 +366,10 @@ async def _gdl_plan(client, changes, port, operation):
     tapir = gdl.tapir_version(target)
     by_guid = dict(zip(guids, details, strict=True))
     rows = await _gdl_rows(client, port, guids)
+    identity = await parameter_tools._identity(client, port, guids, include_dimensions=True)
+    for change in changes:
+        if change.name.casefold() in {"a", "b", "zzyzx"}:
+            identity[change.element_guid].get("details", {}).pop("dimensions", None)
     items = []
     for index, change in enumerate(changes):
         row = rows[change.element_guid]
@@ -372,8 +380,10 @@ async def _gdl_plan(client, changes, port, operation):
         if len(matches) != 1 or "value" not in matches[0]:
             raise ValueError(f"GDL parameter {change.name!r} does not exist or is ambiguous.")
         current = matches[0]
-        value = _gdl_value(current, change.value)
-        wire = gdl._wire(current["type"], value, tapir)
+        value = _gdl_value(current, change.value, allow_script_hidden=change.allow_script_hidden)
+        value, wire = gdl.coerce(
+            current, value, tapir, allow_script_hidden=change.allow_script_hidden
+        )
         details = by_guid[change.element_guid]
         items.append(
             {
@@ -385,6 +395,9 @@ async def _gdl_plan(client, changes, port, operation):
                 "before": deepcopy(current),
                 "expected_type": current["type"],
                 "expected_value": value,
+                "allow_script_hidden": change.allow_script_hidden,
+                "identity_before": identity[change.element_guid],
+                "snapshot": deepcopy(parameters),
                 "parameters": {
                     "elementId": {"guid": change.element_guid},
                     "gdlParameters": [{"name": change.name, "value": wire}],
@@ -395,9 +408,18 @@ async def _gdl_plan(client, changes, port, operation):
 
 
 async def _verify_gdl(client, receipt, items):
+    from archicad_mcp_aberto.tools import parameters as parameter_tools
+
     guids = list(dict.fromkeys(i["element_guid"] for i in items))
     rows = await _gdl_rows(
         client, receipt["target"]["port"], guids, receipt["write_timeout_seconds"]
+    )
+    identity = await parameter_tools._identity(
+        client,
+        receipt["target"]["port"],
+        guids,
+        receipt["write_timeout_seconds"],
+        include_dimensions=True,
     )
     for item in items:
         requested = item["parameters"]["gdlParameters"][0]
@@ -410,6 +432,30 @@ async def _verify_gdl(client, receipt, items):
         differences = write._mismatches({"type": item["expected_type"], "value": wanted}, actual)
         if isinstance(wanted, bool) and actual.get("value") is not wanted:
             differences.append("value.type")
+        changed, properties = parameter_tools._identity_mismatches(
+            item["identity_before"], identity[item["element_guid"]]
+        )
+        item["identity_after"] = identity[item["element_guid"]]
+        differences.extend(f"identity.{key}" for key in changed)
+        if properties:
+            item["unrequested_property_changes"] = properties
+        requested_names = {
+            i["parameters"]["gdlParameters"][0]["name"]
+            for i in items
+            if i["element_guid"] == item["element_guid"]
+        }
+        after_names = gdl.by_name(parameters)
+        item["dependent_changes"] = [
+            {
+                "name": p["name"],
+                "before": p.get("value"),
+                "after": after_names[p["name"]].get("value"),
+            }
+            for p in item["snapshot"]
+            if p["name"] not in requested_names
+            and after_names.get(p["name"]) is not None
+            and not gdl.same(p.get("value"), after_names[p["name"]].get("value"))
+        ]
         item["status"] = "verification_failed" if differences else "verified"
         if differences:
             item["mismatches"] = differences
@@ -434,7 +480,9 @@ async def set_gdl_parameters(
     markers, dependency reports and identity checks use set_element_parameters.
 
     Metres/radians. Refuses fixed/hidden/locked/disabled/array parameters, hotlinks and
-    locked elements. Shared token, explicit port and per-change receipts; never saves.
+    locked elements. HiddenFromScript requires allow_script_hidden on that change.
+    Native options/limits, identity and dependent values are checked. Never saves;
+    use begin_model_task/finish_model_task around the authorized logical editing task.
     """
     if not 1 <= len(changes) <= 100:
         raise ValueError("Pass between 1 and 100 GDL changes.")

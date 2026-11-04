@@ -83,12 +83,16 @@ def tapir_version(target: dict) -> tuple[int, ...]:
     return version(tapir.get("version") if isinstance(tapir, dict) else None)
 
 
-def blocked_reason(parameter: dict) -> str | None:
+def blocked_reason(parameter: dict, *, allow_script_hidden: bool = False) -> str | None:
     """Why a parameter must not be written, or None. Mirrors what the dialog lets a user do."""
     flags = parameter.get("flags", [])
-    if not isinstance(flags, list):
+    if not isinstance(flags, list) or not all(isinstance(flag, str) for flag in flags):
         return "Unexpected GDL flags."
-    hit = [f for f in BLOCKING_FLAGS if f in flags]
+    hit = [
+        f
+        for f in BLOCKING_FLAGS
+        if f in flags and not (f == "HiddenFromScript" and allow_script_hidden)
+    ]
     if hit:
         return f"Parameter is {'/'.join(hit)} in the parameter list."
     if parameter.get("isLocked") is True:
@@ -220,8 +224,6 @@ def _accepted(value: Any, row: dict) -> str | None:
         for o in options
     ):
         return None
-    if row.get("custom_value_allowed") is True:
-        return None
     ranges = []
     for low in limits.get("lower", []):
         ok = value >= low["value"] - TOLERANCE if low["inclusive"] else value > low["value"]
@@ -234,18 +236,24 @@ def _accepted(value: Any, row: dict) -> str | None:
         if isinstance(begin, (int, float)) and isinstance(size, (int, float)) and size:
             ratio = (value - begin) / size
             ranges.append(value >= begin - TOLERANCE and abs(ratio - round(ratio)) < 1e-6)
-    if ranges and any(ranges):
+    # Bounds/steps of one reported range must ALL hold. A permitted explicit value
+    # is an alternative to that range (handled above), not an alternative bound.
+    if ranges and all(ranges):
+        return None
+    if not ranges and row.get("custom_value_allowed") is True:
         return None
     shown = [o["value"] for o in options]
     return f"value is outside the library part's values {shown} and limits {limits}"
 
 
-def coerce(raw: dict, value: Any, tapir: tuple[int, ...]) -> tuple[Any, Any]:
+def coerce(
+    raw: dict, value: Any, tapir: tuple[int, ...], *, allow_script_hidden: bool = False
+) -> tuple[Any, Any]:
     """Validate a requested value; return (value as read back, value to send to Tapir).
 
     Angles are radians on both sides from Tapir 1.7.3; before it the write took degrees.
     """
-    reason = blocked_reason(raw)
+    reason = blocked_reason(raw, allow_script_hidden=allow_script_hidden)
     if reason:
         raise ValueError(reason)
     row = describe([raw])[0]

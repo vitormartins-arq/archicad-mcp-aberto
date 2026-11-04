@@ -367,6 +367,7 @@ class ParameterChange(write.InputModel):
     name: Annotated[str, Field(min_length=1, max_length=255)]
     value: Scalar | list[Scalar] | list[list[Scalar]]
     target: Literal["gdl", "marker"] = "gdl"
+    allow_script_hidden: bool = False
 
     @field_validator("element_guid")
     @classmethod
@@ -386,7 +387,9 @@ class ParameterRequest(write.InputModel):
     run_parameter_script: bool = False
 
 
-async def _identity(client, port, guids, timeout=None) -> dict[str, dict]:
+async def _identity(
+    client, port, guids, timeout=None, *, include_dimensions=False
+) -> dict[str, dict]:
     """Placement, host, layer, classification and user-defined property values."""
     extra = {} if timeout is None else {"timeout": timeout}
     result = await client.tapir(
@@ -413,6 +416,8 @@ async def _identity(client, port, guids, timeout=None) -> dict[str, dict]:
             "classifications": {},
             "properties": {},
         }
+        if include_dimensions and "dimensions" in details:
+            out[guid]["details"]["dimensions"] = details["dimensions"]
     systems = (await client.command(port, "GetAllClassificationSystems", **extra)).get(
         "classificationSystems", []
     )
@@ -534,7 +539,9 @@ async def _plan(client, request: ParameterRequest, port, operation):
                     )
                     continue
                 try:
-                    expected, wire = gdl.coerce(found, c.value, tapir)
+                    expected, wire = gdl.coerce(
+                        found, c.value, tapir, allow_script_hidden=c.allow_script_hidden
+                    )
                     if target_name == "marker" and isinstance(expected, list):
                         raise ValueError("marker array parameters are not supported by Tapir")
                 except ValueError as exc:
@@ -552,6 +559,7 @@ async def _plan(client, request: ParameterRequest, port, operation):
                         "before": found.get("value"),
                         "before_description": described["value_description"],
                         "requested": expected,
+                        "allow_script_hidden": c.allow_script_hidden,
                         "status": "unchanged" if unchanged else "ready",
                     }
                 )
