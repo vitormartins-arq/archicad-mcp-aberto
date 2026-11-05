@@ -25,6 +25,7 @@ from archicad_mcp_aberto.tools import (
     element_structure,
     favorites,
     gateway,
+    geometry_audit,
     hotlinks,
     ifc,
     keynotes,
@@ -2428,6 +2429,27 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         results. One Undo batch; never imports or saves a project."""
         return await object_replacement.replace_object_libraries(
             client_of(ctx), replacements, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def audit_geometry(
+        ctx: Context,
+        element_guids: list[str],
+        port: int | None = None,
+        max_origin_distance_m: float = 10_000.0,
+        max_extent_m: float = 500.0,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> dict:
+        """Read-only geometry triage of 1–500 explicit element GUIDs in one batch.
+
+        Metres; official API only, no Tapir. Reports only findings (paged): distant,
+        large, point-sized or invalid 3D bounds and per-element read errors. Thresholds
+        are adjustable review heuristics, not proof of defects. Does not count polygons,
+        diagnose missing parts or audit the whole model. Never changes selection or saves.
+        """
+        return await geometry_audit.audit_geometry(
+            client_of(ctx), element_guids, port, max_origin_distance_m, max_extent_m, offset, limit
         )
 
     return mcp

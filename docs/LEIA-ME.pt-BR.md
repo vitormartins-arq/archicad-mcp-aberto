@@ -24,7 +24,7 @@ JSON oficial e o Tapir. Nada sai do computador: sem telemetria e sem internet.
 
 ## Situação
 
-Pré-alfa com **164 ferramentas registradas**: **60 somente de leitura**, **3 ações de
+Pré-alfa com **165 ferramentas registradas**: **61 somente de leitura**, **3 ações de
 visualização/sessão** e **101 que escrevem no modelo ou no projeto**. A classificação
 pré-alfa permanece porque as ferramentas mais antigas têm validações registradas no
 ArchiCAD, enquanto parte das mais novas ainda aguarda conferência ao vivo. A lista
@@ -94,3 +94,7 @@ unitários rodam contra um ArchiCAD simulado. Issues e PRs em português ou ingl
 ## Licença
 
 [MIT](../LICENSE) © 2026 Vitor Martins e colaboradores do archicad-mcp-aberto.
+
+## Triagem geométrica em lote
+
+`audit_geometry` confere de 1 a 500 GUIDs explícitos em uma única leitura 3D, sem Tapir. Devolve somente achados paginados e totais do lote: limites inconsistentes, tamanho pontual, extensão muito grande, distância à origem e caixas indisponíveis. Limiares ajustáveis em metros; são candidatos à revisão, não prova de defeito. Não conta polígonos, identifica bibliotecas ausentes nem altera seleção/modelo. Ver [escopo e limites](GEOMETRY_AUDIT.md).

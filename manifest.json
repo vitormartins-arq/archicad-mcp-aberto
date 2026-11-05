@@ -714,6 +714,10 @@
     {
       "name": "replace_object_libraries",
       "description": "Preview or replace existing Object libraries using explicit mounting references."
+    },
+    {
+      "name": "audit_geometry",
+      "description": "Read-only, bounded triage of 3D bounds; report only review findings using the official JSON API."
     }
   ],
   "compatibility": {

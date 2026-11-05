@@ -1,5 +1,7 @@
 # Changelog
 
+- Add read-only `audit_geometry`: one official 3D-bounds batch for up to 500 explicit GUIDs, adjustable distance/extent thresholds, unavailable/invalid bounds and paginated findings with complete batch counts. No Tapir, selection changes or model edits; bounds-only triage is not a polygon, duplicate or missing-library diagnosis.
+
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.

@@ -25,6 +25,7 @@ from archicad_mcp_aberto.tools import (
     element_structure,
     favorites,
     gateway,
+    geometry_audit,
     grids,
     hotlinks,
     ifc,
@@ -365,6 +366,7 @@ INPUTS = {
         ]
     },
     "get_bounding_boxes": {"element_ids": [GUID]},
+    "audit_geometry": {"element_guids": [GUID]},
     "list_keynotes": {},
     "create_keynote_folders": {"folders": [{"key": "01", "title": "Paredes"}]},
     "create_keynote_items": {"items": [{"key": "01.01", "title": "Alvenaria"}]},
@@ -518,6 +520,7 @@ REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
+        geometry_audit,
         camera_paths,
         model_tasks,
         attribute_properties,

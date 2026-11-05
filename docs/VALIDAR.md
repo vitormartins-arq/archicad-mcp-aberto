@@ -893,3 +893,9 @@ Simulado e compilado pelo CI, não testado ao vivo. Precisa do add-on recompilad
 - [ ] `save_3d_scenes` com 3 ou mais ambientes: todas as câmeras vão para um único percurso, "00 BIMx - Apresentação", com os nomes "1 RECEPÇÃO - 2P 01", "2 ..." e assim por diante.
 - [ ] No Mapa de projeto, conferir se as câmeras novas aparecem com esse nome (dado na criação), e não como "Câmera 1". Renomear depois o Archicad recusa (teste ao vivo de 28/10). No Mapa de vistas, nenhuma câmera solta e nenhuma pasta por ambiente.
 - [ ] Conjunto BIMx feito à mão, só com o percurso (mesma combinação 3D, "Adicionar câmeras como itens de galeria separados", céu branco, menor textura): um único modelo e a galeria com os nomes no celular.
+
+## Geometry audit (read-only)
+
+- [ ] Call `audit_geometry` on a few explicitly chosen 3D element GUIDs in the intended project. Confirm the returned port and compare extents with the existing bounds tool.
+- [ ] Set a small distance/extent threshold to produce review candidates, then restore a project-appropriate threshold. Check pagination and that selection/model are unchanged.
+- [ ] An unavailable element must report its native read error, not a missing-library diagnosis. The tool does not count polygons or prove defects.
