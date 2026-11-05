@@ -9,7 +9,9 @@ A witness point names an element and one of its references: ``in_index`` from
 list_element_hotspots, or ``reference: "origin"`` for the hotspot on the object's own origin,
 chosen by comparing coordinates because a library part's hotspot order can change with its
 settings. A reference that is not a hotspot, such as a wall face, takes ``line: true`` with
-``in_index`` and ``location``. Never saves.
+``in_index`` and ``location``: on Archicad 30, in_index 11 is the wall edge through polygon
+hotspots 1 and 2 and 21 the edge through 3 and 4. The dimension's direction must be exactly
+perpendicular to that face, not rounded, or Archicad drops the point later. Never saves.
 """
 
 from __future__ import annotations
@@ -27,17 +29,17 @@ from archicad_mcp_aberto.connection import (
     CommandNotRegistered,
     resolve_port,
 )
-from archicad_mcp_aberto.tools import edit, read, scenes, solids, write
+from archicad_mcp_aberto.tools import scenes, solids, write
 
 MAX_DIMENSIONS = 50
 MAX_ELEMENTS = 200
 TOLERANCE = 0.001  # metres
 # What a dimension must keep from its favorite. "static" is left out: these are associative.
+# So is "textDirection": live on AC30, a favorite holding 0 gives a dimension holding 1.
 COMPARED_SETTINGS = (
     "layerIndex",
     "linePen",
     "textPosition",
-    "textDirection",
     "appearance",
     "witnessForm",
     "witnessValue",
@@ -114,6 +116,10 @@ def _rows(response: dict, count: int, command: str) -> list[dict]:
     return rows
 
 
+def _ids(guids: list[str]) -> list[dict]:
+    return [{"elementId": {"guid": g}} for g in guids]
+
+
 def _guids(element_guids: list[str]) -> list[str]:
     if not 1 <= len(element_guids) <= MAX_ELEMENTS:
         raise ValueError(f"Pass between 1 and {MAX_ELEMENTS} elements.")
@@ -126,9 +132,7 @@ async def list_element_hotspots(
     """Every hotspot of each element: x, y, z, neigId and inIndex, plus an object's origin."""
     guids = _guids(element_guids)
     port = await resolve_port(client, port)
-    response = await _addon(
-        client, port, "GetElementHotspots", {"elements": read.element_ids(guids)}
-    )
+    response = await _addon(client, port, "GetElementHotspots", {"elements": _ids(guids)})
     return {"port": port, "elements": _rows(response, len(guids), "GetElementHotspots")}
 
 
@@ -146,7 +150,7 @@ async def get_dimensions(
     """Dimensions as they are: settings, line, witness points, measured values and text."""
     guids = _guids(element_guids)
     port = await resolve_port(client, port)
-    response = await _addon(client, port, "GetDimensions", {"elements": read.element_ids(guids)})
+    response = await _addon(client, port, "GetDimensions", {"elements": _ids(guids)})
     return {"port": port, "elements": _rows(response, len(guids), "GetDimensions")}
 
 
@@ -202,18 +206,33 @@ def _signature(witnesses: list[dict], direction: dict) -> tuple:
 
 
 async def _existing_signatures(client, port) -> dict[tuple, str]:
-    listed = await client.command(port, "GetElementsByType", {"elementType": "Dimension"})
+    listed = await client.tapir(port, "GetElementsByType", {"elementType": "Dimension"})
     guids = [e["elementId"]["guid"].upper() for e in listed.get("elements", [])]
     out = {}
     for start in range(0, len(guids), 500):
         chunk = guids[start : start + 500]
-        response = await _addon(
-            client, port, "GetDimensions", {"elements": read.element_ids(chunk)}
-        )
+        response = await _addon(client, port, "GetDimensions", {"elements": _ids(chunk)})
         for guid, row in zip(chunk, _rows(response, len(chunk), "GetDimensions"), strict=True):
             if "error" not in row and isinstance(row.get("direction"), dict):
                 out[_signature(row.get("witnessPoints") or [], row["direction"])] = guid
     return out
+
+
+async def _measured_elements(client, guids, port):
+    """A dimension changes nothing in what it measures, so a locked element is fine."""
+    port, target, _ = await write._context(client, port)
+    result = await client.tapir(
+        port,
+        "GetDetailsOfElements",
+        {"elements": _ids(guids), "fields": write.DETAIL_FIELDS},
+    )
+    rows = result.get("detailsOfElements")
+    if not isinstance(rows, list) or len(rows) != len(guids):
+        raise ValueError("Unexpected element details response.")
+    for guid, row in zip(guids, rows, strict=True):
+        if not isinstance(row, dict) or "error" in row or row.get("type") in (None, "Unknown"):
+            raise ValueError(f"Element {guid} does not exist or cannot be read.")
+    return port, target, rows
 
 
 async def _plan(client, plan_input, port, operation):
@@ -221,16 +240,14 @@ async def _plan(client, plan_input, port, operation):
     guids = list(dict.fromkeys(w.element_guid for d in dimensions for w in d.witnesses))
     if len(guids) > MAX_ELEMENTS:
         raise ValueError(f"Pass at most {MAX_ELEMENTS} different elements.")
-    port, target, rows = await edit._editable(client, guids, port)
+    port, target, rows = await _measured_elements(client, guids, port)
     floors = {g: r.get("floorIndex") for g, r in zip(guids, rows, strict=True)}
     settings = None
     if favorite is not None:
         settings = (await _addon(client, port, "GetDimensionFavorite", {"name": favorite}))[
             "settings"
         ]
-    response = await _addon(
-        client, port, "GetElementHotspots", {"elements": read.element_ids(guids)}
-    )
+    response = await _addon(client, port, "GetElementHotspots", {"elements": _ids(guids)})
     hotspots = dict(zip(guids, _rows(response, len(guids), "GetElementHotspots"), strict=True))
     existing = await _existing_signatures(client, port)
     items = []
@@ -338,7 +355,33 @@ async def _dispatch(client, receipt):
         )
         if problems:
             item["mismatches"] = problems
+    await _check_dimensions_kept(client, receipt)
     await _check_witness_elements(client, receipt)
+
+
+async def _check_dimensions_kept(client, receipt):
+    """Archicad can drop a witness point, or the whole dimension, after answering the create:
+    live on AC30, with a line only nearly perpendicular to a wall face. Read them again."""
+    created = [i for i in receipt["items"] if i["status"] == "verified"]
+    if not created:
+        return
+    port = receipt["target"]["port"]
+    try:
+        response = await _addon(
+            client,
+            port,
+            "GetDimensions",
+            {"elements": _ids([i["element_guid"] for i in created])},
+            receipt["write_timeout_seconds"],
+        )
+        rows = _rows(response, len(created), "GetDimensions")
+    except (ArchicadError, ValueError) as exc:
+        receipt["verification_error"] = f"Could not read the dimensions again: {exc}"
+        return
+    for item, row in zip(created, rows, strict=True):
+        wanted = len(item["parameters"]["witnessPoints"])
+        if "error" in row or len(row.get("witnessPoints") or []) != wanted:
+            item.update(status="verification_failed", mismatches=["witness points dropped"])
 
 
 async def _check_witness_elements(client, receipt):
@@ -349,7 +392,7 @@ async def _check_witness_elements(client, receipt):
         result = await client.tapir(
             port,
             "GetDetailsOfElements",
-            {"elements": read.element_ids(guids), "fields": write.DETAIL_FIELDS},
+            {"elements": _ids(guids), "fields": write.DETAIL_FIELDS},
             timeout=receipt["write_timeout_seconds"],
         )
     except ArchicadError as exc:

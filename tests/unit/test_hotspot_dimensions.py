@@ -196,3 +196,15 @@ def test_a_dimension_needs_a_direction():
             direction={"x": 0, "y": 0},
             witnesses=[{"element_guid": guid, "in_index": 1}] * 2,
         )
+
+
+async def test_a_dimension_archicad_dropped_afterwards_fails_verification():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND)]
+        preview = await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+        fake.dimension_drops_witness = True
+        result = await tool.create_linear_dimensions(
+            c, items, FAVORITE, 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["mismatches"] == ["witness points dropped"]

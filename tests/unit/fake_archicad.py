@@ -681,6 +681,7 @@ class FakeArchicad:
     dimension_text_differences: list[str] = field(default_factory=list)
     dimension_settings_override: dict = field(default_factory=dict)
     dimension_moves_witness: str | None = None
+    dimension_drops_witness: bool = False
     created_dimensions: dict[str, dict] = field(default_factory=dict)
     saved_story_views: list[dict] = field(default_factory=list)
     story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
@@ -1116,6 +1117,8 @@ class FakeArchicad:
             for element in args["elements"]:
                 guid = element["elementId"]["guid"].upper()
                 created = deepcopy(self.created_dimensions.get(guid, {}))
+                if self.dimension_drops_witness and created:
+                    created["witnessPoints"].pop()
                 rows.append({"witnessPoints": [], **created, "elementId": element["elementId"]})
             return {"elements": rows}
         if name == "GetDimensionFavorite":
@@ -1323,6 +1326,9 @@ class FakeArchicad:
                     "code": -2130313112, "message": "Failed to update drawings."}}})  # fmt: skip
             self.updated_drawings += [e["elementId"]["guid"] for e in args["elements"]]
             return ok({"addOnCommandResponse": {"success": True}})
+        if name == "GetElementsByType" and args.get("elementType") == "Dimension":
+            rows = [{"elementId": {"guid": g}} for g in self.created_dimensions]
+            return ok({"addOnCommandResponse": {"elements": rows}})
         if name == "GetElementsByType" and "databases" in args:
             assert args["elementType"] == "Drawing" and len(args["databases"]) == 1
             database = args["databases"][0]["databaseId"]["guid"]
