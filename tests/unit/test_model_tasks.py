@@ -81,7 +81,8 @@ async def test_checkpoint_includes_unsaved_state_and_saves_result_in_same_file(n
         ready = await checkpoint(c)
         assert ready["status"] == "verified"
         item = ready["items"][0]
-        assert Path(item["disk_backup_proof"]["path"]).read_bytes() == b"LAST_SAVED_DISK"
+        # Only one backup per PLN is kept: the pre-task state including unsaved edits.
+        assert not Path(item["disk_backup_proof"]["path"]).exists()
         assert Path(item["backup"]["path"]).read_bytes() == b"UNSAVED_BEFORE_TASK"
         state["pending"] = b"AFTER_REQUESTED_MODEL_CHANGES"
         result = await finish(c, ready["task_token"])
@@ -179,3 +180,23 @@ async def test_project_switch_during_settling_is_rejected(native_task, monkeypat
         with pytest.raises(ValueError, match="Project/session changed"):
             await tasks.begin_model_task(c, 19723)
     assert native_task["saves"] == 0
+
+
+async def test_new_checkpoint_keeps_only_latest_backup_of_this_pln(native_task):
+    folder = native_task["source"].parent / "00 - Anteriores"
+    folder.mkdir()
+    old = [folder / "Working_backup_111.pln", folder / "Working_backup_estado_111.pln"]
+    for path in old:
+        path.write_bytes(b"OLD")
+    other = folder / "Other_backup_111.pln"
+    revision = folder / "Working.pln"
+    for path in (other, revision):
+        path.write_bytes(b"KEEP")
+    async with client() as c:
+        ready = await checkpoint(c)
+    item = ready["items"][0]
+    assert set(map(str, old)) <= set(item["removed_old_backups"])
+    assert not any(p.exists() for p in old)
+    assert other.read_bytes() == b"KEEP" and revision.read_bytes() == b"KEEP"
+    backups = [p for p in folder.iterdir() if p.name.startswith("Working_backup")]
+    assert backups == [Path(item["backup"]["path"])]
