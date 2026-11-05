@@ -572,6 +572,14 @@
       "description": "Read dimensions with witness points, measured values and text."
     },
     {
+      "name": "get_archicad_window_image",
+      "description": "See the Archicad window as the user sees it: plan, section, 3D, layout, schedule."
+    },
+    {
+      "name": "open_navigator_item",
+      "description": "Show a story, section, detail, worksheet or layout from the navigator."
+    },
+    {
       "name": "check_dimensions_over_hotspots",
       "description": "List dimension lines crossing or close to the hotspot area of given elements."
     },

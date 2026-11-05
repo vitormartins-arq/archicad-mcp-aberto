@@ -78,6 +78,7 @@ from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import window_capture as window_capture_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 from archicad_mcp_aberto.tools import zones_read as zones_read_tool
@@ -1993,6 +1994,29 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         ArchicadMcpAberto add-on."""
         return await hotspot_dimensions_tool.check_dimensions_over_hotspots(
             client_of(ctx), element_guids, dimension_guids, port, clearance
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_archicad_window_image(
+        ctx: Context, port: int | None = None, region: list[int] | None = None
+    ) -> list:
+        """See the Archicad window as the user sees it, whatever it shows: plan, section, 3D,
+        layout, schedule, worksheet or an open dialog. region [left, top, right, bottom] in
+        pixels of the full window shows only that part. Use it to check your work: numbers do
+        not prove legibility. Windows only; the window must not be minimized."""
+        result = await window_capture_tool.get_archicad_window_image(client_of(ctx), port, region)
+        note = {k: result[k] for k in ("port", "title", "width", "height")}
+        return [note, Image(data=result["png"], format="png")]
+
+    @mcp.tool(annotations=VIEW)
+    async def open_navigator_item(
+        ctx: Context, navigator_item_guid: str, port: int | None = None
+    ) -> dict:
+        """Show a story, section, detail, worksheet or layout from the navigator, to look at it
+        with get_archicad_window_image. Changes the open window, no element. A schedule cannot
+        be opened from here: ask the user to open it, then look at the window."""
+        return await window_capture_tool.open_navigator_item(
+            client_of(ctx), navigator_item_guid, port
         )
 
     @mcp.tool(annotations=READ_ONLY)
