@@ -9,8 +9,9 @@ A witness point names an element and one of its references: ``in_index`` from
 list_element_hotspots, or ``reference: "origin"`` for the hotspot on the object's own origin,
 chosen by comparing coordinates because a library part's hotspot order can change with its
 settings. A reference that is not a hotspot, such as a wall face, takes ``line: true`` with
-``in_index`` and ``location``: on Archicad 30, in_index 11 is the wall edge through polygon
-hotspots 1 and 2 and 21 the edge through 3 and 4. The dimension's direction must be exactly
+``in_index`` and ``location``: on Archicad 30, in_index 11 and 21 are the two wall faces. Which
+is which varies from wall to wall, and the value is only right after the view is rebuilt, so
+read get_dimensions again after a rebuild. The dimension's direction must be exactly
 perpendicular to that face, not rounded, or Archicad drops the point later. Never saves.
 """
 
