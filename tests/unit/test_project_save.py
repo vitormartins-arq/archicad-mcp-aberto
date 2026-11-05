@@ -214,3 +214,10 @@ async def test_move_refuses_existing_archive_destination(tmp_path):
     with pytest.raises(FileExistsError):
         save._move_no_replace(source, dest)
     assert source.read_bytes() == b"source" and dest.read_bytes() == b"existing"
+
+
+def test_backups_always_go_to_00_anteriores(tmp_path):
+    # Vitor 05/11/2026: every backup goes to "00 - Anteriores", never a loose "Anteriores".
+    assert save.ARCHIVE_FOLDER == "00 - Anteriores"
+    source = tmp_path / "Projeto_R06.pln"
+    assert save.archive_folder(source) == tmp_path / "00 - Anteriores"

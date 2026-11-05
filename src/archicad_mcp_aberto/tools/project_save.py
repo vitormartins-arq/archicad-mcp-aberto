@@ -67,6 +67,15 @@ def _revision_path(source: Path, archive: Path) -> Path:
     return source.with_name(f"{stem}{label}{highest + 1:0{max(2, len(digits))}d}{suffix}.pln")
 
 
+# Every backup and archived revision goes to the project's "00 - Anteriores" folder,
+# created when missing. Never a loose "Anteriores" folder (Vitor, 28/10 and 05/11/2026).
+ARCHIVE_FOLDER = "00 - Anteriores"
+
+
+def archive_folder(source: Path) -> Path:
+    return source.parent / ARCHIVE_FOLDER
+
+
 def _archive_path(source: Path, folder: Path) -> Path:
     destination = folder / source.name
     counter = 0
@@ -110,9 +119,9 @@ async def _plan(client, requests, port, operation):
     source = _path(context["projectPath"]) if context["projectPath"] else None
     if request.archive_previous and (source is None or context["untitled"] is not False):
         raise ValueError("Save the untitled project to an explicit PLN path first.")
-    folder = source.parent / "00 - Anteriores" if source else None
+    folder = archive_folder(source) if source else None
     if request.archive_previous and folder and folder.exists() and not folder.is_dir():
-        raise ValueError("00 - Anteriores already exists and is not a folder.")
+        raise ValueError(f"{ARCHIVE_FOLDER} already exists and is not a folder.")
     destination = (
         _path(request.destination_path)
         if request.destination_path
