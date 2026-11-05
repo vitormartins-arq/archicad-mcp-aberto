@@ -32,7 +32,27 @@ from archicad_mcp_aberto.tools import edit, read, scenes, solids, write
 MAX_DIMENSIONS = 50
 MAX_ELEMENTS = 200
 TOLERANCE = 0.001  # metres
-COMPARED_SETTINGS = ("layerIndex", "linePen", "textPosition", "textDirection", "appearance")
+# What a dimension must keep from its favorite. "static" is left out: these are associative.
+COMPARED_SETTINGS = (
+    "layerIndex",
+    "linePen",
+    "textPosition",
+    "textDirection",
+    "appearance",
+    "witnessForm",
+    "witnessValue",
+    "witnessExtensionPen",
+    "marker.type",
+    "marker.pen",
+    "marker.size",
+    "note.pen",
+    "note.fontIndex",
+    "note.size",
+    "note.faceBits",
+    "note.frame",
+    "note.opaque",
+    "note.backgroundPen",
+)
 
 
 class Point2D(write.InputModel):
@@ -168,6 +188,34 @@ def _witness(witness: Witness, row: dict, label: str) -> dict:
     return out
 
 
+def _signature(witnesses: list[dict], direction: dict) -> tuple:
+    """Same references along the same line, whichever way round either is listed."""
+    length = math.hypot(direction["x"], direction["y"]) or 1.0
+    x, y = direction["x"] / length, direction["y"] / length
+    if x < -1e-6 or (abs(x) <= 1e-6 and y < 0):
+        x, y = -x, -y
+    points = sorted(
+        (str((w.get("elementId") or {}).get("guid", "")).upper(), w.get("inIndex"))
+        for w in witnesses
+    )
+    return tuple(points), round(x, 4) + 0.0, round(y, 4) + 0.0
+
+
+async def _existing_signatures(client, port) -> dict[tuple, str]:
+    listed = await client.command(port, "GetElementsByType", {"elementType": "Dimension"})
+    guids = [e["elementId"]["guid"].upper() for e in listed.get("elements", [])]
+    out = {}
+    for start in range(0, len(guids), 500):
+        chunk = guids[start : start + 500]
+        response = await _addon(
+            client, port, "GetDimensions", {"elements": read.element_ids(chunk)}
+        )
+        for guid, row in zip(chunk, _rows(response, len(chunk), "GetDimensions"), strict=True):
+            if "error" not in row and isinstance(row.get("direction"), dict):
+                out[_signature(row.get("witnessPoints") or [], row["direction"])] = guid
+    return out
+
+
 async def _plan(client, plan_input, port, operation):
     dimensions, favorite = plan_input
     guids = list(dict.fromkeys(w.element_guid for d in dimensions for w in d.witnesses))
@@ -184,6 +232,7 @@ async def _plan(client, plan_input, port, operation):
         client, port, "GetElementHotspots", {"elements": read.element_ids(guids)}
     )
     hotspots = dict(zip(guids, _rows(response, len(guids), "GetElementHotspots"), strict=True))
+    existing = await _existing_signatures(client, port)
     items = []
     for i, dimension in enumerate(dimensions):
         label = f"Dimension {i}"
@@ -192,6 +241,10 @@ async def _plan(client, plan_input, port, operation):
         if len(stories) != 1:
             raise ValueError(f"{label}: all witness elements must be on the same story.")
         floor = stories.pop()
+        signature = _signature(points, dimension.direction.model_dump())
+        if signature in existing:
+            raise ValueError(f"{label}: dimension {existing[signature]} already measures this.")
+        existing[signature] = f"of this plan, number {i},"
         item = {
             "index": i,
             "status": "ready",
@@ -206,7 +259,25 @@ async def _plan(client, plan_input, port, operation):
         if favorite is not None:
             item.update(favorite=favorite, favorite_settings=settings)
         items.append(item)
-    return {"operation": operation, "target": target, "items": items}
+    return {
+        "operation": operation,
+        "target": target,
+        "witness_elements": dict(zip(guids, rows, strict=True)),
+        "items": items,
+    }
+
+
+def _setting(settings: dict, path: str):
+    value = settings
+    for key in path.split("."):
+        value = value.get(key) if isinstance(value, dict) else None
+    return value
+
+
+def _same(first, second) -> bool:
+    if isinstance(first, float | int) and isinstance(second, float | int):
+        return abs(first - second) <= 1e-6
+    return first == second
 
 
 def _mismatches(item: dict, row: dict) -> list[str]:
@@ -224,9 +295,10 @@ def _mismatches(item: dict, row: dict) -> list[str]:
         if got.get("inIndex") != want["inIndex"]:
             problems.append(f"witnessPoints.{n}.inIndex")
     settings = row.get("settings") or {}
-    for key in COMPARED_SETTINGS:
-        if "favorite_settings" in item and settings.get(key) != item["favorite_settings"].get(key):
-            problems.append(f"settings.{key}")
+    if "favorite_settings" in item:
+        for path in COMPARED_SETTINGS:
+            if not _same(_setting(settings, path), _setting(item["favorite_settings"], path)):
+                problems.append(f"settings.{path}")
     problems.extend(row.get("textDifferences") or [])
     return problems
 
@@ -266,6 +338,33 @@ async def _dispatch(client, receipt):
         )
         if problems:
             item["mismatches"] = problems
+    await _check_witness_elements(client, receipt)
+
+
+async def _check_witness_elements(client, receipt):
+    """A dimension must not touch what it measures: read those elements again."""
+    before = receipt["witness_elements"]
+    port, guids = receipt["target"]["port"], list(before)
+    try:
+        result = await client.tapir(
+            port,
+            "GetDetailsOfElements",
+            {"elements": read.element_ids(guids), "fields": write.DETAIL_FIELDS},
+            timeout=receipt["write_timeout_seconds"],
+        )
+    except ArchicadError as exc:
+        receipt["verification_error"] = f"Could not read the measured elements again: {exc}"
+        return
+    rows = result.get("detailsOfElements") or []
+    changed = [g for g, row in zip(guids, rows, strict=False) if row != before[g]]
+    if len(rows) != len(guids):
+        changed = guids
+    receipt["witness_elements_unchanged"] = not changed
+    if changed:
+        receipt["witness_elements_changed"] = changed
+        for item in receipt["items"]:
+            if item["status"] == "verified":
+                item.update(status="verification_failed", mismatches=["witness elements changed"])
 
 
 async def create_linear_dimensions(

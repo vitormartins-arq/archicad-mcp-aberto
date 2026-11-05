@@ -16,7 +16,8 @@ SETTINGS = {
     "textPosition": 1,
     "textDirection": 1,
     "appearance": 1,
-    "note": {"size": 2.0, "pen": 3, "frame": False},
+    "marker": {"type": 2, "pen": 3, "size": 2.0},
+    "note": {"size": 2.0, "pen": 3, "fontIndex": 5, "frame": False},
 }
 
 
@@ -100,6 +101,52 @@ async def test_text_the_favorite_did_not_apply_fails_verification():
         )
     assert result["items"][0]["status"] == "verification_failed"
     assert result["items"][0]["mismatches"] == ["text size"]
+
+
+async def test_a_setting_the_favorite_did_not_apply_fails_verification():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND)]
+        preview = await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+        fake.dimension_settings_override = {"marker": {"type": 1, "pen": 3, "size": 2.0}}
+        result = await tool.create_linear_dimensions(
+            c, items, FAVORITE, 19723, False, preview["confirmation_token"]
+        )
+    assert result["items"][0]["status"] == "verification_failed"
+    assert "settings.marker.type" in result["items"][0]["mismatches"]
+
+
+async def test_the_same_dimension_is_not_created_twice():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND)]
+        preview = await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+        await tool.create_linear_dimensions(
+            c, items, FAVORITE, 19723, False, preview["confirmation_token"]
+        )
+        with pytest.raises(ValueError, match="already measures"):
+            await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+
+
+async def test_the_same_dimension_twice_in_one_plan_is_refused():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND), dimension(FIRST, SECOND)]
+        with pytest.raises(ValueError, match="already measures"):
+            await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+
+
+async def test_a_moved_witness_element_fails_verification():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND)]
+        preview = await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+        fake.dimension_moves_witness = FIRST
+        result = await tool.create_linear_dimensions(
+            c, items, FAVORITE, 19723, False, preview["confirmation_token"]
+        )
+    assert result["witness_elements_unchanged"] is False
+    assert result["items"][0]["mismatches"] == ["witness elements changed"]
 
 
 async def test_object_without_a_hotspot_on_its_origin_is_refused():

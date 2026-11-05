@@ -679,6 +679,9 @@ class FakeArchicad:
     element_hotspots: dict[str, dict] = field(default_factory=dict)
     dimension_favorites: dict[str, dict] = field(default_factory=lambda: {"COTA": {}})
     dimension_text_differences: list[str] = field(default_factory=list)
+    dimension_settings_override: dict = field(default_factory=dict)
+    dimension_moves_witness: str | None = None
+    created_dimensions: dict[str, dict] = field(default_factory=dict)
     saved_story_views: list[dict] = field(default_factory=list)
     story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
     grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
@@ -1109,11 +1112,12 @@ class FakeArchicad:
                 rows.append({"elementId": {"guid": guid}, **deepcopy(row)})
             return {"elements": rows}
         if name == "GetDimensions":
-            return {
-                "elements": [
-                    {"elementId": e["elementId"], "witnessPoints": []} for e in args["elements"]
-                ]
-            }
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"].upper()
+                created = deepcopy(self.created_dimensions.get(guid, {}))
+                rows.append({"witnessPoints": [], **created, "elementId": element["elementId"]})
+            return {"elements": rows}
         if name == "GetDimensionFavorite":
             settings = self.dimension_favorites.get(args["name"])
             if settings is None:
@@ -1121,16 +1125,21 @@ class FakeArchicad:
             return {"name": args["name"], "settings": deepcopy(settings)}
         favorite = self.dimension_favorites.get(args.get("favorite"), {})
         rows = []
-        for index, dimension in enumerate(args["dimensions"]):
-            rows.append(
-                {
-                    "elementId": {"guid": f"00000000-0000-4000-8000-{index:012d}"},
-                    "floorIndex": dimension["floorIndex"],
-                    "settings": deepcopy(favorite),
-                    "witnessPoints": deepcopy(dimension["witnessPoints"]),
-                    "textDifferences": list(self.dimension_text_differences),
-                }
-            )
+        for dimension in args["dimensions"]:
+            guid = f"00000000-0000-4000-8000-{len(self.created_dimensions):012d}"
+            row = {
+                "elementId": {"guid": guid},
+                "floorIndex": dimension["floorIndex"],
+                "settings": {**deepcopy(favorite), **self.dimension_settings_override},
+                "direction": deepcopy(dimension["direction"]),
+                "witnessPoints": deepcopy(dimension["witnessPoints"]),
+                "textDifferences": list(self.dimension_text_differences),
+            }
+            self.created_dimensions[guid] = row
+            self.elements[guid] = "Dimension"
+            rows.append(row)
+        if self.dimension_moves_witness:
+            self.details[self.dimension_moves_witness]["details"]["moved"] = True
         return {"elements": rows}
 
     def _own_addon(self, params: dict) -> dict:
