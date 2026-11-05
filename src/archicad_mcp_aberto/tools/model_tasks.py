@@ -81,6 +81,30 @@ def _copy_verified(source: Path, destination: Path) -> dict:
     }
 
 
+def _prune_old_backups(keep: Path) -> list[str]:
+    """Keep only the newest verified backup of this PLN in 00 - Anteriores.
+
+    Vitor (05/11/2026): one backup per working file; older MCP backups of the same
+    PLN are deleted. Only files named "<stem>_backup*.pln|.bpn" directly in the
+    folder are touched; revisions, folders and partial copies stay.
+    """
+    folder = keep.parent
+    if folder.name != project_save.ARCHIVE_FOLDER:
+        return []
+    stem = keep.name.split("_backup", 1)[0]
+    removed = []
+    for path in folder.iterdir():
+        if (
+            path.is_file()
+            and path.suffix.lower() in (".pln", ".bpn")
+            and path.name.startswith(f"{stem}_backup")
+            and path.resolve() != keep.resolve()
+        ):
+            path.unlink()
+            removed.append(str(path))
+    return removed
+
+
 async def _checkpoint_plan(client, requests, port, operation):
     port = await resolve_port(client, port)
     context = await _settled_context(client, port)
@@ -90,7 +114,7 @@ async def _checkpoint_plan(client, requests, port, operation):
     current = project_save._fingerprint(source)
     if not current or current["size"] == 0:
         raise ValueError("Working PLN is missing or empty.")
-    folder = source.parent / "00 - Anteriores"
+    folder = project_save.archive_folder(source)
     stamp = context["modificationStamp"]
     disk = project_save._archive_path(source.with_name(f"{source.stem}_backup_{stamp}.pln"), folder)
     model = project_save._archive_path(
@@ -154,6 +178,10 @@ async def _checkpoint_dispatch(client, receipt):
         else:
             proof = _copy_verified(source, Path(item["model_backup"]))
         item.update(status="verified", stage="checkpoint_verified", backup=proof)
+        try:
+            item["removed_old_backups"] = _prune_old_backups(Path(proof["path"]))
+        except OSError as exc:  # never blocks the task; the new backup is verified
+            item["prune_warning"] = str(exc)
         task_token = str(uuid4())
         _tasks.setdefault(client, {})[task_token] = {
             "client_session": client.session_id,

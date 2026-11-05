@@ -63,7 +63,9 @@ for all of Vitor's projects (blocks, add-ons, MCPs).
 - Vitor's current policy (27 October 2026): work in the project he requests, including
   saved/working projects. Do not require an untitled/test file or manual Save As.
   Before a requested editing task, preserve and verify an automatic _backup PLN
-  in Anteriores; include the current in-memory state, then save the result to the
+  in the project's `00 - Anteriores` folder (create it when missing; never a loose
+  `Anteriores` folder, Vitor 05/11/2026). Keep only the newest backup per PLN:
+  older `<stem>_backup*` files there are deleted (Vitor, 05/11/2026); include the current in-memory state, then save the result to the
   SAME working PLN at task completion. No automatic revision bump. His request
   authorizes this backup/save workflow; do not ask for it repeatedly. Do not save
   for read-only operations, silently switch projects or blindly retry unknown writes.
