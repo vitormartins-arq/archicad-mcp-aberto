@@ -1,5 +1,10 @@
 # Estado atual
 
+- **PR #95 / 05/11/2026:** `main` incorporada à branch de parâmetros GDL.
+  O conflito em `AGENTS.md` foi resolvido com a regra atual da pasta
+  `00 - Anteriores`. O checkpoint da tarefa usa o mesmo caminho de backup
+  que o fluxo de salvamento, conforme a implementação integrada na PR #100.
+
 - **Parâmetros de todas as ferramentas / 28/10/2026 (Claude, nuvem):** a recusa
   "Element is missing or is not an Object" vinha do próprio MCP: o Tapir lê/grava GDL de
   portas, janelas, claraboias, zonas, etiquetas símbolo, títulos de desenho e partes de
