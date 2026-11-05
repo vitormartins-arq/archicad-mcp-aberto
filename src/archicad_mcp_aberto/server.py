@@ -2009,6 +2009,31 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return [note, Image(data=result["png"], format="png")]
 
     @mcp.tool(annotations=VIEW)
+    async def fit_in_window(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Zoom the current window to these elements, to look at them with
+        get_archicad_window_image. Changes the view, no element."""
+        return await window_capture_tool.fit_in_window(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def window_zoom(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> dict:
+        """Read the area the current plan, section, detail, worksheet or layout window shows or,
+        given zoom {xMin, yMin, xMax, yMax} in metres, show that area. Changes the view, no
+        element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.window_zoom(client_of(ctx), zoom, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def pan_window(
+        ctx: Context, right: float = 0.0, up: float = 0.0, port: int | None = None
+    ) -> dict:
+        """Move the current 2D window's view by this many metres, keeping the zoom. Changes the
+        view, no element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.pan_window(client_of(ctx), right, up, port)
+
+    @mcp.tool(annotations=VIEW)
     async def open_navigator_item(
         ctx: Context, navigator_item_guid: str, port: int | None = None
     ) -> dict:

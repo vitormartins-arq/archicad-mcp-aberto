@@ -27,7 +27,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **172 registered tools**: **66 read-only**, **4 view/session actions** and
+Pre-alpha with **175 registered tools**: **66 read-only**, **7 view/session actions** and
 **102 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -164,6 +164,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `get_dimensions` | Read | Dimensions with witness points, measured values and text; needs the add-on | no |
 | `check_dimensions_over_hotspots` | Read | Dimension lines crossing or close to element hotspots; needs the add-on | no |
 | `get_archicad_window_image` | Read | The Archicad window as the user sees it, any view; Windows only | no |
+| `fit_in_window` | View | Zoom the current window to given elements | no |
+| `window_zoom` | View | Read or set the area a 2D window shows; needs add-on R19 | no |
+| `pan_window` | View | Move a 2D window view; needs add-on R19 | no |
 | `open_navigator_item` | View | Show a story, section, detail, worksheet or layout | no |
 | `get_plan_window_image` | Read | The current 2D window as an image; needs add-on R18 | no |
 | `create_linear_dimensions` | Write | Associative dimensions between hotspots from a favorite; needs the add-on | yes |

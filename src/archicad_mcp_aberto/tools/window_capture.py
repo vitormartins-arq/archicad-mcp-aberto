@@ -14,7 +14,14 @@ import struct
 import sys
 import zlib
 
-from archicad_mcp_aberto.connection import ArchicadBusy, ArchicadClient, resolve_port
+from archicad_mcp_aberto.connection import (
+    AddOnError,
+    ArchicadBusy,
+    ArchicadClient,
+    CommandNotRegistered,
+    resolve_port,
+)
+from archicad_mcp_aberto.tools import scenes
 
 PW_RENDERFULLCONTENT = 2
 SRCCOPY_BI_RGB = 0
@@ -198,3 +205,40 @@ async def get_archicad_window_image(
         "height": height,
         "png": encode_png(width, height, pixels),
     }
+
+
+async def fit_in_window(
+    client: ArchicadClient, element_guids: list[str], port: int | None = None
+) -> dict:
+    """Zoom the current window to these elements. Changes the view, no element."""
+    port = await resolve_port(client, port)
+    elements = [{"elementId": {"guid": g}} for g in element_guids]
+    await client.tapir(port, "FitInWindow", {"elements": elements})
+    return {"port": port, "fitted": len(elements)}
+
+
+async def window_zoom(
+    client: ArchicadClient, zoom: dict | None = None, port: int | None = None
+) -> dict:
+    """Read the area the current 2D window shows or, given {xMin, yMin, xMax, yMax} in metres,
+    show that area: this is how to zoom and pan. Changes the view, no element."""
+    port = await resolve_port(client, port)
+    try:
+        response = await client.own_addon(port, "WindowZoom", {"zoom": zoom} if zoom else {})
+    except CommandNotRegistered as exc:
+        raise AddOnError(scenes.ADDON_MISSING, exc.code, exc.detail) from exc
+    return {"port": port, **response}
+
+
+async def pan_window(
+    client: ArchicadClient, right: float = 0.0, up: float = 0.0, port: int | None = None
+) -> dict:
+    """Move the 2D window's view by this many metres. Changes the view, no element."""
+    current = (await window_zoom(client, None, port))["zoom"]
+    moved = {
+        "xMin": current["xMin"] + right,
+        "xMax": current["xMax"] + right,
+        "yMin": current["yMin"] + up,
+        "yMax": current["yMax"] + up,
+    }
+    return await window_zoom(client, moved, port)

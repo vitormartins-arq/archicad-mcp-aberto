@@ -31,3 +31,25 @@ def test_crop_clips_to_the_window():
     assert tool.crop(2, image, [1, 0, 9, 9]) == (1, 1, pixels(1, 1, (2, 2, 2, 255)))
     with pytest.raises(ValueError, match="outside"):
         tool.crop(2, image, [5, 5, 9, 9])
+
+
+class Client:
+    probe_timeout = 1.0
+
+    def __init__(self):
+        self.zoom = {"xMin": 0.0, "yMin": 0.0, "xMax": 10.0, "yMax": 5.0}
+
+    async def command(self, port, name, parameters=None, timeout=None):
+        return {}
+
+    async def own_addon(self, port, name, parameters=None, timeout=None):
+        assert name == "WindowZoom"
+        if parameters.get("zoom"):
+            self.zoom = parameters["zoom"]
+        return {"zoom": dict(self.zoom)}
+
+
+@pytest.mark.anyio
+async def test_pan_keeps_the_zoom_and_moves_the_view():
+    result = await tool.pan_window(Client(), 2.0, -1.0, 19723)
+    assert result["zoom"] == {"xMin": 2.0, "xMax": 12.0, "yMin": -1.0, "yMax": 4.0}

@@ -648,8 +648,14 @@ def client(first, second, reversed_ports=False):
 async def test_all_registered_targeted_tools_have_cases():
     tools = await create_server().list_tools()
     registered = {tool.name for tool in tools if "port" in tool.inputSchema["properties"]}
-    # These two need a real Windows window; both pick the port with resolve_port.
-    registered -= {"get_archicad_window_image", "open_navigator_item"}
+    # These act on the open window and pick the port with resolve_port, like the others.
+    registered -= {
+        "get_archicad_window_image",
+        "open_navigator_item",
+        "fit_in_window",
+        "window_zoom",
+        "pan_window",
+    }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()
 

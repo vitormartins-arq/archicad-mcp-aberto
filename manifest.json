@@ -576,6 +576,18 @@
       "description": "See the Archicad window as the user sees it: plan, section, 3D, layout, schedule."
     },
     {
+      "name": "fit_in_window",
+      "description": "Zoom the current window to given elements."
+    },
+    {
+      "name": "window_zoom",
+      "description": "Read or set the area a 2D window shows."
+    },
+    {
+      "name": "pan_window",
+      "description": "Move a 2D window view by some metres."
+    },
+    {
       "name": "open_navigator_item",
       "description": "Show a story, section, detail, worksheet or layout from the navigator."
     },

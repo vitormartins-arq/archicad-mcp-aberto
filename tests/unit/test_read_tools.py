@@ -116,7 +116,7 @@ async def test_stories_and_project():
 async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 172
+    assert len(tools) == 175
     writes = {
         "begin_model_task",
         "finish_model_task",
@@ -200,6 +200,9 @@ async def test_server_registers_current_tool_surface():
         "create_wall_thickness_dimensions",
         "create_linear_dimensions",
         "open_navigator_item",
+        "fit_in_window",
+        "window_zoom",
+        "pan_window",
         "create_associative_dimensions",
         "create_lamps",
         "create_openings",
