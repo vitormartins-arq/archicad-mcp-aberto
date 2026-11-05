@@ -173,7 +173,9 @@ def _witness(witness: Witness, row: dict, label: str) -> dict:
         raise ValueError(f"{label}: cannot read the hotspots of {witness.element_guid}.")
     if witness.reference == "origin":
         hotspot = _origin_hotspot(row, label)
-    elif witness.line:
+    elif witness.line or witness.location is not None:
+        # A reference read from an existing dimension, or an edge, is taken as given: not all
+        # references Archicad accepts are among the hotspots the API lists.
         hotspot = {"inIndex": witness.in_index, **witness.location.model_dump()}
     else:
         hotspot = next(
@@ -237,7 +239,7 @@ async def _measured_elements(client, guids, port):
 
 
 async def _plan(client, plan_input, port, operation):
-    dimensions, favorite = plan_input
+    dimensions, favorite, replacing = plan_input
     guids = list(dict.fromkeys(w.element_guid for d in dimensions for w in d.witnesses))
     if len(guids) > MAX_ELEMENTS:
         raise ValueError(f"Pass at most {MAX_ELEMENTS} different elements.")
@@ -251,6 +253,7 @@ async def _plan(client, plan_input, port, operation):
     response = await _addon(client, port, "GetElementHotspots", {"elements": _ids(guids)})
     hotspots = dict(zip(guids, _rows(response, len(guids), "GetElementHotspots"), strict=True))
     existing = await _existing_signatures(client, port)
+    existing = {k: v for k, v in existing.items() if v not in replacing}
     items = []
     for i, dimension in enumerate(dimensions):
         label = f"Dimension {i}"
@@ -479,9 +482,12 @@ async def create_linear_dimensions(
     port: int | None = None,
     dry_run: bool = True,
     confirmation_token: str | None = None,
+    replacing: list[str] | None = None,
 ) -> dict:
     """Preview/apply up to 50 associative linear dimensions between hotspots, from one
-    Dimension favorite or the tool defaults, on the story of their elements. Never saves."""
+    Dimension favorite or the tool defaults, on the story of their elements. replacing lists
+    dimensions about to be deleted, so a preview run before deleting them is not refused as a
+    duplicate of them. Never saves."""
     if not 1 <= len(dimensions) <= MAX_DIMENSIONS:
         raise ValueError(f"Pass between 1 and {MAX_DIMENSIONS} dimensions.")
     validated = [
@@ -490,7 +496,7 @@ async def create_linear_dimensions(
     ]
     return await write._write(
         client,
-        (validated, favorite),
+        (validated, favorite, {g.upper() for g in replacing or []}),
         port,
         dry_run,
         confirmation_token,
