@@ -285,6 +285,12 @@ OPERATIONS = {
     ),
     "modify_lamps": ("lamp edit", "lamp_edit_receipt_id", "Only requested fields are modified."),
     "set_gdl_parameters": ("GDL change", "gdl_receipt_id", "Existing scalar parameters only."),
+    "set_element_parameters": (
+        "parameter change",
+        "parameter_receipt_id",
+        "Only the listed differences are sent; every other parameter keeps its value "
+        "unless the library part's parameter script changes it (reported after apply).",
+    ),
     "rotate_elements": (
         "rotation",
         "rotation_receipt_id",
@@ -1994,6 +2000,7 @@ NAMED_PREVIEWS = {
     "delete_elements",
     "rotate_elements",
     "set_gdl_parameters",
+    "set_element_parameters",
     "modify_walls",
     "modify_slabs",
     "modify_columns",

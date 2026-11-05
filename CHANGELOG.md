@@ -18,6 +18,17 @@
 
 ## Unreleased
 
+- Add `get_element_capabilities`, `inspect_element_parameters` and
+  `set_element_parameters`: one layer over GDL parameters, door/window markers and native
+  fields, with descriptions, units, options, limits, array shapes and edit state;
+  previews of only the requested differences; one undoable GDL step; read-back after the
+  parameter script with `dependent_changes`; and a GUID/host/placement/layer/
+  classification identity check. See `docs/PARAMETERS.md`. Simulated only; live
+  validation pending (`docs/VALIDAR.md`).
+- `get_gdl_parameters` and `set_gdl_parameters` no longer refuse doors, windows and the
+  other GDL elements Tapir supports ("Element is missing or is not an Object" came from
+  the MCP, not from Tapir). Angle values are converted to degrees for Tapir before 1.7.3.
+
 - Preserve descriptive suffixes when incrementing the last R/REV token in project
   revision names, including archived revision collision checks. Next-revision saving
   and archival validated in an authorized disposable project using the combined
@@ -590,3 +601,5 @@
   local-coordinate polygon contours and holes with named building materials, optionally
   combined with copied profile geometry. Read back skin count, material data and outlines;
   keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.
+
+- Lamp GDL: per-change script-hidden consent, scalar enum/range validation, identity and dependency read-back; retain all other flags and explicit preview/token checks. Task checkpoints use 00 - Anteriores.

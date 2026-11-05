@@ -1,5 +1,21 @@
 # Estado atual
 
+- **PR #95 / 05/11/2026:** `main` incorporada à branch de parâmetros GDL.
+  O conflito em `AGENTS.md` foi resolvido com a regra atual da pasta
+  `00 - Anteriores`. O checkpoint da tarefa usa o mesmo caminho de backup
+  que o fluxo de salvamento, conforme a implementação integrada na PR #100.
+
+- **Parâmetros de todas as ferramentas / 28/10/2026 (Claude, nuvem):** a recusa
+  "Element is missing or is not an Object" vinha do próprio MCP: o Tapir lê/grava GDL de
+  portas, janelas, claraboias, zonas, etiquetas símbolo, títulos de desenho e partes de
+  parede-cortina. Liberado em get/set_gdl_parameters e criada a camada geral
+  (`get_element_capabilities`, `inspect_element_parameters`, `set_element_parameters`)
+  com marcador, arrays, opções/limites, dependências e conferência de identidade. Matriz
+  e limitações em `docs/PARAMETERS.md`. 3.279 testes offline e Ruff passaram. Nada ao
+  vivo; lista em `VALIDAR.md` ("Parâmetros de todas as ferramentas"). Sem mudança no
+  add-on. Próximo passo possível: expor campos nativos que o Tapir 1.7.3 já tem
+  (`tapir_only_fields`) e, no add-on, GDL de escadas/guarda-corpos.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct
@@ -1140,3 +1156,5 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Codex, 26/10/2026: proposed R05 adds self-contained Windows installation, same-MDID replacement, Include migration and recoverable backups. Core tests use temporary files only; Program Files/UAC/real loading acceptance pending. No merge or installed add-on changes.
 
 - Codex, 26/10/2026: R08 fixes installer failures reported by Vitor. Native Extensions selection is accepted/displayed; foreign Graphisoft APXs without MDID and stale removed-APX registrations are not own-product matches. Empty old folders are backed up. 31 local checks include real notebook read-only preflight for both products; no production write or merge.
+
+- Codex, 4 November 2026: Lamp GDL follow-up on PR #95. Explicit per-change script-hidden consent, scalar enum/range checks, identity/dimension read-back and dependent-change reporting. Existing task checkpoint uses Anteriores per current policy. Offline regression tests and a read-only live audit; real writes/saving remain coordinated acceptance work. Active editable checkout must be upgraded without overwriting local object-replacement changes.
