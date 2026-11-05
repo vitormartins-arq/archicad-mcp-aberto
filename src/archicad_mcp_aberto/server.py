@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
@@ -50,6 +51,7 @@ from archicad_mcp_aberto.tools import design_option_create as design_option_crea
 from archicad_mcp_aberto.tools import drawings as drawings_tool
 from archicad_mcp_aberto.tools import grids as grids_tool
 from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
+from archicad_mcp_aberto.tools import hotspot_dimensions as hotspot_dimensions_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -76,6 +78,7 @@ from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import window_capture as window_capture_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 from archicad_mcp_aberto.tools import zones_read as zones_read_tool
@@ -1951,6 +1954,122 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Tapir. Never saves."""
         return await surfaces_tool.create_surfaces(
             client_of(ctx), surfaces, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_element_hotspots(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 elements' hotspots: x, y, z, neigId and inIndex, plus an object's
+        origin and angle. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.list_element_hotspots(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_favorite(ctx: Context, name: str, port: int | None = None) -> dict:
+        """Read what a Dimension favorite holds: layer, pens, marker, witness lines and text
+        (font, size, pen, frame). Creates nothing. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimension_favorite(client_of(ctx), name, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimensions(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 dimensions: settings, line, and each witness point with its
+        reference, location, measured value and text. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimensions(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_dimensions_over_hotspots(
+        ctx: Context,
+        element_guids: list[str],
+        dimension_guids: list[str] | None = None,
+        port: int | None = None,
+        clearance: float = 0.14,
+    ) -> dict:
+        """List dimension lines crossing the hotspot area of the given elements, or closer
+        than clearance metres, for all dimensions unless dimension_guids is given. Run it
+        after dimensioning, then look at get_plan_window_image. Needs the
+        ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.check_dimensions_over_hotspots(
+            client_of(ctx), element_guids, dimension_guids, port, clearance
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_archicad_window_image(
+        ctx: Context, port: int | None = None, region: list[int] | None = None
+    ) -> list:
+        """See the Archicad window as the user sees it, whatever it shows: plan, section, 3D,
+        layout, schedule, worksheet or an open dialog. region [left, top, right, bottom] in
+        pixels of the full window shows only that part. Use it to check your work: numbers do
+        not prove legibility. Windows only; the window must not be minimized."""
+        result = await window_capture_tool.get_archicad_window_image(client_of(ctx), port, region)
+        note = {k: result[k] for k in ("port", "title", "width", "height")}
+        return [note, Image(data=result["png"], format="png")]
+
+    @mcp.tool(annotations=VIEW)
+    async def fit_in_window(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Zoom the current window to these elements, to look at them with
+        get_archicad_window_image. Changes the view, no element."""
+        return await window_capture_tool.fit_in_window(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def window_zoom(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> dict:
+        """Read the area the current plan, section, detail, worksheet or layout window shows or,
+        given zoom {xMin, yMin, xMax, yMax} in metres, show that area. Changes the view, no
+        element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.window_zoom(client_of(ctx), zoom, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def pan_window(
+        ctx: Context, right: float = 0.0, up: float = 0.0, port: int | None = None
+    ) -> dict:
+        """Move the current 2D window's view by this many metres, keeping the zoom. Changes the
+        view, no element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.pan_window(client_of(ctx), right, up, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def open_navigator_item(
+        ctx: Context, navigator_item_guid: str, port: int | None = None
+    ) -> dict:
+        """Show a story, section, detail, worksheet or layout from the navigator, to look at it
+        with get_archicad_window_image. Changes the open window, no element. A schedule cannot
+        be opened from here: ask the user to open it, then look at the window."""
+        return await window_capture_tool.open_navigator_item(
+            client_of(ctx), navigator_item_guid, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_plan_window_image(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> Image:
+        """See the current floor plan or other 2D window as an image, showing zoom {xMin, yMin,
+        xMax, yMax} in metres if given; the zoom returns afterwards. Changes no element. Needs
+        the ArchicadMcpAberto add-on, revision R18."""
+        result = await hotspot_dimensions_tool.get_plan_window_image(client_of(ctx), zoom, port)
+        return Image(data=base64.b64decode(result["image"]), format="png")
+
+    @mcp.tool(annotations=WRITE)
+    async def create_linear_dimensions(
+        ctx: Context,
+        dimensions: list[hotspot_dimensions_tool.LinearDimension],
+        favorite: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 associative linear dimensions, each with reference_point,
+        direction and witnesses [{element_guid, in_index or reference: "origin"}], from one
+        Dimension favorite or the tool defaults. Apply with explicit port and single-use
+        token; one Undo step, each read back, text settings compared with the favorite.
+        Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await hotspot_dimensions_tool.create_linear_dimensions(
+            client_of(ctx), dimensions, favorite, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

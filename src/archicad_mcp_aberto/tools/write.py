@@ -681,6 +681,11 @@ OPERATIONS["create_surfaces"] = (
     "surface_receipt_id",
     "Each surface is a copy of its base surface with the asked changes; nothing is overwritten.",
 )
+OPERATIONS["create_linear_dimensions"] = (
+    "linear dimension",
+    "dimension_receipt_id",
+    "Dimensions are made by the ArchicadMcpAberto add-on, all in one Undo step.",
+)
 OPERATIONS["create_grid_elements"] = (
     "grid line",
     "grid_receipt_id",

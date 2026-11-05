@@ -27,6 +27,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    hotspot_dimensions,
     ifc,
     interior_elevations,
     issues,
@@ -238,6 +239,23 @@ INPUTS = {
     "move_navigator_items": {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_element_hotspots": {"element_guids": [GUID]},
+    "get_dimension_favorite": {"name": "COTA"},
+    "check_dimensions_over_hotspots": {"element_guids": [GUID]},
+    "get_plan_window_image": {},
+    "get_dimensions": {"element_guids": [GUID]},
+    "create_linear_dimensions": {
+        "dimensions": [
+            {
+                "reference_point": {"x": 0, "y": 0},
+                "direction": {"x": 1, "y": 0},
+                "witnesses": [
+                    {"element_guid": GUID, "in_index": 1},
+                    {"element_guid": GUID, "in_index": 2},
+                ],
+            }
+        ]
     },
     "list_grid_elements": {},
     "create_grid_elements": {
@@ -519,6 +537,7 @@ TARGETED = {
     name: function
     for module in (
         camera_paths,
+        hotspot_dimensions,
         model_tasks,
         attribute_properties,
         attributes_details,
@@ -629,6 +648,14 @@ def client(first, second, reversed_ports=False):
 async def test_all_registered_targeted_tools_have_cases():
     tools = await create_server().list_tools()
     registered = {tool.name for tool in tools if "port" in tool.inputSchema["properties"]}
+    # These act on the open window and pick the port with resolve_port, like the others.
+    registered -= {
+        "get_archicad_window_image",
+        "open_navigator_item",
+        "fit_in_window",
+        "window_zoom",
+        "pan_window",
+    }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()
 
