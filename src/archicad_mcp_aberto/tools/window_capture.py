@@ -14,12 +14,13 @@ import struct
 import sys
 import zlib
 
-from archicad_mcp_aberto.connection import ArchicadClient, resolve_port
+from archicad_mcp_aberto.connection import ArchicadBusy, ArchicadClient, resolve_port
 
 PW_RENDERFULLCONTENT = 2
 SRCCOPY_BI_RGB = 0
 DIB_RGB_COLORS = 0
 ARCHICAD_TITLE = "Archicad"
+_known_projects: dict[int, str] = {}
 
 
 def encode_png(width: int, height: int, bgra: bytes) -> bytes:
@@ -165,9 +166,19 @@ async def get_archicad_window_image(
     bottom] in pixels of the full window shows only that part."""
     if sys.platform != "win32":
         raise ValueError("Seeing the Archicad window is only available on Windows.")
-    port = await resolve_port(client, port)
-    info = await client.tapir(port, "GetProjectInfo", {})
-    name = info.get("projectName") or ""
+    try:
+        port = await resolve_port(client, port)
+    except ArchicadBusy:
+        if port is None:
+            raise
+    # A dialog or tool in use makes Archicad answer "busy", and that is when seeing it helps
+    # most, so the last name known for this port serves, or the only window there is.
+    try:
+        info = await client.tapir(port, "GetProjectInfo", {})
+        name = info.get("projectName") or ""
+        _known_projects[port] = name
+    except ArchicadBusy:
+        name = _known_projects.get(port, "")
     windows = _windows(name)
     if not windows:
         raise ValueError(f"No Archicad window with {name!r} in its title was found.")
