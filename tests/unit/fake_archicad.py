@@ -1108,6 +1108,12 @@ class FakeArchicad:
                 row = self.element_hotspots.get(guid, DEFAULT_HOTSPOTS)
                 rows.append({"elementId": {"guid": guid}, **deepcopy(row)})
             return {"elements": rows}
+        if name == "GetDimensions":
+            return {
+                "elements": [
+                    {"elementId": e["elementId"], "witnessPoints": []} for e in args["elements"]
+                ]
+            }
         if name == "GetDimensionFavorite":
             settings = self.dimension_favorites.get(args["name"])
             if settings is None:
@@ -1116,13 +1122,15 @@ class FakeArchicad:
         favorite = self.dimension_favorites.get(args.get("favorite"), {})
         rows = []
         for index, dimension in enumerate(args["dimensions"]):
-            rows.append({
-                "elementId": {"guid": f"00000000-0000-4000-8000-{index:012d}"},
-                "floorIndex": dimension["floorIndex"],
-                "settings": deepcopy(favorite),
-                "witnessPoints": deepcopy(dimension["witnessPoints"]),
-                "textDifferences": list(self.dimension_text_differences),
-            })
+            rows.append(
+                {
+                    "elementId": {"guid": f"00000000-0000-4000-8000-{index:012d}"},
+                    "floorIndex": dimension["floorIndex"],
+                    "settings": deepcopy(favorite),
+                    "witnessPoints": deepcopy(dimension["witnessPoints"]),
+                    "textDifferences": list(self.dimension_text_differences),
+                }
+            )
         return {"elements": rows}
 
     def _own_addon(self, params: dict) -> dict:
@@ -1135,7 +1143,12 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
-        if name in {"GetElementHotspots", "GetDimensionFavorite", "CreateLinearDimensions"}:
+        if name in {
+            "GetElementHotspots",
+            "GetDimensionFavorite",
+            "GetDimensions",
+            "CreateLinearDimensions",
+        }:
             return ok({"addOnCommandResponse": self._dimension(name, args)})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
