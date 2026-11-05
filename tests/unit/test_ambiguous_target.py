@@ -27,6 +27,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    hotspot_dimensions,
     ifc,
     interior_elevations,
     issues,
@@ -238,6 +239,21 @@ INPUTS = {
     "move_navigator_items": {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_element_hotspots": {"element_guids": [GUID]},
+    "get_dimension_favorite": {"name": "COTA"},
+    "get_dimensions": {"element_guids": [GUID]},
+    "create_linear_dimensions": {
+        "dimensions": [
+            {
+                "reference_point": {"x": 0, "y": 0},
+                "direction": {"x": 1, "y": 0},
+                "witnesses": [
+                    {"element_guid": GUID, "in_index": 1},
+                    {"element_guid": GUID, "in_index": 2},
+                ],
+            }
+        ]
     },
     "list_grid_elements": {},
     "create_grid_elements": {
@@ -519,6 +535,7 @@ TARGETED = {
     name: function
     for module in (
         camera_paths,
+        hotspot_dimensions,
         model_tasks,
         attribute_properties,
         attributes_details,

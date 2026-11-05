@@ -50,6 +50,7 @@ from archicad_mcp_aberto.tools import design_option_create as design_option_crea
 from archicad_mcp_aberto.tools import drawings as drawings_tool
 from archicad_mcp_aberto.tools import grids as grids_tool
 from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
+from archicad_mcp_aberto.tools import hotspot_dimensions as hotspot_dimensions_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -1951,6 +1952,48 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Tapir. Never saves."""
         return await surfaces_tool.create_surfaces(
             client_of(ctx), surfaces, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_element_hotspots(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 elements' hotspots: x, y, z, neigId and inIndex, plus an object's
+        origin and angle. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.list_element_hotspots(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_favorite(ctx: Context, name: str, port: int | None = None) -> dict:
+        """Read what a Dimension favorite holds: layer, pens, marker, witness lines and text
+        (font, size, pen, frame). Creates nothing. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimension_favorite(client_of(ctx), name, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimensions(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 dimensions: settings, line, and each witness point with its
+        reference, location, measured value and text. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimensions(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_linear_dimensions(
+        ctx: Context,
+        dimensions: list[hotspot_dimensions_tool.LinearDimension],
+        favorite: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 associative linear dimensions, each with reference_point,
+        direction and witnesses [{element_guid, in_index or reference: "origin"}], from one
+        Dimension favorite or the tool defaults. Apply with explicit port and single-use
+        token; one Undo step, each read back, text settings compared with the favorite.
+        Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await hotspot_dimensions_tool.create_linear_dimensions(
+            client_of(ctx), dimensions, favorite, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

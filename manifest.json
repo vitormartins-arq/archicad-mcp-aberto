@@ -560,6 +560,22 @@
       "description": "Preview or move View Map and Layout Book items into other folders. Read back after."
     },
     {
+      "name": "list_element_hotspots",
+      "description": "Read elements' hotspots with coordinates and neig data."
+    },
+    {
+      "name": "get_dimension_favorite",
+      "description": "Read what a Dimension favorite holds, text included."
+    },
+    {
+      "name": "get_dimensions",
+      "description": "Read dimensions with witness points, measured values and text."
+    },
+    {
+      "name": "create_linear_dimensions",
+      "description": "Preview or create associative dimensions between hotspots from a favorite."
+    },
+    {
       "name": "list_grid_elements",
       "description": "List grid lines with start, end, story and layer (ArchicadMcpAberto add-on)."
     },

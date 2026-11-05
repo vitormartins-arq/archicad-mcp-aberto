@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **164 registered tools**: **60 read-only**, **3 view/session actions** and
-**101 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **168 registered tools**: **63 read-only**, **3 view/session actions** and
+**102 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -159,6 +159,10 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
+| `list_element_hotspots` | Read | Hotspots of elements with coordinates and neig data; needs the add-on | no |
+| `get_dimension_favorite` | Read | What a Dimension favorite holds, text included; needs the add-on | no |
+| `get_dimensions` | Read | Dimensions with witness points, measured values and text; needs the add-on | no |
+| `create_linear_dimensions` | Write | Associative dimensions between hotspots from a favorite; needs the add-on | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 | `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
