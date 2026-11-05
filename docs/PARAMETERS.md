@@ -152,7 +152,7 @@ upper limit or claim the preview enforces a bound that was not returned. Read-ba
 after the parameter script remains mandatory. Private library scripts stay private.
 
 Before actual edits use the existing `begin_model_task` checkpoint, which preserves
-both disk and unsaved state with verified copies in **Anteriores**, then re-preview
+both disk and unsaved state with verified copies in **00 - Anteriores**, then re-preview
 parameter edits after the checkpoint and finish with `finish_model_task` to save the
 same PLN. These tools already exist in current source; an old editable installation
 can hide them. Updating the Python server does not require closing Archicad or a new

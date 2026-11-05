@@ -88,7 +88,7 @@ def native_cameras(native_task, monkeypatch):
         assert list(state["receipts"].glob("*.path-*-prepared.json"))
         assert any(
             p.read_bytes() == b"UNSAVED_BEFORE_TASK"
-            for p in (state["source"].parent / "Anteriores").glob("*.pln")
+            for p in (state["source"].parent / "00 - Anteriores").glob("*.pln")
         )
         plan = tokens.pop(parameters["nativeToken"])
         assert plan["sealed"]
@@ -163,7 +163,7 @@ async def test_preview_does_not_save_or_create(native_cameras):
     async with client() as c:
         await cameras.create_camera_paths_from_views(c, port=19723)
     assert native_cameras["saves"] == native_cameras["creates"] == 0
-    assert not (native_cameras["source"].parent / "Anteriores").exists()
+    assert not (native_cameras["source"].parent / "00 - Anteriores").exists()
 
 
 async def test_requested_sources_are_sorted_in_navigator_order(native_cameras):
@@ -192,7 +192,7 @@ async def test_native_model_change_refuses_seal_before_any_backup_or_creation(na
         with pytest.raises(AddOnError, match="Model changed"):
             await cameras.create_camera_paths_from_views(c, port=19723)
     assert native_cameras["creates"] == native_cameras["saves"] == 0
-    assert not (native_cameras["source"].parent / "Anteriores").exists()
+    assert not (native_cameras["source"].parent / "00 - Anteriores").exists()
 
 
 async def test_failed_state_restoration_blocks_preview(native_cameras):
