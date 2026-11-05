@@ -242,6 +242,8 @@ INPUTS = {
     },
     "list_element_hotspots": {"element_guids": [GUID]},
     "get_dimension_favorite": {"name": "COTA"},
+    "check_dimensions_over_hotspots": {"element_guids": [GUID]},
+    "get_plan_window_image": {},
     "get_dimensions": {"element_guids": [GUID]},
     "create_linear_dimensions": {
         "dimensions": [

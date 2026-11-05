@@ -1162,6 +1162,8 @@ class FakeArchicad:
             "CreateLinearDimensions",
         }:
             return ok({"addOnCommandResponse": self._dimension(name, args)})
+        if name == "GetPlanWindowImage":
+            return ok({"addOnCommandResponse": {"image": "iVBORw0KGgo="}})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
         if name == "Set3DCamera":

@@ -208,3 +208,34 @@ async def test_a_dimension_archicad_dropped_afterwards_fails_verification():
             c, items, FAVORITE, 19723, False, preview["confirmation_token"]
         )
     assert result["items"][0]["mismatches"] == ["witness points dropped"]
+
+
+async def test_a_line_over_a_symbol_is_reported():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        fake.created_dimensions["00000000-0000-4000-8000-000000000000"] = {
+            "direction": {"x": 1.0, "y": 0.0},
+            "witnessPoints": [
+                {"position": {"x": 0.0, "y": 2.0}},
+                {"position": {"x": 5.0, "y": 2.0}},
+            ],
+        }
+        fake.elements["00000000-0000-4000-8000-000000000000"] = "Dimension"
+        crossing = await tool.check_dimensions_over_hotspots(c, [FIRST], None, 19723)
+        fake.created_dimensions["00000000-0000-4000-8000-000000000000"]["witnessPoints"] = [
+            {"position": {"x": 0.0, "y": 2.1}},
+            {"position": {"x": 5.0, "y": 2.1}},
+        ]
+        near = await tool.check_dimensions_over_hotspots(c, [FIRST], None, 19723)
+    assert [r["element_guid"] for r in crossing["crossing"]] == [FIRST]
+    assert not near["crossing"] and [r["element_guid"] for r in near["close"]] == [FIRST]
+
+
+async def test_the_plan_window_image_comes_from_the_add_on():
+    fake = model()
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await tool.get_plan_window_image(
+            c, {"xMin": 0, "yMin": 0, "xMax": 1, "yMax": 1}, 19723
+        )
+    assert result["port"] == 19723 and result["image"]
+    assert fake.own_addon_requests[-1]["parameters"]["zoom"]["xMax"] == 1

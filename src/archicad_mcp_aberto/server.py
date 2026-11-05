@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
@@ -1977,6 +1978,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Read up to 200 dimensions: settings, line, and each witness point with its
         reference, location, measured value and text. Needs the ArchicadMcpAberto add-on."""
         return await hotspot_dimensions_tool.get_dimensions(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_dimensions_over_hotspots(
+        ctx: Context,
+        element_guids: list[str],
+        dimension_guids: list[str] | None = None,
+        port: int | None = None,
+        clearance: float = 0.14,
+    ) -> dict:
+        """List dimension lines crossing the hotspot area of the given elements, or closer
+        than clearance metres, for all dimensions unless dimension_guids is given. Run it
+        after dimensioning, then look at get_plan_window_image. Needs the
+        ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.check_dimensions_over_hotspots(
+            client_of(ctx), element_guids, dimension_guids, port, clearance
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_plan_window_image(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> Image:
+        """See the current floor plan or other 2D window as an image, showing zoom {xMin, yMin,
+        xMax, yMax} in metres if given; the zoom returns afterwards. Changes no element. Needs
+        the ArchicadMcpAberto add-on, revision R18."""
+        result = await hotspot_dimensions_tool.get_plan_window_image(client_of(ctx), zoom, port)
+        return Image(data=base64.b64decode(result["image"]), format="png")
 
     @mcp.tool(annotations=WRITE)
     async def create_linear_dimensions(

@@ -411,6 +411,67 @@ async def _check_witness_elements(client, receipt):
                 item.update(status="verification_failed", mismatches=["witness elements changed"])
 
 
+async def get_plan_window_image(
+    client: ArchicadClient, zoom: dict | None = None, port: int | None = None
+) -> dict:
+    """The current 2D window as base64 PNG, showing zoom {xMin, yMin, xMax, yMax} if given."""
+    port = await resolve_port(client, port)
+    response = await _addon(client, port, "GetPlanWindowImage", {"zoom": zoom} if zoom else {})
+    return {"port": port, "image": response["image"]}
+
+
+async def check_dimensions_over_hotspots(
+    client: ArchicadClient,
+    element_guids: list[str],
+    dimension_guids: list[str] | None = None,
+    port: int | None = None,
+    clearance: float = 0.14,
+) -> dict:
+    """Which dimension lines cross the hotspot area of the given elements, or pass closer than
+    clearance (metres) to it. The area is a box along the line, larger than a shape at an
+    angle to it, so a diagonal can report more than it touches. Reads only."""
+    port = await resolve_port(client, port)
+    if dimension_guids is None:
+        listed = await client.tapir(port, "GetElementsByType", {"elementType": "Dimension"})
+        dimension_guids = [e["elementId"]["guid"].upper() for e in listed.get("elements", [])]
+    rows = []
+    for start in range(0, len(dimension_guids), MAX_ELEMENTS):
+        chunk = dimension_guids[start : start + MAX_ELEMENTS]
+        rows += (await get_dimensions(client, chunk, port))["elements"]
+    spots = []
+    for start in range(0, len(element_guids), MAX_ELEMENTS):
+        chunk = element_guids[start : start + MAX_ELEMENTS]
+        spots += (await list_element_hotspots(client, chunk, port))["elements"]
+    crossing, close = [], []
+    for row in rows:
+        points = row.get("witnessPoints") or []
+        direction = row.get("direction")
+        if not points or not direction:
+            continue
+        ux, uy = direction["x"], direction["y"]
+        nx, ny = -uy, ux
+        at = points[0]["position"]
+        line = at["x"] * nx + at["y"] * ny
+        ts = [p["position"]["x"] * ux + p["position"]["y"] * uy for p in points]
+        for element in spots:
+            hotspots = element.get("hotspots") or []
+            if not hotspots:
+                continue
+            along = [s["x"] * ux + s["y"] * uy for s in hotspots]
+            across = [s["x"] * nx + s["y"] * ny for s in hotspots]
+            if max(along) < min(ts) or min(along) > max(ts):
+                continue
+            found = {
+                "dimension_guid": row["elementId"]["guid"],
+                "element_guid": element["elementId"]["guid"],
+            }
+            if min(across) <= line <= max(across):
+                crossing.append(found)
+            elif min(across) - clearance <= line <= max(across) + clearance:
+                close.append(found)
+    return {"port": port, "dimensions": len(rows), "crossing": crossing, "close": close}
+
+
 async def create_linear_dimensions(
     client: ArchicadClient,
     dimensions: list[dict | LinearDimension],

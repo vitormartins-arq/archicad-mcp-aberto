@@ -572,6 +572,14 @@
       "description": "Read dimensions with witness points, measured values and text."
     },
     {
+      "name": "check_dimensions_over_hotspots",
+      "description": "List dimension lines crossing or close to the hotspot area of given elements."
+    },
+    {
+      "name": "get_plan_window_image",
+      "description": "See the current floor plan or other 2D window as an image."
+    },
+    {
       "name": "create_linear_dimensions",
       "description": "Preview or create associative dimensions between hotspots from a favorite."
     },
