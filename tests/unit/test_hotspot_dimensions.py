@@ -83,7 +83,7 @@ async def test_origin_is_chosen_by_coordinate_and_the_favorite_reaches_the_add_o
         )
     item = result["items"][0]
     assert item["status"] == "verified"
-    request = fake.own_addon_requests[-1]
+    request = next(r for r in fake.own_addon_requests if r["command"] == "CreateLinearDimensions")
     assert request["command"] == "CreateLinearDimensions"
     assert request["parameters"]["favorite"] == FAVORITE
     assert item["after"]["witnessPoints"][0]["inIndex"] == 9
