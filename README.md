@@ -27,7 +27,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **164 registered tools**: **60 read-only**, **3 view/session actions** and
+Pre-alpha with **165 registered tools**: **61 read-only**, **3 view/session actions** and
 **101 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -50,7 +50,7 @@ Lengths use metres and angles use radians regardless of project display units.
   operations that the official JSON API and Tapir do not expose.
 - Run every automated test without Archicad against the simulated adapter; fixtures say
   whether they came from a live response or from the Tapir/API source contract.
-Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **60 read-only** tools and
+Pre-alpha. Phase 1 is nearly complete: **26 tools**, with **61 read-only** tools and
 **12 write** tools. Writes preview by default and require a single-use confirmation token
 and explicit port to apply. Model edits do not save the project. Rotation, GDL parameters and
 limited straight-wall editing are available, tested only with the simulated Archicad
@@ -60,6 +60,7 @@ in this delivery; operator live validation of these additions remains pending.
 |---|---|---|---|
 | `discover_archicad` | Read | Open instances, ports, project names and counts | for project name |
 | `list_elements` | Read | Paged element GUIDs, optionally by type | no |
+| `audit_geometry` | Read | Bounded 3D-bounds triage, paginated findings only; see [scope and limits](docs/GEOMETRY_AUDIT.md) | no |
 | `get_selection` | Read | Current selection, without changing it | no |
 | `list_properties` | Read | Property definitions | no |
 | `get_properties` | Read | Property values, with per-item errors | no |

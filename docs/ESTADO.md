@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Geometry audit / 5 November 2026:** `audit_geometry` adds bounded read-only
+  triage over the existing official 3D-bounds API. Reports only review findings and
+  batch counts; no Tapir/add-on change, model mutation or whole-model scan.
+  38 focused tests and the full 3,277-test offline suite passed; Ruff check/format
+  passed. Live verification of this new tool remains pending.
+  See `GEOMETRY_AUDIT.md`; no installed server or project was changed.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct
