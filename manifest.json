@@ -714,6 +714,26 @@
     {
       "name": "replace_object_libraries",
       "description": "Preview or replace existing Object libraries using explicit mounting references."
+    },
+    {
+      "name": "list_publisher_sets",
+      "description": "Read publisher sets with their saved output path."
+    },
+    {
+      "name": "publish_publisher_set",
+      "description": "Preview and publish a publisher set or only selected items, optionally merged into one PDF."
+    },
+    {
+      "name": "get_publisher_set_items",
+      "description": "Read the folders and items of one publisher set."
+    },
+    {
+      "name": "list_layouts",
+      "description": "Read Layout Book layouts, optionally filtered by text."
+    },
+    {
+      "name": "save_layouts_as_pdf",
+      "description": "Preview and save layouts as one merged PDF without using the Publisher."
     }
   ],
   "compatibility": {
