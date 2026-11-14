@@ -2362,20 +2362,89 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """List publisher sets with their saved output path. Requires companion add-on."""
         return await publisher.list_publisher_sets(client_of(ctx), port)
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_publisher_set_items(
+        ctx: Context, publisher_set_name: str, port: int | None = None
+    ) -> dict:
+        """List the folders and items of one publisher set with their GUIDs and paths.
+        Requires Tapir."""
+        return await publisher.get_publisher_set_items(client_of(ctx), publisher_set_name, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layouts(
+        ctx: Context, name_contains: str | None = None, port: int | None = None
+    ) -> dict:
+        """List Layout Book layouts (GUID, ID, name, folder path), optionally filtered by
+        text. Requires Tapir."""
+        return await publisher.list_layouts(client_of(ctx), name_contains, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def add_layouts_to_publisher_set(
+        ctx: Context,
+        publisher_set_name: str,
+        layout_guids: list[str],
+        parent_guid: str | None = None,
+        folder_name: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Add Layout Book layouts to a publisher set, in the given order, under parent_guid
+        (default: set root) and optionally inside folder_name, found or created there.
+        Preview first, explicit port and one-use token to apply. No Undo; remove with
+        remove_publisher_items. Requires companion add-on and Tapir."""
+        return await publisher.add_layouts_to_publisher_set(
+            client_of(ctx),
+            publisher_set_name,
+            layout_guids,
+            parent_guid,
+            folder_name,
+            port,
+            dry_run,
+            confirmation_token,
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def remove_publisher_items(
+        ctx: Context,
+        publisher_set_name: str,
+        item_guids: list[str],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Remove items or folders from a publisher set; layouts stay in the Layout Book.
+        Preview first, explicit port and one-use token to apply. No Undo. Requires companion
+        add-on and Tapir."""
+        return await publisher.remove_publisher_items(
+            client_of(ctx), publisher_set_name, item_guids, port, dry_run, confirmation_token
+        )
+
     @mcp.tool(annotations=WRITE)
     async def publish_publisher_set(
         ctx: Context,
         publisher_set_name: str,
         output_folder: str,
+        selected_item_guids: list[str] | None = None,
+        merged_pdf_name: str | None = None,
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Publish one publisher set to an existing folder. Preview first, explicit port
-        and one-use token to apply. Reports files written and the saved path afterwards;
-        the API cannot change the saved path directly. No Undo. Requires companion add-on."""
+        """Publish a publisher set, or only selected_item_guids (items of that set, from
+        get_publisher_set_items), to an existing folder. With merged_pdf_name, the selection
+        is merged in the given order into that single PDF and only it is written. Preview
+        first, explicit port and one-use token to apply. Only publish when the user asked.
+        No Undo. Requires companion add-on."""
         return await publisher.publish_publisher_set(
-            client_of(ctx), publisher_set_name, output_folder, port, dry_run, confirmation_token
+            client_of(ctx),
+            publisher_set_name,
+            output_folder,
+            port,
+            dry_run,
+            confirmation_token,
+            selected_item_guids,
+            merged_pdf_name,
         )
 
     @mcp.tool(annotations=WRITE)

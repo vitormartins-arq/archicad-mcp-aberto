@@ -20,6 +20,7 @@ dependencies = [
   "mcp>=1.30,<2",
   "httpx>=0.28,<1",
   "pydantic>=2.11,<3",
+  "pypdf>=5,<7",
 ]
 
 [project.scripts]

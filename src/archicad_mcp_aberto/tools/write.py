@@ -706,6 +706,16 @@ OPERATIONS["publish_publisher_set"] = (
     "publish_receipt_id",
     "Publishes files to the reviewed folder; no Undo.",
 )
+OPERATIONS["add_layouts_to_publisher_set"] = (
+    "publisher set change",
+    "publisher_receipt_id",
+    "Adds publisher items; Undo does not cover it.",
+)
+OPERATIONS["remove_publisher_items"] = (
+    "publisher set change",
+    "publisher_receipt_id",
+    "Removes publisher items; Undo does not cover it.",
+)
 OPERATIONS["save_next_project_revision"] = (
     "revision save",
     "save_receipt_id",

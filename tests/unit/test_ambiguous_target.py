@@ -112,6 +112,10 @@ INPUTS = {
     "save_next_project_revision": {},
     "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
     "list_publisher_sets": {},
+    "get_publisher_set_items": {"publisher_set_name": "PDF"},
+    "list_layouts": {},
+    "add_layouts_to_publisher_set": {"publisher_set_name": "PDF", "layout_guids": [GUID]},
+    "remove_publisher_items": {"publisher_set_name": "PDF", "item_guids": [GUID]},
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
     "replace_object_libraries": {
@@ -753,7 +757,13 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
             assert not untouched.calls
             return
-        if name in {"list_publisher_sets", "publish_publisher_set"}:
+        if name in {
+            "list_publisher_sets",
+            "publish_publisher_set",
+            "get_publisher_set_items",
+            "add_layouts_to_publisher_set",
+            "remove_publisher_items",
+        }:
             from archicad_mcp_aberto.connection import AddOnError
 
             with pytest.raises(AddOnError):

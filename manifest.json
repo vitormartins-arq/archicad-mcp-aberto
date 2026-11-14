@@ -721,7 +721,23 @@
     },
     {
       "name": "publish_publisher_set",
-      "description": "Preview and publish one publisher set to an existing folder."
+      "description": "Preview and publish a publisher set or only selected items, optionally merged into one PDF."
+    },
+    {
+      "name": "get_publisher_set_items",
+      "description": "Read the folders and items of one publisher set."
+    },
+    {
+      "name": "list_layouts",
+      "description": "Read Layout Book layouts, optionally filtered by text."
+    },
+    {
+      "name": "add_layouts_to_publisher_set",
+      "description": "Preview and add layouts to a publisher set, optionally inside a folder."
+    },
+    {
+      "name": "remove_publisher_items",
+      "description": "Preview and remove items or folders from a publisher set."
     }
   ],
   "compatibility": {
