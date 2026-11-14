@@ -24,8 +24,8 @@ JSON oficial e o Tapir. Nada sai do computador: sem telemetria e sem internet.
 
 ## Situação
 
-Pré-alfa com **170 ferramentas registradas**: **63 somente de leitura**, **3 ações de
-visualização/sessão** e **104 que escrevem no modelo ou no projeto**. A classificação
+Pré-alfa com **169 ferramentas registradas**: **63 somente de leitura**, **3 ações de
+visualização/sessão** e **103 que escrevem no modelo ou no projeto**. A classificação
 pré-alfa permanece porque as ferramentas mais antigas têm validações registradas no
 ArchiCAD, enquanto parte das mais novas ainda aguarda conferência ao vivo. A lista
 completa está no [README em inglês](../README.md#status).

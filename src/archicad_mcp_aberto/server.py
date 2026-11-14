@@ -2379,45 +2379,27 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await publisher.list_layouts(client_of(ctx), name_contains, port)
 
     @mcp.tool(annotations=WRITE)
-    async def add_layouts_to_publisher_set(
+    async def save_layouts_as_pdf(
         ctx: Context,
-        publisher_set_name: str,
         layout_guids: list[str],
-        parent_guid: str | None = None,
-        folder_name: str | None = None,
+        output_folder: str,
+        merged_pdf_name: str,
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Add Layout Book layouts to a publisher set, in the given order, under parent_guid
-        (default: set root) and optionally inside folder_name, found or created there.
-        Preview first, explicit port and one-use token to apply. No Undo; remove with
-        remove_publisher_items. Requires companion add-on and Tapir."""
-        return await publisher.add_layouts_to_publisher_set(
+        """Save Layout Book layouts (GUIDs from list_layouts) as one merged PDF, pages in the
+        given order, for example ground floor then first floor of one house. Does not use or
+        change the Publisher. Preview first, explicit port and one-use token to apply. Only
+        when the user asked. Requires companion add-on and Tapir."""
+        return await publisher.save_layouts_as_pdf(
             client_of(ctx),
-            publisher_set_name,
             layout_guids,
-            parent_guid,
-            folder_name,
+            output_folder,
+            merged_pdf_name,
             port,
             dry_run,
             confirmation_token,
-        )
-
-    @mcp.tool(annotations=WRITE)
-    async def remove_publisher_items(
-        ctx: Context,
-        publisher_set_name: str,
-        item_guids: list[str],
-        port: int | None = None,
-        dry_run: bool = True,
-        confirmation_token: str | None = None,
-    ) -> dict:
-        """Remove items or folders from a publisher set; layouts stay in the Layout Book.
-        Preview first, explicit port and one-use token to apply. No Undo. Requires companion
-        add-on and Tapir."""
-        return await publisher.remove_publisher_items(
-            client_of(ctx), publisher_set_name, item_guids, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=WRITE)

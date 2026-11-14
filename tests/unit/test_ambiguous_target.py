@@ -114,8 +114,11 @@ INPUTS = {
     "list_publisher_sets": {},
     "get_publisher_set_items": {"publisher_set_name": "PDF"},
     "list_layouts": {},
-    "add_layouts_to_publisher_set": {"publisher_set_name": "PDF", "layout_guids": [GUID]},
-    "remove_publisher_items": {"publisher_set_name": "PDF", "item_guids": [GUID]},
+    "save_layouts_as_pdf": {
+        "layout_guids": [GUID],
+        "output_folder": str(Path.cwd()),
+        "merged_pdf_name": "x",
+    },
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
     "replace_object_libraries": {
@@ -737,6 +740,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             "begin_model_task",
             "finish_model_task",
             "create_camera_paths_from_views",
+            "save_layouts_as_pdf",
         }:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -761,8 +765,6 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             "list_publisher_sets",
             "publish_publisher_set",
             "get_publisher_set_items",
-            "add_layouts_to_publisher_set",
-            "remove_publisher_items",
         }:
             from archicad_mcp_aberto.connection import AddOnError
 

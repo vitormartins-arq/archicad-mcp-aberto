@@ -116,15 +116,14 @@ async def test_stories_and_project():
 async def test_server_registers_current_tool_surface():
     server = create_server(lambda: client(model()))
     tools = await server.list_tools()
-    assert len(tools) == 170
+    assert len(tools) == 169
     writes = {
         "begin_model_task",
         "finish_model_task",
         "create_camera_paths_from_views",
         "save_project_as",
         "publish_publisher_set",
-        "add_layouts_to_publisher_set",
-        "remove_publisher_items",
+        "save_layouts_as_pdf",
         "save_next_project_revision",
         "replace_object_libraries",
         "create_walls",

@@ -732,12 +732,8 @@
       "description": "Read Layout Book layouts, optionally filtered by text."
     },
     {
-      "name": "add_layouts_to_publisher_set",
-      "description": "Preview and add layouts to a publisher set, optionally inside a folder."
-    },
-    {
-      "name": "remove_publisher_items",
-      "description": "Preview and remove items or folders from a publisher set."
+      "name": "save_layouts_as_pdf",
+      "description": "Preview and save layouts as one merged PDF without using the Publisher."
     }
   ],
   "compatibility": {

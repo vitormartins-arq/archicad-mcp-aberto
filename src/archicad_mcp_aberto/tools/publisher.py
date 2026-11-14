@@ -289,32 +289,27 @@ async def publish_publisher_set(
     )
 
 
-# Add and remove items -----------------------------------------------------------------
+# Save layouts as PDF ------------------------------------------------------------------
 
 
-async def _add_plan(client, requests, port, operation):
+class SaveLayoutsRequest(write.InputModel):
+    layout_guids: list[str]
+    output_folder: str
+    merged_pdf_name: str
+
+
+async def _save_plan(client, requests, port, operation):
     (request,) = requests
     port = await resolve_port(client, port)
-    root = await _set(client, port, request.publisher_set_name)
-    layout_guids = _guids(request.layout_guids, "layout_guids")
+    folder = _folder(request.output_folder)
+    guids = _guids(request.layout_guids, "layout_guids")
     layouts = {r["guid"]: r for r in (await list_layouts(client, None, port))["layouts"]}
-    missing = [g for g in layout_guids if g not in layouts]
+    missing = [g for g in guids if g not in layouts]
     if missing:
         raise ValueError(f"Not Layout Book layouts: {', '.join(missing)}")
-    tree = await _tree(client, port, "PublisherSets", request.publisher_set_name)
-    rows = {g: _row(i, g, p) for i, g, p in _walk(tree)}
-    parent = str(root["rootGuid"]).upper()
-    if request.parent_guid:
-        parent = _guids([request.parent_guid], "parent_guid")[0]
-        if (
-            parent != str(root["rootGuid"]).upper()
-            and rows.get(parent, {}).get("type") != "FolderItem"
-        ):
-            raise ValueError("parent_guid must be the set root or one of its folders.")
-    folder = request.folder_name.strip() if request.folder_name else None
-    if folder is not None and (not folder or len(folder) > 120):
-        raise ValueError("folder_name must be a short, non-empty name.")
-    already = {r.get("layout_guid") for r in rows.values() if r.get("layout_guid")}
+    name = _pdf_name(request.merged_pdf_name)
+    if (folder / name).exists():
+        raise ValueError(f"{name} already exists in the output folder; pick another name.")
     return {
         "operation": operation,
         "target": {"port": port},
@@ -322,65 +317,53 @@ async def _add_plan(client, requests, port, operation):
             {
                 "index": 0,
                 "status": "ready",
-                "publisher_set_name": request.publisher_set_name,
-                "parent_guid": parent,
-                "parent_path": rows.get(parent, {}).get("path", "(set root)"),
-                "folder_name": folder,
-                "layouts": [layouts[g] for g in layout_guids],
-                "already_in_set": [g for g in layout_guids if g in already],
+                "layouts": [layouts[g] for g in guids],
+                "output_folder": str(folder),
+                "merged_pdf": str(folder / name),
             }
         ],
         "warnings": [
-            "Adds publisher items in the order given; Archicad Undo does not cover this. "
-            "Remove them with remove_publisher_items."
+            "Opens each layout window, saves it as PDF to a temporary folder and merges the "
+            "pages in the order given. Only the merged PDF is written; the Publisher is untouched."
         ],
     }
 
 
-async def _add_dispatch(client, receipt):
+async def _save_dispatch(client, receipt):
     item = receipt["items"][0]
     port = receipt["target"]["port"]
-    params = {
-        "parentGuid": item["parent_guid"],
-        "layoutGuids": [r["guid"] for r in item["layouts"]],
-    }
-    if item.get("folder_name"):
-        params["folderName"] = item["folder_name"]
+    temp = Path(tempfile.mkdtemp(prefix="archicad-layout-pdf-"))
     try:
         response = await grids._addon(
-            client, port, "AddPublisherItems", params, receipt["write_timeout_seconds"]
+            client,
+            port,
+            "SaveLayoutsAsPdf",
+            {"outputPath": str(temp), "layoutGuids": [r["guid"] for r in item["layouts"]]},
+            receipt["write_timeout_seconds"],
         )
+        files = [f.get("file") for f in response.get("files") or []]
+        if len(files) != len(item["layouts"]) or not all(files):
+            raise ValueError("Archicad did not save every layout as PDF.")
+        item["merged_from"] = files
+        item["merged_pages"] = _merge([temp / f for f in files], Path(item["merged_pdf"]))
+        item["files_written"] = [Path(item["merged_pdf"]).name]
+        item["status"] = "verified"
+    except (ValueError, OSError) as exc:
+        item.update(status="failed", error=str(exc))
     except ArchicadError as exc:
         item.update(status="unknown", error=str(exc))
-        receipt["warning"] = "Outcome unknown. Read the set with get_publisher_set_items."
-        return
-    if not isinstance(response, dict):
-        item.update(status="unknown", error="Empty add-on response.")
-        return
-    item["created"] = response.get("items") or []
-    for key in ("folderGuid", "folderCreated"):
-        if key in response:
-            item[key] = response[key]
-    if response.get("error"):
-        item.update(status="failed", error=str(response["error"].get("message")))
-        return
-    try:
-        tree = await _tree(client, port, "PublisherSets", item["publisher_set_name"])
-        present = {g for _, g, _ in _walk(tree)}
-    except (ArchicadError, ValueError) as exc:
-        item.update(status="unverified", error=str(exc))
-        return
-    created = [str(c.get("itemGuid", "")).upper() for c in item["created"]]
-    ok = len(created) == len(item["layouts"]) and all(g in present for g in created)
-    item["status"] = "verified" if ok else "verification_failed"
+        receipt["warning"] = (
+            "Outcome unknown. Check Archicad and the folder; never retry this token."
+        )
+    finally:
+        shutil.rmtree(temp, ignore_errors=True)
 
 
-async def add_layouts_to_publisher_set(
+async def save_layouts_as_pdf(
     client,
-    publisher_set_name: str,
     layout_guids: list[str],
-    parent_guid: str | None = None,
-    folder_name: str | None = None,
+    output_folder: str,
+    merged_pdf_name: str,
     port: int | None = None,
     dry_run: bool = True,
     confirmation_token: str | None = None,
@@ -388,96 +371,17 @@ async def add_layouts_to_publisher_set(
     return await write._write(
         client,
         [
-            AddItemsRequest(
-                publisher_set_name=publisher_set_name,
+            SaveLayoutsRequest(
                 layout_guids=layout_guids,
-                parent_guid=parent_guid,
-                folder_name=folder_name,
+                output_folder=output_folder,
+                merged_pdf_name=merged_pdf_name,
             )
         ],
         port,
         dry_run,
         confirmation_token,
-        "add_layouts_to_publisher_set",
-        planner_override=_add_plan,
-        dispatcher_override=_add_dispatch,
-        completion_note="Publisher items changed; no project was saved and Undo does not cover it.",
-    )
-
-
-async def _remove_plan(client, requests, port, operation):
-    (request,) = requests
-    port = await resolve_port(client, port)
-    root = await _set(client, port, request.publisher_set_name)
-    guids = _guids(request.item_guids, "item_guids")
-    if str(root["rootGuid"]).upper() in guids:
-        raise ValueError("The set root cannot be removed.")
-    tree = await _tree(client, port, "PublisherSets", request.publisher_set_name)
-    rows = {g: _row(i, g, p) for i, g, p in _walk(tree)}
-    missing = [g for g in guids if g not in rows]
-    if missing:
-        raise ValueError(f"Items not in this publisher set: {', '.join(missing)}")
-    return {
-        "operation": operation,
-        "target": {"port": port},
-        "items": [
-            {
-                "index": 0,
-                "status": "ready",
-                "publisher_set_name": request.publisher_set_name,
-                "remove": [rows[g] for g in guids],
-            }
-        ],
-        "warnings": [
-            "Removes publisher items only (layouts stay in the Layout Book). A folder removes "
-            "everything inside it. Undo does not cover this."
-        ],
-    }
-
-
-async def _remove_dispatch(client, receipt):
-    item = receipt["items"][0]
-    port = receipt["target"]["port"]
-    guids = [r["guid"] for r in item["remove"]]
-    try:
-        response = await grids._addon(
-            client,
-            port,
-            "DeletePublisherItems",
-            {"itemGuids": guids},
-            receipt["write_timeout_seconds"],
-        )
-    except ArchicadError as exc:
-        item.update(status="unknown", error=str(exc))
-        return
-    if isinstance(response, dict) and response.get("error"):
-        item.update(status="failed", error=str(response["error"].get("message")))
-        return
-    try:
-        tree = await _tree(client, port, "PublisherSets", item["publisher_set_name"])
-        present = {g for _, g, _ in _walk(tree)}
-    except (ArchicadError, ValueError) as exc:
-        item.update(status="unverified", error=str(exc))
-        return
-    item["status"] = "verified" if not present.intersection(guids) else "verification_failed"
-
-
-async def remove_publisher_items(
-    client,
-    publisher_set_name: str,
-    item_guids: list[str],
-    port: int | None = None,
-    dry_run: bool = True,
-    confirmation_token: str | None = None,
-):
-    return await write._write(
-        client,
-        [RemoveItemsRequest(publisher_set_name=publisher_set_name, item_guids=item_guids)],
-        port,
-        dry_run,
-        confirmation_token,
-        "remove_publisher_items",
-        planner_override=_remove_plan,
-        dispatcher_override=_remove_dispatch,
-        completion_note="Publisher items removed; no project was saved and Undo does not cover it.",
+        "save_layouts_as_pdf",
+        planner_override=_save_plan,
+        dispatcher_override=_save_dispatch,
+        completion_note="Only the merged PDF was written; no project was saved.",
     )

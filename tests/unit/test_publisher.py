@@ -1,5 +1,7 @@
 """Publisher tools against a simulated companion add-on."""
 
+from pathlib import Path
+
 import pytest
 
 from archicad_mcp_aberto.connection import ArchicadClient
@@ -158,64 +160,45 @@ async def test_unknown_selection_and_merge_without_selection_are_refused(addon, 
             await publisher.publish_publisher_set(c, "PDF", str(out), 19723, merged_pdf_name="x")
 
 
-async def test_add_layouts_previews_then_verifies(monkeypatch, tmp_path):
+async def test_save_layouts_merges_in_order_and_writes_only_the_merged_pdf(monkeypatch, tmp_path):
     monkeypatch.setenv("ARCHICAD_MCP_RECEIPTS_DIR", str(tmp_path / "receipts"))
-    layout = "DDDDDDDD-0000-0000-0000-000000000004"
-    created = "EEEEEEEE-0000-0000-0000-000000000005"
-    state = {"added": False}
+    out = tmp_path / "out"
+    out.mkdir()
+    ground = "DDDDDDDD-0000-0000-0000-000000000004"
+    first = "EEEEEEEE-0000-0000-0000-000000000005"
     calls = []
 
     async def fake(client, port, name, parameters=None, timeout=None):
-        calls.append((name, parameters))
-        if name == "AddPublisherItems":
-            state["added"] = True
-            return {
-                "folderGuid": "F",
-                "folderCreated": True,
-                "items": [
-                    {"layoutGuid": layout, "itemGuid": created, "method": "NewNavigatorView"}
-                ],
-            }
-        return {"sets": [{"name": "PDF", "rootGuid": "G", "output": "local", "path": "C:/old"}]}
+        calls.append(name)
+        folder = Path(parameters["outputPath"])
+        _pdf(folder / "03.02 TERREO.pdf", 1)
+        _pdf(folder / "03.03 1 ANDAR.pdf", 2)
+        return {"files": [{"file": "03.02 TERREO.pdf"}, {"file": "03.03 1 ANDAR.pdf"}]}
 
     async def tree(self, port, name, parameters=None, timeout=None):
-        if parameters["navigatorMapId"] == "LayoutBook":
-            return {
-                "navigatorItemTree": {
-                    "children": [
-                        {
-                            "navigatorItem": {
-                                "type": "LayoutItem",
-                                "name": "DC",
-                                "uiId": "03.02",
-                                "navigatorItemId": {"guid": layout},
-                            }
-                        }
-                    ]
-                }
-            }
+        rows = [(ground, "03.02", "TERREO"), (first, "03.03", "1 ANDAR")]
         kids = [
             {
                 "navigatorItem": {
                     "type": "LayoutItem",
-                    "name": "DC",
-                    "navigatorItemId": {"guid": created},
+                    "uiId": i,
+                    "name": n,
+                    "navigatorItemId": {"guid": g},
                 }
             }
+            for g, i, n in rows
         ]
-        return {"navigatorItemTree": {"children": kids if state["added"] else []}}
+        return {"navigatorItemTree": {"children": kids}}
 
     monkeypatch.setattr(grids, "_addon", fake)
     monkeypatch.setattr(ArchicadClient, "tapir", tree)
     async with _client() as c:
-        preview = await publisher.add_layouts_to_publisher_set(c, "PDF", [layout], folder_name="DC")
-        assert not any(n == "AddPublisherItems" for n, _ in calls)
-        done = await publisher.add_layouts_to_publisher_set(
-            c, "PDF", [layout], None, "DC", 19723, False, preview["confirmation_token"]
+        preview = await publisher.save_layouts_as_pdf(c, [ground, first], str(out), "Bloco 01")
+        assert not calls
+        done = await publisher.save_layouts_as_pdf(
+            c, [ground, first], str(out), "Bloco 01", 19723, False, preview["confirmation_token"]
         )
-    assert done["items"][0]["status"] == "verified"
-    assert dict(calls)["AddPublisherItems"] == {
-        "parentGuid": "G",
-        "layoutGuids": [layout],
-        "folderName": "DC",
-    }
+    item = done["items"][0]
+    assert item["status"] == "verified"
+    assert item["merged_pages"] == 3
+    assert sorted(p.name for p in out.iterdir()) == ["Bloco 01.pdf"]
