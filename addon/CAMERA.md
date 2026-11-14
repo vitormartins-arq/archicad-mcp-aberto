@@ -56,14 +56,14 @@ Same run, 18 scenes saved (perspectives, a general axonometric, one cut axonomet
 40 `Get3DWindowImage` calls at 1619x865, no failure; `Show3DAll` worked. A horizontal
 cut at height h reads back as cutStatus 8, pc 1, pd h. Three faults, fixed afterwards
 and not yet retested: `twoPointPerspective` carried over from the previous camera;
-`folderPath` needed the project's top folder ("TEMPLATE LAB COCADA") first, now the first
+`folderPath` needed the project's top folder ("Project Root") first, now the first
 folder is searched anywhere; a plane sent without `cutPen` got pen 1 instead of keeping 0.
 Vitor then opened ISOMETRICA TERREO: the view kept its 3D cut at 1.50 m. He saved the
 project himself.
 
 ## Live test, 22/10/2026 afternoon
 
-Archicad 30 build 3001 BRA, office PC, WG Formosa_R04, Tapir not loaded, add-on from
+Archicad 30 build 3001 BRA, office PC, the validation project, Tapir not loaded, add-on from
 8eff234. Only the 3D camera, the cut and two test views changed; Claude did not save.
 
 - `twoPointPerspective` stays off when not sent: fixed.

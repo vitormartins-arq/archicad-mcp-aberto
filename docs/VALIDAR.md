@@ -662,7 +662,7 @@ porta 19724. Código do branch baixado em ZIP. Sem salvar, apagar nem Desfazer.
   vistas ficam em uma pasta por ambiente, e a isométrica cortada guarda o corte. Não
   salvar o projeto.
 - Conferido em 22/10/2026 à tarde (AC30 build 3001 BRA, sem Tapir, add-on de 8eff234,
-  WG Formosa_R04). Pendente: a caneta 0 do corte volta como 1.
+  projeto de validação). Pendente: a caneta 0 do corte volta como 1.
 
 ## Lote do Claude C18: compostos
 

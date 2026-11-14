@@ -39,11 +39,11 @@ async def test_several_instances_are_never_guessed():
 
 
 async def test_discover_identifies_project_and_tapir():
-    a = FakeArchicad(19723, project_name="WG Formosa_R02")
+    a = FakeArchicad(19723, project_name="Example Project")
     b = FakeArchicad(19724, tapir_version=None)
     async with client(a, b) as c:
         found = {i["port"]: i for i in await discover(c)}
-    assert found[19723]["project_name"] == "WG Formosa_R02"
+    assert found[19723]["project_name"] == "Example Project"
     assert found[19723]["tapir_version"] == "1.7.0"
     assert found[19724]["tapir_loaded"] is False
     assert "project_name" not in found[19724]
