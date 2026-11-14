@@ -711,6 +711,12 @@ OPERATIONS["save_layouts_as_pdf"] = (
     "publish_receipt_id",
     "Writes one merged PDF to the reviewed folder; no Undo.",
 )
+
+OPERATIONS["organize_project_map"] = (
+    "Project Map organization",
+    "project_map_receipt_id",
+    "Renames run; folder creation and moves are manual steps. No Undo.",
+)
 OPERATIONS["save_next_project_revision"] = (
     "revision save",
     "save_receipt_id",

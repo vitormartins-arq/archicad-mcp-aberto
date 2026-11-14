@@ -734,6 +734,14 @@
     {
       "name": "save_layouts_as_pdf",
       "description": "Preview and save layouts as one merged PDF without using the Publisher."
+    },
+    {
+      "name": "get_project_map",
+      "description": "Read Project Map viewpoint categories, native folders and viewpoints."
+    },
+    {
+      "name": "organize_project_map",
+      "description": "Preview and rename Project Map folders; list folder creation and moves as manual steps."
     }
   ],
   "compatibility": {

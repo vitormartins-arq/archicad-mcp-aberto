@@ -50,6 +50,7 @@ from archicad_mcp_aberto.tools import (
     profiles,
     project_info,
     project_location,
+    project_map,
     project_map_names,
     project_resources,
     project_save,
@@ -112,6 +113,8 @@ INPUTS = {
     "save_next_project_revision": {},
     "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
     "list_publisher_sets": {},
+    "get_project_map": {},
+    "organize_project_map": {"operations": [{"action": "rename", "guid": GUID, "name": "X"}]},
     "get_publisher_set_items": {"publisher_set_name": "PDF"},
     "list_layouts": {},
     "save_layouts_as_pdf": {
@@ -530,6 +533,7 @@ TARGETED = {
     name: function
     for module in (
         publisher,
+        project_map,
         camera_paths,
         model_tasks,
         attribute_properties,
@@ -759,6 +763,16 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                 await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
+        if name in {"get_project_map", "organize_project_map"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            command = "GetProjectMapTree" if name == "get_project_map" else "OrganizeProjectMap"
+            assert selected.own_addon_calls == [command]
             assert not untouched.calls
             return
         if name in {

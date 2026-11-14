@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Project Map folders / 14 November 2026:** branch `claude/project-map-folders`
+  adds `get_project_map` and `organize_project_map` over companion add-on R21
+  (`archicad-mcp-addon`, same branch). Live on AC30 3001 BRA / Tapir 1.7.0, copy of the
+  LAB template REV54: renaming a native Project Map folder works (View Map clone follows,
+  867 View Map items and 216 layout drawings unchanged); folder creation and moves return
+  APIERR_BADPARS, so they come back as manual steps. 3,304 offline tests and Ruff passed.
+  No PR yet.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct

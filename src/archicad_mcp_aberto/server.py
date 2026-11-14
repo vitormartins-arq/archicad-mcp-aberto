@@ -37,6 +37,7 @@ from archicad_mcp_aberto.tools import (
     profiles,
     project_info,
     project_location,
+    project_map,
     project_resources,
     project_save,
     property_definitions,
@@ -2377,6 +2378,36 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """List Layout Book layouts (GUID, ID, name, folder path), optionally filtered by
         text. Requires Tapir."""
         return await publisher.list_layouts(client_of(ctx), name_contains, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_project_map(
+        ctx: Context,
+        category: str | None = None,
+        include_view_map: bool = False,
+        port: int | None = None,
+    ) -> dict:
+        """Project Map viewpoint categories (sections, elevations, interiorElevations,
+        worksheets, details, documents3D) with native folders, viewpoints, paths, GUIDs and
+        how many View Map items point to each one. Requires companion add-on R21+."""
+        return await project_map.get_project_map(client_of(ctx), category, include_view_map, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def organize_project_map(
+        ctx: Context,
+        operations: list[dict],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Plan Project Map folders: create_folder (key, parent_guid or parent_key, name),
+        rename (guid of a native folder, name) and move (guid, parent_guid or parent_key).
+        Names become sentence case keeping acronyms (BIMx, DWG). Moves stay inside one
+        category; duplicate folders are reused. Archicad 30 only allows renaming here: folder
+        creation and moves come back as manual_steps with source and destination. Preview
+        first, explicit port and one-use token to apply. Never saves."""
+        return await project_map.organize_project_map(
+            client_of(ctx), operations, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=WRITE)
     async def save_layouts_as_pdf(
