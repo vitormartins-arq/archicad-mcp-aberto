@@ -1,9 +1,20 @@
 #include "ObjectReplacementCommands.hpp"
 #include "OnExit.hpp"
 #include <cmath>
+#include <cctype>
 #include <string>
 
 namespace {
+bool SameParameterName (const char* left, const char* right)
+{
+    while (*left != '\0' && *right != '\0') {
+        if (std::tolower (static_cast<unsigned char> (*left)) !=
+            std::tolower (static_cast<unsigned char> (*right))) return false;
+        ++left;
+        ++right;
+    }
+    return *left == *right;
+}
 // Changes after an add-on/application restart, even when the port is reused.
 const API_Guid bootId = APIGuidFromString (GS::Guid (GS::Guid::GenerateGuid).ToUniString ().ToCStr ().Get ());
 
@@ -13,8 +24,24 @@ API_AddParType* Numeric (API_AddParType** parameters, const char* name)
     const GSSize count = BMGetHandleSize ((GSHandle) parameters) / sizeof (API_AddParType);
     for (GSIndex i = 0; i < count; ++i) {
         API_AddParType& p = (*parameters)[i];
-        if (CHEqualCStrings (p.name, name) && p.typeMod != API_ParArray &&
+        if (SameParameterName (p.name, name) && p.typeMod != API_ParArray &&
             (p.typeID == APIParT_Length || p.typeID == APIParT_RealNum)) return &p;
+    }
+    return nullptr;
+}
+
+API_AddParType* Scalar (API_AddParType** parameters, const GS::UniString& name, Int32 type)
+{
+    if (parameters == nullptr) return nullptr;
+    const GSSize count = BMGetHandleSize ((GSHandle) parameters) / sizeof (API_AddParType);
+    for (GSIndex i = 0; i < count; ++i) {
+        API_AddParType& p = (*parameters)[i];
+        if (GS::UniString (p.name) != name || p.typeID != type || p.typeMod == API_ParArray) continue;
+        if (p.typeID == APIParT_CString || p.typeID == APIParT_Title ||
+            p.typeID == APIParT_Separator || p.typeID == APIParT_Dictionary ||
+            SameParameterName (p.name, "A") || SameParameterName (p.name, "B") ||
+            SameParameterName (p.name, "ZZYZX")) return nullptr;
+        return &p;
     }
     return nullptr;
 }
@@ -85,17 +112,38 @@ GSErrCode Describe (const API_Guid& guid, GS::ObjectState& result)
     API_Element element = {};
     element.header.guid = guid;
     GSErrCode error = ACAPI_Element_Get (&element);
-    if (error != NoError) return error;
-    if (element.header.type != API_ElemType (API_ObjectID) ||
-        element.header.hotlinkGuid != APINULLGuid || element.object.owner != APINULLGuid)
+    if (error != NoError) {
+        result.Add ("stage", "getElement");
+        return error;
+    }
+    // Ordinary library Objects use APIVarId_Object (SYMB), not Generic. Keep
+    // grid/custom variations excluded rather than comparing to a Generic type.
+    const bool ordinaryObject = element.header.type.typeID == API_ObjectID &&
+        (element.header.type.variationID == APIVarId_Generic ||
+         element.header.type.variationID == APIVarId_Object);
+    if (!ordinaryObject ||
+        element.header.hotlinkGuid != APINULLGuid || element.object.owner != APINULLGuid) {
+        result.Add ("stage", "standaloneObject");
+        result.Add ("isObject", element.header.type.typeID == API_ObjectID);
+        result.Add ("variationID", static_cast<Int32> (element.header.type.variationID));
+        result.Add ("hotlinkGuid", APIGuidToString (element.header.hotlinkGuid));
+        if (element.header.type.typeID == API_ObjectID)
+            result.Add ("ownerGuid", APIGuidToString (element.object.owner));
         return APIERR_BADID;
+    }
     API_ElementMemo memo = {}, libraryMemo = {};
     const GS::OnExit guard ([&] () { ACAPI_DisposeElemMemoHdls (&memo); ACAPI_DisposeElemMemoHdls (&libraryMemo); });
     error = ACAPI_Element_GetMemo (guid, &memo, APIMemoMask_AddPars);
-    if (error != NoError) return error;
+    if (error != NoError) {
+        result.Add ("stage", "getMemo");
+        return error;
+    }
     GS::ObjectState library;
     error = Library (element.object.libInd, library, libraryMemo);
-    if (error != NoError) return error;
+    if (error != NoError) {
+        result.Add ("stage", "getLibrary");
+        return error;
+    }
     double a = 0, b = 0;
     library.Get ("a", a); library.Get ("b", b);
     const auto* z = Numeric (memo.params, "ZZYZX");
@@ -113,13 +161,26 @@ GSErrCode Describe (const API_Guid& guid, GS::ObjectState& result)
         "fixPoint", (Int32) element.object.fixPoint,
         "offsetX", element.object.offset.x, "offsetY", element.object.offset.y,
         "parameters", Parameters (memo.params));
+    GS::Array<API_ElementHotspot> hotspots;
+    const GSErrCode hotspotError = ACAPI_Element_GetHotspots (guid, &hotspots);
+    result.Add ("hotspotReadCode", (Int32) hotspotError);
+    const auto& hotspotRows = result.AddList<GS::ObjectState> ("hotspots");
+    if (hotspotError == NoError) {
+        for (const auto& hotspot : hotspots) {
+            hotspotRows (GS::ObjectState ("index", (Int32) hotspot.first.inIndex,
+                "x", hotspot.second.x, "y", hotspot.second.y, "z", hotspot.second.z));
+        }
+    }
     API_Guid group = APINULLGuid;
     const GSErrCode groupError = ACAPI_Grouping_GetGroup (guid, &group);
     result.Add ("groupGuid", APIGuidToString (group));
     result.Add ("groupReadCode", (Int32) groupError);
     GS::Array<GS::Pair<API_Guid, API_Guid>> classifications;
     error = ACAPI_Element_GetClassificationItems (guid, classifications);
-    if (error != NoError) return error;
+    if (error != NoError) {
+        result.Add ("stage", "getClassifications");
+        return error;
+    }
     const auto& classificationRows = result.AddList<GS::ObjectState> ("classifications");
     for (const auto& pair : classifications) {
         classificationRows (GS::ObjectState ("system", APIGuidToString (pair.first), "item", APIGuidToString (pair.second)));
@@ -154,7 +215,13 @@ GS::ObjectState GetObjectReplacementDataCommand::Execute (const GS::ObjectState&
     for (const auto& guid : guids) {
         GS::ObjectState row;
         error = Describe (APIGuidFromString (guid.ToCStr ().Get ()), row);
-        rows (error == NoError ? row : CreateErrorResponse (error, "Not an editable standalone Object."));
+        if (error == NoError) {
+            rows (row);
+        } else {
+            auto failure = CreateErrorResponse (error, "Object snapshot failed; inspect diagnostics.");
+            failure.Add ("diagnostics", row);
+            rows (failure);
+        }
     }
     return result;
 }
@@ -162,7 +229,7 @@ GS::ObjectState GetObjectReplacementDataCommand::Execute (const GS::ObjectState&
 GS::String ReplaceObjectLibrariesCommand::GetName () const { return "ReplaceObjectLibraries"; }
 GS::Optional<GS::UniString> ReplaceObjectLibrariesCommand::GetInputParametersSchema () const
 {
-    return R"({"type":"object","properties":{"sessionId":{"type":"string"},"targetUnid":{"type":"string"},"targetIndex":{"type":"integer"},"objects":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"object","properties":{"guid":{"type":"string"},"stamp":{"type":"string"},"x":{"type":"number"},"y":{"type":"number"},"level":{"type":"number"},"a":{"type":"number","exclusiveMinimum":0},"b":{"type":"number","exclusiveMinimum":0},"height":{"type":"number","exclusiveMinimum":0}},"required":["guid","stamp","x","y","level","a","b","height"],"additionalProperties":false}}},"required":["sessionId","targetUnid","targetIndex","objects"],"additionalProperties":false})";
+    return R"({"type":"object","properties":{"sessionId":{"type":"string"},"targetUnid":{"type":"string"},"targetIndex":{"type":"integer"},"objects":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"object","properties":{"guid":{"type":"string"},"stamp":{"type":"string"},"x":{"type":"number"},"y":{"type":"number"},"level":{"type":"number"},"a":{"type":"number","exclusiveMinimum":0},"b":{"type":"number","exclusiveMinimum":0},"height":{"type":"number","exclusiveMinimum":0},"parameterValues":{"type":"array","maxItems":200,"items":{"type":"object","properties":{"name":{"type":"string"},"type":{"type":"integer"},"value":{"type":"number"}},"required":["name","type","value"],"additionalProperties":false}}},"required":["guid","stamp","x","y","level","a","b","height"],"additionalProperties":false}}},"required":["sessionId","targetUnid","targetIndex","objects"],"additionalProperties":false})";
 }
 GS::ObjectState ReplaceObjectLibrariesCommand::Execute (const GS::ObjectState& input, GS::ProcessControl&) const
 {
@@ -203,6 +270,23 @@ GS::ObjectState ReplaceObjectLibrariesCommand::Execute (const GS::ObjectState& i
             auto* pa = Numeric (memo.params, "A"); auto* pb = Numeric (memo.params, "B"); auto* pz = Numeric (memo.params, "ZZYZX");
             if (pa == nullptr || pb == nullptr || pz == nullptr) return APIERR_BADPARS;
             pa->value.real = a; pb->value.real = b; pz->value.real = height;
+            GS::Array<GS::ObjectState> values;
+            row.Get ("parameterValues", values);
+            if (!values.IsEmpty ()) {
+                API_ElementMemo sourceMemo = {};
+                const GS::OnExit sourceGuard ([&] () { ACAPI_DisposeElemMemoHdls (&sourceMemo); });
+                e = ACAPI_Element_GetMemo (element.header.guid, &sourceMemo, APIMemoMask_AddPars);
+                if (e != NoError) return e;
+                for (const auto& value : values) {
+                    GS::UniString name; Int32 type = 0; double numeric = 0;
+                    value.Get ("name", name); value.Get ("type", type); value.Get ("value", numeric);
+                    auto* source = Scalar (sourceMemo.params, name, type);
+                    auto* destination = Scalar (memo.params, name, type);
+                    if (source == nullptr || destination == nullptr || !std::isfinite (numeric) ||
+                        source->value.real != numeric) return APIERR_BADPARS;
+                    destination->value.real = numeric;
+                }
+            }
             element.object.libInd = index;
             element.object.useXYFixSize = true;
             element.object.xRatio = a; element.object.yRatio = b;

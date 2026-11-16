@@ -17,6 +17,12 @@ The updated companion APX is required. Tapir 1.7.0 ModifyObjects cannot swap lib
    parameters plus target defaults. It performs no mutation.
 4. `replace_object_libraries(replacements, port)` prepares a preview. Each entry needs
    `guid`, `target_unid`, `source_mount` and `target_mount` (explicit XYZ).
+   `dimensions="target"` uses the destination's nominal dimensions rather than
+   stretching it to the old instance. The default `"source"` preserves prior behavior.
+   `preserve_parameters=[...]` explicitly copies compatible numeric scalar parameters
+   with identical names and types. Missing, array, string and dimensional parameters
+   are refused. The updated native companion rechecks source values inside Undo;
+   readback verifies each copied value. Unlisted parameters still take target defaults.
 5. Review the preview, including all parameter resets. Apply identical inputs with
    `dry_run=false`, the explicit port and the single-use confirmation token.
 6. Keep the receipt. For a lost response, first inspect the actual object state and
@@ -34,9 +40,10 @@ the final A/B dimensions rather than by copying ratios between different nominal
 - Only standalone Objects; lamps, doors, windows, grid variations, hotlinks and owned
   objects are refused. One exact destination library per batch (up to 50 objects).
 - Source and destination need readable positive A/B/ZZYZX dimensions.
-- A/B/ZZYZX are preserved. **All other GDL parameters take destination defaults**,
-  including arrays. The source memo and target defaults are disclosed in the preview.
-  No implicit parameter mapping is attempted.
+- A/B/ZZYZX follow the explicit source/target dimension policy. Other GDL parameters
+  take destination defaults except explicitly listed compatible numeric scalars.
+  The source memo, target defaults and preserved values are disclosed in the preview.
+  No implicit parameter mapping is attempted. Arrays are never silently copied.
 - The destination anchor is reset to origin (`fixPoint=-1`, zero offset), while
   translation compensates for the explicit mounting references. Angle, reflection,
   story and dimension values are preserved; ratios may change to preserve dimensions.

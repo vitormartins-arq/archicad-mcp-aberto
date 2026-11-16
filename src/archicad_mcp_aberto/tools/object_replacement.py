@@ -8,7 +8,7 @@ than A/B/ZZYZX intentionally take target defaults; the preview discloses both me
 from __future__ import annotations
 
 import math
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -28,6 +28,8 @@ class Replacement(write.InputModel):
     target_unid: Annotated[str, Field(min_length=1, max_length=127)]
     source_mount: MountPoint
     target_mount: MountPoint
+    dimensions: Literal["source", "target"] = "source"
+    preserve_parameters: list[str] = Field(default_factory=list)
 
     @field_validator("guid")
     @classmethod
@@ -117,6 +119,27 @@ async def _plan(client, replacements, port, operation):
         placement, mount = _placement(
             before, request.source_mount.model_dump(), request.target_mount.model_dump()
         )
+        sizes = before if request.dimensions == "source" else target
+        source_params = {p["name"]: p for p in before["parameters"]["items"]}
+        target_params = {p["name"]: p for p in target["parameters"]["items"]}
+        preserved = []
+        if len(set(request.preserve_parameters)) != len(request.preserve_parameters):
+            raise ValueError("Duplicate preserved parameter names.")
+        for name in request.preserve_parameters:
+            old, new = source_params.get(name), target_params.get(name)
+            if (
+                name.casefold() in {"a", "b", "zzyzx"}
+                or old is None
+                or new is None
+                or old.get("array")
+                or new.get("array")
+                or old.get("type") != new.get("type")
+                or type(old.get("value")) not in (int, float)
+                or type(new.get("value")) not in (int, float)
+                or not math.isfinite(old["value"])
+            ):
+                raise ValueError(f"Parameter {name!r} is not a compatible numeric scalar.")
+            preserved.append({"name": name, "type": old["type"], "value": old["value"]})
         items.append(
             {
                 "index": index,
@@ -126,12 +149,15 @@ async def _plan(client, replacements, port, operation):
                 "destination": target,
                 "source_mount": request.source_mount.model_dump(),
                 "target_mount": request.target_mount.model_dump(),
+                "dimensions_policy": request.dimensions,
+                "preserved_parameters": preserved,
                 "mount_story_coordinates": mount,
                 "parameters": {
                     "guid": request.guid,
                     "stamp": before["stamp"],
                     **placement,
-                    **{k: before[k] for k in ("a", "b", "height")},
+                    **{k: sizes[k] for k in ("a", "b", "height")},
+                    **({"parameterValues": preserved} if preserved else {}),
                 },
             }
         )
@@ -142,8 +168,9 @@ async def _plan(client, replacements, port, operation):
         "library": target,
         "items": items,
         "limitations": [
-            "A/B/ZZYZX dimensions, angle, reflection and home story are preserved.",
-            "Other GDL parameters take the displayed target defaults, including arrays.",
+            "A/B/ZZYZX use the explicit source/target dimensions policy; "
+            "angle/reflection/story stay.",
+            "Only explicitly listed compatible numeric GDL scalars are preserved; others reset.",
             "The anchor hotspot resets to the object origin; offset resets to zero.",
             "GUID/layer/groups/classifications are checked after writing. "
             "Properties and associations are not explicitly written; "
@@ -191,6 +218,14 @@ def _mismatches(item, after):
             for k in mount
         ):
             problems.append("Explicit mount reference moved.")
+    actual_params = {p["name"]: p for p in after.get("parameters", {}).get("items", [])}
+    for expected_param in item.get("preserved_parameters", []):
+        actual = actual_params.get(expected_param["name"], {})
+        if (
+            actual.get("type") != expected_param["type"]
+            or actual.get("value") != expected_param["value"]
+        ):
+            problems.append(f"Parameter {expected_param['name']} differs.")
     return problems
 
 

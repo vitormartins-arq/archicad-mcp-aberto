@@ -1,5 +1,48 @@
 # Estado atual
 
+- **World Gym / 27/10, auditoria BIMx solicitada pelo Vitor:** projeto abertoR05 emH:,AC30/3001/BRA/Tapir1.7.3,porta19723,942elementos.740itens doMapa deVistas lidos integralmente:29perspectivas,8axonometrias e30documentos3D. Existe1Camera e1CamSet(Percurso Sem Nome),masGetDetailsOfElements não lê os parâmetros desses tipos. Schema fresco doMCP configurado:139ferramentas,nenhuma criação/edição/ocultação Camera/CamSet.24perspectivas compartilham configurações principaisARCHICAD e são candidatas a galeria comum,sem certificar cortes/filtros/posição ainda inacessíveis. PublisherBIMx tem2entradas3D(ISOMETRICA TERREO/FACHADA01);não supor37modelos duplicados. Nenhuma câmera/percurso criado,nenhuma configuração alterada,nada salvo/publicado. Alternativa oficial identificada noDevKit30:API_CameraType/API_CamSetType,ACAPI_Element_Create/Get eACAPI_View_GoToView;exige novo comandoMCP e confirmação específica do controle de ocultação em planta. Relatório/CSV/JSON/schema em WG-BIMx-cameras-2026-10-27. Não converter axonometrias silenciosamente. Não declarar o percursoBIMx - Apresentação criado.
+
+- **World Gym / 27/10, auditoria de teto solicitada pelo Vitor:** cinco capturas reais,sem editar/salvar. A16 indicaPiscina para leste a partir da musculação,em direção ao acesso confirmado. A14 na recepção tem somenteColetivas01/02: falta orientação de tetoPiscina desde entrada. A14 também mostra setasdireita nas duasfaces,produzindo sentidos físicos opostos;face da recepção precisa revisão em relação às coletivas situadas ao sul. Não declarar percurso completo certificado. VersoA16 oculto pela parede na câmera de piscina. Evidências/limites em Conferencia-rota-teto-piscina.md na pasta instalacao-20261026. Precisa complementar teto na recepção mantendo coletivas e revisar setasantesdealterarasset. Nenhum modelo modificado nesta auditoria.
+
+- **World Gym / 27/10, fechamento da piscina:** Vitor aprovou padrão B02/camada201/Fixacao1,60m. A17 eB19 adicionadas e conferidas no R05; A17 final(52.188107681,14.65,1.60),B19(52.188107681,14.1,1.60),ambas no painel fixo ao lado da portaP04. A criação Tapir herdou altura1,50m: detectada no nativo e corrigida pela troca para a mesma biblioteca com dimensões target,seguida de reposicionamento; leituras/capturas finais confirmam0,06592m e0,0885m. A16 1051 respostas comparadas,34diferenças esperadas revisadas (nome/geometria/elevações/expressão). Total27trocas+2adições,29placas r09/26códigos,891elementos/178objetos. Salvo no R05 às08:52:45,680230496bytes,SHA256B73BB6D5A85F37878F51FED1DC73D48152829354E1F8F9A4215CBD62F346D203. Relatório Resultado-final-r09-R05.md eCSV29linhas. Planta visual geral ainda pendente: capturaWindows mantém viewportantigo apesar da mudança de abas; imagens nativas3D corretas. Não afirmar vista remota final confirmada. Filas encerradas. Nenhum modelo/LAB Blocos recompilado nem merge. Entradas anteriores históricas.
+
+- **World Gym / 27/10, R05 e piscina:** Vitor salvou como WG Formosa_R05 em H:\Meu Drive\02 - Empresarial\Projetos - Arq\CRM 008 - WG Formosa\01 - Projetos\01 - Projeto BIM. Arquivo 679141696 bytes, hash1186BA4E978D7CC6208ED52F42642DE00A758EE55B1D6875F873BC96A9B10DBE, cópia local antes piscina com hash idêntico (não aberta nesta etapa). Continuação confirmou26 trocas anteriores por releitura; nesta etapa A16 trocada com novo token/sessão/contexto R05, verified e hotspot preservado em(46.3,16.000000001,3.3), captura nativa inspecionada. Total27 trocas,0 adições,889 elementos. A16/A17/B19 importadas em lote concluído3sucessos; A17/B19 não colocadas. Usuário confirmou acesso pela porta dupla de vidro próxima ao corredor dos banheiros; portaP04 GUID4390774E-3360-42E8-B87C-99EEC028A036,2m. Aguarda resposta para padrão/implantação das duas novas (nenhum favorito sinalização encontrado). Não salvar automaticamente: A16 e três importações ainda não salvas após o salvamento do Vitor. Planta final e propriedades completas A16 pendentes. Relatório/evidências em WG-r09-teste-2026-10-26/instalacao-20261026/Resultado-piscina-R05.md. Nenhum modelo/LAB Blocos alterado, nenhum merge. Registros antigos abaixo são históricos.
+
+- **World Gym / 26/10, B01 escrita real:** na cópia de trabalho r09, porta 19723,
+  AC30/3001/BRA/Tapir1.7.3, lote de uma substituição retornou verified. GUID
+  BA62BB8C-7EC1-439B-AC88-D03084F53678 e ID TA28 preservados; camada 201, andar0,
+  rotação/espelhamento/classificação/grupo e 25 escalares GDL conferidos. Dimensões
+  novas 0,22×0,016×0,255076; Fixacao real via hotspots continua em
+  (53,898107681;9,08;1,60), antes/depois. Imagens nativas antes/depois geradas e
+  inspecionadas. Consulta de 1051 propriedades: 947 indisponíveis,93 normais,
+  7 indefinidas,4 não avaliadas;44 respostas mudaram por nome/geometria/elevações
+  e expressão de dimensões,1007 iguais. Testes LAB63/Ruff passaram também.
+  Não salvar automaticamente: somente cópia ANTES da troca foi salva. Após mudança
+  da sessão remota, captura UI falhou duas vezes com CreateForMonitor 0x80070057;
+  automação UI interrompida. Planta visual, Undo e aceite visual do Vitor pendentes.
+  Demais placas intocadas. Não considerar a tarefa geral r09 concluída.
+
+- **World Gym / 26/10, dimensões e parâmetros:** correção local adiciona política
+  explícita source/target para dimensões e preservação de escalares numéricos GDL
+  indicados pelo chamador, com validação de nome/tipo/valor no nativo e releitura.
+  Mantém prévia/token/sessão/stamp/Undo. Fonte e APX compilados; 2770 testes unitários
+  passaram em 27,13 s e Ruff passou. Incluída leitura nativa de hotspots para auditar
+  o offset da origem antes de uma troca real. Cópia PLN salva antes de reiniciar,
+  original intocado. Teste real da nova escrita ainda pendente; não confundir testes
+  simulados com certificação geométrica. LAB Blocos e modelos r09 não alterados.
+
+- **World Gym / 26/10, correção local de leitura:** no PC ESC, AC30 build 3001 BRA,
+  Tapir 1.7.3, o complemento #87 foi carregado por pasta de extensões do usuário,
+  sem substituir arquivos protegidos. Leitura da B01 revelou comparação indevida
+  com API_ElemType Generic (objetos comuns usam APIVarId_Object/SYMB) e busca
+  sensível a caixa de ZZYZX (biblioteca real usa zzyzx). Correções compiladas com
+  SDK30/MSVC v143; leitura real agora retorna objeto, altura 0,33 m, transformação,
+  camada e classificações. Variações especiais, hotlinks e objetos com owner
+  continuam recusados. Acrescentado diagnóstico por etapa. Nenhuma substituição
+  executada; aceite de escrita/Undo/metadados continua pendente. Branch local
+  codex/live-replacement-diagnostics, sem merge. Evidências na pasta local
+  WG-r09-teste-2026-10-26/instalacao-20261026.
+
 - **Issue #87 / Codex:** troca de biblioteca implementada em checkout isolado, com
   comandos nativos próprios, montagem explícita e prévia/token/recibo. APX AC30
   compilado (SDK30/MSVC v143). 2765 testes offline, Ruff e formatação dos arquivos

@@ -1915,8 +1915,10 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Replace library parts of existing standalone Objects, preserving GUID and
-        final dimensions. Requires the updated companion add-on, one exact target_unid
+        """Replace library parts of existing standalone Objects, preserving GUID.
+        Each replacement chooses dimensions='source' (default) or 'target' and may
+        list preserve_parameters (compatible numeric scalar names, checked after writing).
+        Requires the updated companion add-on, one exact target_unid
         per batch and explicit source_mount/target_mount {x,y,z} measured in metres in
         final-sized local axes before reflection/rotation. Never infer mounting points.
         Preview discloses parameter resets and anchor changes. Apply requires explicit

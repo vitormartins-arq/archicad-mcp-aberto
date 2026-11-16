@@ -81,6 +81,11 @@ def native(monkeypatch, tmp_path):
         row = parameters["objects"][0]
         state["objects"][0].update({k: v for k, v in row.items() if k not in ("guid", "stamp")})
         state["objects"][0]["library"] = deepcopy(state["target"])
+        state["objects"][0]["parameters"] = deepcopy(state["target"]["parameters"])
+        for value in row.get("parameterValues", []):
+            for parameter in state["objects"][0]["parameters"]["items"]:
+                if parameter["name"] == value["name"]:
+                    parameter["value"] = value["value"]
         state["objects"][0]["stamp"] = "9007199254740994"
         state["objects"][0].update(fixPoint=-1, offsetX=0.0, offsetY=0.0)
         if state["drift"]:
@@ -102,6 +107,46 @@ def request(**kwargs):
         "target_mount": {"x": -0.3, "y": 0.01, "z": -0.1},
         **kwargs,
     }
+
+
+@pytest.mark.anyio
+async def test_target_dimensions_avoid_stretching_revised_geometry(native):
+    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+        preview = await tool.replace_object_libraries(client, [request(dimensions="target")], 19723)
+        assert preview["items"][0]["parameters"]["height"] == 0.5
+        result = await tool.replace_object_libraries(
+            client, [request(dimensions="target")], 19723, False, preview["confirmation_token"]
+        )
+        assert result["status"] == "verified"
+        assert result["items"][0]["after"]["a"] == 2.0
+
+
+@pytest.mark.anyio
+async def test_explicit_compatible_scalar_preserved_and_verified(native):
+    native["target"]["parameters"]["items"] = [{"name": "plan_mode", "type": 1, "value": 1}]
+    native["objects"][0]["parameters"]["items"] = [{"name": "plan_mode", "type": 1, "value": 2}]
+    req = request(preserve_parameters=["plan_mode"])
+    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+        preview = await tool.replace_object_libraries(client, [req], 19723)
+        result = await tool.replace_object_libraries(
+            client, [req], 19723, False, preview["confirmation_token"]
+        )
+        assert result["status"] == "verified"
+        assert result["items"][0]["after"]["parameters"]["items"][0]["value"] == 2
+        altered = deepcopy(result["items"][0]["after"])
+        altered["parameters"]["items"][0]["value"] = 1
+        assert "Parameter plan_mode differs." in tool._mismatches(result["items"][0], altered)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("name", ["A", "missing", "custom"])
+async def test_incompatible_parameter_mapping_refused(native, name):
+    async with ArchicadClient(transport=fake_transport(FakeArchicad(19723))) as client:
+        with pytest.raises(ValueError, match="not a compatible numeric scalar"):
+            await tool.replace_object_libraries(
+                client, [request(preserve_parameters=[name])], 19723
+            )
+        assert native["writes"] == []
 
 
 @pytest.mark.anyio
