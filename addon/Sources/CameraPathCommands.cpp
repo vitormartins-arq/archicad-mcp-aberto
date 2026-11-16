@@ -421,9 +421,15 @@ GS::ObjectState SealCameraPathCommand::Execute (const GS::ObjectState& parameter
             throw std::runtime_error ("Project or stable context changed before sealing.");
         if (ModelState () != plan->model || Json (ReadInventory ().Describe ()) != plan->inventory)
             throw std::runtime_error ("Model/attributes/cameras changed during view capture.");
-        plan->context = current;
+        // ModelState temporarily changes/restores the database and can advance
+        // the project stamp. Seal the context AFTER our validated read, not the
+        // stale pre-read stamp. The expected context was checked above and the
+        // complete element/attribute/camera snapshot must still match.
+        plan->context = ProjectContext (process);
+        if (!SameContext (plan->context, current, false))
+            throw std::runtime_error ("Project changed during model validation.");
         plan->sealed = true;
-        return GS::ObjectState ("sealed", true, "context", current);
+        return GS::ObjectState ("sealed", true, "context", plan->context);
     } catch (const std::exception& e) { return CreateErrorResponse (APIERR_GENERAL, GS::UniString (e.what ()));
     }
 }
