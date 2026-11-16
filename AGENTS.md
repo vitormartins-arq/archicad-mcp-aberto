@@ -30,6 +30,41 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
 4. `docs/FILA.md`: Codex's task queue, kept by Claude. When Vitor says "faça as tarefas
    de docs/FILA.md", follow the rules at the top of that file.
 
+## GitHub is the source of truth
+
+The GitHub repository `vitormartins-arq/archicad-mcp-aberto` is the official source of this project's code, documentation, history and state. Memory from earlier conversations never outranks the verified state of the repository.
+
+### Before you start
+
+1. Confirm you are in a clone of this repository: the `origin` remote, the active branch and the Git state.
+2. Run `git status` and `git fetch` to see local and remote changes. Keep both, and resolve divergence safely.
+3. Read `CLAUDE.md`, `AGENTS.md`, `README.md` and any other relevant instructions.
+
+### Where files go
+
+- Create or change permanent files inside this repository, keeping its structure. Reuse existing files and folders; use short, clear, consistent names.
+- Do not create parallel or duplicate projects, or leave final deliverables in Desktop, Downloads, temporary folders or any other folder without authorization. Temporary files outside the repository are not deliverables.
+- Destinations outside the repository that the project's instructions already name (lessons log, Drive delivery folders) still apply.
+- If the official directory is unavailable, find it or say so before creating permanent files.
+
+### After an authorized change
+
+1. Check `git diff` and `git status`, and run the relevant tests.
+2. Prepare a commit with a plain description. Commit and push when authorized.
+3. Confirm the commit reached GitHub. Never say GitHub is up to date without checking.
+4. Say what is left only in the local environment.
+
+### Safety
+
+- Never discard changes without authorization. Never run `git reset --hard`, `git clean -fd` or a force push on your own.
+- Do not overwrite changes made by other agents or collaborators.
+- Never commit credentials, tokens or secrets.
+- Merges, deployments and production changes need the applicable authorization.
+
+### Final report
+
+Report the repository, local directory, active branch, main files changed, tests and checks run, commit created, sync state with GitHub, and open items or blockers.
+
 ## Commands
 
 ```bash
