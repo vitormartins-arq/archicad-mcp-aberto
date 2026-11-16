@@ -7,8 +7,9 @@ building materials, layers, layer combinations, and attribute folders (the
 folders of the layer, material, surface... dialogs; official JSON API). Every item keeps
 its GUID, so elements that use it follow the new name. A renamed layer combination keeps
 every layer's state, which is read back. Renamed View Map items get a custom name, as in
-Archicad. Model View Options and Graphic Overrides have no Tapir 1.7.0 command, so they
-are not here.
+Archicad. Graphic Override rules, rule groups (folders) and combinations go through
+our add-on (addon/, GetGraphicOverrides/RenameGraphicOverrides). Model View Options and
+Renovation Filters cannot be renamed by any Archicad API (AC30 DevKit, 16/11/2026).
 Uses the shared preview, single-use token and receipts, and reads every name back.
 Never saves.
 """
@@ -22,12 +23,13 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, model_validator
 
 from archicad_mcp_aberto.connection import (
+    AddOnError,
     ArchicadClient,
     ArchicadError,
     CommandFailed,
     TapirError,
 )
-from archicad_mcp_aberto.tools import classifications, documents, drafting, write
+from archicad_mcp_aberto.tools import classifications, documents, drafting, overrides, write
 from archicad_mcp_aberto.tools import favorites as favorites_tool
 from archicad_mcp_aberto.tools import property_definitions as pd
 
@@ -76,7 +78,16 @@ Kind = Literal[
     "layers",
     "layer_combinations",
     "attribute_folders",
+    "override_rules",
+    "override_rule_groups",
+    "override_combinations",
 ]
+# kind -> (key of overrides._overrides, item type of RenameGraphicOverrides)
+OVERRIDES = {
+    "override_rules": ("rules", "rule"),
+    "override_rule_groups": ("rule_groups", "ruleGroup"),
+    "override_combinations": ("combinations", "combination"),
+}
 
 
 # Live AC30 build 3001 BRA, Tapir 1.7.0 (14/10/2026): CreateSurfaces with overwriteExisting
@@ -258,6 +269,12 @@ async def _catalog(client, port, request: RenameRequest, timeout=None) -> list[d
             for p in props
             if pd._gid(p, "propertyGroupId") in custom and pd._gid(p, "propertyId")
         ]
+    if kind in OVERRIDES:
+        data = await overrides._overrides(client, port, timeout)
+        return [
+            {"key": r["guid"], "fields": {"name": r["name"]}, "where": r.get("rule_group") or ""}
+            for r in data[OVERRIDES[kind][0]]
+        ]
     if kind == "attribute_folders":
         response = await client.command(
             port, "GetAttributeFolderStructure", {"attributeType": request.scope}, **extra
@@ -279,7 +296,7 @@ def _unique_scope(kind: str, row: dict) -> str | None:
     """Names must stay unique within this scope (None: duplicates are allowed)."""
     if kind in NAVIGATOR:
         return None
-    if kind in ("classification_items", "properties", "attribute_folders"):
+    if kind in ("classification_items", "properties", "attribute_folders", "override_rules"):
         return str(row["where"])  # within a system, a group or a parent folder
     return ""
 
@@ -299,6 +316,8 @@ def _parameters(kind: str, key: str, new: dict) -> dict:
         return {"propertyId": {"guid": key}, **new}
     if kind == "attribute_folders":
         return {"attributeFolderId": {"guid": key}, "newName": new["name"]}
+    if kind in OVERRIDES:
+        return {"type": OVERRIDES[kind][1], "guid": key, "newName": new["name"]}
     if kind == "layer_combinations":
         return {"attributeId": {"guid": key}, **new, "layers": []}
     return {"attributeId": {"guid": key}, **new}
@@ -327,6 +346,8 @@ async def _plan(client, requests, port, operation):
             raise ValueError(f"{row['fields']} would get a blank name.")
         if request.kind == "attribute_folders" and new["name"] != new["name"].strip():
             raise ValueError(f"Folder name {new['name']!r} must not start or end with a space.")
+        if request.kind in OVERRIDES and len(new["name"]) > 255:
+            raise ValueError(f"{new['name']!r} is longer than 255 characters.")
         items.append(
             {
                 "index": len(items),
@@ -416,6 +437,29 @@ async def _send(client, receipt, items) -> None:
                     rest.update(status="failed", error="Not sent after a lost answer.")
                 receipt["warning"] = "Outcome unknown; inspect Archicad. Never retry this token."
                 return
+            item["write_response"] = row
+            _outcome(item, row)
+        return
+    if kind in OVERRIDES:  # our add-on: one undo step, one result per item
+        try:
+            raw = await overrides._addon(
+                client,
+                port,
+                "RenameGraphicOverrides",
+                {"renames": [i["parameters"] for i in items]},
+                timeout=timeout,
+            )
+            rows = _rows_of(raw, "executionResults", len(items))
+        except (CommandFailed, AddOnError) as exc:  # refused or not loaded: nothing ran
+            for item in items:
+                item.update(status="failed", error=exc.detail or str(exc))
+            return
+        except (ArchicadError, ValueError) as exc:
+            for item in items:
+                item.update(status="unknown", error=str(exc))
+            receipt["warning"] = "Outcome unknown; inspect Archicad. Never retry this token."
+            return
+        for item, row in zip(items, rows, strict=True):
             item["write_response"] = row
             _outcome(item, row)
         return

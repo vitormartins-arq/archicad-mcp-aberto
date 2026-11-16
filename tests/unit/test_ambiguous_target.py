@@ -46,6 +46,7 @@ from archicad_mcp_aberto.tools import (
     navigator_moves,
     object_replacement,
     openings,
+    overrides,
     preview_images,
     profiles,
     project_info,
@@ -251,6 +252,8 @@ INPUTS = {
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
     },
     "list_grid_elements": {},
+    "list_graphic_overrides": {},
+    "list_renovation_filters": {},
     "create_grid_elements": {
         "grids": [{"start": {"x": 0, "y": 0}, "end": {"x": 0, "y": 9}, "floor_index": 0}]
     },
@@ -566,6 +569,7 @@ TARGETED = {
         morphs,
         navigator,
         grids,
+        overrides,
         navigator_moves,
         openings,
         preview_images,

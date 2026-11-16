@@ -669,6 +669,43 @@ class FakeArchicad:
     saved_story_views: list[dict] = field(default_factory=list)
     story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
     grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
+    # Graphic Overrides and Renovation Filters, shaped from addon/Sources/OverrideCommands.cpp
+    # (not a live capture yet). Rule groups own rules; combinations list rules.
+    override_groups: list[dict] = field(
+        default_factory=lambda: [
+            {"guid": "A0000000-0000-0000-0000-000000000001", "name": "LAB - Executivo",
+             "ruleGuids": ["B0000000-0000-0000-0000-000000000001",
+                           "B0000000-0000-0000-0000-000000000002"]},
+            {"guid": "A0000000-0000-0000-0000-000000000002", "name": "Renovation",
+             "ruleGuids": ["B0000000-0000-0000-0000-000000000003"]},
+        ]
+    )  # fmt: skip
+    override_rules: list[dict] = field(
+        default_factory=lambda: [
+            {"guid": "B0000000-0000-0000-0000-000000000001", "name": "Paredes - Demolir"},
+            {"guid": "B0000000-0000-0000-0000-000000000002", "name": "Paredes - Construir"},
+            {"guid": "B0000000-0000-0000-0000-000000000003", "name": "Demolition"},
+        ]
+    )
+    override_combinations: list[dict] = field(
+        default_factory=lambda: [
+            {"guid": "C0000000-0000-0000-0000-000000000001", "name": "Demolir e Construir",
+             "ruleGuids": ["B0000000-0000-0000-0000-000000000001",
+                           "B0000000-0000-0000-0000-000000000002"]},
+            {"guid": "C0000000-0000-0000-0000-000000000002", "name": "No Overrides",
+             "ruleGuids": [], "builtIn": True},
+        ]
+    )  # fmt: skip
+    override_current: str = "C0000000-0000-0000-0000-000000000001"
+    override_rename_ignored: set[str] = field(default_factory=set)  # guids answered ok, kept
+    renovation_filters: list[dict] = field(
+        default_factory=lambda: [
+            {"guid": "D0000000-0000-0000-0000-000000000001", "name": "01 Existing Plan"},
+            {"guid": "D0000000-0000-0000-0000-000000000002", "name": "02 Demolition Plan"},
+            {"guid": "D0000000-0000-0000-0000-000000000003", "name": "03 New Construction"},
+        ]
+    )
+    renovation_current: str = "D0000000-0000-0000-0000-000000000003"
     grid_ignored: set[str] = field(default_factory=set)  # parameters CreateGridElements drops
     grid_create_errors: dict[int, dict] = field(default_factory=dict)  # item -> error
     camera_3d: dict = field(
@@ -1087,6 +1124,59 @@ class FakeArchicad:
             elements.append({"elementId": {"guid": guid}})
         return {"elements": elements, "warnings": []}
 
+    def _overrides(self, name: str, args: dict) -> dict:
+        # Shapes of addon/Sources/OverrideCommands.cpp; not a live capture yet.
+        if name == "GetRenovationFilters":
+            filters = [{"guid": f["guid"], "name": f["name"]} for f in self.renovation_filters]
+            return {"renovationFilters": filters, "currentFilterGuid": self.renovation_current}
+        if name == "GetGraphicOverrides":
+            group_of = {r: g["guid"] for g in self.override_groups for r in g["ruleGuids"]}
+            rules = []
+            for rule in self.override_rules:
+                row = {"guid": rule["guid"], "name": rule["name"]}
+                if rule["guid"] in group_of:
+                    row["ruleGroupGuid"] = group_of[rule["guid"]]
+                rules.append(row)
+            strip = ("guid", "name", "ruleGuids")
+            return {
+                "ruleGroups": [{k: deepcopy(g[k]) for k in strip} for g in self.override_groups],
+                "rules": rules,
+                "combinations": [
+                    {k: deepcopy(c[k]) for k in strip} for c in self.override_combinations
+                ],
+                "currentCombinationGuid": self.override_current,
+            }
+        tables = {
+            "rule": self.override_rules,
+            "ruleGroup": self.override_groups,
+            "combination": self.override_combinations,
+        }
+        results = []
+        for item in args["renames"]:
+            table = tables[item["type"]]
+            row = next((r for r in table if r["guid"] == item["guid"].upper()), None)
+            if row is None:
+                error = {"code": -2130313215, "message": "No item with this GUID."}
+                results.append({"success": False, "error": error})
+                continue
+            if row.get("builtIn"):
+                error = {"code": -2130312885, "message": "Built-in item; refused."}
+                results.append({"success": False, "error": error})
+                continue
+            if item["type"] == "rule":
+                group = next(g for g in self.override_groups if row["guid"] in g["ruleGuids"])
+                peers = [r for r in table if r["guid"] in group["ruleGuids"]]
+            else:
+                peers = table
+            if any(p is not row and p["name"] == item["newName"] for p in peers):
+                error = {"code": -2130313084, "message": "The name is already used."}
+                results.append({"success": False, "error": error})
+                continue
+            if row["guid"] not in self.override_rename_ignored:
+                row["name"] = item["newName"]
+            results.append({"success": True})
+        return {"executionResults": results}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -1152,6 +1242,8 @@ class FakeArchicad:
                        "storyIndex": args["storyIndex"], "view": view}})  # fmt: skip
         if name in {"GetGridElementDefaults", "GetGridElements", "CreateGridElements"}:
             return ok({"addOnCommandResponse": self._grid(name, args)})
+        if name in {"GetGraphicOverrides", "RenameGraphicOverrides", "GetRenovationFilters"}:
+            return ok({"addOnCommandResponse": self._overrides(name, args)})
         if name == "Get3DWindowImage":
             # A tiny stand-in, not a real 3D window grab.
             image = "/9j/AA==" if args.get("format", "png") == "jpg" else "iVBORw0KGgo="

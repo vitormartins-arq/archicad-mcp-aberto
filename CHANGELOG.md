@@ -1,5 +1,11 @@
 # Changelog
 
+- Add `list_graphic_overrides` and `list_renovation_filters`, and the `rename_items`
+  kinds `override_rules`, `override_rule_groups` and `override_combinations`, through new
+  add-on commands `GetGraphicOverrides`, `RenameGraphicOverrides` and
+  `GetRenovationFilters` (`addon/Sources/OverrideCommands.cpp`). Checked in the Archicad
+  30 DevKit (30.3000): Model View Options have only Get/Search/GetNum and renovation
+  filters only list/name/current, so neither can be renamed by any API.
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.

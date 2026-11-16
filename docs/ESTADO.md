@@ -1,5 +1,14 @@
 # Estado atual
 
+- **Sobreposições e filtros de renovação / 16/11/2026 (Claude):** conferido no DevKit
+  AC30 30.3000: Opções de Visualização do Modelo e Filtros de Renovação não têm função
+  de renomear em nenhuma API (só ler). Sobreposições Gráficas (regras, pastas,
+  combinações) leem e renomeiam. Add-on ganhou `GetGraphicOverrides`,
+  `RenameGraphicOverrides` e `GetRenovationFilters`; MCP ganhou `list_graphic_overrides`,
+  `list_renovation_filters` e três kinds no `rename_items`. Testes offline de overrides,
+  renames, manifesto e alvo ambíguo passaram; compilação no CI; teste ao vivo pendente
+  (ver VALIDAR.md). Falta oferecer os três comandos ao Tapir upstream.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct

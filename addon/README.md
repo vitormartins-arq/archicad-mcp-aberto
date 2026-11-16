@@ -54,6 +54,16 @@ Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
   name as the camera ID, and, unless `viewMap` is false, clones it into the View Map.
 - `GetCameraViews`: `{"map"?: "ViewMap" | "ProjectMap"}` lists the camera items with
   their camera and camera path.
+- `GetGraphicOverrides`: `{}` lists override `ruleGroups` (the folders of the Rules
+  dialog, with `ruleGuids`), `rules` (with `ruleGroupGuid`), `combinations` (with
+  `ruleGuids`) and `currentCombinationGuid`.
+- `RenameGraphicOverrides`: `{"renames": [{"type": "rule" | "ruleGroup" |
+  "combination", "guid", "newName"}]}` renames by GUID in one Undo step and answers one
+  `executionResults` row per item (`success`, or `error` with Archicad's code). A
+  combination keeps its rules. Built-in items are refused by Archicad.
+- `GetRenovationFilters`: `{}` lists `renovationFilters` (guid, name) and
+  `currentFilterGuid`. Renovation filters and Model View Options cannot be renamed: the
+  AC30 C API has no call for it (only read functions).
 - Renaming Project Map cameras is not offered: Archicad refuses it even through the
   API (ChangeMemo ignored, ChangeNavigatorItem 0x81060065, live AC30, 28/10/2026).
 
