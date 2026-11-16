@@ -893,3 +893,18 @@ Simulado e compilado pelo CI, não testado ao vivo. Precisa do add-on recompilad
 - [ ] `save_3d_scenes` com 3 ou mais ambientes: todas as câmeras vão para um único percurso, "00 BIMx - Apresentação", com os nomes "1 RECEPÇÃO - 2P 01", "2 ..." e assim por diante.
 - [ ] No Mapa de projeto, conferir se as câmeras novas aparecem com esse nome (dado na criação), e não como "Câmera 1". Renomear depois o Archicad recusa (teste ao vivo de 28/10). No Mapa de vistas, nenhuma câmera solta e nenhuma pasta por ambiente.
 - [ ] Conjunto BIMx feito à mão, só com o percurso (mesma combinação 3D, "Adicionar câmeras como itens de galeria separados", céu branco, menor textura): um único modelo e a galeria com os nomes no celular.
+
+## Lote do Claude: sobreposições gráficas e filtros de renovação pelo add-on
+
+Precisa do `.apx` novo do add-on (artefato do CI `addon.yml` deste PR) instalado. Teste
+no Template P. Interiores LAB (com backup em `00 - Anteriores`, regra de 27/10).
+
+- [ ] **list_graphic_overrides.** "Liste as sobreposições gráficas." Conferir pastas de
+  regras, regras de cada pasta, combinações com suas regras e a combinação atual contra
+  o diálogo Regras/Combinações de Sobreposição Gráfica.
+- [ ] **list_renovation_filters.** "Liste os filtros de renovação." Conferir nomes e o
+  filtro atual.
+- [ ] **rename_items override_rules / override_rule_groups / override_combinations.**
+  Renomear uma regra, uma pasta e uma combinação do template. Esperado `verified`; as
+  combinações mantêm as regras; elementos e vistas que usam a combinação continuam com
+  ela; um Desfazer volta os nomes. Uma regra/combinação embutida deve dar `failed`.

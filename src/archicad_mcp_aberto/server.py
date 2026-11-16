@@ -62,6 +62,7 @@ from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
+from archicad_mcp_aberto.tools import overrides as overrides_tool
 from archicad_mcp_aberto.tools import project_map_names as project_map_names_tool
 from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
@@ -676,14 +677,17 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         layout_book items, favorites, classification_systems, classification_items (id
         and name), custom property_groups and properties, building_materials,
         layers (surfaces are refused: Tapir changed their texture), layer_combinations
-        (layer states are kept and read back) or
-        attribute_folders (scope = attribute type, e.g. Layer). Either find + replace on
+        (layer states are kept and read back),
+        attribute_folders (scope = attribute type, e.g. Layer), or Graphic Override
+        override_rules, override_rule_groups (folders) and override_combinations (these
+        three need the ArchicadMcpAberto add-on). Model View Options and Renovation
+        Filters cannot be renamed by any Archicad API. Either find + replace on
         every name (replace "" removes the text) or renames, a list of exact {old, new}
         names. scope narrows classification_items to a system, properties to a group,
         favorites to an element type. Items keep their
         GUID; names that would clash are refused; up to 500 per call. Apply identical
         inputs with explicit port and single-use token; every name is read back.
-        Requires Tapir. Never saves."""
+        Requires Tapir or, for overrides, the add-on. Never saves."""
         return await renames_tool.rename_items(
             client_of(ctx),
             kind,
@@ -1962,6 +1966,21 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         layer index and library part; include_parameters adds the GDL parameters and the
         Grid Tool defaults. Needs the ArchicadMcpAberto add-on."""
         return await grids_tool.list_grid_elements(client_of(ctx), port, include_parameters)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_graphic_overrides(ctx: Context, port: int | None = None) -> dict:
+        """List the Graphic Overrides: rule groups (the folders of the Rules dialog) with
+        their rules, every rule with its folder, every combination with its rules, and the
+        current combination. Rename them with rename_items (kind override_rules,
+        override_rule_groups or override_combinations). Needs the ArchicadMcpAberto
+        add-on."""
+        return await overrides_tool.list_graphic_overrides(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_renovation_filters(ctx: Context, port: int | None = None) -> dict:
+        """List the Renovation Filters by name and the current one. No Archicad API can
+        rename a filter or read its settings. Needs the ArchicadMcpAberto add-on."""
+        return await overrides_tool.list_renovation_filters(client_of(ctx), port)
 
     @mcp.tool(annotations=WRITE)
     async def create_grid_elements(

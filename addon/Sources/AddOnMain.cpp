@@ -9,6 +9,7 @@
 #include "CameraPathCommands.hpp"
 #include "CameraViewCommands.hpp"
 #include "ObjectReplacementCommands.hpp"
+#include "OverrideCommands.hpp"
 
 template <typename CommandType>
 static GSErrCode InstallCommand ()
@@ -53,6 +54,9 @@ GSErrCode Initialize (void)
     err |= InstallCommand<SaveStoryViewCommand> ();
     err |= InstallCommand<GetObjectReplacementDataCommand> ();
     err |= InstallCommand<ReplaceObjectLibrariesCommand> ();
+    err |= InstallCommand<GetGraphicOverridesCommand> ();
+    err |= InstallCommand<RenameGraphicOverridesCommand> ();
+    err |= InstallCommand<GetRenovationFiltersCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif

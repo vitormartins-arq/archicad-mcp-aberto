@@ -564,6 +564,14 @@
       "description": "List grid lines with start, end, story and layer (ArchicadMcpAberto add-on)."
     },
     {
+      "name": "list_graphic_overrides",
+      "description": "List Graphic Override rules, folders and combinations (ArchicadMcpAberto add-on)."
+    },
+    {
+      "name": "list_renovation_filters",
+      "description": "List renovation filters and the current one (ArchicadMcpAberto add-on)."
+    },
+    {
       "name": "create_grid_elements",
       "description": "Preview or draw grid lines from start and end points (ArchicadMcpAberto add-on). Read back after."
     },
