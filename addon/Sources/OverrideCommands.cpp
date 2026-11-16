@@ -92,10 +92,12 @@ GS::ObjectState GetGraphicOverridesCommand::Execute (const GS::ObjectState& /*pa
         combinations (row);
     }
 
+#ifdef ServerMainVers_3000  // not in the AC29 API
     API_Guid current = APINULLGuid;
     if (ACAPI_GraphicalOverride_GetActualOverrideCombination (current) == NoError && current != APINULLGuid) {
         response.Add ("currentCombinationGuid", APIGuidToString (current));
     }
+#endif
     return response;
 }
 
