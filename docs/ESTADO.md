@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Tabelas interativas / 17/11/2026:** nova `list_schedules` (só leitura) junta o Mapa
+  do Projeto, o Mapa de Vistas e o Livro de Pranchas pelo GUID de origem: tabela ->
+  vista salva -> desenho na prancha. Teste ao vivo no Template P. Interiores sujo_REV66
+  (AC30 3001 BRA): 86 tabelas, com pastas e pranchas. Exportar em XLSX pelo Publicador
+  depende de um conjunto montado à mão pelo Vitor (item de tabela com formato XLSX);
+  o teste de publicação está pendente desse conjunto.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct

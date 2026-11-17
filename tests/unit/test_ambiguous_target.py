@@ -61,6 +61,7 @@ from archicad_mcp_aberto.tools import (
     roofs,
     room_views,
     scenes,
+    schedules,
     sections,
     selection,
     solids,
@@ -190,6 +191,7 @@ INPUTS = {
     },
     "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
     "get_navigator_tree": {},
+    "list_schedules": {},
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
     "attach_elements_to_issue": {
@@ -567,6 +569,7 @@ TARGETED = {
         navigator,
         grids,
         navigator_moves,
+        schedules,
         openings,
         preview_images,
         object_replacement,

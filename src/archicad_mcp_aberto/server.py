@@ -67,6 +67,7 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import room_views as room_views_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
+from archicad_mcp_aberto.tools import schedules as schedules_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import solids as solids_tool
@@ -1239,6 +1240,19 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await navigator_tool.get_navigator_tree(
             client_of(ctx), navigator_map, port, query, offset, limit, publisher_set_name
         )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_schedules(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        only_on_layouts: bool = False,
+    ) -> dict:
+        """List Interactive Schedules: name, ID, Project Map folder, saved views (with
+        their View Map folder) and the layouts each one is placed on. Query matches name,
+        ID or folder. Navigator only: no schedule fields or values. Never writes.
+        """
+        return await schedules_tool.list_schedules(client_of(ctx), port, query, only_on_layouts)
 
     @mcp.tool(annotations=WRITE)
     async def create_meshes(

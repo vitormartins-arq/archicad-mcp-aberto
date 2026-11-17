@@ -27,7 +27,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **169 registered tools**: **63 read-only**, **3 view/session actions** and
+Pre-alpha with **170 registered tools**: **64 read-only**, **3 view/session actions** and
 **103 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -143,6 +143,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
 | `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
 | `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
+| `list_schedules` | Read | Interactive Schedules with Project Map folder, saved views and the layouts they are on | yes |
 | `create_meshes` | Write | Simple 3D terrains from absolute project coordinates, read back per mesh | yes |
 | `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
 | `get_view_settings` | Read | Settings or native error for each of up to 100 views | yes |
@@ -496,6 +497,11 @@ and open to everyone's contributions.
   items `failed` with `not_attempted: true`. Source-derived simulation only; live validation pending.
 
 
+- `list_schedules(port?, query?, only_on_layouts=false)` lists the Project Map schedules
+  with name, ID and folder, their saved views in the View Map (with folder) and the
+  layouts each one is placed on (layout, subset and drawing). It joins the three
+  Navigator trees by source GUID: schedule -> saved view -> layout drawing. Archicad 30
+  exposes no schedule fields, criteria or values, so none are returned. Never writes.
 - `get_navigator_tree(navigator_map="ProjectMap", port?, query?, offset=0, limit=200,
   publisher_set_name?)` reads a flattened Navigator tree through Tapir 1.7.0. Maps are
   `ProjectMap` (project), `PublicViewMap` (views), `LayoutBook` (layouts) and
