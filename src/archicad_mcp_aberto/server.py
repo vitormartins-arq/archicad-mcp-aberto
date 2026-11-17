@@ -34,6 +34,7 @@ from archicad_mcp_aberto.tools import (
     object_replacement,
     openings,
     preview_images,
+    profile_modifiers,
     profiles,
     project_info,
     project_location,
@@ -2063,6 +2064,34 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         physics, zone categories, pen tables, line types or fill types. Omit guids to
         read that whole attribute kind. Native errors remain per item; never writes."""
         return await attributes_details.get_attribute_details(client_of(ctx), kind, guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_profile_modifiers(
+        ctx: Context, profile_guid: str, port: int | None = None
+    ) -> dict:
+        """Read named modifiers of one complex profile, with GUIDs, edges and anchors.
+
+        Requires the matching Archicad MCP Aberto add-on.
+        """
+        return await profile_modifiers.get_profile_modifiers(client_of(ctx), profile_guid, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def rename_profile_modifiers(
+        ctx: Context,
+        profile_guid: str,
+        renames: list[profile_modifiers.ModifierRename],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Rename named edge offsets in one complex profile by modifier GUID.
+
+        Preview first, then use the same inputs with the explicit port and one-use
+        token. Requires the matching add-on. Does not consolidate IDs or save the PLN.
+        """
+        return await profile_modifiers.rename_profile_modifiers(
+            client_of(ctx), profile_guid, renames, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_ifc_of_elements(

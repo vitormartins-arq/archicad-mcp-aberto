@@ -580,6 +580,14 @@
       "description": "Read detailed composites, profiles, surfaces, physical properties, zone categories, pen tables, lines or fills."
     },
     {
+      "name": "get_profile_modifiers",
+      "description": "Read named complex-profile modifiers by GUID, with edge directions and anchors."
+    },
+    {
+      "name": "rename_profile_modifiers",
+      "description": "Preview or verify renames of named edge offsets by modifier GUID within a complex profile."
+    },
+    {
       "name": "get_ifc_of_elements",
       "description": "Read IFC type, IDs and properties for elements."
     },

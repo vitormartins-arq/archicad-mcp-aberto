@@ -1,5 +1,10 @@
 # Estado atual
 
+- **Modificadores de perfil / 17/11/2026:** leitura de afastamentos nomeados por
+  GUID de perfil com IDs, arestas, sentidos e âncoras disponíveis no SDK. A
+  renomeação é por ID, com prévia, token, verificação da definição e recibo.
+  A validação em um PLN descartável no Archicad ainda está pendente.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct
