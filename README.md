@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **169 registered tools**: **63 read-only**, **3 view/session actions** and
-**103 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **171 registered tools**: **64 read-only**, **3 view/session actions** and
+**104 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -185,6 +185,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_layout_subsets` | Write | New Layout Book subsets with prefix and numbering | yes |
 | `place_hotlinks` | Write | Places hotlink modules from .mod or .pln files | yes |
 | `get_attribute_details` | Read | Detailed composites, profiles, surfaces, material physics, zone categories, pen tables, lines or fills | yes |
+| `get_profile_modifiers` | Read | Named modifiers of a complex profile with GUIDs, edge directions and measurement anchors | companion |
+| `rename_profile_modifiers` | Write | Preview and verify renames of edge offsets by ID within one complex profile | companion |
 
 ### Reported live validation
 

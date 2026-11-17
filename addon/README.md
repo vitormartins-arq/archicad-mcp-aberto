@@ -61,3 +61,23 @@ Angles are in radians on the MCP side; Archicad keeps them in degrees and the co
 convert. A perspective camera defaults to a 60 degree view cone. First live test
 (AC30 build 3001 BRA, 21/10/2026) in `CAMERA.md`; how to place cameras in
 `docs/3D_SCENES.md`.
+
+## Complex profile modifiers
+
+`GetProfileModifiers` exposes names keyed by modifier GUID for one profile.
+Each supported edge-offset setup reports the hatch and edge index, offset side,
+and available dimension anchors. Indices are local to the profile. Their
+presence does not establish equivalence between modifiers.
+
+`RenameProfileModifiers` uses the original extended attribute definition and
+changes only its parameter-name table. It checks project identity, the old
+names and a fingerprint of the serialized profile image before writing. The
+readback checks the full name table and the image fingerprint. If the readback
+shows a difference, the add-on attempts to restore and verify the original
+definition. An unknown outcome requires inspection before any further write.
+`ACAPI_Attribute_ModifyExt` is non-undoable.
+
+For a live check, use a disposable PLN with an edge offset already set to a
+nonzero value on a placed element. Read the profile, preview an ID rename,
+apply with the issued token, and compare the ID, edge setup, instance offset
+and the element geometry against the initial state.

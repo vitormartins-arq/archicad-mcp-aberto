@@ -250,6 +250,11 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "rename_profile_modifiers": (
+        "profile modifier rename",
+        "modifier_receipt_id",
+        "Changes names only, within one profile. Modifier IDs and profile geometry are verified.",
+    ),
     "create_windows": (
         "window",
         "window_receipt_id",

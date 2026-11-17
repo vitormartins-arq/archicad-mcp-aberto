@@ -47,6 +47,7 @@ from archicad_mcp_aberto.tools import (
     object_replacement,
     openings,
     preview_images,
+    profile_modifiers,
     profiles,
     project_info,
     project_location,
@@ -138,6 +139,11 @@ INPUTS = {
     "list_project_map_cameras": {},
     "list_hotlinks": {},
     "get_attribute_details": {"kind": "composites", "guids": []},
+    "get_profile_modifiers": {"profile_guid": GUID},
+    "rename_profile_modifiers": {
+        "profile_guid": GUID,
+        "renames": [{"modifier_id": PROP, "new_name": "Recuo"}],
+    },
     "get_ifc_of_elements": {"element_guids": [GUID]},
     "find_elements_by_ifc_ids": {"ifc_ids": ["2O2Fr$t4X7Zf8NOew3FNvQ"]},
     "get_project_location": {},
@@ -534,6 +540,7 @@ TARGETED = {
         model_tasks,
         attribute_properties,
         attributes_details,
+        profile_modifiers,
         attributes,
         classification_systems,
         classifications,
@@ -772,6 +779,18 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                 await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetPublisherSets"]
+            assert not untouched.calls
+            return
+        if name in {"get_profile_modifiers", "rename_profile_modifiers"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            command = (
+                "GetProjectSaveContext" if name.startswith("rename") else "GetProfileModifiers"
+            )
+            assert selected.own_addon_calls == [command]
             assert not untouched.calls
             return
         if name in {"inspect_object_replacements", "replace_object_libraries"}:
