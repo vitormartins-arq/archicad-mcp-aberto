@@ -675,7 +675,8 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """Preview renaming template items of one kind: view_map, project_map or
         layout_book items, favorites, classification_systems, classification_items (id
         and name), custom property_groups and properties, building_materials,
-        layers, surfaces (require the native RenameAttributes command), layer_combinations
+        layers, surfaces and operation_profiles (require the native RenameAttributes
+        command), layer_combinations
         (layer states are kept and read back) or
         attribute_folders (scope = attribute type, e.g. Layer). Either find + replace on
         every name (replace "" removes the text) or renames, a list of exact {old, new}

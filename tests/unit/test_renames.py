@@ -232,6 +232,40 @@ async def test_surface_rename_refuses_without_native_command():
     assert "CreateSurfaces" not in fake.tapir_calls
 
 
+async def test_operation_profile_rename_preserves_official_attributes():
+    fake = model()
+    guid = "46464646-4646-4646-8646-000000000009"
+    profile = {
+        "attributeId": {"guid": guid},
+        "name": "ANT Office",
+        "occupancyType": "Non-Residential",
+        "hotWaterLoad": 0.5,
+        "humanHeatGain": 75,
+        "humidity": 0.45,
+    }
+    fake.operation_profiles[guid] = deepcopy(profile)
+    parameters = {"attributeIds": [{"attributeId": {"guid": guid}}]}
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        before = await client.command(19723, "GetOperationProfileAttributes", parameters)
+        preview, result = await apply(
+            client, kind="operation_profiles", find="ANT ", replace="LAB "
+        )
+        after = await client.command(19723, "GetOperationProfileAttributes", parameters)
+    assert preview["items"][0]["before"]["name"] == "ANT Office"
+    assert result["status"] == "verified"
+    assert fake.own_addon_requests == [
+        {
+            "command": "RenameAttributes",
+            "parameters": {
+                "attributeType": "OperationProfile",
+                "renames": [{"guid": guid, "newName": "LAB Office"}],
+            },
+        }
+    ]
+    before["attributes"][0]["operationProfileAttribute"]["name"] = "LAB Office"
+    assert before == after
+
+
 async def test_surface_preview_rejects_names_still_occupied_at_start():
     fake = model()
     fake.surfaces = {7: "Oak", 8: "Walnut"}

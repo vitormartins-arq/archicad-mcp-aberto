@@ -1,5 +1,9 @@
 # Changelog
 
+- Support Operation Profiles in native `RenameAttributes` and
+  `rename_items(kind="operation_profiles")`, passing the SDK's extended
+  schedule definition back unchanged.
+
 - Add native `RenameAttributes` and use it for `rename_items(kind="surfaces")`
   when available. Surface renames no longer use Tapir's texture-changing overwrite
   path. Preview, single-use confirmation, receipts and readback are retained.

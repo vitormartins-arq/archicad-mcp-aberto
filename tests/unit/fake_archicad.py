@@ -371,6 +371,7 @@ class FakeArchicad:
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
     surface_details: dict[str, dict] = field(default_factory=dict)  # GUID -> GetSurfaces row
+    operation_profiles: dict[str, dict] = field(default_factory=dict)
     surface_type_ignored: bool = False
     # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
     line_types: list[dict] = field(
@@ -708,6 +709,21 @@ class FakeArchicad:
                     "isAvailable": self.own_addon_loaded
                     and probe.get("commandNamespace") == "ArchicadMcpAberto"
                     and probe.get("commandName") in {"RenameAttributes", "Get3DCamera"}
+                }
+            )
+        if command == "API.GetAttributesByType" and params["attributeType"] == "OperationProfile":
+            return ok(
+                {"attributeIds": [{"attributeId": {"guid": g}} for g in self.operation_profiles]}
+            )
+        if command == "API.GetOperationProfileAttributes":
+            return ok(
+                {
+                    "attributes": [
+                        {"operationProfileAttribute": deepcopy(self.operation_profiles[g])}
+                        if (g := row["attributeId"]["guid"]) in self.operation_profiles
+                        else {"error": {"code": -1, "message": "Unknown operation profile"}}
+                        for row in params["attributeIds"]
+                    ]
                 }
             )
         if command == "API.GetProductInfo":
@@ -1106,6 +1122,26 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
+        if name == "RenameAttributes" and args.get("attributeType") == "OperationProfile":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                profile = self.operation_profiles.get(guid)
+                row = {"guid": guid, "oldName": profile["name"] if profile else "", "newName": new}
+                row["success"] = (
+                    profile is not None
+                    and bool(new.strip())
+                    and not any(
+                        g != guid and other["name"].casefold() == new.casefold()
+                        for g, other in self.operation_profiles.items()
+                    )
+                )
+                if row["success"]:
+                    profile["name"] = new
+                else:
+                    row["error"] = {"code": -1, "message": "Invalid operation profile or name"}
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
         if name == "RenameAttributes" and args.get("attributeType") == "Surface":
             rows = []
             for item in args["renames"]:

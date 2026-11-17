@@ -73,6 +73,7 @@ Kind = Literal[
     "properties",
     "building_materials",
     "surfaces",
+    "operation_profiles",
     "layers",
     "layer_combinations",
     "attribute_folders",
@@ -86,6 +87,7 @@ SURFACE_COMMAND = {
         "commandName": "RenameAttributes",
     }
 }
+NATIVE_ATTRIBUTES = {"surfaces": "Surface", "operation_profiles": "OperationProfile"}
 
 
 class Rename(write.InputModel):
@@ -265,6 +267,30 @@ async def _catalog(client, port, request: RenameRequest, timeout=None) -> list[d
         if not isinstance(root, dict):
             raise ValueError(f"Unexpected {request.scope} folder structure response.")
         return _folder_rows(root, 0, "", [])
+    if kind == "operation_profiles":
+        ids = await client.command(
+            port, "GetAttributesByType", {"attributeType": "OperationProfile"}, **extra
+        )
+        attribute_ids = ids["attributeIds"]
+        catalog = []
+        for start in range(0, len(attribute_ids), MAX_RENAMES):
+            batch = attribute_ids[start : start + MAX_RENAMES]
+            response = await client.command(
+                port, "GetOperationProfileAttributes", {"attributeIds": batch}, **extra
+            )
+            for requested, row in zip(
+                batch, _rows_of(response, "attributes", len(batch)), strict=True
+            ):
+                profile = row.get("operationProfileAttribute", {})
+                guid = documents._guid(profile.get("attributeId"))
+                if (
+                    not guid
+                    or guid != documents._guid(requested.get("attributeId"))
+                    or not isinstance(profile.get("name"), str)
+                ):
+                    raise ValueError("Could not read the complete operation profile catalog.")
+                catalog.append({"key": guid, "fields": {"name": profile["name"]}, "where": ""})
+        return catalog
     attribute_type = "Surface" if kind == "surfaces" else ATTRIBUTES[kind][0]
     rows = await drafting._attributes(client, port, attribute_type)
     return [
@@ -284,7 +310,7 @@ def _unique_scope(kind: str, row: dict) -> str | None:
 
 
 def _parameters(kind: str, key: str, new: dict) -> dict:
-    if kind == "surfaces":
+    if kind in NATIVE_ATTRIBUTES:
         return {"guid": key, "newName": new["name"]}
     if kind in NAVIGATOR:
         return {"navigatorItemId": {"guid": key}, "newName": new["name"]}
@@ -308,10 +334,11 @@ def _parameters(kind: str, key: str, new: dict) -> dict:
 async def _plan(client, requests, port, operation):
     (request,) = requests
     port, target, _ = await write._context(client, port)
-    if request.kind == "surfaces":
+    if request.kind in NATIVE_ATTRIBUTES:
         availability = await client.command(port, "IsAddOnCommandAvailable", SURFACE_COMMAND)
         if availability.get("isAvailable") is not True:
-            raise ValueError("Surface renaming requires ArchicadMcpAberto.RenameAttributes.")
+            label = "Surface" if request.kind == "surfaces" else "Operation profile"
+            raise ValueError(f"{label} renaming requires ArchicadMcpAberto.RenameAttributes.")
     rows = await _catalog(client, port, request)
     wanted = {r.old: r.new for r in request.renames or []}
     used = set()
@@ -350,12 +377,14 @@ async def _plan(client, requests, port, operation):
         raise ValueError(f"No {request.kind} name contains {request.find!r}; nothing to rename.")
     if len(items) > MAX_RENAMES:
         raise ValueError(f"{len(items)} renames; at most {MAX_RENAMES} per call. Narrow it.")
-    if request.kind == "surfaces":
+    if request.kind in NATIVE_ATTRIBUTES:
         occupied = {row["fields"]["name"].casefold(): row["key"] for row in rows}
         for item in items:
             name = item["after_name"]["name"]
             if occupied.get(name.casefold(), item["key"]) != item["key"]:
-                raise ValueError(f"Surface name {name!r} is already occupied.")
+                raise ValueError(
+                    f"{NATIVE_ATTRIBUTES[request.kind]} name {name!r} is already occupied."
+                )
     renamed = {i["key"] for i in items}
     final = [(row, row["fields"]) for row in rows if row["key"] not in renamed]
     final += [(next(r for r in rows if r["key"] == i["key"]), i["after_name"]) for i in items]
@@ -452,9 +481,12 @@ async def _send(client, receipt, items) -> None:
             item["write_response"] = row
             _outcome(item, row)
         return
-    if kind == "surfaces":
+    if kind in NATIVE_ATTRIBUTES:
         command, answer_key = "RenameAttributes", "results"
-        payload: dict = {"attributeType": "Surface", "renames": [i["parameters"] for i in items]}
+        payload: dict = {
+            "attributeType": NATIVE_ATTRIBUTES[kind],
+            "renames": [i["parameters"] for i in items],
+        }
     elif kind in batch:
         command, list_key, answer_key = batch[kind]
         payload = {list_key: [i["parameters"] for i in items]}
@@ -463,7 +495,7 @@ async def _send(client, receipt, items) -> None:
         payload = {list_key: [i["parameters"] for i in items], "overwriteExisting": True}
         answer_key = "attributeIds"
     try:
-        send = client.own_addon if kind == "surfaces" else client.tapir
+        send = client.own_addon if kind in NATIVE_ATTRIBUTES else client.tapir
         raw = await send(port, command, payload, timeout=timeout)
         rows = _rows_of(raw, answer_key, len(items))
     except CommandFailed as exc:  # Archicad refused the call before running it
@@ -486,7 +518,7 @@ async def _send(client, receipt, items) -> None:
         if answer_key == "attributeIds":
             same = isinstance(row, dict) and documents._guid(row.get("attributeId")) == item["key"]
             row = {"success": True} if same else {"success": False, "error": row}
-        if kind == "surfaces" and (
+        if kind in NATIVE_ATTRIBUTES and (
             not isinstance(row, dict)
             or str(row.get("guid", "")).lower() != item["key"].lower()
             or row.get("newName") != item["after_name"]["name"]
