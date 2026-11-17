@@ -701,6 +701,15 @@ class FakeArchicad:
         self.command_requests.append(deepcopy(body))
         if self.busy:
             return fail(4001, "Invalid program status (ongoing user input)")
+        if command == "API.IsAddOnCommandAvailable":
+            probe = params.get("addOnCommandId", {})
+            return ok(
+                {
+                    "isAvailable": self.own_addon_loaded
+                    and probe.get("commandNamespace") == "ArchicadMcpAberto"
+                    and probe.get("commandName") in {"RenameAttributes", "Get3DCamera"}
+                }
+            )
         if command == "API.GetProductInfo":
             return ok(
                 {"version": self.version, "buildNumber": self.build, "languageCode": self.language}
@@ -1097,6 +1106,27 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
+        if name == "RenameAttributes" and args.get("attributeType") == "Surface":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                idx = next((i for i in self.surfaces if surface_guid(i) == guid), None)
+                old = self.surfaces.get(idx, "")
+                row = {"guid": guid, "oldName": old, "newName": new, "success": False}
+                if (
+                    idx is None
+                    or not new.strip()
+                    or any(
+                        i != idx and n.casefold() == new.casefold()
+                        for i, n in self.surfaces.items()
+                    )
+                ):
+                    row["error"] = {"code": -1, "message": "Invalid surface or name"}
+                else:
+                    self.surfaces[idx] = new
+                    row["success"] = True
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
         if name == "Set3DCamera":

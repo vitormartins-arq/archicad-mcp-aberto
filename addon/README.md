@@ -31,6 +31,11 @@ from Tapir (MIT, `Tools/LICENSE-Tapir`).
 
 Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
 
+- `RenameAttributes`: `{"attributeType":"Surface","renames":[{"guid":"…","newName":"…"}]}`,
+  up to 500 items, in request order. Also supports BuildingMaterial, Fill, Line,
+  Composite, Profile, ZoneCategory and Layer. Answers `results` with per-item
+  outcomes. Names already occupied by another attribute of the same type are rejected.
+
 - `Get3DCamera`: the 3D projection (perspective camera and target in metres, or the
   parallel azimuth and projection mode).
 - `Set3DCamera`: `{"perspective": {camera, target, viewCone?}}` or

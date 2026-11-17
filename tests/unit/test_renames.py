@@ -11,6 +11,7 @@ from tests.unit.fake_archicad import (
     fake_transport,
     folder_guid,
     layer_guid,
+    surface_guid,
 )
 
 pytestmark = pytest.mark.anyio
@@ -172,11 +173,76 @@ async def test_refusals_before_any_rename():
             {"kind": "layers", "renames": [{"old": "A", "new": "B"}, {"old": "A", "new": "C"}]},
             {"kind": "layers", "find": "A", "replace": "B", "scope": "x"},
             {"kind": "styles", "find": "A", "replace": "B"},
-            {"kind": "surfaces", "find": "Pintura", "replace": "Tinta"},  # texture changed live
         ):
             with pytest.raises(ValidationError):
                 await renames.rename_items(c, **bad)
     assert not {"CreateLayers", "RenameFavorites"} & set(fake.tapir_calls)
+
+
+async def test_surface_rename_uses_native_command_and_keeps_details():
+    fake = model()
+    fake.surfaces = {7: "Textured Surface"}
+    guid = surface_guid(7)
+    details = {"texture": {"name": "wood.jpg", "rotation": 0.3}, "color": [1, 0, 0]}
+    fake.surface_details[guid] = deepcopy(details)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await renames.rename_items(c, "surfaces", find="Surface", replace="Oak")
+        assert fake.surfaces[7] == "Textured Surface"
+        token = preview["confirmation_token"]
+        result = await renames.rename_items(
+            c,
+            "surfaces",
+            find="Surface",
+            replace="Oak",
+            port=19723,
+            dry_run=False,
+            confirmation_token=token,
+        )
+        with pytest.raises(ValueError, match="consumed"):
+            await renames.rename_items(
+                c,
+                "surfaces",
+                find="Surface",
+                replace="Oak",
+                port=19723,
+                dry_run=False,
+                confirmation_token=token,
+            )
+    assert result["status"] == "verified"
+    assert fake.surfaces == {7: "Textured Oak"}
+    assert fake.surface_details[guid] == details
+    assert fake.own_addon_requests == [
+        {
+            "command": "RenameAttributes",
+            "parameters": {
+                "attributeType": "Surface",
+                "renames": [{"guid": guid, "newName": "Textured Oak"}],
+            },
+        }
+    ]
+    assert "CreateSurfaces" not in fake.tapir_calls
+
+
+async def test_surface_rename_refuses_without_native_command():
+    fake = model(own_addon_loaded=False)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="requires ArchicadMcpAberto.RenameAttributes"):
+            await renames.rename_items(c, "surfaces", find="A", replace="B")
+    assert not fake.own_addon_requests
+    assert "CreateSurfaces" not in fake.tapir_calls
+
+
+async def test_surface_preview_rejects_names_still_occupied_at_start():
+    fake = model()
+    fake.surfaces = {7: "Oak", 8: "Walnut"}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="already occupied"):
+            await renames.rename_items(
+                c,
+                "surfaces",
+                renames=[{"old": "Oak", "new": "Walnut"}, {"old": "Walnut", "new": "Pine"}],
+            )
+    assert not fake.own_addon_requests
 
 
 async def test_find_with_empty_replace_removes_the_text():

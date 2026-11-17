@@ -1,5 +1,9 @@
 # Changelog
 
+- Add native `RenameAttributes` and use it for `rename_items(kind="surfaces")`
+  when available. Surface renames no longer use Tapir's texture-changing overwrite
+  path. Preview, single-use confirmation, receipts and readback are retained.
+
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.
