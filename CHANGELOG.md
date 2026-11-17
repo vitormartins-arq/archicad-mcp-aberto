@@ -1,5 +1,10 @@
 # Changelog
 
+- Add native `GetFavoriteTree` and `RenameFavoritesAndFolders` (R18). They use the
+  Archicad 29/30 Favorite Manager, so favorites keep every setting and folders can be
+  renamed; this also reaches favorites of types Tapir does not list (MEP, curtain wall
+  parts, angle and radial dimensions). Not undoable: save a revision first.
+
 - Support MEP systems in native `RenameAttributes` and
   `rename_items(kind="mep_systems")` (R17). MEP systems have no extended definition,
   so the plain attribute modify keeps pens, fills, materials and domains.

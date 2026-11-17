@@ -31,6 +31,9 @@ from Tapir (MIT, `Tools/LICENSE-Tapir`).
 
 Namespace `ArchicadMcpAberto`, called with `API.ExecuteAddOnCommand`:
 
+- `GetFavoriteTree`: `{}` → every favorite folder path and favorite (name, folder, typeID).
+- `RenameFavoritesAndFolders`: `{"folders":[{"path":["A","B"],"newName":"…"}],"favorites":[{"name":"…","newName":"…"}]}`.
+  Folders first, in order (send deepest first); every item is read back. Not undoable.
 - `RenameAttributes`: `{"attributeType":"Surface","renames":[{"guid":"…","newName":"…"}]}`,
   up to 500 items, in request order. Also supports BuildingMaterial, Fill, Line,
   Composite, Profile, ZoneCategory, Layer, OperationProfile and MEPSystem. Answers `results` with per-item

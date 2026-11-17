@@ -10,6 +10,7 @@
 #include "CameraViewCommands.hpp"
 #include "ObjectReplacementCommands.hpp"
 #include "AttributeRenameCommand.hpp"
+#include "FavoriteCommands.hpp"
 
 template <typename CommandType>
 static GSErrCode InstallCommand ()
@@ -55,6 +56,8 @@ GSErrCode Initialize (void)
     err |= InstallCommand<GetObjectReplacementDataCommand> ();
     err |= InstallCommand<ReplaceObjectLibrariesCommand> ();
     err |= InstallCommand<RenameAttributesCommand> ();
+    err |= InstallCommand<GetFavoriteTreeCommand> ();
+    err |= InstallCommand<RenameFavoritesCommand> ();
 #ifdef ServerMainVers_3000
     err |= InstallCommand<Get3DWindowImageCommand> ();
 #endif
