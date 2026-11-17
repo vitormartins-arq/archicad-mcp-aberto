@@ -1,5 +1,6 @@
 #include "AttributeRenameCommand.hpp"
 #include "OnExit.hpp"
+#include <cstring>
 
 namespace {
 API_AttrTypeID AttributeType (const GS::UniString& type)
@@ -13,6 +14,50 @@ API_AttrTypeID AttributeType (const GS::UniString& type)
     if (type == "ZoneCategory") return API_ZoneCatID;
     if (type == "Layer") return API_LayerID;
     return API_ZombieAttrID;
+}
+
+bool SameTexture (const API_Texture& a, const API_Texture& b)
+{
+    return strcmp (reinterpret_cast<const char*> (a.texName),
+                   reinterpret_cast<const char*> (b.texName)) == 0 &&
+           a.status == b.status && a.missingPict == b.missingPict && a.xSize == b.xSize &&
+           a.ySize == b.ySize && a.rotAng == b.rotAng;
+}
+
+// Live AC30 build 3001 BRA (17/11/2026): Modify with texture.fileLoc set renamed the texture
+// reference after the image file on disk ("Brick - Running Bond -opt") instead of keeping the
+// stored library name ("TIJOLO - APARELHO AO COMPRIDO -OPT"). The surface is written with
+// fileLoc cleared, so Archicad keeps texName, and the texture is read back and compared.
+// If it still differs, the original surface is written back and the item fails.
+GSErrCode RenameSurface (API_Attribute& attribute, GS::UniString& oldName, const char*& message)
+{
+    const API_Texture original = attribute.material.texture;
+    IO::Location* location = attribute.material.texture.fileLoc;
+    attribute.material.texture.fileLoc = nullptr;
+    const GS::OnExit restoreLocation ([&] () { attribute.material.texture.fileLoc = location; });
+
+    GSErrCode error = ACAPI_Attribute_Modify (&attribute, nullptr);
+    if (error != NoError) return error;
+
+    GS::UniString readName;
+    API_Attribute after = {};
+    after.header.typeID = API_MaterialID;
+    after.header.guid = attribute.header.guid;
+    after.header.uniStringNamePtr = &readName;
+    const GS::OnExit disposeAfter ([&] () { delete after.material.texture.fileLoc; });
+    error = ACAPI_Attribute_Get (&after);
+    if (error != NoError) {
+        message = "Surface renamed, but it could not be read back.";
+        return error;
+    }
+    if (SameTexture (original, after.material.texture)) return NoError;
+
+    message = "The texture changed on rename; the original surface was written back.";
+    attribute.material.texture = original;
+    attribute.material.texture.fileLoc = nullptr;
+    attribute.header.uniStringNamePtr = &oldName;
+    ACAPI_Attribute_Modify (&attribute, nullptr);
+    return APIERR_GENERAL;
 }
 
 GSErrCode Rename (API_AttrTypeID type, const GS::UniString& guid, const GS::UniString& name,
@@ -60,14 +105,12 @@ GSErrCode Rename (API_AttrTypeID type, const GS::UniString& guid, const GS::UniS
     message = "Attribute modification failed.";
     if (type == API_BuildingMaterialID || type == API_LayerID)
         return ACAPI_Attribute_Modify (&attribute, nullptr);
+    if (type == API_MaterialID)
+        return RenameSurface (attribute, oldName, message);
 
     API_AttributeDefExt definition = {};
     const GS::OnExit dispose ([&] () { ACAPI_DisposeAttrDefsHdlsExt (&definition); });
     error = ACAPI_Attribute_GetDefExt (type, attribute.header.index, &definition);
-    // Some SDK/host versions expose the surface texture only in API_MaterialType.
-    // In that case send the complete original material (including texture.fileLoc).
-    if (error == APIERR_BADID && type == API_MaterialID)
-        return ACAPI_Attribute_Modify (&attribute, nullptr);
     if (error != NoError) {
         message = "Could not read the extended attribute definition.";
         return error;
