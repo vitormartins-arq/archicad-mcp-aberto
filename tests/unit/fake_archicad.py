@@ -371,6 +371,8 @@ class FakeArchicad:
         default_factory=lambda: {1: "Pintura Branca", 2: "Concreto Aparente"}
     )
     surface_details: dict[str, dict] = field(default_factory=dict)  # GUID -> GetSurfaces row
+    operation_profiles: dict[str, dict] = field(default_factory=dict)
+    mep_systems: dict[str, str] = field(default_factory=dict)  # GUID -> name
     surface_type_ignored: bool = False
     # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
     line_types: list[dict] = field(
@@ -701,6 +703,30 @@ class FakeArchicad:
         self.command_requests.append(deepcopy(body))
         if self.busy:
             return fail(4001, "Invalid program status (ongoing user input)")
+        if command == "API.IsAddOnCommandAvailable":
+            probe = params.get("addOnCommandId", {})
+            return ok(
+                {
+                    "isAvailable": self.own_addon_loaded
+                    and probe.get("commandNamespace") == "ArchicadMcpAberto"
+                    and probe.get("commandName") in {"RenameAttributes", "Get3DCamera"}
+                }
+            )
+        if command == "API.GetAttributesByType" and params["attributeType"] == "OperationProfile":
+            return ok(
+                {"attributeIds": [{"attributeId": {"guid": g}} for g in self.operation_profiles]}
+            )
+        if command == "API.GetOperationProfileAttributes":
+            return ok(
+                {
+                    "attributes": [
+                        {"operationProfileAttribute": deepcopy(self.operation_profiles[g])}
+                        if (g := row["attributeId"]["guid"]) in self.operation_profiles
+                        else {"error": {"code": -1, "message": "Unknown operation profile"}}
+                        for row in params["attributeIds"]
+                    ]
+                }
+            )
         if command == "API.GetProductInfo":
             return ok(
                 {"version": self.version, "buildNumber": self.build, "languageCode": self.language}
@@ -1097,6 +1123,66 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
+        if name == "RenameAttributes" and args.get("attributeType") == "OperationProfile":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                profile = self.operation_profiles.get(guid)
+                row = {"guid": guid, "oldName": profile["name"] if profile else "", "newName": new}
+                row["success"] = (
+                    profile is not None
+                    and bool(new.strip())
+                    and not any(
+                        g != guid and other["name"].casefold() == new.casefold()
+                        for g, other in self.operation_profiles.items()
+                    )
+                )
+                if row["success"]:
+                    profile["name"] = new
+                else:
+                    row["error"] = {"code": -1, "message": "Invalid operation profile or name"}
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
+        if name == "RenameAttributes" and args.get("attributeType") == "MEPSystem":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                row = {"guid": guid, "oldName": self.mep_systems.get(guid, ""), "newName": new}
+                row["success"] = (
+                    guid in self.mep_systems
+                    and bool(new.strip())
+                    and not any(
+                        g != guid and n.casefold() == new.casefold()
+                        for g, n in self.mep_systems.items()
+                    )
+                )
+                if row["success"]:
+                    self.mep_systems[guid] = new
+                else:
+                    row["error"] = {"code": -1, "message": "Invalid MEP system or name"}
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
+        if name == "RenameAttributes" and args.get("attributeType") == "Surface":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                idx = next((i for i in self.surfaces if surface_guid(i) == guid), None)
+                old = self.surfaces.get(idx, "")
+                row = {"guid": guid, "oldName": old, "newName": new, "success": False}
+                if (
+                    idx is None
+                    or not new.strip()
+                    or any(
+                        i != idx and n.casefold() == new.casefold()
+                        for i, n in self.surfaces.items()
+                    )
+                ):
+                    row["error"] = {"code": -1, "message": "Invalid surface or name"}
+                else:
+                    self.surfaces[idx] = new
+                    row["success"] = True
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
         if name == "Set3DCamera":
@@ -1446,7 +1532,11 @@ class FakeArchicad:
             else:
                 key, rows = mapping[name]
             return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
-        if name == "GetAttributesByType" and args["attributeType"] == "MEPSystem":
+        if (
+            name == "GetAttributesByType"
+            and args["attributeType"] == "MEPSystem"
+            and not self.mep_systems
+        ):
             fixture = json.loads(
                 (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
                     encoding="utf-8"
@@ -2444,6 +2534,16 @@ class FakeArchicad:
                     }
                 )
             return ok({"addOnCommandResponse": {"layerCombinations": out}})
+        if (
+            name == "GetAttributesByType"
+            and args["attributeType"] == "MEPSystem"
+            and self.mep_systems
+        ):
+            rows = [
+                {"attributeId": {"guid": g}, "index": i, "name": n}
+                for i, (g, n) in enumerate(self.mep_systems.items(), 1)
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
         if name == "GetAttributesByType" and args["attributeType"] == "Surface":
             rows = [
                 {"attributeId": {"guid": surface_guid(i)}, "index": i, "name": n}

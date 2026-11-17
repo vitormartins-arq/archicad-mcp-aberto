@@ -1,5 +1,30 @@
 # Manual live smoke
 
+For native surface renaming, load the candidate APX for the matching Archicad
+major and open a new, disposable untitled project containing a textured surface.
+Pass that surface GUID and the target port:
+
+```bash
+uv run python tests/live/rename_surface.py --port 19723 --guid GUID --evidence rename-surface.json
+```
+
+This compares the full official `GetSurfaceAttributes` JSON before and after,
+including texture and IDs; only the name may differ. It never saves. If the
+rename succeeds, check Edit > Undo and verify whether it restores the old
+name and original fields. The SDK classifies attribute modification as
+non-undoable; opening an undo scope is not proof that a host accepts it.
+
+For an operation profile, use a disposable project and select a profile GUID:
+
+```bash
+uv run python tests/live/rename_operation_profile.py --port 19723 --guid GUID --evidence rename-operation-profile.json --disposable-copy
+```
+
+Pass `--disposable-copy` only on a saved throwaway copy. The check compares
+all fields exposed by `GetOperationProfileAttributes` except the name.
+That API does not expose schedules; compare them separately in Archicad
+when validating preservation. The script never saves the project.
+
 Run only on an explicitly chosen test project on Vitor's PC. Importing the script
 or running unit tests does not connect to Archicad. Codex tested this runner only
 against the fake Archicad; live execution and visual approval belong to the operator.

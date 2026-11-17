@@ -1,5 +1,22 @@
 # Changelog
 
+- Add native `GetFavoriteTree` and `RenameFavoritesAndFolders` (R18). They use the
+  Archicad 29/30 Favorite Manager, so favorites keep every setting and folders can be
+  renamed; this also reaches favorites of types Tapir does not list (MEP, curtain wall
+  parts, angle and radial dimensions). Not undoable: save a revision first.
+
+- Support MEP systems in native `RenameAttributes` and
+  `rename_items(kind="mep_systems")` (R17). MEP systems have no extended definition,
+  so the plain attribute modify keeps pens, fills, materials and domains.
+
+- Support Operation Profiles in native `RenameAttributes` and
+  `rename_items(kind="operation_profiles")`, passing the SDK's extended
+  schedule definition back unchanged.
+
+- Add native `RenameAttributes` and use it for `rename_items(kind="surfaces")`
+  when available. Surface renames no longer use Tapir's texture-changing overwrite
+  path. Preview, single-use confirmation, receipts and readback are retained.
+
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.
