@@ -74,6 +74,7 @@ Kind = Literal[
     "building_materials",
     "surfaces",
     "operation_profiles",
+    "mep_systems",
     "layers",
     "layer_combinations",
     "attribute_folders",
@@ -87,7 +88,11 @@ SURFACE_COMMAND = {
         "commandName": "RenameAttributes",
     }
 }
-NATIVE_ATTRIBUTES = {"surfaces": "Surface", "operation_profiles": "OperationProfile"}
+NATIVE_ATTRIBUTES = {
+    "surfaces": "Surface",
+    "operation_profiles": "OperationProfile",
+    "mep_systems": "MEPSystem",
+}
 
 
 class Rename(write.InputModel):
@@ -291,7 +296,7 @@ async def _catalog(client, port, request: RenameRequest, timeout=None) -> list[d
                     raise ValueError("Could not read the complete operation profile catalog.")
                 catalog.append({"key": guid, "fields": {"name": profile["name"]}, "where": ""})
         return catalog
-    attribute_type = "Surface" if kind == "surfaces" else ATTRIBUTES[kind][0]
+    attribute_type = NATIVE_ATTRIBUTES.get(kind) or ATTRIBUTES[kind][0]
     rows = await drafting._attributes(client, port, attribute_type)
     return [
         {"key": documents._guid(r.get("attributeId")), "fields": {"name": r["name"]}, "where": ""}
@@ -337,7 +342,7 @@ async def _plan(client, requests, port, operation):
     if request.kind in NATIVE_ATTRIBUTES:
         availability = await client.command(port, "IsAddOnCommandAvailable", SURFACE_COMMAND)
         if availability.get("isAvailable") is not True:
-            label = "Surface" if request.kind == "surfaces" else "Operation profile"
+            label = NATIVE_ATTRIBUTES[request.kind]
             raise ValueError(f"{label} renaming requires ArchicadMcpAberto.RenameAttributes.")
     rows = await _catalog(client, port, request)
     wanted = {r.old: r.new for r in request.renames or []}

@@ -266,6 +266,31 @@ async def test_operation_profile_rename_preserves_official_attributes():
     assert before == after
 
 
+async def test_mep_system_rename_uses_native_command():
+    fake = model()
+    cold = "47474747-4747-4747-8747-000000000001"
+    hot = "47474747-4747-4747-8747-000000000002"
+    fake.mep_systems = {cold: "ÁGUA FRIA [Tubulação]", hot: "ÁGUA QUENTE [Tubulação]"}
+    async with ArchicadClient(transport=fake_transport(fake)) as client:
+        preview, result = await apply(
+            client,
+            kind="mep_systems",
+            renames=[{"old": "ÁGUA FRIA [Tubulação]", "new": "Água fria – Tubulação"}],
+        )
+    assert preview["items"][0]["before"]["name"] == "ÁGUA FRIA [Tubulação]"
+    assert result["status"] == "verified"
+    assert fake.own_addon_requests == [
+        {
+            "command": "RenameAttributes",
+            "parameters": {
+                "attributeType": "MEPSystem",
+                "renames": [{"guid": cold, "newName": "Água fria – Tubulação"}],
+            },
+        }
+    ]
+    assert fake.mep_systems[hot] == "ÁGUA QUENTE [Tubulação]"
+
+
 async def test_surface_preview_rejects_names_still_occupied_at_start():
     fake = model()
     fake.surfaces = {7: "Oak", 8: "Walnut"}

@@ -1,5 +1,9 @@
 # Changelog
 
+- Support MEP systems in native `RenameAttributes` and
+  `rename_items(kind="mep_systems")` (R17). MEP systems have no extended definition,
+  so the plain attribute modify keeps pens, fills, materials and domains.
+
 - Support Operation Profiles in native `RenameAttributes` and
   `rename_items(kind="operation_profiles")`, passing the SDK's extended
   schedule definition back unchanged.

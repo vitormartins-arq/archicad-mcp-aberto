@@ -14,6 +14,7 @@ API_AttrTypeID AttributeType (const GS::UniString& type)
     if (type == "Profile") return API_ProfileID;
     if (type == "ZoneCategory") return API_ZoneCatID;
     if (type == "Layer") return API_LayerID;
+    if (type == "MEPSystem") return API_MEPSystemID;
     return API_ZombieAttrID;
 }
 
@@ -105,7 +106,8 @@ GSErrCode Rename (API_AttrTypeID type, const GS::UniString& guid, const GS::UniS
     newName = name;
     attribute.header.uniStringNamePtr = &newName;
     message = "Attribute modification failed.";
-    if (type == API_BuildingMaterialID || type == API_LayerID)
+    // MEP systems have no extended definition (ACAPinc.h lists "-" for API_MEPSystemID).
+    if (type == API_BuildingMaterialID || type == API_LayerID || type == API_MEPSystemID)
         return ACAPI_Attribute_Modify (&attribute, nullptr);
     if (type == API_MaterialID)
         return RenameSurface (attribute, oldName, message);
@@ -127,7 +129,7 @@ GS::String RenameAttributesCommand::GetName () const { return "RenameAttributes"
 
 GS::Optional<GS::UniString> RenameAttributesCommand::GetInputParametersSchema () const
 {
-    return R"({"type":"object","properties":{"attributeType":{"enum":["Surface","BuildingMaterial","Fill","Line","Composite","Profile","ZoneCategory","Layer","OperationProfile"]},"renames":{"type":"array","minItems":1,"maxItems":500,"items":{"type":"object","properties":{"guid":{"type":"string","pattern":"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"},"newName":{"type":"string"}},"required":["guid","newName"],"additionalProperties":false}}},"required":["attributeType","renames"],"additionalProperties":false})";
+    return R"({"type":"object","properties":{"attributeType":{"enum":["Surface","BuildingMaterial","Fill","Line","Composite","Profile","ZoneCategory","Layer","OperationProfile","MEPSystem"]},"renames":{"type":"array","minItems":1,"maxItems":500,"items":{"type":"object","properties":{"guid":{"type":"string","pattern":"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"},"newName":{"type":"string"}},"required":["guid","newName"],"additionalProperties":false}}},"required":["attributeType","renames"],"additionalProperties":false})";
 }
 
 GS::ObjectState RenameAttributesCommand::Execute (const GS::ObjectState& input, GS::ProcessControl&) const

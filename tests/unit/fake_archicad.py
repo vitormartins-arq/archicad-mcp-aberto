@@ -372,6 +372,7 @@ class FakeArchicad:
     )
     surface_details: dict[str, dict] = field(default_factory=dict)  # GUID -> GetSurfaces row
     operation_profiles: dict[str, dict] = field(default_factory=dict)
+    mep_systems: dict[str, str] = field(default_factory=dict)  # GUID -> name
     surface_type_ignored: bool = False
     # Line types in the GetAttributesByType shape (Tapir 1.7.0 source); synthetic.
     line_types: list[dict] = field(
@@ -1142,6 +1143,25 @@ class FakeArchicad:
                     row["error"] = {"code": -1, "message": "Invalid operation profile or name"}
                 rows.append(row)
             return ok({"addOnCommandResponse": {"results": rows}})
+        if name == "RenameAttributes" and args.get("attributeType") == "MEPSystem":
+            rows = []
+            for item in args["renames"]:
+                guid, new = item["guid"], item["newName"]
+                row = {"guid": guid, "oldName": self.mep_systems.get(guid, ""), "newName": new}
+                row["success"] = (
+                    guid in self.mep_systems
+                    and bool(new.strip())
+                    and not any(
+                        g != guid and n.casefold() == new.casefold()
+                        for g, n in self.mep_systems.items()
+                    )
+                )
+                if row["success"]:
+                    self.mep_systems[guid] = new
+                else:
+                    row["error"] = {"code": -1, "message": "Invalid MEP system or name"}
+                rows.append(row)
+            return ok({"addOnCommandResponse": {"results": rows}})
         if name == "RenameAttributes" and args.get("attributeType") == "Surface":
             rows = []
             for item in args["renames"]:
@@ -1512,7 +1532,11 @@ class FakeArchicad:
             else:
                 key, rows = mapping[name]
             return ok({"addOnCommandResponse": {key: deepcopy(rows)}})
-        if name == "GetAttributesByType" and args["attributeType"] == "MEPSystem":
+        if (
+            name == "GetAttributesByType"
+            and args["attributeType"] == "MEPSystem"
+            and not self.mep_systems
+        ):
             fixture = json.loads(
                 (Path(__file__).parents[1] / "fixtures" / "tapir170_mep_documented.json").read_text(
                     encoding="utf-8"
@@ -2510,6 +2534,16 @@ class FakeArchicad:
                     }
                 )
             return ok({"addOnCommandResponse": {"layerCombinations": out}})
+        if (
+            name == "GetAttributesByType"
+            and args["attributeType"] == "MEPSystem"
+            and self.mep_systems
+        ):
+            rows = [
+                {"attributeId": {"guid": g}, "index": i, "name": n}
+                for i, (g, n) in enumerate(self.mep_systems.items(), 1)
+            ]
+            return ok({"addOnCommandResponse": {"attributes": rows}})
         if name == "GetAttributesByType" and args["attributeType"] == "Surface":
             rows = [
                 {"attributeId": {"guid": surface_guid(i)}, "index": i, "name": n}
