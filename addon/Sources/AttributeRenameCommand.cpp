@@ -93,7 +93,8 @@ GSErrCode Rename (API_AttrTypeID type, const GS::UniString& guid, const GS::UniS
     existing.typeID = type;
     existing.uniStringNamePtr = &newName;
     error = ACAPI_Attribute_Search (&existing);
-    if (error == NoError && existing.guid != attribute.header.guid) {
+    if (error == NoError && existing.guid != attribute.header.guid &&
+        existing.index != attribute.header.index) {
         message = "This name already exists in the same attribute type.";
         return APIERR_BADNAME;
     }
