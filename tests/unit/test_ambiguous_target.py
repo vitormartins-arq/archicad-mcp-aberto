@@ -1,6 +1,7 @@
 """P-005: target selection against MockTransport only; never a real Archicad."""
 
 import inspect
+import tempfile
 from copy import deepcopy
 from pathlib import Path
 
@@ -39,6 +40,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     mep,
     meshes,
+    model_tables,
     model_tasks,
     modify,
     morphs,
@@ -192,6 +194,21 @@ INPUTS = {
     "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
     "get_navigator_tree": {},
     "list_schedules": {},
+    "export_model_table": {
+        "output_folder": tempfile.mkdtemp(prefix="mcp-table-"),
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        },
+    },
+    "check_table_data": {
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        }
+    },
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
     "attach_elements_to_issue": {
@@ -570,6 +587,7 @@ TARGETED = {
         grids,
         navigator_moves,
         schedules,
+        model_tables,
         openings,
         preview_images,
         object_replacement,

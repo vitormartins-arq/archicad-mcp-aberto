@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Tabelas do modelo / 18/11/2026:** `export_model_table` monta a tabela direto dos
+  dados do modelo (propriedades, classificações, parâmetros GDL) e grava um XLSX novo
+  com abas de linhas, Resumo e Pendências, sem o Publicador. `check_table_data` lista
+  campos obrigatórios vazios. Escritor XLSX próprio (sem dependência nova), conferido
+  com openpyxl. Testes offline passaram; teste ao vivo e definições prontas do LAB
+  (luminárias, elétrica, mobiliário) aguardam um Archicad aberto.
+
 - **Tabelas interativas / 17/11/2026:** nova `list_schedules` (só leitura) junta o Mapa
   do Projeto, o Mapa de Vistas e o Livro de Pranchas pelo GUID de origem: tabela ->
   vista salva -> desenho na prancha. Teste ao vivo no Template P. Interiores sujo_REV66

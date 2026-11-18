@@ -380,6 +380,14 @@
       "description": "List Interactive Schedules with their Project Map folder, saved views and the layouts they are on."
     },
     {
+      "name": "export_model_table",
+      "description": "Build a table from model data (properties, classifications, GDL parameters) and write a new XLSX, without the Publisher."
+    },
+    {
+      "name": "check_table_data",
+      "description": "List the elements whose required table columns are empty, using the same definition as export_model_table."
+    },
+    {
       "name": "create_meshes",
       "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
     },

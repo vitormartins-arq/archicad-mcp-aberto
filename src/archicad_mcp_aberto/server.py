@@ -59,6 +59,7 @@ from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import layout_book as layout_book_tool
 from archicad_mcp_aberto.tools import mep as mep_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
+from archicad_mcp_aberto.tools import model_tables as model_tables_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
@@ -109,6 +110,13 @@ VIEW = {
     "readOnlyHint": False,
     "destructiveHint": False,
     "idempotentHint": True,
+    "openWorldHint": False,
+}
+# Reads the model and writes one new local file; never overwrites, never changes the model.
+EXPORT = {
+    "readOnlyHint": False,
+    "destructiveHint": False,
+    "idempotentHint": False,
     "openWorldHint": False,
 }
 WRITE = {
@@ -1253,6 +1261,44 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         ID or folder. Navigator only: no schedule fields or values. Never writes.
         """
         return await schedules_tool.list_schedules(client_of(ctx), port, query, only_on_layouts)
+
+    @mcp.tool(annotations=EXPORT)
+    async def export_model_table(
+        ctx: Context,
+        output_folder: str,
+        definition: model_tables_tool.TableDefinition | None = None,
+        definition_path: str | None = None,
+        port: int | None = None,
+        file_name: str | None = None,
+    ) -> dict:
+        """Build a table straight from the model and write it as a new XLSX, without the
+        Publisher. The definition names element_types, columns (header + source: guid,
+        type, builtin:<nonLocalizedName>, prop:<Group>/<Name>, class:<System>,
+        param:<GDL name>), filters, group_by, sum_columns and sort_by. Sheets: the rows, a
+        "Resumo" sheet with count and sums per group, and "Pendências" for required
+        columns left empty. Pass definition or an absolute definition_path (.json). Never
+        overwrites a file and never changes the model.
+        """
+        return await model_tables_tool.export_model_table(
+            client_of(ctx), output_folder, definition, definition_path, port, file_name
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_table_data(
+        ctx: Context,
+        definition: model_tables_tool.TableDefinition | None = None,
+        definition_path: str | None = None,
+        port: int | None = None,
+        limit: int = 100,
+    ) -> dict:
+        """Check the data behind a table: with the same definition as export_model_table,
+        list the elements whose required columns (required=true) are empty, with counts
+        per column and columns whose property or classification system does not exist.
+        Read-only.
+        """
+        return await model_tables_tool.check_table_data(
+            client_of(ctx), definition, definition_path, port, limit
+        )
 
     @mcp.tool(annotations=WRITE)
     async def create_meshes(
