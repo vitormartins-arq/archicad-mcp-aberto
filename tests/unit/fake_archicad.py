@@ -3749,7 +3749,9 @@ class FakeArchicad:
                         "polygons": deepcopy(body["polygons"]),
                     }
                 if name == "ModifyLabels":
-                    if details.get("labelClass") != "Text":
+                    if details.get("labelClass") == "Symbol" and set(changes) == {"symbolStyle"}:
+                        details.setdefault("symbolStyle", {}).update(changes.pop("symbolStyle"))
+                    elif details.get("labelClass") != "Text":
                         rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))
                         continue
                     details.setdefault("style", {}).update(changes.pop("style", {}))
