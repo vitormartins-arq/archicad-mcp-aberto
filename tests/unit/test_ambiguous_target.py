@@ -1,7 +1,9 @@
 """P-005: target selection against MockTransport only; never a real Archicad."""
 
 import inspect
+import tempfile
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -39,6 +41,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     mep,
     meshes,
+    model_tables,
     model_tasks,
     modify,
     morphs,
@@ -54,12 +57,14 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     project_save,
     property_definitions,
+    publisher,
     read,
     renames,
     revisions,
     roofs,
     room_views,
     scenes,
+    schedules,
     section_dimensions,
     sections,
     selection,
@@ -110,6 +115,15 @@ INPUTS = {
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
+    "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
+    "list_publisher_sets": {},
+    "get_publisher_set_items": {"publisher_set_name": "PDF"},
+    "list_layouts": {},
+    "save_layouts_as_pdf": {
+        "layout_guids": [GUID],
+        "output_folder": str(Path.cwd()),
+        "merged_pdf_name": "x",
+    },
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
     "replace_object_libraries": {
@@ -181,6 +195,22 @@ INPUTS = {
     },
     "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
     "get_navigator_tree": {},
+    "list_schedules": {},
+    "export_model_table": {
+        "output_folder": tempfile.mkdtemp(prefix="mcp-table-"),
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        },
+    },
+    "check_table_data": {
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        }
+    },
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
     "attach_elements_to_issue": {
@@ -550,6 +580,7 @@ REMOVALS = ("remove_solid_operations", "remove_trims")
 TARGETED = {
     name: function
     for module in (
+        publisher,
         camera_paths,
         hotspot_dimensions,
         section_dimensions,
@@ -589,6 +620,8 @@ TARGETED = {
         navigator,
         grids,
         navigator_moves,
+        schedules,
+        model_tables,
         openings,
         preview_images,
         object_replacement,
@@ -783,6 +816,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             "begin_model_task",
             "finish_model_task",
             "create_camera_paths_from_views",
+            "save_layouts_as_pdf",
         }:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -801,6 +835,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                 await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
+        if name in {
+            "list_publisher_sets",
+            "publish_publisher_set",
+            "get_publisher_set_items",
+        }:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetPublisherSets"]
             assert not untouched.calls
             return
         if name in {"inspect_object_replacements", "replace_object_libraries"}:

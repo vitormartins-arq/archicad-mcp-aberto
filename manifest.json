@@ -376,6 +376,18 @@
       "description": "Read flattened Project Map, View Map, Layout Book or one named publisher set, with filtering and pagination."
     },
     {
+      "name": "list_schedules",
+      "description": "List Interactive Schedules with their Project Map folder, saved views and the layouts they are on."
+    },
+    {
+      "name": "export_model_table",
+      "description": "Build a table from model data (properties, classifications, GDL parameters) and write a new XLSX, without the Publisher."
+    },
+    {
+      "name": "check_table_data",
+      "description": "List the elements whose required table columns are empty, using the same definition as export_model_table."
+    },
+    {
       "name": "create_meshes",
       "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
     },
@@ -766,6 +778,26 @@
     {
       "name": "replace_object_libraries",
       "description": "Preview or replace existing Object libraries using explicit mounting references."
+    },
+    {
+      "name": "list_publisher_sets",
+      "description": "Read publisher sets with their saved output path."
+    },
+    {
+      "name": "publish_publisher_set",
+      "description": "Preview and publish a publisher set or only selected items, optionally merged into one PDF."
+    },
+    {
+      "name": "get_publisher_set_items",
+      "description": "Read the folders and items of one publisher set."
+    },
+    {
+      "name": "list_layouts",
+      "description": "Read Layout Book layouts, optionally filtered by text."
+    },
+    {
+      "name": "save_layouts_as_pdf",
+      "description": "Preview and save layouts as one merged PDF without using the Publisher."
     }
   ],
   "compatibility": {
