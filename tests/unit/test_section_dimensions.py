@@ -174,3 +174,62 @@ def test_repeated_point_is_refused():
         tool.SectionDimension.model_validate(
             {"station_x": 0, "points": [{"element_guid": SLAB, "at": "top"}] * 2}
         )
+
+
+def drawn_only(n: int, parent: str, kind: str, box: dict):
+    """What Archicad 30 really returns: no hotspots, only the drawn extent (live test)."""
+    return {
+        "sectionElementId": {"guid": f"BBBBBBBB-0000-4000-8000-{n:012d}"},
+        "parentId": {"guid": parent},
+        "parentType": kind,
+        "parentTypeId": 0,
+        "hotspots": [],
+        "lineExtent": box,
+    }
+
+
+def box3d(z_min, z_max):
+    return {
+        "boundingBox3D": {
+            "xMin": 0.0,
+            "yMin": 0.0,
+            "zMin": z_min,
+            "xMax": 1.0,
+            "yMax": 1.0,
+            "zMax": z_max,
+        }
+    }
+
+
+async def test_without_hotspots_uses_drawn_extent_and_model_height():
+    fake = model()
+    fake.section_cuts[NAV] = [
+        drawn_only(1, SLAB, "Slab", {"xMin": 0.0, "xMax": 4.0, "yMin": -0.12, "yMax": 0.0}),
+        # The wall is drawn shorter than it is (hidden by the ceiling): its top comes from z.
+        drawn_only(3, WALL, "Wall", {"xMin": 3.9, "xMax": 4.05, "yMin": 0.0, "yMax": 2.60}),
+    ]
+    fake.bounding_boxes_3d = {SLAB: box3d(-0.12, 0.0), WALL: box3d(0.0, 2.80)}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        read = await tool.get_section_cut_elements(c, NAV, 19723)
+        wall = next(e for e in read["elements"] if e["parent_guid"] == WALL)
+        assert wall["section_elements"][0]["view_extent"]["y_max"] == 2.60
+        plan = await tool.create_section_dimensions(
+            c,
+            NAV,
+            [
+                {
+                    "station_x": 1.0,
+                    "points": [
+                        {"element_guid": SLAB, "at": "top"},
+                        {"element_guid": WALL, "at": "top"},
+                    ],
+                }
+            ],
+            port=19723,
+        )
+    item = plan["items"][0]
+    assert item["segments_m"] == [2.8]
+    witnesses = item["parameters"]["witnessPoints"]
+    assert witnesses[0]["location"] == {"x": 1.0, "y": 0.0}
+    assert witnesses[1]["location"] == {"x": 3.9, "y": 2.8}  # x clamped onto the wall
+    assert "supplUnId" not in witnesses[1]

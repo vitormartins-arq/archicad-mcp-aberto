@@ -75,6 +75,23 @@ async def _cut(client, port, navigator_guid, parents=None, rebuild=False, timeou
     return response
 
 
+def _drawn(row: dict) -> dict | None:
+    """Extent of what the section element draws (lines first, then polygons), in the view.
+
+    Archicad returns no hotspots for section elements, so this is where a cut element sits.
+    """
+    box = row.get("lineExtent") or row.get("polygonExtent")
+    if not isinstance(box, dict):
+        return None
+    try:
+        return {
+            k: float(box[a])
+            for k, a in (("x_min", "xMin"), ("x_max", "xMax"), ("y_min", "yMin"), ("y_max", "yMax"))
+        }
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def _group(rows: list[dict]) -> dict[str, dict]:
     """Section elements by model parent, each with its hotspots and their extent."""
     parents: dict[str, dict] = {}
@@ -87,7 +104,7 @@ def _group(rows: list[dict]) -> dict[str, dict]:
         entry["section_elements"].append(
             {
                 "guid": _guid((row.get("sectionElementId") or {}).get("guid", "")),
-                "view_extent": _range(hotspots),
+                "view_extent": _range(hotspots) or _drawn(row),
                 "hotspots": hotspots,
             }
         )
@@ -194,11 +211,11 @@ def _pick(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
     candidates = [
         (section_element["guid"], h)
         for section_element in entry["section_elements"]
-        for h in section_element["hotspots"]
+        for h in section_element.get("hotspots") or []
         if isinstance(h.get("y"), int | float) and isinstance(h.get("x"), int | float)
     ]
     if not candidates:
-        raise ValueError(f"{label}: element {point.element_guid} has no hotspot in this view.")
+        return _pick_drawn(point, entry, station, label)
     extreme = (max if point.at == "top" else min)(h["y"] for _, h in candidates)
     near = station if point.near_x is None else point.near_x
     level = [(g, h) for g, h in candidates if abs(h["y"] - extreme) <= TOLERANCE]
@@ -219,6 +236,40 @@ def _pick(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
     }
 
 
+def _pick_drawn(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
+    """Top or bottom of what the element draws in the view, at the station (clamped to it)."""
+    near = station if point.near_x is None else point.near_x
+    options = []
+    for section_element in entry["section_elements"]:
+        box = section_element.get("view_extent")
+        if box:
+            x = min(max(near, box["x_min"]), box["x_max"])
+            # In a section y is the absolute height (checked live), so the model's 3D box
+            # gives the true top/bottom; the drawn extent is cut by what hides the element.
+            z = entry.get("z_max") if point.at == "top" else entry.get("z_min")
+            y = (
+                z
+                if isinstance(z, int | float)
+                else (box["y_max"] if point.at == "top" else box["y_min"])
+            )
+            options.append(
+                (abs(x - near), -y if point.at == "top" else y, section_element["guid"], x, y)
+            )
+    if not options:
+        raise ValueError(f"{label}: element {point.element_guid} draws nothing in this view.")
+    _, _, guid, x, y = min(options)
+    return {
+        "element_guid": point.element_guid,
+        "element_type": entry.get("type"),
+        "at": point.at,
+        "section_element_guid": guid,
+        "x": x,
+        "y": y,
+        # Archicad does not place a section witness point by itself: the location is required.
+        "witness": {"sectionElementId": {"guid": guid}, "location": {"x": x, "y": y}},
+    }
+
+
 async def _plan(client, plan_input, port, operation):
     navigator_guid, dimensions, favorite = plan_input
     port, target, _ = await write._context(client, port)
@@ -229,6 +280,9 @@ async def _plan(client, plan_input, port, operation):
     if not response.get("sectionElementCount"):
         raise ValueError(NOT_GENERATED)
     grouped = _group(response["elements"])
+    model = await _model_data(client, port, list(grouped)) if grouped else {}
+    for guid, entry in grouped.items():
+        entry.update(model.get(guid, {}))
     settings = None
     if favorite is not None:
         settings = (await _addon(client, port, "GetDimensionFavorite", {"name": favorite}))[
