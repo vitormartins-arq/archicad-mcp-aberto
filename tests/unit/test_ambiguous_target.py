@@ -60,6 +60,7 @@ from archicad_mcp_aberto.tools import (
     roofs,
     room_views,
     scenes,
+    section_dimensions,
     sections,
     selection,
     solids,
@@ -256,6 +257,19 @@ INPUTS = {
                 ],
             }
         ]
+    },
+    "get_section_cut_elements": {"navigator_guid": GUID},
+    "create_section_dimensions": {
+        "navigator_guid": GUID,
+        "dimensions": [
+            {
+                "station_x": 0,
+                "points": [
+                    {"element_guid": GUID, "at": "top"},
+                    {"element_guid": GUID, "at": "bottom"},
+                ],
+            }
+        ],
     },
     "list_grid_elements": {},
     "create_grid_elements": {
@@ -538,6 +552,7 @@ TARGETED = {
     for module in (
         camera_paths,
         hotspot_dimensions,
+        section_dimensions,
         model_tasks,
         attribute_properties,
         attributes_details,
@@ -745,6 +760,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             }
             for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
                 instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
+    if name in {"get_section_cut_elements", "create_section_dimensions"}:
+        for instance in (first, second):
+            instance.section_cuts[GUID] = [
+                {
+                    "sectionElementId": {"guid": PROP},
+                    "parentId": {"guid": GUID},
+                    "parentType": "Slab",
+                    "hotspots": [
+                        {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                        {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                    ],
+                }
+            ]
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -845,6 +873,18 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     if name == "create_composites":
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
+    if name == "create_section_dimensions":
+        second.section_cuts[GUID] = [
+            {
+                "sectionElementId": {"guid": PROP},
+                "parentId": {"guid": GUID},
+                "parentType": "Slab",
+                "hotspots": [
+                    {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                    {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                ],
+            }
+        ]
     arguments = deepcopy(INPUTS[name])
     if name == "create_camera_paths_from_views":
 

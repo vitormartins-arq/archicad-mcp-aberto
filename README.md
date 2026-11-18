@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **175 registered tools**: **66 read-only**, **7 view/session actions** and
-**102 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **177 registered tools**: **67 read-only**, **7 view/session actions** and
+**103 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -170,6 +170,8 @@ in this delivery; operator live validation of these additions remains pending.
 | `open_navigator_item` | View | Show a story, section, detail, worksheet or layout | no |
 | `get_plan_window_image` | Read | The current 2D window as an image; needs add-on R18 | no |
 | `create_linear_dimensions` | Write | Associative dimensions between hotspots from a favorite; needs the add-on | yes |
+| `get_section_cut_elements` | Read | What a section or elevation cuts, per model element, with Z and view hotspots; needs the add-on | no |
+| `create_section_dimensions` | Write | Vertical associative dimensions inside a section (floor, finish, wall, ceiling); needs the add-on | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 | `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |

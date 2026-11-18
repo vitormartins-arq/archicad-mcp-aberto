@@ -604,6 +604,14 @@
       "description": "Preview or create associative dimensions between hotspots from a favorite."
     },
     {
+      "name": "get_section_cut_elements",
+      "description": "List what a section or elevation cuts, per model element, with Z and view hotspots."
+    },
+    {
+      "name": "create_section_dimensions",
+      "description": "Preview or create vertical associative dimensions inside a section or elevation."
+    },
+    {
       "name": "list_grid_elements",
       "description": "List grid lines with start, end, story and layer (ArchicadMcpAberto add-on)."
     },

@@ -686,6 +686,11 @@ OPERATIONS["create_linear_dimensions"] = (
     "dimension_receipt_id",
     "Dimensions are made by the ArchicadMcpAberto add-on, all in one Undo step.",
 )
+OPERATIONS["create_section_dimensions"] = (
+    "section dimension",
+    "dimension_receipt_id",
+    "Dimensions are made inside the section by the ArchicadMcpAberto add-on, in one Undo step.",
+)
 OPERATIONS["create_grid_elements"] = (
     "grid line",
     "grid_receipt_id",

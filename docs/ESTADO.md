@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Cotas em cortes / 18/11/2026:** `get_section_cut_elements` e `create_section_dimensions`
+  (depende da PR #99 e dos comandos nativos novos do Complemento, branch
+  `claude/section-dimensions` do archicad-mcp-addon). Base: exemplo oficial do SDK AC30
+  (Element_Test, cota associativa em corte presa ao elemento de corte pelo nó/supplUnId).
+  Compilou no AC30; 3.331 testes offline passaram. Falta o teste ao vivo nos 3 cortes do
+  WG Formosa_R06 (cópia do PLN, no notebook): confirmar que os hotspots do elemento de
+  corte vêm com y = altura e que a cota relida mantém o ponto.
+
 - **Camera context stabilization / 28 October 2026:** R13 live inventory and
   capture/restoration passed on AC30 3001 BRA / Tapir 1.7.3. No physical camera
   was created: deferred view notifications invalidated the save context. A distinct

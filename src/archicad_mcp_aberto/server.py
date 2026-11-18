@@ -68,6 +68,7 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import room_views as room_views_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
+from archicad_mcp_aberto.tools import section_dimensions as section_dimensions_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import solids as solids_tool
@@ -2070,6 +2071,44 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Needs the ArchicadMcpAberto add-on. Never saves."""
         return await hotspot_dimensions_tool.create_linear_dimensions(
             client_of(ctx), dimensions, favorite, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_section_cut_elements(
+        ctx: Context,
+        navigator_guid: str,
+        port: int | None = None,
+        parent_guids: list[str] | None = None,
+        rebuild: bool = False,
+        include_hotspots: bool = True,
+    ) -> dict:
+        """List what a section, elevation or interior elevation (Project Map item GUID) cuts
+        or shows, per model element: type, story, layer, absolute z_min/z_max, and its section
+        elements with hotspots and extent in the view (x along the cut, y the height). Works
+        when get_section_elements is empty; rebuild=true generates a view never opened.
+        Needs the ArchicadMcpAberto add-on. Changes nothing in the model."""
+        return await section_dimensions_tool.get_section_cut_elements(
+            client_of(ctx), navigator_guid, port, parent_guids, rebuild, include_hotspots
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_section_dimensions(
+        ctx: Context,
+        navigator_guid: str,
+        dimensions: list[section_dimensions_tool.SectionDimension],
+        favorite: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 vertical associative dimensions inside one section or elevation
+        (Project Map item GUID). Each: station_x (view x of the line) and points
+        [{element_guid, at: top|bottom, near_x?}] on elements the view cuts (floor slab,
+        finish, wall base/top, ceiling), from get_section_cut_elements. One Dimension favorite
+        or the tool defaults. Apply with explicit port and single-use token; one Undo step,
+        read back point by point. Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await section_dimensions_tool.create_section_dimensions(
+            client_of(ctx), navigator_guid, dimensions, favorite, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

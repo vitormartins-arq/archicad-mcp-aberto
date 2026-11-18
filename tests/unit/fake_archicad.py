@@ -683,6 +683,10 @@ class FakeArchicad:
     dimension_moves_witness: str | None = None
     dimension_drops_witness: bool = False
     created_dimensions: dict[str, dict] = field(default_factory=dict)
+    # GetSectionCutElements rows per Project Map item GUID; shapes of DimensionCommands.cpp.
+    section_cuts: dict[str, list[dict]] = field(default_factory=dict)
+    section_cut_needs_rebuild: bool = False
+    section_dimension_shift: float = 0.0  # Archicad moves read-back witness points by this in y
     saved_story_views: list[dict] = field(default_factory=list)
     story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
     grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
@@ -1145,6 +1149,53 @@ class FakeArchicad:
             self.details[self.dimension_moves_witness]["details"]["moved"] = True
         return {"elements": rows}
 
+    def _section(self, name: str, args: dict) -> dict:
+        nav = args["navigatorItemGuid"].upper()
+        if nav not in self.section_cuts:
+            return {"error": {"code": -2130313112, "message": "No Project Map item."}}
+        rows = self.section_cuts[nav]
+        if name == "GetSectionCutElements":
+            rebuilt = self.section_cut_needs_rebuild and args.get("rebuild", False)
+            if self.section_cut_needs_rebuild and not rebuilt:
+                rows = []
+            wanted = {g.upper() for g in args.get("parentGuids", [])}
+            listed = [
+                deepcopy(r) for r in rows if not wanted or r["parentId"]["guid"].upper() in wanted
+            ]
+            return {
+                "name": "CORTE AA",
+                "rebuilt": rebuilt,
+                "sectionElementCount": len(rows),
+                "elements": listed,
+                "truncated": False,
+            }
+        favorite = self.dimension_favorites.get(args.get("favorite"), {})
+        out = []
+        for dimension in args["dimensions"]:
+            guid = f"00000000-0000-4000-9000-{len(self.created_dimensions):012d}"
+            witnesses = [
+                {
+                    "elementId": deepcopy(w["sectionElementId"]),
+                    "inIndex": w.get("inIndex", 0),
+                    "location": {
+                        "x": w["location"]["x"],
+                        "y": w["location"]["y"] + self.section_dimension_shift,
+                    },
+                }
+                for w in dimension["witnessPoints"]
+            ]
+            row = {
+                "elementId": {"guid": guid},
+                "floorIndex": 0,
+                "settings": {**deepcopy(favorite), **self.dimension_settings_override},
+                "direction": deepcopy(dimension["direction"]),
+                "witnessPoints": witnesses,
+                "textDifferences": list(self.dimension_text_differences),
+            }
+            self.created_dimensions[guid] = row
+            out.append(row)
+        return {"name": "CORTE AA", "elements": out}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -1162,6 +1213,8 @@ class FakeArchicad:
             "CreateLinearDimensions",
         }:
             return ok({"addOnCommandResponse": self._dimension(name, args)})
+        if name in {"GetSectionCutElements", "CreateSectionDimensions"}:
+            return ok({"addOnCommandResponse": self._section(name, args)})
         if name == "GetPlanWindowImage":
             return ok({"addOnCommandResponse": {"image": "iVBORw0KGgo="}})
         if name == "Get3DCamera":
