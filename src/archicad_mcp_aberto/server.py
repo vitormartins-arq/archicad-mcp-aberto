@@ -2106,7 +2106,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         [{element_guid, at: top|bottom, near_x?}] on elements the view cuts (floor slab,
         finish, wall base/top, ceiling), from get_section_cut_elements. One Dimension favorite
         or the tool defaults. Apply with explicit port and single-use token; one Undo step,
-        read back point by point. Needs the ArchicadMcpAberto add-on. Never saves."""
+        read back point by point. Needs the ArchicadMcpAberto add-on. Never saves.
+
+        For demolition and construction sections, dimension new floors, walls and ceilings
+        by default. Existing floor and roof or slab can serve as the lower and upper
+        references. Tie the vertical dimensions to both ends of the section where possible.
+        Check the full section and dimension each distinct height or level change in the
+        new floors, walls and ceilings. Use the matching demolition and construction
+        dimension favorite. Place the first line 0.50 m from the drawing and offset
+        subsequent parallel lines by 0.20 m each. Verify after rebuilding the section."""
         return await section_dimensions_tool.create_section_dimensions(
             client_of(ctx), navigator_guid, dimensions, favorite, port, dry_run, confirmation_token
         )
