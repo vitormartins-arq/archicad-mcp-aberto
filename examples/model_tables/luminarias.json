@@ -1,0 +1,58 @@
+{
+  "name": "Luminárias",
+  "element_types": [
+    "Lamp"
+  ],
+  "columns": [
+    {
+      "header": "ID",
+      "source": "builtin:General_ElementID",
+      "required": true
+    },
+    {
+      "header": "Classificação",
+      "source": "class:Classificação Archicad",
+      "required": true
+    },
+    {
+      "header": "Modelo",
+      "source": "prop:Luminotécnico/Modelo",
+      "required": true
+    },
+    {
+      "header": "Tipo de fixação",
+      "source": "prop:Luminotécnico/Tipo de fixação"
+    },
+    {
+      "header": "Temperatura de cor (K)",
+      "source": "prop:Luminotécnico/Temperatura de cor (K)",
+      "required": true
+    },
+    {
+      "header": "Fluxo luminoso (lm)",
+      "source": "prop:Luminotécnico/Fluxo luminoso (lm)"
+    },
+    {
+      "header": "Acabamento",
+      "source": "prop:Luminotécnico/Tipo de acabamento"
+    },
+    {
+      "header": "Ordem de acendimento",
+      "source": "prop:Luminotécnico/Ordem de acendimento – texto"
+    },
+    {
+      "header": "Localização",
+      "source": "prop:Expressões de texto (expressão)/Localização do produto no projeto"
+    }
+  ],
+  "group_by": [
+    "Modelo",
+    "Temperatura de cor (K)"
+  ],
+  "sum_columns": [
+    "Fluxo luminoso (lm)"
+  ],
+  "sort_by": [
+    "ID"
+  ]
+}

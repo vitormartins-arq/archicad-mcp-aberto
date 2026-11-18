@@ -1,0 +1,54 @@
+{
+  "name": "Ambientes",
+  "element_types": [
+    "Zone"
+  ],
+  "columns": [
+    {
+      "header": "Número",
+      "source": "builtin:Zone_ZoneNumber",
+      "required": true
+    },
+    {
+      "header": "Nome",
+      "source": "builtin:Zone_ZoneName",
+      "required": true
+    },
+    {
+      "header": "Área (m²)",
+      "source": "builtin:Zone_CalculatedArea"
+    },
+    {
+      "header": "Piso",
+      "source": "prop:Especificação por zona – acabamentos/Zona – acabamento de piso",
+      "required": true
+    },
+    {
+      "header": "Parede",
+      "source": "prop:Especificação por zona – acabamentos/Zona – acabamento de parede",
+      "required": true
+    },
+    {
+      "header": "Teto",
+      "source": "prop:Especificação por zona – acabamentos/Zona – acabamento de teto",
+      "required": true
+    },
+    {
+      "header": "Rodapé",
+      "source": "prop:Especificação por zona – acabamentos/Zona – acabamento de rodapé"
+    },
+    {
+      "header": "Pé-direito",
+      "source": "prop:Pé-direito por zona (expressão)/Pé-direito – texto"
+    }
+  ],
+  "group_by": [
+    "Pé-direito"
+  ],
+  "sum_columns": [
+    "Área (m²)"
+  ],
+  "sort_by": [
+    "Número"
+  ]
+}

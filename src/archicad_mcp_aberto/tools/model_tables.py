@@ -57,6 +57,8 @@ class TableDefinition(write.InputModel):
     group_by: list[str] = Field(default_factory=list, max_length=5)
     sum_columns: list[str] = Field(default_factory=list, max_length=20)
     sort_by: list[str] = Field(default_factory=list, max_length=5)
+    # Texts that mean "not filled in" (template defaults); treated as empty.
+    placeholders: list[str] = Field(default_factory=lambda: ["-", "--", "...", "—"], max_length=20)
 
 
 def _definition(definition: dict | TableDefinition | None, path: str | None) -> TableDefinition:
@@ -269,6 +271,11 @@ async def _collect(client, port, table: TableDefinition) -> dict:
                     else params[guid].get(column.header)
                 )
         rows.append({"guid": guid, "values": row})
+    blank = {p.strip() for p in table.placeholders}
+    for row in rows:
+        for header, value in row["values"].items():
+            if isinstance(value, str) and value.strip() in blank:
+                row["values"][header] = None
     kept = [r for r in rows if all(_matches(r["values"][f.column], f) for f in table.filters)]
     unresolved = [
         *({"column": h, "reason": "property not found"} for h in missing_props),

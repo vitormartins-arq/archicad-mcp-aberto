@@ -148,3 +148,11 @@ async def test_definition_from_json_file(tmp_path):
     async with ArchicadClient(transport=fake_transport(fake())) as c:
         result = await model_tables.check_table_data(c, definition_path=str(file), port=19723)
     assert result["table"] == "Luminárias"
+
+
+async def test_placeholder_texts_count_as_empty():
+    f = fake()
+    f.property_values[(L1, ROOM)] = value("-")
+    async with ArchicadClient(transport=fake_transport(f)) as c:
+        result = await model_tables.check_table_data(c, DEFINITION, port=19723)
+    assert result["missing_by_column"] == {"Ambiente": 2}

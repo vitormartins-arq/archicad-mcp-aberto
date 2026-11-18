@@ -509,6 +509,9 @@ and open to everyone's contributions.
   Tapir). The XLSX has the rows, a `Resumo` sheet (count and sums per group) and a
   `Pendências` sheet (required columns left empty). Never overwrites an explicit file
   name and never changes the model.
+  Texts listed in `placeholders` (default `-`, `--`, `...`, `—`) count as empty. Ready
+  definitions for the LAB template are in `examples/model_tables/` (luminaires, doors
+  and windows, rooms).
 - `check_table_data(definition? | definition_path?, port?, limit=100)` uses the same
   definition and lists elements with empty required columns, counts per column and
   columns whose property or classification system was not found. Read-only.
