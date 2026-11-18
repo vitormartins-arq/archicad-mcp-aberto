@@ -101,8 +101,9 @@ def _group(rows: list[dict]) -> dict[str, dict]:
 async def _model_data(client, port, guids: list[str]) -> dict[str, dict]:
     """Story, layer and the 3D box (absolute Z) of each model parent."""
     out: dict[str, dict] = {g: {} for g in guids}
-    for start in range(0, len(guids), 500):
-        chunk = guids[start : start + 500]
+    step = read.MAX_ELEMENTS_PER_CALL  # GetDetailsOfElements takes at most 100 IDs
+    for start in range(0, len(guids), step):
+        chunk = guids[start : start + step]
         details = await client.tapir(
             port,
             "GetDetailsOfElements",
