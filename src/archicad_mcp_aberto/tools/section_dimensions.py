@@ -206,8 +206,40 @@ class SectionDimension(write.InputModel):
         return self
 
 
+# Node codes that tie a witness point to the section element, so it survives a rebuild of
+# the view. Without them Archicad stores the point by location and the dimension is
+# static (checked live on AC30 3001, WG Formosa section 01, 18/11/2026). Same codes as the
+# AC30 DevKit example Element_Test / Do_CreateAssociativeDimensionsOnSection.
+HOTS_GENERALEDIT = 2100
+HOTS_ZMIN = 16
+HOTS_ZMAX = 32
+
+
+def _node(hotspot: dict, at: str) -> dict | None:
+    """Node fields for a hotspot, or None when the hotspot cannot hold an association."""
+    node_type = hotspot.get("node_type") or 0
+    if node_type:
+        # Walls, beams, columns: the hotspot already names its node (e.g. 2102 + subType).
+        return {
+            "inIndex": hotspot.get("in_index") or 0,
+            "nodeType": node_type,
+            "nodeStatus": hotspot.get("sub_type") or 0,
+        }
+    vertex = hotspot.get("suppl_un_id") or 0
+    if vertex:
+        # Slabs: the hotspot carries the polygon vertex ID; the plane is top or bottom.
+        return {
+            "supplUnId": vertex,
+            "nodeType": HOTS_GENERALEDIT,
+            "nodeStatus": HOTS_ZMAX if at == "top" else HOTS_ZMIN,
+        }
+    return None
+
+
 def _pick(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
-    """The hotspot at the element's top or bottom in the view, nearest the station."""
+    """The hotspot at the element's top or bottom in the view, nearest the station.
+
+    Hotspots that carry a node are preferred, so the dimension stays associative."""
     candidates = [
         (section_element["guid"], h)
         for section_element in entry["section_elements"]
@@ -219,7 +251,11 @@ def _pick(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
     extreme = (max if point.at == "top" else min)(h["y"] for _, h in candidates)
     near = station if point.near_x is None else point.near_x
     level = [(g, h) for g, h in candidates if abs(h["y"] - extreme) <= TOLERANCE]
-    guid, hotspot = min(level, key=lambda c: abs(c[1]["x"] - near))
+    linked = [(g, h) for g, h in level if _node(h, point.at)]
+    guid, hotspot = min(linked or level, key=lambda c: abs(c[1]["x"] - near))
+    node = _node(hotspot, point.at)
+    witness = {"sectionElementId": {"guid": guid}, **(node or {})}
+    witness["location"] = {"x": hotspot["x"], "y": hotspot["y"]}
     return {
         "element_guid": point.element_guid,
         "element_type": entry.get("type"),
@@ -227,12 +263,8 @@ def _pick(point: SectionPoint, entry: dict, station: float, label: str) -> dict:
         "section_element_guid": guid,
         "x": hotspot["x"],
         "y": hotspot["y"],
-        "witness": {
-            "sectionElementId": {"guid": guid},
-            "inIndex": hotspot.get("in_index") or 0,
-            "supplUnId": hotspot.get("suppl_un_id") or 0,
-            "location": {"x": hotspot["x"], "y": hotspot["y"]},
-        },
+        "associative": node is not None,
+        "witness": witness,
     }
 
 
@@ -265,7 +297,9 @@ def _pick_drawn(point: SectionPoint, entry: dict, station: float, label: str) ->
         "section_element_guid": guid,
         "x": x,
         "y": y,
-        # Archicad does not place a section witness point by itself: the location is required.
+        # No hotspot: the point is placed by location only and the dimension comes out
+        # static (it does not follow the element when the view is rebuilt).
+        "associative": False,
         "witness": {"sectionElementId": {"guid": guid}, "location": {"x": x, "y": y}},
     }
 

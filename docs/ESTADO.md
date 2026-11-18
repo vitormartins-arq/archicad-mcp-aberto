@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Section dimension association fixed / 18 November 2026:** the loss of association
+  came from witness points sent by location only, which Archicad stores as static.
+  `create_section_dimensions` now sends the hotspot's node (walls: nodeType + subType +
+  inIndex; slabs: vertex ID with HOTS_GENERALEDIT 2100 and ZMAX 32 / ZMIN 16), as in the
+  AC30 DevKit example. Live on a copy of WG Formosa_R06 (AC30 3001 BRA, Tapir 1.7.0,
+  Complemento of 18/11 14:55): sections 01, 02 and 03 each got a slab/wall chain that
+  stayed non-static with every point linked after a forced rebuild. Points without a
+  hotspot still fall back to location and are reported with `associative: false`.
 - **Section dimension conventions / 18 November 2026:** Updated the MCP tool description
   and `docs/SECTION_DIMENSIONS.md` after reviewing Vitor's manual edits in Formosa
   sections 01–03. Work right to left, keep text on the left, use room-local chains

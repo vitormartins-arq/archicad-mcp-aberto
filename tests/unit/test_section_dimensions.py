@@ -233,3 +233,49 @@ async def test_without_hotspots_uses_drawn_extent_and_model_height():
     assert witnesses[0]["location"] == {"x": 1.0, "y": 0.0}
     assert witnesses[1]["location"] == {"x": 3.9, "y": 2.8}  # x clamped onto the wall
     assert "supplUnId" not in witnesses[1]
+
+
+def test_witness_node_codes_keep_the_dimension_associative():
+    # Live AC30 (WG Formosa section 01): a wall hotspot names its node (2102 + subType);
+    # a slab hotspot carries the vertex ID, used with the top or bottom plane.
+    wall = {"x": 1.0, "y": 3.5, "in_index": 1, "node_type": 2102, "sub_type": 5, "suppl_un_id": 0}
+    slab = {"x": 1.0, "y": 0.02, "in_index": 10, "node_type": 0, "sub_type": 0, "suppl_un_id": 4}
+    bare = {"x": 1.0, "y": 0.0, "in_index": 3, "node_type": 0, "sub_type": 0, "suppl_un_id": 0}
+    assert tool._node(wall, "top") == {"inIndex": 1, "nodeType": 2102, "nodeStatus": 5}
+    assert tool._node(slab, "top") == {"supplUnId": 4, "nodeType": 2100, "nodeStatus": 32}
+    assert tool._node(slab, "bottom")["nodeStatus"] == 16
+    assert tool._node(bare, "top") is None
+
+
+def test_pick_prefers_hotspots_with_a_node():
+    entry = {
+        "type": "Wall",
+        "section_elements": [
+            {
+                "guid": WALL,
+                "hotspots": [
+                    {
+                        "x": 0.0,
+                        "y": 3.5,
+                        "in_index": 9,
+                        "node_type": 0,
+                        "sub_type": 0,
+                        "suppl_un_id": 0,
+                    },
+                    {
+                        "x": 0.5,
+                        "y": 3.5,
+                        "in_index": 1,
+                        "node_type": 2102,
+                        "sub_type": 5,
+                        "suppl_un_id": 0,
+                    },
+                ],
+            }
+        ],
+    }
+    point = tool.SectionPoint(element_guid=WALL, at="top")
+    picked = tool._pick(point, entry, 0.0, "item 0")
+    assert picked["associative"] is True
+    assert picked["witness"]["nodeType"] == 2102
+    assert picked["witness"]["nodeStatus"] == 5
