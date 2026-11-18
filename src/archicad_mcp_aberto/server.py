@@ -2109,12 +2109,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         read back point by point. Needs the ArchicadMcpAberto add-on. Never saves.
 
         For demolition and construction sections, dimension new floors, walls and ceilings
-        by default. Existing floor and roof or slab can serve as the lower and upper
-        references. Tie the vertical dimensions to both ends of the section where possible.
-        Check the full section and dimension each distinct height or level change in the
-        new floors, walls and ceilings. Use the matching demolition and construction
-        dimension favorite. Place the first line 0.50 m from the drawing and offset
-        subsequent parallel lines by 0.20 m each. Verify after rebuilding the section."""
+        by default, using the matching demolition and construction dimension favorite.
+        Work from right to left across the section, placing vertical lines to the left
+        of their local reference with dimension text on the left, following the user's
+        approved examples. Check every distinct height and level throughout the section.
+        Organize chains by room or construction detail. Dimension a local lowered ceiling
+        inside its own room, with local lower and upper references. General chains use
+        the relevant floor/slab and roof or upper slab, including existing references.
+        Use civil construction levels when specified: in WG Formosa_R06 the base is
+        the structural slab surface, before floor finishes. For example, slab -0.20 m
+        to ceiling +2.50 m is 2.70 m. Confirm the datum for each subsequent project.
+        Place the first line 0.50 m from its local drawing reference and space parallel
+        lines by 0.20 m. Rebuild and verify every point, value, association and text
+        position. Report missing points or fixed dimensions explicitly.
+        Full workflow and approved examples: docs/SECTION_DIMENSIONS.md."""
         return await section_dimensions_tool.create_section_dimensions(
             client_of(ctx), navigator_guid, dimensions, favorite, port, dry_run, confirmation_token
         )
