@@ -658,6 +658,8 @@ class FakeArchicad:
 
     # Built-in property ids for API.GetPropertyIds, by nonLocalizedName.
     builtin_property_ids: dict[str, str] = field(default_factory=dict)
+    # (group, name) -> GUID for GetPropertyIds with UserDefined localizedName.
+    user_property_ids: dict[tuple[str, str], str] = field(default_factory=dict)
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
     own_addon_loaded: bool = True
@@ -852,7 +854,10 @@ class FakeArchicad:
             # Shape from the official JSON API documentation; built-in names seen live.
             rows = []
             for p in params["properties"]:
-                guid = self.builtin_property_ids.get(p.get("nonLocalizedName", ""))
+                if p.get("type") == "UserDefined":
+                    guid = self.user_property_ids.get(tuple(p.get("localizedName", [])))
+                else:
+                    guid = self.builtin_property_ids.get(p.get("nonLocalizedName", ""))
                 if guid is None:
                     rows.append({"error": {"code": 4006, "message": "Property not found"}})
                 else:
