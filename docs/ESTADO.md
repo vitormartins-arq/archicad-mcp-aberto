@@ -1,5 +1,13 @@
 # Estado atual
 
+- **Section dimension conventions / 18 November 2026:** Updated the MCP tool description
+  and `docs/SECTION_DIMENSIONS.md` after reviewing Vitor's manual edits in Formosa
+  sections 01–03. Work right to left, keep text on the left, use room-local chains
+  for lowered ceilings, 0.50 m first offset and 0.20 m parallel spacing. Formosa uses
+  structural slab levels for civil execution. Native association loss in section 01
+  remains unresolved. This update changes documentation only. The running MCP must
+  load this branch/release for its tool description to expose these conventions.
+
 - **Cotas em cortes / 18/11/2026:** `get_section_cut_elements` e `create_section_dimensions`
   (depende da PR #99 e dos comandos nativos novos do Complemento, branch
   `claude/section-dimensions` do archicad-mcp-addon). Base: exemplo oficial do SDK AC30
