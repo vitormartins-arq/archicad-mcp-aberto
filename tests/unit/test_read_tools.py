@@ -154,7 +154,6 @@ async def test_server_registers_current_tool_surface():
         "apply_favorites",
         "select_elements",
         "highlight_elements",
-        "capture_view_image",
         "create_zones",
         "create_objects",
         "move_elements",
@@ -235,7 +234,7 @@ async def test_server_registers_current_tool_surface():
     }
     reads = [t for t in tools if t.name not in writes]
     creation = next(t for t in tools if t.name == "create_walls")
-    assert len(reads) == 72
+    assert len(reads) == 73
     assert all(t.annotations and t.annotations.readOnlyHint for t in reads)
     assert creation.annotations and not creation.annotations.readOnlyHint
     assert creation.annotations.destructiveHint and not creation.annotations.idempotentHint

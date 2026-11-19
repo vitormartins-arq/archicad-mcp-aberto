@@ -673,7 +673,7 @@
     },
     {
       "name": "capture_view_image",
-      "description": "Open a View Map view and return the Archicad window as a PNG to check edits."
+      "description": "Return the active Archicad 2D window as a PNG, optionally zoomed, to check edits."
     },
     {
       "name": "get_element_preview",

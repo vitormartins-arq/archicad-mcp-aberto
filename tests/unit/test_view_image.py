@@ -1,69 +1,59 @@
 """capture_view_image: companion add-on stubbed; never live Archicad."""
 
-from pathlib import Path
+import base64
 
 import pytest
 
 from archicad_mcp_aberto.tools import scenes, view_image
 
 pytestmark = pytest.mark.anyio
-PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32
-
-
-class Client:
-    pass
+PNG = base64.b64encode(bytes([0x89]) + b"PNG" + bytes([13, 10, 26, 10]) + b"0" * 8).decode()
 
 
 async def _port(client, port):
     return port or 19723
 
 
-async def test_opens_view_and_returns_png(monkeypatch):
+async def test_returns_active_window_and_passes_zoom(monkeypatch):
     calls = []
 
     async def addon(client, port, name, parameters):
         calls.append((name, parameters))
-        Path(parameters["outputPath"]).write_bytes(PNG)
-        return {"outputPath": parameters["outputPath"], "windowType": 1}
+        return {"image": PNG}
 
     monkeypatch.setattr(scenes, "_addon", addon)
     monkeypatch.setattr(view_image, "resolve_port", _port)
-    guid = "44a29191-1d57-4b04-9a95-40ebaf9a2e27"
-    result = await view_image.capture_view_image(Client(), guid, 19723)
-    name, parameters = calls[0]
-    assert name == "CaptureViewImage"
-    assert parameters["viewGuid"] == guid.upper()
-    assert parameters["outputPath"].endswith(".png")
-    assert result["bytes"] == len(PNG) and result["window_type"] == 1
+    result = await view_image.capture_view_image(object())
+    assert calls[-1] == ("GetPlanWindowImage", {})
+    box = {"xMin": 0, "yMin": 0, "xMax": 2, "yMax": 1}
+    result = await view_image.capture_view_image(object(), box, 19723)
+    assert calls[-1][1] == {"zoom": {k: float(v) for k, v in box.items()}}
+    assert result["png_base64"] == PNG
 
 
-async def test_active_window_without_guid(monkeypatch):
-    async def addon(client, port, name, parameters):
-        assert "viewGuid" not in parameters
-        Path(parameters["outputPath"]).write_bytes(PNG)
-        return {}
+@pytest.mark.parametrize("zoom", [{"xMin": 0}, {"xMin": 1, "yMin": 0, "xMax": 1, "yMax": 1}])
+async def test_bad_zoom_refused_before_network(monkeypatch, zoom):
+    async def addon(*args):
+        raise AssertionError("no call")
 
     monkeypatch.setattr(scenes, "_addon", addon)
-    monkeypatch.setattr(view_image, "resolve_port", _port)
-    assert (await view_image.capture_view_image(Client()))["view_guid"] is None
-
-
-async def test_refuses_bad_guid_and_missing_or_non_png(monkeypatch):
-    monkeypatch.setattr(view_image, "resolve_port", _port)
     with pytest.raises(ValueError):
-        await view_image.capture_view_image(Client(), "not-a-guid")
+        await view_image.capture_view_image(object(), zoom)
 
-    async def nothing(client, port, name, parameters):
+
+async def test_no_or_bad_image(monkeypatch):
+    monkeypatch.setattr(view_image, "resolve_port", _port)
+
+    async def empty(client, port, name, parameters):
         return {}
 
-    monkeypatch.setattr(scenes, "_addon", nothing)
-    with pytest.raises(ValueError, match="did not write"):
-        await view_image.capture_view_image(Client())
+    monkeypatch.setattr(scenes, "_addon", empty)
+    with pytest.raises(ValueError, match="no window image"):
+        await view_image.capture_view_image(object())
 
     async def text(client, port, name, parameters):
-        Path(parameters["outputPath"]).write_bytes(b"hello")
-        return {}
+        return {"image": base64.b64encode(b"hello").decode()}
 
     monkeypatch.setattr(scenes, "_addon", text)
     with pytest.raises(ValueError, match="PNG"):
-        await view_image.capture_view_image(Client())
+        await view_image.capture_view_image(object())

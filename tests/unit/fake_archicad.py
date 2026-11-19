@@ -23,8 +23,6 @@ CREATE_WALLS_FIXTURE = json.loads(
     )
 )
 
-PNG_STUB = bytes([0x89]) + b"PNG" + bytes([13, 10, 26, 10]) + b"0" * 16
-
 
 # Official documentation/source-derived format; not a live capture.
 BUILDING_MATERIALS_FIXTURE = json.loads(
@@ -1224,9 +1222,6 @@ class FakeArchicad:
             return ok({"addOnCommandResponse": self._section(name, args)})
         if name == "GetPlanWindowImage":
             return ok({"addOnCommandResponse": {"image": "iVBORw0KGgo="}})
-        if name == "CaptureViewImage":
-            Path(args["outputPath"]).write_bytes(PNG_STUB)
-            return ok({"addOnCommandResponse": {"outputPath": args["outputPath"], "windowType": 1}})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
         if name == "Set3DCamera":

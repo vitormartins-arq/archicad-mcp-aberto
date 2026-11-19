@@ -2349,18 +2349,17 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """List project libraries and requested Archicad special folders."""
         return await project_resources.list_libraries(client_of(ctx), folder_types, port)
 
-    @mcp.tool(annotations=VIEW)
+    @mcp.tool(annotations=READ_ONLY)
     async def capture_view_image(
         ctx: Context,
-        view_guid: str | None = None,
-        crop: bool = True,
+        zoom: dict | None = None,
         port: int | None = None,
     ) -> list:
-        """Look at Archicad: open a View Map view (GUID from get_navigator_tree; plan,
-        section, schedule, layout...) or keep the active window, and return it as a PNG.
-        Use it after every edit to check the result. Changes only which window is open;
-        never edits or saves the project. Needs the ArchicadMcpAberto add-on."""
-        result = await view_image.capture_view_image(client_of(ctx), view_guid, port, crop)
+        """Look at Archicad: return the active 2D window (plan, section, elevation,
+        detail, worksheet) as a PNG, optionally zoomed to {xMin, yMin, xMax, yMax} in
+        metres (the zoom is restored). Use it after every edit to check the result.
+        Never edits or saves. Needs the companion add-on (GetPlanWindowImage)."""
+        result = await view_image.capture_view_image(client_of(ctx), zoom, port)
         data = base64.b64decode(result.pop("png_base64"))
         return [TextContent(type="text", text=json.dumps(result)), Image(data=data, format="png")]
 

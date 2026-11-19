@@ -9,7 +9,6 @@
 #include "CameraPathCommands.hpp"
 #include "CameraViewCommands.hpp"
 #include "ObjectReplacementCommands.hpp"
-#include "ViewImageCommands.hpp"
 
 template <typename CommandType>
 static GSErrCode InstallCommand ()
@@ -42,7 +41,6 @@ GSErrCode Initialize (void)
     err |= InstallCommand<GetProjectSaveContextCommand> ();
     err |= InstallCommand<SaveProjectAsPLNCommand> ();
     err |= InstallCommand<SaveCurrentProjectPLNCommand> ();
-    err |= InstallCommand<CaptureViewImageCommand> ();
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
     err |= InstallCommand<Save3DViewCommand> ();
