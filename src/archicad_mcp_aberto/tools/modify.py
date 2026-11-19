@@ -250,9 +250,14 @@ def _label(change, row, target, label, extra):
             raise ValueError(f"{label}: cannot read the current text.")
     else:
         raise ValueError(f"{label}: unknown label class {label_class!r}.")
-    # Positions and associations cannot be changed through ModifyLabels 1.7.0.
+    # Positions and associations cannot be changed through ModifyLabels 1.7.0. A new
+    # text_way makes Archicad redraw the text from midCoordinate, so it recomputes
+    # endCoordinate on its own (live AC30, 18/11/2026); the other points must hold.
     expected = {"labelClass": label_class}
-    for key in ("begCoordinate", "midCoordinate", "endCoordinate", "ownerElementId"):
+    keys = ["begCoordinate", "midCoordinate", "endCoordinate", "ownerElementId"]
+    if "text_way" in changes:
+        keys.remove("endCoordinate")
+    for key in keys:
         if key in details:
             expected[key] = deepcopy(details[key])
     parameters = {}
