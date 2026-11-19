@@ -116,6 +116,8 @@ class TextModify(_Edit):
 class LabelModify(_Edit):
     text: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
     height_mm: write.Positive | None = None
+    text_way: Literal["Parallel", "Horizontal", "Vertical", "General"] | None = None
+    always_readable: bool | None = None
 
     @field_validator("text")
     @classmethod
@@ -232,17 +234,45 @@ def _morph(change, row, target, label, extra):
 
 def _label(change, row, target, label, extra):
     details = row["details"]
-    if details.get("labelClass") != "Text":
-        raise ValueError(f"{label}: only Text labels are supported; Symbol labels are refused.")
     changes = change.model_dump(exclude={"guid"}, exclude_none=True)
-    if not isinstance(details.get("text"), str):
-        raise ValueError(f"{label}: cannot read the current text.")
-    # Positions and associations cannot be changed through ModifyLabels 1.7.0.
-    expected = {"labelClass": "Text", "text": changes.get("text", texts._lines(details["text"]))}
-    for key in ("begCoordinate", "midCoordinate", "endCoordinate", "ownerElementId"):
+    label_class = details.get("labelClass")
+    symbol_fields = {"text_way", "always_readable"} & changes.keys()
+    if label_class == "Symbol":
+        if changes.keys() - symbol_fields:
+            raise ValueError(
+                f"{label}: Symbol labels accept only text_way and always_readable; "
+                "their content comes from the library part."
+            )
+    elif label_class == "Text":
+        if symbol_fields:
+            raise ValueError(f"{label}: text_way and always_readable apply to Symbol labels only.")
+        if not isinstance(details.get("text"), str):
+            raise ValueError(f"{label}: cannot read the current text.")
+    else:
+        raise ValueError(f"{label}: unknown label class {label_class!r}.")
+    # Positions and associations cannot be changed through ModifyLabels 1.7.0. A new
+    # text_way makes Archicad redraw the text from midCoordinate, so it recomputes
+    # endCoordinate on its own (live AC30, 18/11/2026); the other points must hold.
+    expected = {"labelClass": label_class}
+    keys = ["begCoordinate", "midCoordinate", "endCoordinate", "ownerElementId"]
+    if "text_way" in changes:
+        keys.remove("endCoordinate")
+    for key in keys:
         if key in details:
             expected[key] = deepcopy(details[key])
     parameters = {}
+    if label_class == "Symbol":
+        if not isinstance(details.get("symbolStyle"), dict):
+            raise ValueError(f"{label}: cannot read the current symbol style.")
+        style = {}
+        if "text_way" in changes:
+            style["textWay"] = changes["text_way"]
+        if "always_readable" in changes:
+            style["flipEnabled"] = changes["always_readable"]
+        parameters["symbolStyle"] = style
+        expected["symbolStyle"] = dict(style)
+        return changes, parameters, expected
+    expected["text"] = changes.get("text", texts._lines(details["text"]))
     if "text" in changes:
         parameters["text"] = changes["text"]
     if "height_mm" in changes:
@@ -872,11 +902,12 @@ async def modify_labels(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview/edit up to 50 Text labels: text and height_mm in paper millimetres.
+    """Preview/edit up to 50 labels.
 
-    Tapir 1.7.0 ModifyLabels does not accept position or story changes. Symbol labels
-    and unsupported fields are refused. Owner, position and story are preserved;
-    content and size are read back. Never saves.
+    Text labels: text and height_mm in paper millimetres. Symbol labels: text_way and
+    always_readable (Archicad's "Always readable" flip). Tapir 1.7.0 ModifyLabels does
+    not accept position or story changes; other fields are refused. Owner, position and
+    story are preserved; changed fields are read back. Never saves.
     """
     return await _modify(
         client, labels, LabelModify, port, dry_run, confirmation_token, "modify_labels"

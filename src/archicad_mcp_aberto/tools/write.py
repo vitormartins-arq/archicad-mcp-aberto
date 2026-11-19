@@ -474,7 +474,8 @@ OPERATIONS = {
 OPERATIONS["modify_labels"] = (
     "label edit",
     "label_edit_receipt_id",
-    "Text and height_mm only; position is preserved. "
+    "Text and height_mm on Text labels, text_way and always_readable on Symbol "
+    "labels; position is preserved. "
     "Native edits may flatten rich text and disable word wrap.",
 )
 
