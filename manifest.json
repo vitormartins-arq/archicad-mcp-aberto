@@ -620,6 +620,10 @@
       "description": "List project libraries and special folders."
     },
     {
+      "name": "capture_view_image",
+      "description": "Open a View Map view and return the Archicad window as a PNG to check edits."
+    },
+    {
       "name": "get_element_preview",
       "description": "Return PNG previews of elements as MCP image content."
     },

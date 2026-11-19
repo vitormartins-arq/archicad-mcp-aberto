@@ -27,7 +27,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **172 registered tools**: **65 read-only**, **4 view/session actions** and
+Pre-alpha with **173 registered tools**: **65 read-only**, **5 view/session actions** and
 **103 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
