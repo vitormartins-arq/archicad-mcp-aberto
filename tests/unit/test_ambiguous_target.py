@@ -29,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    hotspot_dimensions,
     ifc,
     interior_elevations,
     issues,
@@ -64,6 +65,7 @@ from archicad_mcp_aberto.tools import (
     room_views,
     scenes,
     schedules,
+    section_dimensions,
     sections,
     selection,
     solids,
@@ -268,6 +270,36 @@ INPUTS = {
     "move_navigator_items": {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_element_hotspots": {"element_guids": [GUID]},
+    "get_dimension_favorite": {"name": "COTA"},
+    "check_dimensions_over_hotspots": {"element_guids": [GUID]},
+    "get_plan_window_image": {},
+    "get_dimensions": {"element_guids": [GUID]},
+    "create_linear_dimensions": {
+        "dimensions": [
+            {
+                "reference_point": {"x": 0, "y": 0},
+                "direction": {"x": 1, "y": 0},
+                "witnesses": [
+                    {"element_guid": GUID, "in_index": 1},
+                    {"element_guid": GUID, "in_index": 2},
+                ],
+            }
+        ]
+    },
+    "get_section_cut_elements": {"navigator_guid": GUID},
+    "create_section_dimensions": {
+        "navigator_guid": GUID,
+        "dimensions": [
+            {
+                "station_x": 0,
+                "points": [
+                    {"element_guid": GUID, "at": "top"},
+                    {"element_guid": GUID, "at": "bottom"},
+                ],
+            }
+        ],
     },
     "list_grid_elements": {},
     "create_grid_elements": {
@@ -550,6 +582,8 @@ TARGETED = {
     for module in (
         publisher,
         camera_paths,
+        hotspot_dimensions,
+        section_dimensions,
         model_tasks,
         attribute_properties,
         attributes_details,
@@ -662,6 +696,14 @@ def client(first, second, reversed_ports=False):
 async def test_all_registered_targeted_tools_have_cases():
     tools = await create_server().list_tools()
     registered = {tool.name for tool in tools if "port" in tool.inputSchema["properties"]}
+    # These act on the open window and pick the port with resolve_port, like the others.
+    registered -= {
+        "get_archicad_window_image",
+        "open_navigator_item",
+        "fit_in_window",
+        "window_zoom",
+        "pan_window",
+    }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()
 
@@ -751,6 +793,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             }
             for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
                 instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
+    if name in {"get_section_cut_elements", "create_section_dimensions"}:
+        for instance in (first, second):
+            instance.section_cuts[GUID] = [
+                {
+                    "sectionElementId": {"guid": PROP},
+                    "parentId": {"guid": GUID},
+                    "parentType": "Slab",
+                    "hotspots": [
+                        {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                        {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                    ],
+                }
+            ]
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -865,6 +920,18 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     if name == "create_composites":
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
+    if name == "create_section_dimensions":
+        second.section_cuts[GUID] = [
+            {
+                "sectionElementId": {"guid": PROP},
+                "parentId": {"guid": GUID},
+                "parentType": "Slab",
+                "hotspots": [
+                    {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                    {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                ],
+            }
+        ]
     arguments = deepcopy(INPUTS[name])
     if name == "create_camera_paths_from_views":
 
