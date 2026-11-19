@@ -113,10 +113,16 @@ static GS::ObjectState SaveProjectNative (const GS::ObjectState& parameters, boo
         // FileSavePars has no atomic no-replace option; callers must not write this path concurrently.
         API_WindowInfo previousWindow {};
         bool switched = false;
+        bool canRestore = true;
         if (samePath) {
-            err = ACAPI_Window_GetCurrentWindow (&previousWindow);
-            if (err != NoError) return CreateErrorResponse (err, "Cannot preserve the original window before saving.");
-            if (previousWindow.typeID != APIWind_FloorPlanID) {
+            // Some windows (schedules, interactive lists) are not reported by
+            // GetCurrentWindow. Save from the floor plan anyway and say the original
+            // window was not restored, instead of refusing the save (live AC30, 19/11/2026).
+            if (ACAPI_Window_GetCurrentWindow (&previousWindow) != NoError) {
+                canRestore = false;
+                previousWindow = {};
+            }
+            if (!canRestore || previousWindow.typeID != APIWind_FloorPlanID) {
                 API_WindowInfo floor {};
                 floor.typeID = APIWind_FloorPlanID;
                 err = ACAPI_Window_ChangeWindow (&floor);
@@ -125,13 +131,16 @@ static GS::ObjectState SaveProjectNative (const GS::ObjectState& parameters, boo
             }
         }
         err = ACAPI_ProjectOperation_Save (&save);
-        const auto restoreError = switched ? ACAPI_Window_ChangeWindow (&previousWindow) : NoError;
+        const auto restoreError = (switched && canRestore) ? ACAPI_Window_ChangeWindow (&previousWindow) : NoError;
         if (err != NoError) return CreateErrorResponse (err, "Native Save As returned an error; inspect before retrying.");
         if (restoreError != NoError) return CreateErrorResponse (restoreError, "Saved, but original window restoration needs inspection.");
         API_ProjectInfo after;
         err = ACAPI_ProjectOperation_Project (&after);
         if (err != NoError) return CreateErrorResponse (err, "Save returned, but context read-back failed.");
-        return Context (after);
+        GS::ObjectState response = Context (after);
+        if (samePath && !canRestore)
+            response.Add ("windowNote", "Saved from the floor plan; the original window could not be identified or restored.");
+        return response;
     } catch (const std::exception&) {
         return CreateErrorResponse (APIERR_BADPARS, "File path validation or save inspection failed.");
     }

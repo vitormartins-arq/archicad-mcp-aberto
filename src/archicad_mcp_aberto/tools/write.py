@@ -305,7 +305,8 @@ OPERATIONS = {
     "delete_elements": (
         "deletion",
         "delete_receipt_id",
-        "Only editable elements in an untitled test project can be deleted. Never saves.",
+        "Untitled test project, or a saved one inside a verified begin_model_task "
+        "(task_token). Only editable elements. Never saves.",
     ),
     "create_walls": (
         "wall",
@@ -1876,12 +1877,32 @@ async def set_property_values(
     return await _write(client, validated, port, dry_run, confirmation_token, "set_property_values")
 
 
+def _saved_task(client: ArchicadClient, task_token: str | None, port: int) -> None:
+    """A saved project may be edited destructively only inside a verified task.
+
+    Vitor (19/11/2026): before deleting in a real project, keep the previous file in
+    00 - Anteriores (begin_model_task keeps a single verified backup there).
+    """
+    from archicad_mcp_aberto.tools import model_tasks
+
+    if not task_token:
+        raise ValueError(
+            "Deletion needs an untitled test project, or task_token from begin_model_task "
+            "in a saved project (one verified backup kept in 00 - Anteriores first)."
+        )
+    model_tasks._task(client, task_token, port)
+
+
 async def _delete_plan(
-    client: ArchicadClient, guids: list[str], port: int | None, operation: str
+    client: ArchicadClient,
+    guids: list[str],
+    port: int | None,
+    operation: str,
+    task_token: str | None = None,
 ) -> dict:
     port, target, _ = await _context(client, port)
     if target["project"].get("isUntitled") is not True:
-        raise ValueError("Deletion requires an untitled test project (isUntitled=true).")
+        _saved_task(client, task_token, port)
     elements = element_ids(guids)
     details = await client.tapir(
         port,
@@ -1926,13 +1947,22 @@ async def _delete_plan(
     }
 
 
-async def _delete_dispatch(client: ArchicadClient, receipt: dict) -> None:
+async def _delete_dispatch(
+    client: ArchicadClient, receipt: dict, task_token: str | None = None
+) -> None:
     items, port = receipt["items"], receipt["target"]["port"]
     timeout = receipt["write_timeout_seconds"]
     # Recheck immediately before the destructive command, including after journaling.
     try:
         project = await client.tapir(port, "GetProjectInfo", timeout=timeout)
-        if project != receipt["target"]["project"] or project.get("isUntitled") is not True:
+        allowed = project.get("isUntitled") is True
+        if not allowed and task_token:
+            try:
+                _saved_task(client, task_token, port)
+                allowed = True
+            except ValueError:
+                allowed = False
+        if project != receipt["target"]["project"] or not allowed:
             for item in items:
                 item.update(status="failed", error="Project changed; deletion not dispatched.")
             return
@@ -1984,8 +2014,14 @@ async def delete_elements(
     port: int | None = None,
     dry_run: bool = True,
     confirmation_token: str | None = None,
+    task_token: str | None = None,
 ) -> dict:
-    """Delete up to 50 editable, non-hotlinked elements in an untitled test project.
+    """Delete up to 50 editable, non-hotlinked elements.
+
+    An untitled test project needs nothing more. A saved project needs task_token from
+    a verified begin_model_task, which keeps the previous file as the single backup in
+    00 - Anteriores; finish_model_task then saves the same PLN. Elements on hidden or
+    locked layers are refused by Archicad as non-editable.
 
     Uses Tapir DeleteElements (not an official JSON API command). Preview lists type,
     story and layer. Single-use token, explicit port, receipts, absence verification.
@@ -1996,7 +2032,25 @@ async def delete_elements(
     guids = [item["elementId"]["guid"] for item in element_ids(element_guids)]
     if len(set(guids)) != len(guids):
         raise ValueError("Duplicate element GUIDs are not allowed.")
-    return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
+    if task_token is None:
+        return await _write(client, guids, port, dry_run, confirmation_token, "delete_elements")
+
+    async def planner(client, guids, port, operation):
+        return await _delete_plan(client, guids, port, operation, task_token)
+
+    async def dispatcher(client, receipt):
+        await _delete_dispatch(client, receipt, task_token)
+
+    return await _write(
+        client,
+        guids,
+        port,
+        dry_run,
+        confirmation_token,
+        "delete_elements",
+        planner_override=planner,
+        dispatcher_override=dispatcher,
+    )
 
 
 NAMED_PREVIEWS = {

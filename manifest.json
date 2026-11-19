@@ -672,6 +672,10 @@
       "description": "List project libraries and special folders."
     },
     {
+      "name": "capture_view_image",
+      "description": "Return the active Archicad 2D window as a PNG, optionally zoomed, to check edits."
+    },
+    {
       "name": "get_element_preview",
       "description": "Return PNG previews of elements as MCP image content."
     },

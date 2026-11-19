@@ -44,6 +44,7 @@ from archicad_mcp_aberto.tools import (
     publisher,
     read,
     revisions,
+    view_image,
     write,
 )
 from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
@@ -743,12 +744,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
+        task_token: str | None = None,
     ) -> dict:
-        """Delete up to 50 editable elements, only in an untitled test project. Requires Tapir.
-        Preview then apply with explicit port and single-use token. Never saves or unlocks.
+        """Delete up to 50 editable elements. Requires Tapir. In a saved project pass
+        task_token from begin_model_task (one verified backup kept in 00 - Anteriores),
+        then finish_model_task saves. Preview then apply with explicit port and single-use
+        token. Never unlocks or shows hidden layers.
         """
         return await write.delete_elements(
-            client_of(ctx), element_guids, port, dry_run, confirmation_token
+            client_of(ctx), element_guids, port, dry_run, confirmation_token, task_token
         )
 
     @mcp.tool(annotations=WRITE)
@@ -2345,6 +2349,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """List project libraries and requested Archicad special folders."""
         return await project_resources.list_libraries(client_of(ctx), folder_types, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def capture_view_image(
+        ctx: Context,
+        zoom: dict | None = None,
+        port: int | None = None,
+    ) -> list:
+        """Look at Archicad: return the active 2D window (plan, section, elevation,
+        detail, worksheet) as a PNG, optionally zoomed to {xMin, yMin, xMax, yMax} in
+        metres (the zoom is restored). Use it after every edit to check the result.
+        Never edits or saves. Needs the companion add-on (GetPlanWindowImage)."""
+        result = await view_image.capture_view_image(client_of(ctx), zoom, port)
+        data = base64.b64decode(result.pop("png_base64"))
+        return [TextContent(type="text", text=json.dumps(result)), Image(data=data, format="png")]
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_element_preview(
