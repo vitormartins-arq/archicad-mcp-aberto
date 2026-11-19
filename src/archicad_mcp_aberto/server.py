@@ -1189,8 +1189,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/edit up to 50 Text labels: text and height_mm (paper mm).
-        Tapir 1.7.0 cannot change label position/story here. Symbol labels and unsupported
+        """Preview/edit up to 50 labels. Text labels: text and height_mm (paper mm).
+        Symbol labels: text_way (Parallel, Horizontal, Vertical, General) and
+        always_readable. Tapir 1.7.0 cannot change label position/story here; other
         fields are refused. Explicit port and single-use token to apply; never saves.
         """
         return await modify.modify_labels(client_of(ctx), labels, port, dry_run, confirmation_token)

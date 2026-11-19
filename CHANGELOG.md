@@ -9,6 +9,10 @@
   ceiling), linked through its section element, from a Dimension favorite or the tool
   defaults, one Undo step, read back point by point. Both need the companion add-on
   commands `GetSectionCutElements` and `CreateSectionDimensions` (archicad-mcp-addon).
+- `modify_labels` edits Symbol labels' text direction: `text_way` (Parallel, Horizontal,
+  Vertical, General) and `always_readable` (Archicad's flip), through Tapir 1.7.0
+  `ModifyLabels` `symbolStyle`. Text and size stay Text-label only; owner and position
+  are preserved and read back.
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.
