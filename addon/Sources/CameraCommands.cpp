@@ -279,7 +279,7 @@ static GSErrCode FindOrCreateFolder (const API_Guid& parentGuid, const GS::UniSt
 
 // Depth-first search of the View Map for a folder by name, so the first folder of a path
 // may sit below the project's own top folder (live test: "02 | MODELO 3D" was inside
-// "TEMPLATE LAB COCADA").
+// "Project Root").
 static bool FindFolderAnywhere (const API_Guid& parentGuid, const GS::UniString& folder, API_Guid& folderGuid, int depth = 0)
 {
     if (depth > 8) {
