@@ -47,34 +47,46 @@ and does not convert or validate its ABI. Internal CMake target names and CI job
 identifiers may retain the technical major/platform suffix; user-facing files follow
 the table. Wheel/sdist filenames retain the Python packaging standard so installers work.
 
-## Drive delivery
+## Drive delivery — layout requested on 29 October 2026
 
-Keep one folder per repository under `Archicad/Add-Ons Archicad`:
+Keep all distribution folders under `Archicad/Add-Ons Archicad/ADD- ON - LAB Tools`:
 
 ```text
-LAB - Servidor MCP/   Python MCP server, not an Archicad APX
-LAB - MCP Escritório/      private Python MCP layer, not another APX
-LAB - Importador de Blocos e Texturas/           native importer, complete package with engine/runtime
-LAB - Complemento MCP/   native MCP companion
+ADD- ON - LAB Tools/
+  Atual/Archicad 29/
+  Atual/Archicad 30/
+  Componentes individuais/
+    ADD-ON - LAB Blocos e texturas/
+    ADD-ON - LAB Complemento MCP/
+    ADD- ON - Tapir/
+  Servidores MCP/
+    SERVIDOR MCP - LAB Aberto/
+    SERVIDOR MCP - LAB Escritório/
+  Documentos/
+  00 - Anteriores/
+  LEIA-ME.md
 ```
 
-Within each repository folder, `Atual` is the current integrated distribution or
-explicitly labelled latest candidate, `Em teste` contains unaccepted PR material, and
-`00 - Anteriores` keeps previous material. Put Archicad 29/30 in separate child folders.
-Keep source snapshots and the delivery receipt alongside the matching material.
-The companion APXs built in the open server and private add-on repository share an
-MDID: they are alternatives, not independent plug-ins to load together.
+The suite installer stays directly in Atual/Archicad 29 or Atual/Archicad 30.
+Each individual component/server retains its own Atual, Documentos and
+00 - Anteriores folders. Keep source snapshots, instructions and verification
+receipts in Documentos. Archive superseded deliveries without overwriting them.
+Atual identifies the latest delivery; record candidate/live-validation status
+in its README and receipt rather than creating another Em teste folder.
 
+Users installing the suite do not also need both individual LAB installers.
+Tapir and Python MCP servers remain separate. Standalone and integrated versions
+can differ: at the time of this reorganization, suite R16 includes companion R14,
+while the standalone AC30 companion is R15. Inspect the installed revision before
+replacing a newer standalone component with the suite.
 
-Keep only the name and revision in each filename; the parent folder carries major
-version and status. Use the exact repository folder above; update the Drive copies and delivery record whenever material is
-delivered, preserve the previous revision, and keep test builds separate until accepted.
-This workflow creates GitHub artifacts; it does not authenticate to Drive or silently
-upload private material. The authorized delivery step copies the verified files there.
-Never run a working clone, venv or installed APX from Drive/OneDrive.
-
-Package naming is not runtime certification. It changes no add-on MDID, native command,
-project element, installation or saved Archicad file. Keep the LAB Blocos importer separate.
+The canonical local path map is ADD- ON - LAB Tools/Documentos/MAPA DE CAMINHOS.md,
+relative to Add-Ons Archicad. Resolve the local Drive prefix on each computer.
+Repositories, module identities and installed runtime paths remain independent.
+Do not recreate the former sibling delivery folders or run a clone/venv/APX from Drive.
+The open-server companion APX and the LAB native companion share an MDID;
+load the chosen implementation only. This documentation change installs nothing,
+changes no saved Archicad project and publishes no new binary revision.
 
 ## LAB prefix (26 October 2026)
 
