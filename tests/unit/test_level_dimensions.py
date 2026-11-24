@@ -61,6 +61,14 @@ def native(tmp_path, monkeypatch):
             assert params["dimensions"][0]["favorite"] == REQUEST["favorite"]
             if control["mode"] == "timeout":
                 raise ArchicadError("Unknown native outcome")
+            if control["mode"] == "native_error":
+                raise ArchicadError(
+                    "Add-on error in CreateLevelDimensions.",
+                    detail={
+                        "code": -2130313112,
+                        "diagnostic": {"stage": "element_create", "itemIndex": 0},
+                    },
+                )
             if control["mode"] == "bad_count":
                 return {"dimensions": []}
             if row["existingGuids"]:
@@ -100,6 +108,24 @@ async def test_preview_preserves_exact_favorite_and_no_writes(native):
     assert p["items"][0]["expected"]["bottomElevationProject"] == 0
     assert [n for n, p in native["calls"]] == ["PlanLevelDimensions"]
     assert p["items"][0]["parameters"]["reference"] == "favorite"
+
+
+async def test_native_failure_detail_survives_receipt_and_no_retry(native):
+    async with client() as c:
+        p = await levels.create_level_dimensions(c, [REQUEST], 19723)
+        native["mode"] = "native_error"
+        r = await levels.create_level_dimensions(
+            c, [REQUEST], 19723, False, p["confirmation_token"]
+        )
+        assert r["status"] == "needs_review"
+        item = r["items"][0]
+        assert item["status"] == "unknown"
+        assert item["native_error"]["code"] == -2130313112
+        assert item["native_error"]["diagnostic"]["stage"] == "element_create"
+        with pytest.raises(ValueError, match="consumed"):
+            await levels.create_level_dimensions(
+                c, [REQUEST], 19723, False, p["confirmation_token"]
+            )
 
 
 async def test_create_readback_and_token_replay(native):
