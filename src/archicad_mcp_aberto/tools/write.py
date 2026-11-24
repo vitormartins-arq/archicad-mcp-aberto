@@ -704,6 +704,11 @@ OPERATIONS["create_grid_elements"] = (
     "grid_receipt_id",
     "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
 )
+OPERATIONS["create_level_dimensions"] = (
+    "level dimension",
+    "level_dimension_receipt_id",
+    "Native associative level dimensions from exact favorites, one Undo step; never saves.",
+)
 OPERATIONS["save_project_as"] = (
     "project save",
     "save_receipt_id",

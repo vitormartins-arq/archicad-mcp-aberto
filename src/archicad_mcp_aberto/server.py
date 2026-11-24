@@ -29,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     hotlinks,
     ifc,
     keynotes,
+    level_dimensions,
     locks,
     model_tasks,
     modify,
@@ -190,6 +191,43 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Errors are reported per item. Save the project first on Archicad 29: some
         builds have crashed on large property reads."""
         return await read.get_properties(client_of(ctx), element_guids, property_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_level_dimensions(
+        ctx: Context,
+        port: int | None = None,
+        floor_index: int | None = None,
+        guids: list[str] | None = None,
+        include_drawing: bool = False,
+    ) -> dict:
+        """Read native LevelDimension style/association/value and optional drawn texts.
+        Filter by story or 1..100 GUIDs; bounded to 5000 dimensions. Use to avoid duplicates.
+        Requires updated companion; changes no model/selection.
+        """
+        return await level_dimensions.get_level_dimensions(
+            client_of(ctx), port, floor_index, guids, include_drawing
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_level_dimensions(
+        ctx: Context,
+        dimensions: list[level_dimensions.LevelDimensionCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Create 1..20 native associative LevelDimensions from exact favorites; XY in metres.
+        Pass point, floor_index, slab_guid and favorite (e.g. COTA DE NÍVEL - PISO).
+        reference/datum default to favorite; top/bottom selects a live autotext, project_zero
+        overrides datum. Top=story+slab.level+offsetFromTop; bottom subtracts thickness.
+        Preserve favorite content/style and project precision. Never plain text/GDL.
+        Preview/token, one Undo, read-back. Refuse curved outlines, wrong story and points
+        outside slab/inside holes. Existing dimensions within 2 cm of same slab point are
+        checked, not duplicated. Never saves. Updated companion/live acceptance required.
+        """
+        return await level_dimensions.create_level_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     async def tapir_status(ctx: Context) -> dict:
