@@ -6,6 +6,11 @@
   required. See `SUSPEND_GROUPS.md`; 3,595 offline tests and Ruff checks passed.
   Native companion AC29/AC30 builds passed; live grouped-Lamp acceptance remains pending.
 
+- **LevelDimension failure diagnostics / 24 November 2026:**
+  Native execution failures now preserve the SDK error object and diagnostic stage in
+  receipts instead of only the generic exception string. This improves diagnosis;
+  the real creation failure remains unresolved. No client-project creation was retried.
+
 - **Native level dimensions / 24 November 2026:** `get_level_dimensions` and
   `create_level_dimensions` use the matching native companion to read/place associative
   LevelDimension annotations from exact favorites, with snapshot/token, deduplication,
