@@ -704,6 +704,11 @@ OPERATIONS["create_grid_elements"] = (
     "grid_receipt_id",
     "Grid lines are made by the ArchicadMcpAberto add-on, all in one Undo step.",
 )
+OPERATIONS["save_and_close_project"] = (
+    "project close",
+    "close_receipt_id",
+    "Experimental: save the same PLN, verify it, then close only that project. No Undo.",
+)
 OPERATIONS["save_project_as"] = (
     "project save",
     "save_receipt_id",

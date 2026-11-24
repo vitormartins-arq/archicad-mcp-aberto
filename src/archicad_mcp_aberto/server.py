@@ -36,6 +36,7 @@ from archicad_mcp_aberto.tools import (
     openings,
     preview_images,
     profiles,
+    project_close,
     project_info,
     project_location,
     project_resources,
@@ -2773,6 +2774,24 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         no Undo. Preview/token/explicit port required. Untitled/Teamwork refused.
         Requires updated companion add-on and server on the Archicad computer."""
         return await project_save.save_next_project_revision(
+            client_of(ctx), port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def save_and_close_project(
+        ctx: Context,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """EXPERIMENTAL: save to the SAME PLN, verify file/context, close that project.
+        Explicit port required in preview and apply; one-use token binds path/session/stamp.
+        Requires updated companion add-on on the same computer. No new revision, no Undo,
+        no mouse/keyboard, no process termination. Refuses untitled/Teamwork/stale contexts.
+        A lost connection is an unknown outcome, never proof of closure; never auto-retry.
+        Native Close is marked not for public use by Graphisoft; live acceptance pending.
+        """
+        return await project_close.save_and_close_project(
             client_of(ctx), port, dry_run, confirmation_token
         )
 

@@ -760,6 +760,10 @@
       "description": "Preview or create complex profiles by copying existing profile geometry."
     },
     {
+      "name": "save_and_close_project",
+      "description": "Experimental same-path save, verification and close of one explicitly selected project."
+    },
+    {
       "name": "save_project_as",
       "description": "Preview native Save As PLN to a new explicit destination."
     },

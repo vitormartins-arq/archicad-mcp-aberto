@@ -3,6 +3,8 @@
 #include "GSGuid.hpp"
 #include <filesystem>
 #include <string>
+#include <chrono>
+#include <memory>
 
 namespace {
 GS::UniString Session ()
@@ -158,4 +160,97 @@ GS::Optional<GS::UniString> SaveCurrentProjectPLNCommand::GetInputParametersSche
 GS::ObjectState SaveCurrentProjectPLNCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
 {
     return SaveProjectNative (parameters, true);
+}
+
+namespace {
+struct CloseProof {
+    GS::ObjectState context;
+    GS::UniString token;
+    std::filesystem::path path;
+    std::uintmax_t size;
+    std::filesystem::file_time_type modified;
+    std::chrono::steady_clock::time_point expires;
+};
+std::unique_ptr<CloseProof> closeProof;
+bool SameCloseContext (const GS::ObjectState& expected, const GS::ObjectState& current)
+{
+    for (const char* key : {"sessionId", "projectEpoch", "projectPath", "modificationStamp"}) {
+        GS::UniString a, b;
+        if (!expected.Get (key, a) || !current.Get (key, b) || a != b) return false;
+    }
+    bool untitled = true, teamwork = true;
+    return current.Get ("untitled", untitled) && current.Get ("teamwork", teamwork) && !untitled && !teamwork;
+}
+}
+
+GS::String PrepareProjectCloseCommand::GetName () const { return "PrepareProjectClose"; }
+GS::Optional<GS::UniString> PrepareProjectCloseCommand::GetInputParametersSchema () const
+{
+    return SaveProjectAsPLNCommand ().GetInputParametersSchema ();
+}
+GS::ObjectState PrepareProjectCloseCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
+{
+    closeProof.reset ();
+    auto saved = SaveProjectNative (parameters, true);
+    if (saved.Contains ("error")) return saved;
+    try {
+        API_ProjectInfo info;
+        const auto err = ACAPI_ProjectOperation_Project (&info);
+        if (err != NoError || !SameCloseContext (saved, Context (info)))
+            return CreateErrorResponse (APIERR_BADPARS, "Saved, but project changed; close not prepared.");
+        GS::UniString path;
+        saved.Get ("projectPath", path);
+        const std::string utf8 = path.ToCStr (CC_UTF8).Get ();
+        auto proof = std::make_unique<CloseProof> ();
+        proof->path = std::filesystem::path (std::u8string (
+            reinterpret_cast<const char8_t*> (utf8.data ()), utf8.size ()));
+        proof->size = std::filesystem::file_size (proof->path);
+        if (proof->size == 0) return CreateErrorResponse (APIERR_BADPARS, "Saved PLN is empty; close refused.");
+        proof->modified = std::filesystem::last_write_time (proof->path);
+        proof->context = saved;
+        proof->token = GS::Guid (GS::Guid::GenerateGuid).ToUniString ();
+        proof->expires = std::chrono::steady_clock::now () + std::chrono::minutes (10);
+        saved.Add ("closeToken", proof->token);
+        saved.Add ("savedFileSize", GS::UniString (std::to_string (proof->size).c_str ()));
+        closeProof = std::move (proof);
+        return saved;
+    } catch (const std::exception&) {
+        return CreateErrorResponse (APIERR_BADPARS, "Saved file inspection failed; close not prepared.");
+    }
+}
+
+GS::String ClosePreparedProjectCommand::GetName () const { return "ClosePreparedProject"; }
+GS::Optional<GS::UniString> ClosePreparedProjectCommand::GetInputParametersSchema () const
+{
+    return GS::UniString (R"({"type":"object","properties":{"closeToken":{"type":"string"},"sessionId":{"type":"string"},"projectEpoch":{"type":"string"},"projectPath":{"type":"string"},"modificationStamp":{"type":"string"}},"required":["closeToken","sessionId","projectEpoch","projectPath","modificationStamp"],"additionalProperties":false})");
+}
+GS::ObjectState ClosePreparedProjectCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
+{
+    // Consume before checking or dispatching: errors/timeouts never replay a close.
+    auto proof = std::move (closeProof);
+    GS::UniString token;
+    if (!proof || !parameters.Get ("closeToken", token) || token != proof->token ||
+        std::chrono::steady_clock::now () >= proof->expires)
+        return CreateErrorResponse (APIERR_BADPARS, "Close proof missing, expired or consumed.");
+    API_ProjectInfo info;
+    auto err = ACAPI_ProjectOperation_Project (&info);
+    if (err != NoError || !SameCloseContext (parameters, Context (info)) ||
+        !SameCloseContext (proof->context, Context (info)))
+        return CreateErrorResponse (APIERR_BADPARS, "Project changed after save; close refused.");
+    try {
+        if (!std::filesystem::is_regular_file (proof->path) ||
+            std::filesystem::file_size (proof->path) != proof->size ||
+            std::filesystem::last_write_time (proof->path) != proof->modified)
+            return CreateErrorResponse (APIERR_BADPARS, "Saved file changed; close refused.");
+    } catch (const std::exception&) {
+        return CreateErrorResponse (APIERR_BADPARS, "Cannot verify saved PLN; close refused.");
+    }
+    // SDK labels Close as not for public use. Experimental, never force/quit on refusal.
+    err = ACAPI_ProjectOperation_Close ();
+    if (err != NoError) return CreateErrorResponse (err, "Native close refused; do not retry automatically.");
+    Epoch () = GS::Guid (GS::Guid::GenerateGuid).ToUniString ();
+    API_ProjectInfo after;
+    const auto readError = ACAPI_ProjectOperation_Project (&after);
+    return GS::ObjectState ("closeReturnedNoError", true, "noOpenProject", readError == APIERR_NOPLAN,
+        "readBackError", static_cast<Int32> (readError));
 }
