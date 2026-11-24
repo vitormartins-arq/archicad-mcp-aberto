@@ -760,6 +760,14 @@
       "description": "Preview or create complex profiles by copying existing profile geometry."
     },
     {
+      "name": "get_level_dimensions",
+      "description": "Read native level dimensions, association, style, measured value and optional drawn text."
+    },
+    {
+      "name": "create_level_dimensions",
+      "description": "Create associative native level dimensions in batches using exact LevelDimension favorites."
+    },
+    {
       "name": "save_project_as",
       "description": "Preview native Save As PLN to a new explicit destination."
     },
