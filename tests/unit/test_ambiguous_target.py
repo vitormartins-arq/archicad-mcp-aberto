@@ -28,6 +28,7 @@ from archicad_mcp_aberto.tools import (
     favorites,
     gateway,
     grids,
+    groups,
     hotlinks,
     hotspot_dimensions,
     ifc,
@@ -112,6 +113,8 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "get_suspend_groups": {},
+    "set_suspend_groups": {"suspended": True},
     "list_camera_paths": {},
     "create_camera_paths_from_views": {},
     "begin_model_task": {},
@@ -600,6 +603,7 @@ GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters
 TARGETED = {
     name: function
     for module in (
+        groups,
         publisher,
         camera_paths,
         hotspot_dimensions,
@@ -838,6 +842,15 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {"get_suspend_groups", "set_suspend_groups"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetSuspendGroups"]
+            assert not untouched.calls
+            return
         if name in {"get_level_dimensions", "create_level_dimensions"}:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -971,6 +984,12 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             }
         ]
     arguments = deepcopy(INPUTS[name])
+    if name == "set_suspend_groups":
+
+        async def group_plan(c, values, port, operation):
+            return {"operation": operation, "target": {"port": port}, "items": []}
+
+        monkeypatch.setattr(groups, "_plan", group_plan)
     if name == "create_camera_paths_from_views":
 
         async def camera_plan(c, port, path_name, view_guids):

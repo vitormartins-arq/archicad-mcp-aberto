@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     element_structure,
     favorites,
     gateway,
+    groups,
     hotlinks,
     ifc,
     keynotes,
@@ -237,6 +238,30 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Errors are reported per item. Save the project first on Archicad 29: some
         builds have crashed on large property reads."""
         return await read.get_properties(client_of(ctx), element_guids, property_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_suspend_groups(ctx: Context, port: int | None = None) -> dict:
+        """Read native Suspend Groups mode. Requires matching companion; no UI/selection changes."""
+        return await groups.get_suspend_groups(client_of(ctx), port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_suspend_groups(
+        ctx: Context,
+        suspended: bool,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Set native Suspend Groups with preview/token and read-back; preserves memberships.
+
+        Suspend BEFORE previewing edits to grouped lamps. Afterwards restore restore_suspended
+        from the receipt with a NEW preview/token, including after failed edits. Mode is local
+        to the selected instance; never ungroup, select, save or edit additional members.
+        Requires updated companion. Do not retry unknown outcomes; query state first.
+        """
+        return await groups.set_suspend_groups(
+            client_of(ctx), suspended, port, dry_run, confirmation_token
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_level_dimensions(

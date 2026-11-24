@@ -1,6 +1,16 @@
 # Estado atual
 
-- **Local runtime / 24 November 2026:** isolated deployment combines PR #95 and merged #111 with the existing surface-management Python tools and rename availability compatibility fix. LAB cotas wrapper remains unchanged. No native add-on installation or model operation is part of this update. Validation: 3,573 public and 116 LAB offline tests passed; both Ruff checks passed. LAB stdio initialization listed 219 tools, preserving electrical/lighting dimensions and exposing saved-project task_token. No Archicad API/model calls were made. Codex reload remains necessary after the configuration path switch. This local branch is not published.
+- **Local runtime / 24 November 2026:** prepared Suspend Groups tools on the configured
+  Python checkout while preserving surface-management, Lamp and saved-project deletion
+  tools. LAB cotas wrapper is unchanged. Matching R45/R28 companion installation and MCP
+  reconnection are still required; no active Archicad was changed or restarted.
+
+- **Suspend Groups / 24 November 2026:** added `get_suspend_groups` and
+  `set_suspend_groups` with strict snapshot/token, independent read-back and an explicit
+  restoration value. No ungrouping or expansion of edit GUIDs. Matching native companion
+  required. See `SUSPEND_GROUPS.md`; 3,595 offline tests and Ruff checks passed.
+  Native companion AC29/AC30 builds passed; live grouped-Lamp acceptance remains pending.
+
 - **Native level dimensions / 24 November 2026:** `get_level_dimensions` and
   `create_level_dimensions` use the matching native companion to read/place associative
   LevelDimension annotations from exact favorites, with snapshot/token, deduplication,

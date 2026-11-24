@@ -250,6 +250,11 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "set_suspend_groups": (
+        "Suspend Groups mode",
+        "group_mode_receipt_id",
+        "Editing mode only; preserves memberships. Restore the previous value after editing.",
+    ),
     "create_windows": (
         "window",
         "window_receipt_id",

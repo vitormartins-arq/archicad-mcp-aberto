@@ -60,6 +60,14 @@
   },
   "tools": [
     {
+      "name": "get_suspend_groups",
+      "description": "Read native Suspend Groups mode without changing membership or selection."
+    },
+    {
+      "name": "set_suspend_groups",
+      "description": "Preview/set Suspend Groups with snapshot, token and verified read-back; restore explicitly."
+    },
+    {
       "name": "discover_archicad",
       "description": "List open Archicad instances with port, version, Tapir state and project."
     },
