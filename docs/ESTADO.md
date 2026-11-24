@@ -1,5 +1,11 @@
 # Estado atual
 
+- **Suspend Groups / 24 November 2026:** added `get_suspend_groups` and
+  `set_suspend_groups` with strict snapshot/token, independent read-back and an explicit
+  restoration value. No ungrouping or expansion of edit GUIDs. Matching native companion
+  required. See `SUSPEND_GROUPS.md`; 3,595 offline tests and Ruff checks passed.
+  Native companion AC29/AC30 builds passed; live grouped-Lamp acceptance remains pending.
+
 - **Native level dimensions / 24 November 2026:** `get_level_dimensions` and
   `create_level_dimensions` use the matching native companion to read/place associative
   LevelDimension annotations from exact favorites, with snapshot/token, deduplication,
