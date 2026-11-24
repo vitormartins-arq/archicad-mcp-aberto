@@ -32,8 +32,11 @@ Native level dimensions: `get_level_dimensions` reads existing annotations and
 Finished top and bottom account for slab reference-plane offset. Requires the matching
 companion; live acceptance pending. See [LEVEL_DIMENSIONS.md](docs/LEVEL_DIMENSIONS.md).
 
-Pre-alpha with **191 registered tools**: **76 read-only**, **8 view/session actions** and
-**107 project or model writes**. The broad surface is already useful, but pre-alpha is
+Suspend Groups: `get_suspend_groups` queries the mode; `set_suspend_groups` previews,
+applies and verifies a reversible change without ungrouping. See [workflow](docs/SUSPEND_GROUPS.md).
+
+Pre-alpha with **193 registered tools**: **77 read-only**, **8 view/session actions** and
+**108 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
