@@ -41,6 +41,8 @@ GSErrCode Initialize (void)
     err |= InstallCommand<GetProjectSaveContextCommand> ();
     err |= InstallCommand<SaveProjectAsPLNCommand> ();
     err |= InstallCommand<SaveCurrentProjectPLNCommand> ();
+    err |= InstallCommand<PrepareProjectCloseCommand> ();
+    err |= InstallCommand<ClosePreparedProjectCommand> ();
     err |= InstallCommand<Get3DCameraCommand> ();
     err |= InstallCommand<Set3DCameraCommand> ();
     err |= InstallCommand<Save3DViewCommand> ();

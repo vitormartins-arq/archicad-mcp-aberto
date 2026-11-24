@@ -27,15 +27,16 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **189 registered tools**: **75 read-only**, **8 view/session actions** and
-**106 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **190 registered tools**: **75 read-only**, **8 view/session actions** and
+**107 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
 
 Writes preview by default and require a single-use confirmation token and an explicit
 Archicad port to apply. They produce per-item results and receipts and read the result
-back whenever the available API exposes enough information. No tool saves the project.
+back whenever the available API exposes enough information. Explicit project-save tools
+save only through their documented guarded workflow.
 Lengths use metres and angles use radians regardless of project display units.
 
 ### Capabilities at a glance
@@ -957,6 +958,12 @@ numeric values remain strict. Receipt text preserves the actual Archicad respons
 ## Explicit project saving and revisions
 
 `save_project_as` saves the in-memory project to a new absolute PLN path.
+`save_and_close_project` is an **experimental** same-path save and project close:
+explicit port, preview/token, native save proof, local file verification, native close
+and no-open-project read-back. It does not create a revision or quit the application.
+Graphisoft marks the native Close operation as not for public use; runtime acceptance
+is pending. A disconnected endpoint is an unknown outcome, never closure proof.
+See [the protocol and controlled acceptance checklist](docs/PROJECT_CLOSE.md).
 `save_next_project_revision` proposes the next R/REV in the current folder, then
 archives the previous PLN in `00 - Anteriores` after verifying the native saved path
 and a nonempty file. Both require preview, explicit port and one-use token, the

@@ -1,5 +1,14 @@
 # Estado atual
 
+- **Experimental project close / 24 November 2026:** `save_and_close_project` saves
+  the same PLN and verifies context/file before a one-use native close proof is used.
+  Explicit-port preview/token, stale-context checks, prepared/saved/result receipts;
+  timeout means unknown, never automatic retry. Native Close is marked not for public
+  use by Graphisoft; live acceptance is pending. No real projects closed, no install,
+  no MCP reload. See `PROJECT_CLOSE.md`. Distribution proposal R20.
+  Validation: 3,552 offline tests passed, Ruff check/format passed, native Windows
+  AC30 Release build passed with MSVC 19.44 and the AC30 DevKit. Runtime untested.
+
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
 - **Section dimension association fixed / 18 November 2026:** the loss of association

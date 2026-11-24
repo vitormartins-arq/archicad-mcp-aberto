@@ -52,6 +52,7 @@ from archicad_mcp_aberto.tools import (
     parameters,
     preview_images,
     profiles,
+    project_close,
     project_info,
     project_location,
     project_map_names,
@@ -116,6 +117,7 @@ INPUTS = {
     "begin_model_task": {},
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
+    "save_and_close_project": {},
     "save_next_project_revision": {},
     "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
     "list_publisher_sets": {},
@@ -636,6 +638,7 @@ TARGETED = {
         view_image,
         object_replacement,
         project_info,
+        project_close,
         project_save,
         project_location,
         project_location,
@@ -821,6 +824,17 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name == "save_and_close_project":
+            from archicad_mcp_aberto.connection import ArchicadError
+
+            # General fake has no availability probe. Protocol mocks cover the new
+            # commands separately; routing must still fail closed on this port only.
+            with pytest.raises(ArchicadError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.calls == ["API.GetProductInfo", "API.IsAddOnCommandAvailable"]
+            assert not selected.own_addon_calls and not untouched.calls
+            return
         if name in {
             "list_camera_paths",
             "begin_model_task",
