@@ -27,8 +27,13 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **192 registered tools**: **77 read-only**, **8 view/session actions** and
-**107 project or model writes**. The broad surface is already useful, but pre-alpha is
+Native level dimensions: `get_level_dimensions` reads existing annotations and
+`create_level_dimensions` previews associative batches from exact native favorites.
+Finished top and bottom account for slab reference-plane offset. Requires the matching
+companion; live acceptance pending. See [LEVEL_DIMENSIONS.md](docs/LEVEL_DIMENSIONS.md).
+
+Pre-alpha with **194 registered tools**: **78 read-only**, **8 view/session actions** and
+**108 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.

@@ -38,6 +38,7 @@ from archicad_mcp_aberto.tools import (
     layer_settings,
     layers,
     layout_book,
+    level_dimensions,
     locks,
     mep,
     meshes,
@@ -116,6 +117,17 @@ INPUTS = {
     "begin_model_task": {},
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
+    "get_level_dimensions": {},
+    "create_level_dimensions": {
+        "dimensions": [
+            {
+                "point": {"x": 1, "y": 2},
+                "floor_index": 0,
+                "slab_guid": GUID,
+                "favorite": "Native level",
+            }
+        ]
+    },
     "save_next_project_revision": {},
     "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
     "list_publisher_sets": {},
@@ -620,6 +632,7 @@ TARGETED = {
         layer_settings,
         layers,
         layout_book,
+        level_dimensions,
         locks,
         mep,
         meshes,
@@ -825,6 +838,17 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             instance.project_name = ""
             instance.details[GUID] = {"type": "Wall", "floorIndex": 0, "layerIndex": 1}
     async with client(first, second) as c:
+        if name in {"get_level_dimensions", "create_level_dimensions"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == [
+                "GetLevelDimensions" if name == "get_level_dimensions" else "PlanLevelDimensions"
+            ]
+            assert not untouched.calls
+            return
         if name in {
             "list_camera_paths",
             "begin_model_task",
@@ -959,6 +983,12 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             }
 
         monkeypatch.setattr(camera_paths, "_plan", camera_plan)
+    if name == "create_level_dimensions":
+
+        async def level_plan(c, dimensions, port, operation):
+            return {"operation": operation, "target": {"port": port}, "items": []}
+
+        monkeypatch.setattr(level_dimensions, "_plan", level_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
         first.calls.clear()

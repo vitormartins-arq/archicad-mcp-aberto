@@ -1,6 +1,16 @@
 # Estado atual
 
 - **Local runtime / 24 November 2026:** isolated deployment combines PR #95 and merged #111 with the existing surface-management Python tools and rename availability compatibility fix. LAB cotas wrapper remains unchanged. No native add-on installation or model operation is part of this update. Validation: 3,573 public and 116 LAB offline tests passed; both Ruff checks passed. LAB stdio initialization listed 219 tools, preserving electrical/lighting dimensions and exposing saved-project task_token. No Archicad API/model calls were made. Codex reload remains necessary after the configuration path switch. This local branch is not published.
+- **Native level dimensions / 24 November 2026:** `get_level_dimensions` and
+  `create_level_dimensions` use the matching native companion to read/place associative
+  LevelDimension annotations from exact favorites, with snapshot/token, deduplication,
+  one Undo and independent read-back. Finished top accounts for story + reference
+  level + offsetFromTop. Default favorite multi-note content/datum is retained. See
+  `LEVEL_DIMENSIONS.md` for scope, limits and pending coordinated live acceptance.
+  No PLN modified, no add-on installed or MCP connection restarted. Proposal R20.
+  Validation: 3,562 offline tests passed; native companion AC29/AC30 Release builds
+  and shared seven-case C++ elevation test passed. Native association/custom favorite
+  appearance after real slab edits still needs coordinated live acceptance.
 
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
