@@ -148,6 +148,8 @@ async def _dispatch(client, receipt):
     except (ArchicadError, ValueError) as exc:
         for item in receipt["items"]:
             item.update(status="unknown", error=str(exc))
+            if isinstance(exc, ArchicadError) and exc.detail is not None:
+                item["native_error"] = exc.detail
         return
     rows = result.get("dimensions", [])
     if not isinstance(rows, list) or len(rows) != len(receipt["items"]):
