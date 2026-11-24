@@ -66,12 +66,68 @@ async def test_height_only_keeps_content():
     assert result["items"][0]["after"]["details"]["text"] == "Original\nSecond line"
 
 
-async def test_symbol_label_refused():
+def _symbol(fake):
+    details = fake.details[ELEMENT]["details"]
+    details["labelClass"] = "Symbol"
+    details["ownerElementId"] = {"guid": OTHER}
+    details.pop("text", None)
+    details["symbolStyle"] = {"textWay": "Parallel", "flipEnabled": True, "textSize": 2}
+
+
+async def test_symbol_label_text_refused():
     fake = model("Label")
-    fake.details[ELEMENT]["details"]["labelClass"] = "Symbol"
+    _symbol(fake)
     async with ArchicadClient(transport=fake_transport(fake)) as c:
         with pytest.raises(ValueError, match="Symbol"):
             await modify.modify_labels(c, [{"guid": ELEMENT, "text": "A"}], 19723)
+    assert "ModifyLabels" not in fake.tapir_calls
+
+
+async def test_symbol_label_text_way_and_readability_preserve_owner_and_position():
+    fake = model("Label")
+    _symbol(fake)
+    before = deepcopy(fake.details[ELEMENT])
+    edits = [{"guid": ELEMENT, "text_way": "Vertical", "always_readable": True}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, "Label", edits)
+    assert result["status"] == "verified"
+    assert sent(fake, "Label") == [
+        {
+            "elementId": {"guid": ELEMENT},
+            "symbolStyle": {"textWay": "Vertical", "flipEnabled": True},
+        }
+    ]
+    after = result["items"][0]["after"]["details"]
+    for key in ("ownerElementId", "begCoordinate", "midCoordinate", "endCoordinate"):
+        assert after[key] == before["details"][key]
+    assert after["symbolStyle"]["textSize"] == 2
+
+
+async def test_text_way_lets_archicad_recompute_only_the_end_point():
+    fake = model("Label")
+    _symbol(fake)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await modify.modify_labels(c, [{"guid": ELEMENT, "text_way": "Vertical"}], 19723)
+    expected = preview["items"][0]["expected"]
+    assert "endCoordinate" not in expected
+    assert {"begCoordinate", "midCoordinate", "ownerElementId"} <= expected.keys()
+
+
+@pytest.mark.parametrize("edit", [{"text_way": "Sideways"}, {"always_readable": "yes"}])
+async def test_symbol_style_values_validated_before_network(edit):
+    fake = model("Label")
+    _symbol(fake)
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError):
+            await modify.modify_labels(c, [{"guid": ELEMENT, **edit}])
+    assert not fake.calls
+
+
+async def test_text_way_refused_on_text_label():
+    fake = model("Label")
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="Symbol labels only"):
+            await modify.modify_labels(c, [{"guid": ELEMENT, "text_way": "Vertical"}], 19723)
     assert "ModifyLabels" not in fake.tapir_calls
 
 

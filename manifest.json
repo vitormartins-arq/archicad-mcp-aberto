@@ -388,6 +388,18 @@
       "description": "Read flattened Project Map, View Map, Layout Book or one named publisher set, with filtering and pagination."
     },
     {
+      "name": "list_schedules",
+      "description": "List Interactive Schedules with their Project Map folder, saved views and the layouts they are on."
+    },
+    {
+      "name": "export_model_table",
+      "description": "Build a table from model data (properties, classifications, GDL parameters) and write a new XLSX, without the Publisher."
+    },
+    {
+      "name": "check_table_data",
+      "description": "List the elements whose required table columns are empty, using the same definition as export_model_table."
+    },
+    {
       "name": "create_meshes",
       "description": "Safely create simple 3D terrains from absolute project coordinates, with preview and geometry read-back."
     },
@@ -572,6 +584,58 @@
       "description": "Preview or move View Map and Layout Book items into other folders. Read back after."
     },
     {
+      "name": "list_element_hotspots",
+      "description": "Read elements' hotspots with coordinates and neig data."
+    },
+    {
+      "name": "get_dimension_favorite",
+      "description": "Read what a Dimension favorite holds, text included."
+    },
+    {
+      "name": "get_dimensions",
+      "description": "Read dimensions with witness points, measured values and text."
+    },
+    {
+      "name": "get_archicad_window_image",
+      "description": "See the Archicad window as the user sees it: plan, section, 3D, layout, schedule."
+    },
+    {
+      "name": "fit_in_window",
+      "description": "Zoom the current window to given elements."
+    },
+    {
+      "name": "window_zoom",
+      "description": "Read or set the area a 2D window shows."
+    },
+    {
+      "name": "pan_window",
+      "description": "Move a 2D window view by some metres."
+    },
+    {
+      "name": "open_navigator_item",
+      "description": "Show a story, section, detail, worksheet or layout from the navigator."
+    },
+    {
+      "name": "check_dimensions_over_hotspots",
+      "description": "List dimension lines crossing or close to the hotspot area of given elements."
+    },
+    {
+      "name": "get_plan_window_image",
+      "description": "See the current floor plan or other 2D window as an image."
+    },
+    {
+      "name": "create_linear_dimensions",
+      "description": "Preview or create associative dimensions between hotspots from a favorite."
+    },
+    {
+      "name": "get_section_cut_elements",
+      "description": "List what a section or elevation cuts, per model element, with Z and view hotspots."
+    },
+    {
+      "name": "create_section_dimensions",
+      "description": "Preview or create vertical associative dimensions inside a section or elevation."
+    },
+    {
       "name": "list_grid_elements",
       "description": "List grid lines with start, end, story and layer (ArchicadMcpAberto add-on)."
     },
@@ -618,6 +682,10 @@
     {
       "name": "list_libraries",
       "description": "List project libraries and special folders."
+    },
+    {
+      "name": "capture_view_image",
+      "description": "Return the active Archicad 2D window as a PNG, optionally zoomed, to check edits."
     },
     {
       "name": "get_element_preview",
@@ -726,6 +794,26 @@
     {
       "name": "replace_object_libraries",
       "description": "Preview or replace existing Object libraries using explicit mounting references."
+    },
+    {
+      "name": "list_publisher_sets",
+      "description": "Read publisher sets with their saved output path."
+    },
+    {
+      "name": "publish_publisher_set",
+      "description": "Preview and publish a publisher set or only selected items, optionally merged into one PDF."
+    },
+    {
+      "name": "get_publisher_set_items",
+      "description": "Read the folders and items of one publisher set."
+    },
+    {
+      "name": "list_layouts",
+      "description": "Read Layout Book layouts, optionally filtered by text."
+    },
+    {
+      "name": "save_layouts_as_pdf",
+      "description": "Preview and save layouts as one merged PDF without using the Publisher."
     }
   ],
   "compatibility": {

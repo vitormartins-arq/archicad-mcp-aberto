@@ -1,5 +1,44 @@
 # Estado atual
 
+- **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
+
+- **Section dimension association fixed / 18 November 2026:** the loss of association
+  came from witness points sent by location only, which Archicad stores as static.
+  `create_section_dimensions` now sends the hotspot's node (walls: nodeType + subType +
+  inIndex; slabs: vertex ID with HOTS_GENERALEDIT 2100 and ZMAX 32 / ZMIN 16), as in the
+  AC30 DevKit example. Live on a copy of WG Formosa_R06 (AC30 3001 BRA, Tapir 1.7.0,
+  Complemento of 18/11 14:55): sections 01, 02 and 03 each got a slab/wall chain that
+  stayed non-static with every point linked after a forced rebuild. Points without a
+  hotspot still fall back to location and are reported with `associative: false`.
+- **Section dimension conventions / 18 November 2026:** Updated the MCP tool description
+  and `docs/SECTION_DIMENSIONS.md` after reviewing Vitor's manual edits in Formosa
+  sections 01–03. Work right to left, keep text on the left, use room-local chains
+  for lowered ceilings, 0.50 m first offset and 0.20 m parallel spacing. Formosa uses
+  structural slab levels for civil execution. The association loss in section 01 is
+  fixed (see the entry above). This update changes documentation only. The running MCP must
+  load this branch/release for its tool description to expose these conventions.
+
+- **Cotas em cortes / 18/11/2026:** `get_section_cut_elements` e `create_section_dimensions`
+  (depende da PR #99 e dos comandos nativos novos do Complemento, branch
+  `claude/section-dimensions` do archicad-mcp-addon). Base: exemplo oficial do SDK AC30
+  (Element_Test, cota associativa em corte presa ao elemento de corte pelo nó/supplUnId).
+  Compilou no AC30; 3.331 testes offline passaram. Falta o teste ao vivo nos 3 cortes do
+  WG Formosa_R06 (cópia do PLN, no notebook): confirmar que os hotspots do elemento de
+  corte vêm com y = altura e que a cota relida mantém o ponto.
+
+- **Tabelas do modelo / 18/11/2026:** `export_model_table` monta a tabela direto dos
+  dados do modelo (propriedades, classificações, parâmetros GDL) e grava um XLSX novo
+  com abas de linhas, Resumo e Pendências, sem o Publicador. `check_table_data` lista
+  campos obrigatórios vazios. Escritor XLSX próprio (sem dependência nova), conferido
+  com openpyxl. Testes offline passaram; teste ao vivo e definições prontas do LAB
+  (luminárias, elétrica, mobiliário) aguardam um Archicad aberto.
+
+- **Tabelas interativas / 17/11/2026:** nova `list_schedules` (só leitura) junta o Mapa
+  do Projeto, o Mapa de Vistas e o Livro de Pranchas pelo GUID de origem: tabela ->
+  vista salva -> desenho na prancha. Teste ao vivo no Template P. Interiores sujo_REV66
+  (AC30 3001 BRA): 86 tabelas, com pastas e pranchas. Exportar em XLSX pelo Publicador
+  depende de um conjunto montado à mão pelo Vitor (item de tabela com formato XLSX);
+  o teste de publicação está pendente desse conjunto.
 - **PR #95 / 05/11/2026:** `main` incorporada à branch de parâmetros GDL.
   O conflito em `AGENTS.md` foi resolvido com a regra atual da pasta
   `00 - Anteriores`. O checkpoint da tarefa usa o mesmo caminho de backup

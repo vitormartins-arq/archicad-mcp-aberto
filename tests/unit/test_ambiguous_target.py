@@ -1,7 +1,9 @@
 """P-005: target selection against MockTransport only; never a real Archicad."""
 
 import inspect
+import tempfile
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -27,6 +29,7 @@ from archicad_mcp_aberto.tools import (
     gateway,
     grids,
     hotlinks,
+    hotspot_dimensions,
     ifc,
     interior_elevations,
     issues,
@@ -38,6 +41,7 @@ from archicad_mcp_aberto.tools import (
     locks,
     mep,
     meshes,
+    model_tables,
     model_tasks,
     modify,
     morphs,
@@ -54,12 +58,15 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     project_save,
     property_definitions,
+    publisher,
     read,
     renames,
     revisions,
     roofs,
     room_views,
     scenes,
+    schedules,
+    section_dimensions,
     sections,
     selection,
     solids,
@@ -67,6 +74,7 @@ from archicad_mcp_aberto.tools import (
     stories,
     surfaces,
     texts,
+    view_image,
     views,
     voids,
     wall_dimensions,
@@ -109,6 +117,15 @@ INPUTS = {
     "finish_model_task": {"task_token": "missing"},
     "save_project_as": {"destination_path": "example.pln"},
     "save_next_project_revision": {},
+    "publish_publisher_set": {"publisher_set_name": "PDF", "output_folder": str(Path.cwd())},
+    "list_publisher_sets": {},
+    "get_publisher_set_items": {"publisher_set_name": "PDF"},
+    "list_layouts": {},
+    "save_layouts_as_pdf": {
+        "layout_guids": [GUID],
+        "output_folder": str(Path.cwd()),
+        "merged_pdf_name": "x",
+    },
     "inspect_project_save": {"destination_path": "example.pln"},
     "inspect_object_replacements": {"guids": [GUID], "target_unid": "EXACT-UNID"},
     "replace_object_libraries": {
@@ -180,6 +197,22 @@ INPUTS = {
     },
     "modify_meshes": {"meshes": [{"guid": GUID, "level": 0.5}]},
     "get_navigator_tree": {},
+    "list_schedules": {},
+    "export_model_table": {
+        "output_folder": tempfile.mkdtemp(prefix="mcp-table-"),
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        },
+    },
+    "check_table_data": {
+        "definition": {
+            "name": "T",
+            "element_types": ["Wall"],
+            "columns": [{"header": "G", "source": "guid"}],
+        }
+    },
     "list_issues": {},
     "create_issues": {"issues": [{"name": "Review"}]},
     "attach_elements_to_issue": {
@@ -218,6 +251,7 @@ INPUTS = {
     "apply_favorites": {"changes": [{"element_guid": GUID, "favorite": "Parede padrão"}]},
     "select_elements": {"element_guids": [GUID]},
     "highlight_elements": {"element_guids": [GUID]},
+    "capture_view_image": {},
     "get_element_groups": {"element_guids": [GUID]},
     "create_groups": {"groups": [{"element_guids": [GUID, PROP]}]},
     "create_layers": {"layers": [{"name": "Cotas"}]},
@@ -239,6 +273,36 @@ INPUTS = {
     "move_navigator_items": {
         "map": "view_map",
         "moves": [{"item": "Door schedule", "folder": "Architecture"}],
+    },
+    "list_element_hotspots": {"element_guids": [GUID]},
+    "get_dimension_favorite": {"name": "COTA"},
+    "check_dimensions_over_hotspots": {"element_guids": [GUID]},
+    "get_plan_window_image": {},
+    "get_dimensions": {"element_guids": [GUID]},
+    "create_linear_dimensions": {
+        "dimensions": [
+            {
+                "reference_point": {"x": 0, "y": 0},
+                "direction": {"x": 1, "y": 0},
+                "witnesses": [
+                    {"element_guid": GUID, "in_index": 1},
+                    {"element_guid": GUID, "in_index": 2},
+                ],
+            }
+        ]
+    },
+    "get_section_cut_elements": {"navigator_guid": GUID},
+    "create_section_dimensions": {
+        "navigator_guid": GUID,
+        "dimensions": [
+            {
+                "station_x": 0,
+                "points": [
+                    {"element_guid": GUID, "at": "top"},
+                    {"element_guid": GUID, "at": "bottom"},
+                ],
+            }
+        ],
     },
     "list_grid_elements": {},
     "create_grid_elements": {
@@ -524,7 +588,10 @@ GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters
 TARGETED = {
     name: function
     for module in (
+        publisher,
         camera_paths,
+        hotspot_dimensions,
+        section_dimensions,
         model_tasks,
         attribute_properties,
         attributes_details,
@@ -561,9 +628,12 @@ TARGETED = {
         navigator,
         grids,
         navigator_moves,
+        schedules,
+        model_tables,
         parameters,
         openings,
         preview_images,
+        view_image,
         object_replacement,
         project_info,
         project_save,
@@ -636,6 +706,14 @@ def client(first, second, reversed_ports=False):
 async def test_all_registered_targeted_tools_have_cases():
     tools = await create_server().list_tools()
     registered = {tool.name for tool in tools if "port" in tool.inputSchema["properties"]}
+    # These act on the open window and pick the port with resolve_port, like the others.
+    registered -= {
+        "get_archicad_window_image",
+        "open_navigator_item",
+        "fit_in_window",
+        "window_zoom",
+        "pan_window",
+    }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()
 
@@ -725,6 +803,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             }
             for key in ("Zone_ZoneName", "Zone_ZoneNumber", "Zone_CalculatedArea"):
                 instance.builtin_property_ids[key] = f"{len(key):08d}-0000-4000-8000-000000000000"
+    if name in {"get_section_cut_elements", "create_section_dimensions"}:
+        for instance in (first, second):
+            instance.section_cuts[GUID] = [
+                {
+                    "sectionElementId": {"guid": PROP},
+                    "parentId": {"guid": GUID},
+                    "parentType": "Slab",
+                    "hotspots": [
+                        {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                        {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                    ],
+                }
+            ]
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -735,6 +826,7 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             "begin_model_task",
             "finish_model_task",
             "create_camera_paths_from_views",
+            "save_layouts_as_pdf",
         }:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -753,6 +845,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                 await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
             selected, untouched = (first, second) if port == 19723 else (second, first)
             assert selected.own_addon_calls == ["GetProjectSaveContext"]
+            assert not untouched.calls
+            return
+        if name in {
+            "list_publisher_sets",
+            "publish_publisher_set",
+            "get_publisher_set_items",
+        }:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == ["GetPublisherSets"]
             assert not untouched.calls
             return
         if name in {"inspect_object_replacements", "replace_object_libraries"}:
@@ -825,6 +930,18 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
     if name == "create_composites":
         row = BUILDING_MATERIALS_FIXTURE["get_building_materials"]["buildingMaterials"][1]
         second.building_materials[row["attributeId"]["guid"]] = deepcopy(row)
+    if name == "create_section_dimensions":
+        second.section_cuts[GUID] = [
+            {
+                "sectionElementId": {"guid": PROP},
+                "parentId": {"guid": GUID},
+                "parentType": "Slab",
+                "hotspots": [
+                    {"inIndex": 1, "supplUnId": 1, "x": 0.0, "y": -0.1},
+                    {"inIndex": 2, "supplUnId": 2, "x": 0.0, "y": 0.0},
+                ],
+            }
+        ]
     arguments = deepcopy(INPUTS[name])
     if name == "create_camera_paths_from_views":
 

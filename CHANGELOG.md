@@ -1,5 +1,18 @@
 # Changelog
 
+- Add `get_section_cut_elements` (read-only) and `create_section_dimensions`. The first
+  lists what a section, elevation or interior elevation cuts or shows, per model element,
+  with absolute Z from the 3D box and the section elements' hotspots in view coordinates;
+  it works where `get_section_elements` comes back empty, and `rebuild=true` generates a
+  view never opened. The second previews and creates vertical associative dimensions inside
+  the view: each point is a model element's top or bottom (floor slab, finish, wall,
+  ceiling), linked through its section element, from a Dimension favorite or the tool
+  defaults, one Undo step, read back point by point. Both need the companion add-on
+  commands `GetSectionCutElements` and `CreateSectionDimensions` (archicad-mcp-addon).
+- `modify_labels` edits Symbol labels' text direction: `text_way` (Parallel, Horizontal,
+  Vertical, General) and `always_readable` (Archicad's flip), through Tapir 1.7.0
+  `ModifyLabels` `symbolStyle`. Text and size stay Text-label only; owner and position
+  are preserved and read back.
 - Add the read-only `list_project_map_cameras`. Renaming Project Map cameras is not
   offered: a live test (AC30, 28/10/2026) showed Archicad refuses it even through our
   add-on, so existing cameras are renamed by hand.

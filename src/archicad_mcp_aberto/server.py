@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
@@ -40,8 +41,10 @@ from archicad_mcp_aberto.tools import (
     project_resources,
     project_save,
     property_definitions,
+    publisher,
     read,
     revisions,
+    view_image,
     write,
 )
 from archicad_mcp_aberto.tools import classification_systems as classification_systems_tool
@@ -50,6 +53,7 @@ from archicad_mcp_aberto.tools import design_option_create as design_option_crea
 from archicad_mcp_aberto.tools import drawings as drawings_tool
 from archicad_mcp_aberto.tools import grids as grids_tool
 from archicad_mcp_aberto.tools import hotlinks as hotlinks_tool
+from archicad_mcp_aberto.tools import hotspot_dimensions as hotspot_dimensions_tool
 from archicad_mcp_aberto.tools import interior_elevations as interior_elevations_tool
 from archicad_mcp_aberto.tools import issues as issues_tool
 from archicad_mcp_aberto.tools import labels as labels_tool
@@ -58,6 +62,7 @@ from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import layout_book as layout_book_tool
 from archicad_mcp_aberto.tools import mep as mep_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
+from archicad_mcp_aberto.tools import model_tables as model_tables_tool
 from archicad_mcp_aberto.tools import morphs as morphs_tool
 from archicad_mcp_aberto.tools import navigator as navigator_tool
 from archicad_mcp_aberto.tools import navigator_moves as navigator_moves_tool
@@ -67,6 +72,8 @@ from archicad_mcp_aberto.tools import renames as renames_tool
 from archicad_mcp_aberto.tools import roofs as roofs_tool
 from archicad_mcp_aberto.tools import room_views as room_views_tool
 from archicad_mcp_aberto.tools import scenes as scenes_tool
+from archicad_mcp_aberto.tools import schedules as schedules_tool
+from archicad_mcp_aberto.tools import section_dimensions as section_dimensions_tool
 from archicad_mcp_aberto.tools import sections as sections_tool
 from archicad_mcp_aberto.tools import selection as selection_tool
 from archicad_mcp_aberto.tools import solids as solids_tool
@@ -77,6 +84,7 @@ from archicad_mcp_aberto.tools import texts as texts_tool
 from archicad_mcp_aberto.tools import views as views_tool
 from archicad_mcp_aberto.tools import voids as voids_tool
 from archicad_mcp_aberto.tools import wall_dimensions as wall_dimensions_tool
+from archicad_mcp_aberto.tools import window_capture as window_capture_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 from archicad_mcp_aberto.tools import zones_read as zones_read_tool
@@ -111,6 +119,13 @@ VIEW = {
     "readOnlyHint": False,
     "destructiveHint": False,
     "idempotentHint": True,
+    "openWorldHint": False,
+}
+# Reads the model and writes one new local file; never overwrites, never changes the model.
+EXPORT = {
+    "readOnlyHint": False,
+    "destructiveHint": False,
+    "idempotentHint": False,
     "openWorldHint": False,
 }
 WRITE = {
@@ -733,12 +748,15 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         port: int | None = None,
         dry_run: bool = True,
         confirmation_token: str | None = None,
+        task_token: str | None = None,
     ) -> dict:
-        """Delete up to 50 editable elements, only in an untitled test project. Requires Tapir.
-        Preview then apply with explicit port and single-use token. Never saves or unlocks.
+        """Delete up to 50 editable elements. Requires Tapir. In a saved project pass
+        task_token from begin_model_task (one verified backup kept in 00 - Anteriores),
+        then finish_model_task saves. Preview then apply with explicit port and single-use
+        token. Never unlocks or shows hidden layers.
         """
         return await write.delete_elements(
-            client_of(ctx), element_guids, port, dry_run, confirmation_token
+            client_of(ctx), element_guids, port, dry_run, confirmation_token, task_token
         )
 
     @mcp.tool(annotations=WRITE)
@@ -1234,8 +1252,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview/edit up to 50 Text labels: text and height_mm (paper mm).
-        Tapir 1.7.0 cannot change label position/story here. Symbol labels and unsupported
+        """Preview/edit up to 50 labels. Text labels: text and height_mm (paper mm).
+        Symbol labels: text_way (Parallel, Horizontal, Vertical, General) and
+        always_readable. Tapir 1.7.0 cannot change label position/story here; other
         fields are refused. Explicit port and single-use token to apply; never saves.
         """
         return await modify.modify_labels(client_of(ctx), labels, port, dry_run, confirmation_token)
@@ -1300,6 +1319,57 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await navigator_tool.get_navigator_tree(
             client_of(ctx), navigator_map, port, query, offset, limit, publisher_set_name
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_schedules(
+        ctx: Context,
+        port: int | None = None,
+        query: str | None = None,
+        only_on_layouts: bool = False,
+    ) -> dict:
+        """List Interactive Schedules: name, ID, Project Map folder, saved views (with
+        their View Map folder) and the layouts each one is placed on. Query matches name,
+        ID or folder. Navigator only: no schedule fields or values. Never writes.
+        """
+        return await schedules_tool.list_schedules(client_of(ctx), port, query, only_on_layouts)
+
+    @mcp.tool(annotations=EXPORT)
+    async def export_model_table(
+        ctx: Context,
+        output_folder: str,
+        definition: model_tables_tool.TableDefinition | None = None,
+        definition_path: str | None = None,
+        port: int | None = None,
+        file_name: str | None = None,
+    ) -> dict:
+        """Build a table straight from the model and write it as a new XLSX, without the
+        Publisher. The definition names element_types, columns (header + source: guid,
+        type, builtin:<nonLocalizedName>, prop:<Group>/<Name>, class:<System>,
+        param:<GDL name>), filters, group_by, sum_columns and sort_by. Sheets: the rows, a
+        "Resumo" sheet with count and sums per group, and "Pendências" for required
+        columns left empty. Pass definition or an absolute definition_path (.json). Never
+        overwrites a file and never changes the model.
+        """
+        return await model_tables_tool.export_model_table(
+            client_of(ctx), output_folder, definition, definition_path, port, file_name
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_table_data(
+        ctx: Context,
+        definition: model_tables_tool.TableDefinition | None = None,
+        definition_path: str | None = None,
+        port: int | None = None,
+        limit: int = 100,
+    ) -> dict:
+        """Check the data behind a table: with the same definition as export_model_table,
+        list the elements whose required columns (required=true) are empty, with counts
+        per column and columns whose property or classification system does not exist.
+        Read-only.
+        """
+        return await model_tables_tool.check_table_data(
+            client_of(ctx), definition, definition_path, port, limit
         )
 
     @mcp.tool(annotations=WRITE)
@@ -2017,6 +2087,176 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         )
 
     @mcp.tool(annotations=READ_ONLY)
+    async def list_element_hotspots(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 elements' hotspots: x, y, z, neigId and inIndex, plus an object's
+        origin and angle. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.list_element_hotspots(
+            client_of(ctx), element_guids, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimension_favorite(ctx: Context, name: str, port: int | None = None) -> dict:
+        """Read what a Dimension favorite holds: layer, pens, marker, witness lines and text
+        (font, size, pen, frame). Creates nothing. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimension_favorite(client_of(ctx), name, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_dimensions(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read up to 200 dimensions: settings, line, and each witness point with its
+        reference, location, measured value and text. Needs the ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.get_dimensions(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_dimensions_over_hotspots(
+        ctx: Context,
+        element_guids: list[str],
+        dimension_guids: list[str] | None = None,
+        port: int | None = None,
+        clearance: float = 0.14,
+    ) -> dict:
+        """List dimension lines crossing the hotspot area of the given elements, or closer
+        than clearance metres, for all dimensions unless dimension_guids is given. Run it
+        after dimensioning, then look at get_plan_window_image. Needs the
+        ArchicadMcpAberto add-on."""
+        return await hotspot_dimensions_tool.check_dimensions_over_hotspots(
+            client_of(ctx), element_guids, dimension_guids, port, clearance
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_archicad_window_image(
+        ctx: Context, port: int | None = None, region: list[int] | None = None
+    ) -> list:
+        """See the Archicad window as the user sees it, whatever it shows: plan, section, 3D,
+        layout, schedule, worksheet or an open dialog. region [left, top, right, bottom] in
+        pixels of the full window shows only that part. Use it to check your work: numbers do
+        not prove legibility. Windows only; the window must not be minimized."""
+        result = await window_capture_tool.get_archicad_window_image(client_of(ctx), port, region)
+        note = {k: result[k] for k in ("port", "title", "width", "height")}
+        return [note, Image(data=result["png"], format="png")]
+
+    @mcp.tool(annotations=VIEW)
+    async def fit_in_window(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Zoom the current window to these elements, to look at them with
+        get_archicad_window_image. Changes the view, no element."""
+        return await window_capture_tool.fit_in_window(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def window_zoom(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> dict:
+        """Read the area the current plan, section, detail, worksheet or layout window shows or,
+        given zoom {xMin, yMin, xMax, yMax} in metres, show that area. Changes the view, no
+        element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.window_zoom(client_of(ctx), zoom, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def pan_window(
+        ctx: Context, right: float = 0.0, up: float = 0.0, port: int | None = None
+    ) -> dict:
+        """Move the current 2D window's view by this many metres, keeping the zoom. Changes the
+        view, no element. Needs the ArchicadMcpAberto add-on, revision R19."""
+        return await window_capture_tool.pan_window(client_of(ctx), right, up, port)
+
+    @mcp.tool(annotations=VIEW)
+    async def open_navigator_item(
+        ctx: Context, navigator_item_guid: str, port: int | None = None
+    ) -> dict:
+        """Show a story, section, detail, worksheet or layout from the navigator, to look at it
+        with get_archicad_window_image. Changes the open window, no element. A schedule cannot
+        be opened from here: ask the user to open it, then look at the window."""
+        return await window_capture_tool.open_navigator_item(
+            client_of(ctx), navigator_item_guid, port
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_plan_window_image(
+        ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
+    ) -> Image:
+        """See the current floor plan or other 2D window as an image, showing zoom {xMin, yMin,
+        xMax, yMax} in metres if given; the zoom returns afterwards. Changes no element. Needs
+        the ArchicadMcpAberto add-on, revision R18."""
+        result = await hotspot_dimensions_tool.get_plan_window_image(client_of(ctx), zoom, port)
+        return Image(data=base64.b64decode(result["image"]), format="png")
+
+    @mcp.tool(annotations=WRITE)
+    async def create_linear_dimensions(
+        ctx: Context,
+        dimensions: list[hotspot_dimensions_tool.LinearDimension],
+        favorite: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 associative linear dimensions, each with reference_point,
+        direction and witnesses [{element_guid, in_index or reference: "origin"}], from one
+        Dimension favorite or the tool defaults. Apply with explicit port and single-use
+        token; one Undo step, each read back, text settings compared with the favorite.
+        Needs the ArchicadMcpAberto add-on. Never saves."""
+        return await hotspot_dimensions_tool.create_linear_dimensions(
+            client_of(ctx), dimensions, favorite, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_section_cut_elements(
+        ctx: Context,
+        navigator_guid: str,
+        port: int | None = None,
+        parent_guids: list[str] | None = None,
+        rebuild: bool = False,
+        include_hotspots: bool = True,
+    ) -> dict:
+        """List what a section, elevation or interior elevation (Project Map item GUID) cuts
+        or shows, per model element: type, story, layer, absolute z_min/z_max, and its section
+        elements with hotspots and extent in the view (x along the cut, y the height). Works
+        when get_section_elements is empty; rebuild=true generates a view never opened.
+        Needs the ArchicadMcpAberto add-on. Changes nothing in the model."""
+        return await section_dimensions_tool.get_section_cut_elements(
+            client_of(ctx), navigator_guid, port, parent_guids, rebuild, include_hotspots
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def create_section_dimensions(
+        ctx: Context,
+        navigator_guid: str,
+        dimensions: list[section_dimensions_tool.SectionDimension],
+        favorite: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview up to 50 vertical associative dimensions inside one section or elevation
+        (Project Map item GUID). Each: station_x (view x of the line) and points
+        [{element_guid, at: top|bottom, near_x?}] on elements the view cuts (floor slab,
+        finish, wall base/top, ceiling), from get_section_cut_elements. One Dimension favorite
+        or the tool defaults. Apply with explicit port and single-use token; one Undo step,
+        read back point by point. Needs the ArchicadMcpAberto add-on. Never saves.
+
+        For demolition and construction sections, dimension new floors, walls and ceilings
+        by default, using the matching demolition and construction dimension favorite.
+        Work from right to left across the section, placing vertical lines to the left
+        of their local reference with dimension text on the left, following the user's
+        approved examples. Check every distinct height and level throughout the section.
+        Organize chains by room or construction detail. Dimension a local lowered ceiling
+        inside its own room, with local lower and upper references. General chains use
+        the relevant floor/slab and roof or upper slab, including existing references.
+        Use civil construction levels when specified: in WG Formosa_R06 the base is
+        the structural slab surface, before floor finishes. For example, slab -0.20 m
+        to ceiling +2.50 m is 2.70 m. Confirm the datum for each subsequent project.
+        Place the first line 0.50 m from its local drawing reference and space parallel
+        lines by 0.20 m. Rebuild and verify every point, value, association and text
+        position. Report missing points or fixed dimensions explicitly.
+        Full workflow and approved examples: docs/SECTION_DIMENSIONS.md."""
+        return await section_dimensions_tool.create_section_dimensions(
+            client_of(ctx), navigator_guid, dimensions, favorite, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
     async def list_grid_elements(
         ctx: Context, port: int | None = None, include_parameters: bool = False
     ) -> dict:
@@ -2172,6 +2412,20 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
     ) -> dict:
         """List project libraries and requested Archicad special folders."""
         return await project_resources.list_libraries(client_of(ctx), folder_types, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def capture_view_image(
+        ctx: Context,
+        zoom: dict | None = None,
+        port: int | None = None,
+    ) -> list:
+        """Look at Archicad: return the active 2D window (plan, section, elevation,
+        detail, worksheet) as a PNG, optionally zoomed to {xMin, yMin, xMax, yMax} in
+        metres (the zoom is restored). Use it after every edit to check the result.
+        Never edits or saves. Needs the companion add-on (GetPlanWindowImage)."""
+        result = await view_image.capture_view_image(client_of(ctx), zoom, port)
+        data = base64.b64decode(result.pop("png_base64"))
+        return [TextContent(type="text", text=json.dumps(result)), Image(data=data, format="png")]
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_element_preview(
@@ -2417,6 +2671,78 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await model_tasks.finish_model_task(
             client_of(ctx), task_token, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_publisher_sets(ctx: Context, port: int | None = None) -> dict:
+        """List publisher sets with their saved output path. Requires companion add-on."""
+        return await publisher.list_publisher_sets(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_publisher_set_items(
+        ctx: Context, publisher_set_name: str, port: int | None = None
+    ) -> dict:
+        """List the folders and items of one publisher set with their GUIDs and paths.
+        Requires Tapir."""
+        return await publisher.get_publisher_set_items(client_of(ctx), publisher_set_name, port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def list_layouts(
+        ctx: Context, name_contains: str | None = None, port: int | None = None
+    ) -> dict:
+        """List Layout Book layouts (GUID, ID, name, folder path), optionally filtered by
+        text. Requires Tapir."""
+        return await publisher.list_layouts(client_of(ctx), name_contains, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def save_layouts_as_pdf(
+        ctx: Context,
+        layout_guids: list[str],
+        output_folder: str,
+        merged_pdf_name: str,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Save Layout Book layouts (GUIDs from list_layouts) as one merged PDF, pages in the
+        given order, for example ground floor then first floor of one house. Does not use or
+        change the Publisher. Preview first, explicit port and one-use token to apply. Only
+        when the user asked. Requires companion add-on and Tapir."""
+        return await publisher.save_layouts_as_pdf(
+            client_of(ctx),
+            layout_guids,
+            output_folder,
+            merged_pdf_name,
+            port,
+            dry_run,
+            confirmation_token,
+        )
+
+    @mcp.tool(annotations=WRITE)
+    async def publish_publisher_set(
+        ctx: Context,
+        publisher_set_name: str,
+        output_folder: str,
+        selected_item_guids: list[str] | None = None,
+        merged_pdf_name: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Publish a publisher set, or only selected_item_guids (items of that set, from
+        get_publisher_set_items), to an existing folder. With merged_pdf_name, the selection
+        is merged in the given order into that single PDF and only it is written. Preview
+        first, explicit port and one-use token to apply. Only publish when the user asked.
+        No Undo. Requires companion add-on."""
+        return await publisher.publish_publisher_set(
+            client_of(ctx),
+            publisher_set_name,
+            output_folder,
+            port,
+            dry_run,
+            confirmation_token,
+            selected_item_guids,
+            merged_pdf_name,
         )
 
     @mcp.tool(annotations=WRITE)

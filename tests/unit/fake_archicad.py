@@ -325,6 +325,15 @@ GRID_DEFAULTS = {
 }
 
 
+DEFAULT_HOTSPOTS = {
+    "floorIndex": 0,
+    "hotspots": [
+        {"neigId": 13, "inIndex": 1, "x": 0.0, "y": 0.0, "z": 0.0},
+        {"neigId": 13, "inIndex": 2, "x": 1.0, "y": 0.0, "z": 0.0},
+    ],
+}
+
+
 @dataclass
 class FakeArchicad:
     port: int
@@ -665,6 +674,8 @@ class FakeArchicad:
 
     # Built-in property ids for API.GetPropertyIds, by nonLocalizedName.
     builtin_property_ids: dict[str, str] = field(default_factory=dict)
+    # (group, name) -> GUID for GetPropertyIds with UserDefined localizedName.
+    user_property_ids: dict[tuple[str, str], str] = field(default_factory=dict)
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
     own_addon_loaded: bool = True
@@ -673,6 +684,18 @@ class FakeArchicad:
     own_addon_calls: list[str] = field(default_factory=list)
     own_addon_requests: list[dict] = field(default_factory=list)
     own_addon_errors: set[str] = field(default_factory=set)  # commands that fail
+    # Shapes of addon/Sources/DimensionCommands.cpp; not a live capture.
+    element_hotspots: dict[str, dict] = field(default_factory=dict)
+    dimension_favorites: dict[str, dict] = field(default_factory=lambda: {"COTA": {}})
+    dimension_text_differences: list[str] = field(default_factory=list)
+    dimension_settings_override: dict = field(default_factory=dict)
+    dimension_moves_witness: str | None = None
+    dimension_drops_witness: bool = False
+    created_dimensions: dict[str, dict] = field(default_factory=dict)
+    # GetSectionCutElements rows per Project Map item GUID; shapes of DimensionCommands.cpp.
+    section_cuts: dict[str, list[dict]] = field(default_factory=dict)
+    section_cut_needs_rebuild: bool = False
+    section_dimension_shift: float = 0.0  # Archicad moves read-back witness points by this in y
     saved_story_views: list[dict] = field(default_factory=list)
     story_view_ignored: set[str] = field(default_factory=set)  # SaveStoryView keys dropped
     grid_elements: dict[str, dict] = field(default_factory=dict)  # guid -> GetGridElements row
@@ -859,7 +882,10 @@ class FakeArchicad:
             # Shape from the official JSON API documentation; built-in names seen live.
             rows = []
             for p in params["properties"]:
-                guid = self.builtin_property_ids.get(p.get("nonLocalizedName", ""))
+                if p.get("type") == "UserDefined":
+                    guid = self.user_property_ids.get(tuple(p.get("localizedName", [])))
+                else:
+                    guid = self.builtin_property_ids.get(p.get("nonLocalizedName", ""))
                 if guid is None:
                     rows.append({"error": {"code": 4006, "message": "Property not found"}})
                 else:
@@ -1094,6 +1120,94 @@ class FakeArchicad:
             elements.append({"elementId": {"guid": guid}})
         return {"elements": elements, "warnings": []}
 
+    def _dimension(self, name: str, args: dict) -> dict:
+        if name == "GetElementHotspots":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"].upper()
+                row = self.element_hotspots.get(guid, DEFAULT_HOTSPOTS)
+                rows.append({"elementId": {"guid": guid}, **deepcopy(row)})
+            return {"elements": rows}
+        if name == "GetDimensions":
+            rows = []
+            for element in args["elements"]:
+                guid = element["elementId"]["guid"].upper()
+                created = deepcopy(self.created_dimensions.get(guid, {}))
+                if self.dimension_drops_witness and created:
+                    created["witnessPoints"].pop()
+                rows.append({"witnessPoints": [], **created, "elementId": element["elementId"]})
+            return {"elements": rows}
+        if name == "GetDimensionFavorite":
+            settings = self.dimension_favorites.get(args["name"])
+            if settings is None:
+                return {"error": {"code": -1, "message": "No favorite with this exact name."}}
+            return {"name": args["name"], "settings": deepcopy(settings)}
+        favorite = self.dimension_favorites.get(args.get("favorite"), {})
+        rows = []
+        for dimension in args["dimensions"]:
+            guid = f"00000000-0000-4000-8000-{len(self.created_dimensions):012d}"
+            row = {
+                "elementId": {"guid": guid},
+                "floorIndex": dimension["floorIndex"],
+                "settings": {**deepcopy(favorite), **self.dimension_settings_override},
+                "direction": deepcopy(dimension["direction"]),
+                "witnessPoints": deepcopy(dimension["witnessPoints"]),
+                "textDifferences": list(self.dimension_text_differences),
+            }
+            self.created_dimensions[guid] = row
+            self.elements[guid] = "Dimension"
+            rows.append(row)
+        if self.dimension_moves_witness:
+            self.details[self.dimension_moves_witness]["details"]["moved"] = True
+        return {"elements": rows}
+
+    def _section(self, name: str, args: dict) -> dict:
+        nav = args["navigatorItemGuid"].upper()
+        if nav not in self.section_cuts:
+            return {"error": {"code": -2130313112, "message": "No Project Map item."}}
+        rows = self.section_cuts[nav]
+        if name == "GetSectionCutElements":
+            rebuilt = self.section_cut_needs_rebuild and args.get("rebuild", False)
+            if self.section_cut_needs_rebuild and not rebuilt:
+                rows = []
+            wanted = {g.upper() for g in args.get("parentGuids", [])}
+            listed = [
+                deepcopy(r) for r in rows if not wanted or r["parentId"]["guid"].upper() in wanted
+            ]
+            return {
+                "name": "CORTE AA",
+                "rebuilt": rebuilt,
+                "sectionElementCount": len(rows),
+                "elements": listed,
+                "truncated": False,
+            }
+        favorite = self.dimension_favorites.get(args.get("favorite"), {})
+        out = []
+        for dimension in args["dimensions"]:
+            guid = f"00000000-0000-4000-9000-{len(self.created_dimensions):012d}"
+            witnesses = [
+                {
+                    "elementId": deepcopy(w["sectionElementId"]),
+                    "inIndex": w.get("inIndex", 0),
+                    "location": {
+                        "x": w["location"]["x"],
+                        "y": w["location"]["y"] + self.section_dimension_shift,
+                    },
+                }
+                for w in dimension["witnessPoints"]
+            ]
+            row = {
+                "elementId": {"guid": guid},
+                "floorIndex": 0,
+                "settings": {**deepcopy(favorite), **self.dimension_settings_override},
+                "direction": deepcopy(dimension["direction"]),
+                "witnessPoints": witnesses,
+                "textDifferences": list(self.dimension_text_differences),
+            }
+            self.created_dimensions[guid] = row
+            out.append(row)
+        return {"name": "CORTE AA", "elements": out}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -1104,6 +1218,17 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
+        if name in {
+            "GetElementHotspots",
+            "GetDimensionFavorite",
+            "GetDimensions",
+            "CreateLinearDimensions",
+        }:
+            return ok({"addOnCommandResponse": self._dimension(name, args)})
+        if name in {"GetSectionCutElements", "CreateSectionDimensions"}:
+            return ok({"addOnCommandResponse": self._section(name, args)})
+        if name == "GetPlanWindowImage":
+            return ok({"addOnCommandResponse": {"image": "iVBORw0KGgo="}})
         if name == "Get3DCamera":
             return ok({"addOnCommandResponse": deepcopy(self.camera_3d)})
         if name == "Set3DCamera":
@@ -1268,6 +1393,9 @@ class FakeArchicad:
                     "code": -2130313112, "message": "Failed to update drawings."}}})  # fmt: skip
             self.updated_drawings += [e["elementId"]["guid"] for e in args["elements"]]
             return ok({"addOnCommandResponse": {"success": True}})
+        if name == "GetElementsByType" and args.get("elementType") == "Dimension":
+            rows = [{"elementId": {"guid": g}} for g in self.created_dimensions]
+            return ok({"addOnCommandResponse": {"elements": rows}})
         if name == "GetElementsByType" and "databases" in args:
             assert args["elementType"] == "Drawing" and len(args["databases"]) == 1
             database = args["databases"][0]["databaseId"]["guid"]
@@ -3816,7 +3944,9 @@ class FakeArchicad:
                         "polygons": deepcopy(body["polygons"]),
                     }
                 if name == "ModifyLabels":
-                    if details.get("labelClass") != "Text":
+                    if details.get("labelClass") == "Symbol" and set(changes) == {"symbolStyle"}:
+                        details.setdefault("symbolStyle", {}).update(changes.pop("symbolStyle"))
+                    elif details.get("labelClass") != "Text":
                         rows.append(deepcopy(MODIFY_LABELS_FIXTURE["failure"]))
                         continue
                     details.setdefault("style", {}).update(changes.pop("style", {}))

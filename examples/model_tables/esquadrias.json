@@ -1,0 +1,59 @@
+{
+  "name": "Esquadrias",
+  "element_types": [
+    "Door",
+    "Window"
+  ],
+  "columns": [
+    {
+      "header": "ID",
+      "source": "builtin:General_ElementID",
+      "required": true
+    },
+    {
+      "header": "Elemento",
+      "source": "type"
+    },
+    {
+      "header": "Tipo de abertura",
+      "source": "prop:Esquadrias/Esquadrias – tipo de abertura",
+      "required": true
+    },
+    {
+      "header": "Material",
+      "source": "prop:Esquadrias/Esquadrias – material",
+      "required": true
+    },
+    {
+      "header": "Acabamento",
+      "source": "prop:Esquadrias/Esquadrias – acabamento"
+    },
+    {
+      "header": "Vidro",
+      "source": "prop:Esquadrias/Esquadrias – vidro"
+    },
+    {
+      "header": "Localização",
+      "source": "prop:Esquadrias/Esquadrias – localização"
+    },
+    {
+      "header": "Área de iluminação",
+      "source": "prop:Esquadrias/Esquadrias – área de iluminação"
+    },
+    {
+      "header": "Área de ventilação",
+      "source": "prop:Esquadrias/Esquadrias – área de ventilação"
+    }
+  ],
+  "group_by": [
+    "Elemento",
+    "Tipo de abertura"
+  ],
+  "sum_columns": [
+    "Área de iluminação",
+    "Área de ventilação"
+  ],
+  "sort_by": [
+    "ID"
+  ]
+}

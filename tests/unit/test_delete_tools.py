@@ -207,3 +207,39 @@ async def test_receipt_records_documented_transport(receipts):
     assert journal["operation"] == result["operation"] == "delete_elements"
     assert "API.DeleteElements" not in fake.calls
     assert "FilterElements" in fake.tapir_calls
+
+
+async def test_saved_project_needs_task_token():
+    fake = model()
+    fake.project_name = "Real project"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="task_token"):
+            await write.delete_elements(c, [GUID], 19723)
+    assert "DeleteElements" not in fake.tapir_calls
+
+
+async def test_saved_project_deletes_inside_verified_task(monkeypatch):
+    from archicad_mcp_aberto.tools import model_tasks
+
+    seen = []
+
+    def task(client, token, port):
+        seen.append((token, port))
+        if token != "task-ok":
+            raise ValueError("Task checkpoint missing")
+        return {}
+
+    monkeypatch.setattr(model_tasks, "_task", task)
+    fake = model()
+    fake.project_name = "Real project"
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        with pytest.raises(ValueError, match="checkpoint"):
+            await write.delete_elements(c, [GUID], 19723, task_token="wrong")
+        preview = await write.delete_elements(c, [GUID], 19723, task_token="task-ok")
+        result = await write.delete_elements(
+            c, [GUID], 19723, False, preview["confirmation_token"], task_token="task-ok"
+        )
+    assert result["status"] == "verified"
+    assert GUID not in fake.elements
+    assert ("task-ok", 19723) in seen
+    assert all("Save" not in command for command in fake.calls + fake.tapir_calls)

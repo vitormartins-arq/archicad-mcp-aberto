@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **167 registered tools**: **62 read-only**, **3 view/session actions** and
-**102 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **189 registered tools**: **75 read-only**, **8 view/session actions** and
+**106 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -146,6 +146,9 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_issues` | Write | Up to 20 issues with per-issue receipt and name/tag read-back | yes |
 | `attach_elements_to_issue` | Write | Associate existing elements as Highlight, verified per element | yes |
 | `get_navigator_tree` | Read | Flattened project, view, layout or publisher tree; search and pagination | yes |
+| `list_schedules` | Read | Interactive Schedules with Project Map folder, saved views and the layouts they are on | yes |
+| `export_model_table` | File | Table built from model data with columns, filters, groups and sums, written as a new XLSX | yes |
+| `check_table_data` | Read | Elements whose required table columns are empty, with counts per column | yes |
 | `create_meshes` | Write | Simple 3D terrains from absolute project coordinates, read back per mesh | yes |
 | `modify_meshes` | Write | Base level, skirt and display of simple terrains, preserving topology | yes |
 | `get_view_settings` | Read | Settings or native error for each of up to 100 views | yes |
@@ -162,6 +165,19 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_keynote_folders` | Write | New keynote folders with new keys; only adds | yes |
 | `create_keynote_items` | Write | New keynote items with title, description and reference; only adds | yes |
 | `create_morphs` | Write | Box morphs from a base corner and size, read back by story, origin and 3D box | yes |
+| `list_element_hotspots` | Read | Hotspots of elements with coordinates and neig data; needs the add-on | no |
+| `get_dimension_favorite` | Read | What a Dimension favorite holds, text included; needs the add-on | no |
+| `get_dimensions` | Read | Dimensions with witness points, measured values and text; needs the add-on | no |
+| `check_dimensions_over_hotspots` | Read | Dimension lines crossing or close to element hotspots; needs the add-on | no |
+| `get_archicad_window_image` | Read | The Archicad window as the user sees it, any view; Windows only | no |
+| `fit_in_window` | View | Zoom the current window to given elements | no |
+| `window_zoom` | View | Read or set the area a 2D window shows; needs add-on R19 | no |
+| `pan_window` | View | Move a 2D window view; needs add-on R19 | no |
+| `open_navigator_item` | View | Show a story, section, detail, worksheet or layout | no |
+| `get_plan_window_image` | Read | The current 2D window as an image; needs add-on R18 | no |
+| `create_linear_dimensions` | Write | Associative dimensions between hotspots from a favorite; needs the add-on | yes |
+| `get_section_cut_elements` | Read | What a section or elevation cuts, per model element, with Z and view hotspots; needs the add-on | no |
+| `create_section_dimensions` | Write | Vertical associative dimensions inside a section (floor, finish, wall, ceiling); needs the add-on | yes |
 | `create_wall_thickness_dimensions` | Write | Associative thickness dimensions on existing walls, on the wall's story | yes |
 | `create_associative_dimensions` | Write | Linear dimensions between wall ends, linked to the walls | yes |
 | `create_openings` | Write | Rectangular Opening-tool openings in existing walls or slabs | yes |
@@ -499,6 +515,27 @@ and open to everyone's contributions.
   items `failed` with `not_attempted: true`. Source-derived simulation only; live validation pending.
 
 
+- `export_model_table(output_folder, definition? | definition_path?, port?, file_name?)`
+  builds a table straight from the model, since no API configures or reads an
+  Interactive Schedule in Archicad 30. The definition (inline or an absolute `.json`
+  file) has `name`, `element_types`, `columns` (`header`, `source`, `required`),
+  `filters` (`equal`, `not_equal`, `contains`, `empty`, `not_empty`), `group_by`,
+  `sum_columns` and `sort_by`. Sources: `guid`, `type`, `builtin:<nonLocalizedName>`,
+  `prop:<Group>/<Name>`, `class:<System>` and `param:<GDL name>` (Objects and Lamps,
+  Tapir). The XLSX has the rows, a `Resumo` sheet (count and sums per group) and a
+  `Pendências` sheet (required columns left empty). Never overwrites an explicit file
+  name and never changes the model.
+  Texts listed in `placeholders` (default `-`, `--`, `...`, `—`) count as empty. Ready
+  definitions for the LAB template are in `examples/model_tables/` (luminaires, doors
+  and windows, rooms).
+- `check_table_data(definition? | definition_path?, port?, limit=100)` uses the same
+  definition and lists elements with empty required columns, counts per column and
+  columns whose property or classification system was not found. Read-only.
+- `list_schedules(port?, query?, only_on_layouts=false)` lists the Project Map schedules
+  with name, ID and folder, their saved views in the View Map (with folder) and the
+  layouts each one is placed on (layout, subset and drawing). It joins the three
+  Navigator trees by source GUID: schedule -> saved view -> layout drawing. Archicad 30
+  exposes no schedule fields, criteria or values, so none are returned. Never writes.
 - `get_navigator_tree(navigator_map="ProjectMap", port?, query?, offset=0, limit=200,
   publisher_set_name?)` reads a flattened Navigator tree through Tapir 1.7.0. Maps are
   `ProjectMap` (project), `PublicViewMap` (views), `LayoutBook` (layouts) and
