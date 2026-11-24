@@ -713,6 +713,10 @@ async def test_all_registered_targeted_tools_have_cases():
         "fit_in_window",
         "window_zoom",
         "pan_window",
+        # Surface task targeting is covered separately in test_surface_management.
+        "manage_surfaces",
+        "audit_surface_usage",
+        "delete_unused_surfaces",
     }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()

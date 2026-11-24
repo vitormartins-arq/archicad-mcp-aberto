@@ -172,7 +172,6 @@ async def test_refusals_before_any_rename():
             {"kind": "layers", "renames": [{"old": "A", "new": "B"}, {"old": "A", "new": "C"}]},
             {"kind": "layers", "find": "A", "replace": "B", "scope": "x"},
             {"kind": "styles", "find": "A", "replace": "B"},
-            {"kind": "surfaces", "find": "Pintura", "replace": "Tinta"},  # texture changed live
         ):
             with pytest.raises(ValidationError):
                 await renames.rename_items(c, **bad)

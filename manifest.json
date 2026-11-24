@@ -814,6 +814,18 @@
     {
       "name": "save_layouts_as_pdf",
       "description": "Preview and save layouts as one merged PDF without using the Publisher."
+    },
+    {
+      "name": "manage_surfaces",
+      "description": "Rename surfaces by GUID (requests [{guid,new_name}]) or move them\n        (requests [{guid}]) to an existing Surface folder GUID using the official\n        MoveAttributesAndFolders API. Preview/one-use token, verified automatic\n        backup, per-item readback and same-PLN saving. Unknown outcomes require\n        receipt inspection. Requires native RenameAttributes for renaming.\n        "
+    },
+    {
+      "name": "audit_surface_usage",
+      "description": "Audit exposed surface references and report incomplete coverage.\n        No-use-found does not prove non-use. No surface deletion is authorized by\n        this audit until the SDK adapter can certify exhaustive reference coverage.\n        "
+    },
+    {
+      "name": "delete_unused_surfaces",
+      "description": "Report requested deletion candidates and the missing non-use proof.\n        Currently read-only and always returns deleted=0 with explicit limitations.\n        "
     }
   ],
   "compatibility": {

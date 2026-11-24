@@ -44,6 +44,7 @@ from archicad_mcp_aberto.tools import (
     publisher,
     read,
     revisions,
+    surface_management,
     view_image,
     write,
 )
@@ -145,6 +146,51 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
             yield {"client": client}
 
     mcp = FastMCP("archicad-mcp-aberto", instructions=INSTRUCTIONS, lifespan=lifespan)
+
+    @mcp.tool(annotations=WRITE)
+    async def manage_surfaces(
+        ctx: Context,
+        operation: Literal["rename", "move"],
+        requests: list[surface_management.SurfaceRequest],
+        target_folder_guid: str | None = None,
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Rename surfaces by GUID (requests [{guid,new_name}]) or move them
+        (requests [{guid}]) to an existing Surface folder GUID using the official
+        MoveAttributesAndFolders API. Preview/one-use token, verified automatic
+        backup, per-item readback and same-PLN saving. Unknown outcomes require
+        receipt inspection. Requires native RenameAttributes for renaming.
+        """
+        return await surface_management.manage_surfaces(
+            client_of(ctx),
+            operation,
+            [request.model_dump(exclude_none=True) for request in requests],
+            target_folder_guid,
+            port,
+            dry_run,
+            confirmation_token,
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def audit_surface_usage(ctx: Context, port: int | None = None) -> dict:
+        """Audit exposed surface references and report incomplete coverage.
+        No-use-found does not prove non-use. No surface deletion is authorized by
+        this audit until the SDK adapter can certify exhaustive reference coverage.
+        """
+        return await surface_management.audit_surface_usage(client_of(ctx), port)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def delete_unused_surfaces(
+        ctx: Context,
+        surface_guids: list[str],
+        port: int | None = None,
+    ) -> dict:
+        """Report requested deletion candidates and the missing non-use proof.
+        Currently read-only and always returns deleted=0 with explicit limitations.
+        """
+        return await surface_management.delete_unused_surfaces(client_of(ctx), surface_guids, port)
 
     def client_of(ctx: Context) -> ArchicadClient:
         return ctx.request_context.lifespan_context["client"]

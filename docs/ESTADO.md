@@ -1,5 +1,7 @@
 # Estado atual
 
+- **Local runtime / 24 November 2026:** isolated deployment combines PR #95 and merged #111 with the existing surface-management Python tools and rename availability compatibility fix. LAB cotas wrapper remains unchanged. No native add-on installation or model operation is part of this update. Validation: 3,573 public and 116 LAB offline tests passed; both Ruff checks passed. LAB stdio initialization listed 219 tools, preserving electrical/lighting dimensions and exposing saved-project task_token. No Archicad API/model calls were made. Codex reload remains necessary after the configuration path switch. This local branch is not published.
+
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
 - **Section dimension association fixed / 18 November 2026:** the loss of association
