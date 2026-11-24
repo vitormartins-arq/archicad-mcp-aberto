@@ -17,6 +17,7 @@ from archicad_mcp_aberto.connection import (
     resolve_port,
 )
 from archicad_mcp_aberto.connection.discovery import tapir_state
+from archicad_mcp_aberto.tools import gdl
 
 MAX_ELEMENTS_PER_CALL = 100
 MAX_PROPERTIES_PER_CALL = 30
@@ -450,9 +451,11 @@ async def list_library_parts(
 async def get_gdl_parameters(
     client: ArchicadClient, element_guids: list[str], port: int | None = None
 ) -> dict[str, Any]:
-    """Read GDL parameters of up to 100 Object GUIDs, preserving native per-item errors.
+    """Read GDL parameters of up to 100 library part based elements, with native errors.
 
-    Requires Tapir GetGDLParametersOfElements; lengths in metres, angles in radians.
+    Objects, lamps, doors, windows, skylights, zones, symbol labels, drawing titles and
+    curtain wall frames/panels/junctions/accessories (``gdl.GDL_OWNER_TYPES``). Other types
+    are answered here and never sent to Tapir. Lengths in metres, angles in radians.
     Flags, array dimensions and locked state are preserved. Changes nothing.
     """
     elements = element_ids(element_guids)
@@ -465,24 +468,38 @@ async def get_gdl_parameters(
     )
     rows = details.get("detailsOfElements")
     if not isinstance(rows, list) or len(rows) != len(elements):
-        raise ValueError("Unexpected Object details response.")
-    result = await client.tapir(port, "GetGDLParametersOfElements", {"elements": elements})
-    parameters = result.get("gdlParametersOfElements")
-    if not isinstance(parameters, list) or len(parameters) != len(elements):
-        raise ValueError("Unexpected GDL parameter response cardinality.")
+        raise ValueError("Unexpected element type response.")
+    owners = [
+        e
+        for e, d in zip(elements, rows, strict=True)
+        if isinstance(d, dict) and d.get("type") in gdl.GDL_OWNER_TYPES
+    ]
+    found = {}
+    if owners:
+        result = await client.tapir(port, "GetGDLParametersOfElements", {"elements": owners})
+        parameters = result.get("gdlParametersOfElements")
+        if not isinstance(parameters, list) or len(parameters) != len(owners):
+            raise ValueError("Unexpected GDL parameter response cardinality.")
+        found = {e["elementId"]["guid"]: row for e, row in zip(owners, parameters, strict=True)}
     out = []
-    for guid, detail, row in zip(guids, rows, parameters, strict=True):
-        if not isinstance(detail, dict) or detail.get("type") != "Object":
+    for guid, detail in zip(guids, rows, strict=True):
+        if guid in found:
+            out.append({"guid": guid, "type": detail["type"], **found[guid]})
+        elif not isinstance(detail, dict):
+            out.append({"guid": guid, "error": {"message": "Cannot read element type"}})
+        elif "error" in detail or detail.get("type") in (None, "Unknown"):
+            out.append(
+                {"guid": guid, "error": detail.get("error", {"message": "Element is missing"})}
+            )
+        else:
             out.append(
                 {
                     "guid": guid,
-                    "error": detail.get(
-                        "error", {"message": "Element is missing or is not an Object"}
-                    )
-                    if isinstance(detail, dict)
-                    else {"message": "Cannot read Object type"},
+                    "type": detail["type"],
+                    "error": {
+                        "message": f"{detail['type']} has no GDL parameters reachable "
+                        "through Tapir; see get_element_capabilities for its fields."
+                    },
                 }
             )
-        else:
-            out.append({"guid": guid, **row})
     return {"port": port, "gdlParametersOfElements": out}

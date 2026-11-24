@@ -893,3 +893,35 @@ Simulado e compilado pelo CI, não testado ao vivo. Precisa do add-on recompilad
 - [ ] `save_3d_scenes` com 3 ou mais ambientes: todas as câmeras vão para um único percurso, "00 BIMx - Apresentação", com os nomes "1 RECEPÇÃO - 2P 01", "2 ..." e assim por diante.
 - [ ] No Mapa de projeto, conferir se as câmeras novas aparecem com esse nome (dado na criação), e não como "Câmera 1". Renomear depois o Archicad recusa (teste ao vivo de 28/10). No Mapa de vistas, nenhuma câmera solta e nenhuma pasta por ambiente.
 - [ ] Conjunto BIMx feito à mão, só com o percurso (mesma combinação 3D, "Adicionar câmeras como itens de galeria separados", céu branco, menor textura): um único modelo e a galeria com os nomes no celular.
+
+## Parâmetros de todas as ferramentas (validação ao vivo pendente)
+
+Ferramentas novas: `get_element_capabilities`, `inspect_element_parameters`,
+`set_element_parameters`; `get_gdl_parameters`/`set_gdl_parameters` agora aceitam portas,
+janelas e os outros elementos com GDL. Só testado no ArchiCAD simulado (fixture sintética
+de porta com nomes `fx_`, não de uma porta real). Pode ser no projeto em que o Vitor
+estiver trabalhando, com `begin_model_task` antes e `finish_model_task` no fim. Anotar
+versão, build, idioma do ArchiCAD e versão do Tapir (esperado 1.7.3).
+
+- [ ] **Caso principal: porta nativa do ArchiCAD 30.** Selecionar uma porta e pedir
+  "mostre os parâmetros de folha, marco, maçaneta, puxador, abertura e 2D/3D". Conferir
+  que os nomes, descrições e opções batem com a janela de configurações da porta e que
+  `group`/`parent` separam as páginas. Mudar um parâmetro disponível (ex.: tipo de
+  maçaneta) e conferir `verified`, a mesma porta (mesmo GUID) na mesma parede
+  (`identity_after.details.ownerElementId`) e nenhum `identity_changed`. Ctrl+Z desfaz.
+- [ ] **Dependência.** Mudar na porta um parâmetro que liga/desliga outros (ex.: com/sem
+  puxador) e conferir `dependent_changes` contra o que a janela da porta mostra.
+- [ ] **Valor recusado pelo script.** Pedir um valor fora do limite de um parâmetro
+  numérico: a prévia deve recusar, ou o recibo deve trazer `not_applied`, nunca `verified`.
+- [ ] **Lista de opções (enum)** e **array** (se a porta tiver) numa janela.
+- [ ] **Marcador da porta/janela**: mudar um parâmetro do marcador (target `marker`);
+  `undo_steps` 2 quando junto com GDL.
+- [ ] **Objeto e luminária**: um parâmetro de cada, relido `verified`.
+- [ ] **Ângulo**: um parâmetro do tipo Angle (ex.: abertura 3D) com Tapir 1.7.3; o valor
+  relido deve ser o pedido (em radianos).
+- [ ] **Bloqueados**: elemento travado, camada travada e elemento de hotlink devem ser
+  recusados na prévia; parâmetro oculto/travado aparece `editable: false` com o motivo.
+- [ ] **Campos nativos**: `inspect_element_parameters` numa parede, laje, zona, texto e
+  escada; `writable_by` aponta o `modify_*` certo e a escada traz a limitação.
+- [ ] **Capacidades**: `get_element_capabilities` com uma porta, uma parede e um painel de
+  parede-cortina; conferir que nada promete escrita onde não há.
