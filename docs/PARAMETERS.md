@@ -178,3 +178,9 @@ Order matters for Symbol labels: a later style/details operation can regenerate 
 parameters. Apply intended style/order first, then re-read parameters, apply the actual
 GDL background last, and re-read it again after any subsequent edit. Inspect the final
 mask shape as well as occlusion; no assumption of persistence across regeneration.
+
+Mask shape is also library-part-specific. Read `possibleValues` and
+`canHaveCustomValue` before setting a parameter such as `iShapeHead`; never guess
+an enum from another library part or assume 1 means Rectangle. Validate shape,
+border and occlusion in the final image. Native allowed-value validation is enforced
+by the existing GDL setter, including for Symbol Labels.

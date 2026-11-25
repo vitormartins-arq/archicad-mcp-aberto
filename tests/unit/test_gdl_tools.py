@@ -197,3 +197,33 @@ async def test_symbol_label_background_parameter_preserves_measurement_geometry(
     assert result["counts"]["verified"] == 1
     assert fake.gdl_parameters[GUID][0]["value"] == 19
     assert fake.details[GUID] == before
+
+
+@pytest.mark.parametrize("value,accepted", [(8, True), (1, False)])
+async def test_symbol_mask_shape_uses_native_allowed_values(value, accepted):
+    # Synthetic allowed-value metadata, not a captured library-part definition.
+    fake = model()
+    fake.elements[GUID] = "Label"
+    fake.details[GUID] = {"type": "Label", "labelClass": "Symbol", "floorIndex": 0, "layerIndex": 1}
+    fake.gdl_parameters[GUID] = [
+        {
+            "name": "iShapeHead",
+            "type": "Integer",
+            "value": 3,
+            "flags": [],
+            "isLocked": False,
+            "canHaveCustomValue": False,
+            "possibleValues": [
+                {"value": 3, "description": "Oval"},
+                {"value": 8, "description": "Rectangle"},
+            ],
+        }
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        if accepted:
+            result = await apply(c, [change("iShapeHead", value)])
+            assert result["counts"]["verified"] == 1
+        else:
+            with pytest.raises(ValueError):
+                await edit.set_gdl_parameters(c, [change("iShapeHead", value)], 19723)
+            assert "SetGDLParametersOfElements" not in fake.tapir_calls
