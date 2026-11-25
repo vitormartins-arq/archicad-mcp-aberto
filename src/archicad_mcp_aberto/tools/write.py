@@ -2310,3 +2310,9 @@ OPERATIONS["create_layer_combinations"] = (
     "Creates new combinations only; existing names are refused and every requested "
     "state is read back.",
 )
+
+OPERATIONS["create_level_dimensions"] = (
+    "level dimension",
+    "level_dimension_receipt_id",
+    "Native associative slab-top level dimensions; one Undo step. Never a Label.",
+)

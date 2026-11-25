@@ -814,6 +814,14 @@
     {
       "name": "save_layouts_as_pdf",
       "description": "Preview and save layouts as one merged PDF without using the Publisher."
+    },
+    {
+      "name": "get_level_dimensions",
+      "description": "Read native level dimensions and slab associations."
+    },
+    {
+      "name": "create_level_dimensions",
+      "description": "Preview/create native associative slab-top level dimensions."
     }
   ],
   "compatibility": {

@@ -38,6 +38,7 @@ from archicad_mcp_aberto.tools import (
     layer_settings,
     layers,
     layout_book,
+    level_dimensions,
     locks,
     mep,
     meshes,
@@ -111,6 +112,8 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "get_level_dimensions": {"element_guids": [GUID]},
+    "create_level_dimensions": {"dimensions": [{"slab_guid": GUID, "position": {"x": 1, "y": 1}}]},
     "list_camera_paths": {},
     "create_camera_paths_from_views": {},
     "begin_model_task": {},
@@ -620,6 +623,7 @@ TARGETED = {
         layer_settings,
         layers,
         layout_book,
+        level_dimensions,
         locks,
         mep,
         meshes,
@@ -816,6 +820,10 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
                     ],
                 }
             ]
+    if name in {"get_level_dimensions", "create_level_dimensions"}:
+        for instance in (first, second):
+            instance.elements[GUID] = "Slab"
+            instance.native_level_slabs[GUID] = {"top": 0.0, "bounds": [0, 0, 5, 5]}
     if name == "delete_elements":
         for instance in (first, second):
             instance.project_name = ""
@@ -882,6 +890,8 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in GDL_TOOLS else "Wall"
     expected_type = MODIFY_TYPES.get(name, expected_type)
+    if name in {"get_level_dimensions", "create_level_dimensions"}:
+        expected_type = "Slab"
     extra = {
         "create_groups": {PROP: "Wall"},
         "update_zones": {PROP: "Zone"},

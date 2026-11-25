@@ -678,6 +678,13 @@ class FakeArchicad:
     user_property_ids: dict[tuple[str, str], str] = field(default_factory=dict)
     # Our own add-on (addon/, namespace ArchicadMcpAberto). Response shapes follow the
     # add-on source and the live runs of 21-22/10/2026 on Archicad 30 build 3001.
+    # Companion LevelDimensionCommands.cpp / AC29/30 SDK contract, NOT live capture.
+    native_level_dimensions: dict[str, dict] = field(default_factory=dict)
+    native_level_override: dict = field(default_factory=dict)
+    native_level_lose_response: bool = False
+    native_level_favorites: dict[str, dict] = field(default_factory=dict)
+    native_level_slabs: dict[str, dict] = field(default_factory=dict)
+    native_level_preview_overrides: dict = field(default_factory=dict)
     own_addon_loaded: bool = True
     # get_attribute_details tests: answer the eight detail commands from one fixture row.
     attribute_details_fixture: bool = False
@@ -1208,6 +1215,99 @@ class FakeArchicad:
             out.append(row)
         return {"name": "CORTE AA", "elements": out}
 
+    def _level_dimensions(self, name, args):
+        if name == "GetLevelDimensions":
+            return {
+                "elements": [
+                    deepcopy(
+                        self.native_level_dimensions.get(
+                            g, {"error": {"code": -1, "message": "Not a native LevelDimension"}}
+                        )
+                    )
+                    for g in args["guids"]
+                ]
+            }
+        rows = []
+        for index, p in enumerate(args["dimensions"]):
+            slab = self.native_level_slabs.get(p["slabGuid"])
+            error = None
+            if self.elements.get(p["slabGuid"]) != "Slab" or slab is None:
+                error = "Expected an existing Slab"
+            elif slab.get("referencePlane", "Top") != "Top" or slab.get("curved", False):
+                error = "Unsupported slab geometry"
+            else:
+                x, y = p["position"]["x"], p["position"]["y"]
+                # Rectangular synthetic slabs and rectangular holes for transport tests.
+                a, b, c, d = slab["bounds"]
+                if not a <= x <= c or not b <= y <= d:
+                    error = "Point outside slab"
+                for a, b, c, d in slab.get("holes", []):
+                    if a <= x <= c and b <= y <= d:
+                        error = "Point in hole"
+            favorite = p.get("favorite")
+            if favorite is not None and favorite not in self.native_level_favorites:
+                error = "Favorite is not LevelDimension"
+            if error:
+                rows.append({"error": {"code": -1, "message": error}})
+                continue
+            settings = {
+                "layerIndex": p.get("layerIndex", 1),
+                "pen": 1,
+                "dimForm": 0,
+                "markerSize": 3.0,
+                "angle": 0.0,
+                "notePen": 1,
+                "noteSize": 2.0,
+            }
+            settings.update(self.native_level_favorites.get(favorite, {}))
+            if "layerIndex" in p:
+                settings["layerIndex"] = p["layerIndex"]
+            preview = {
+                "slabGuid": p["slabGuid"],
+                "position": deepcopy(p["position"]),
+                "expectedLevel": slab["top"],
+                "floorIndex": slab.get("floorIndex", 0),
+                "staticLevel": False,
+                "origin": 0,
+                "settings": settings,
+            }
+            if name == "PreviewLevelDimensions":
+                rows.append({**preview, **deepcopy(self.native_level_preview_overrides)})
+                continue
+            if p.get("expectedLevel") != slab["top"]:
+                rows.append({"error": {"code": -1, "message": "Stale elevation"}})
+                continue
+            if index in self.create_errors:
+                rows.append(deepcopy(self.create_errors[index]))
+                continue
+            guid = str(uuid4()).upper()
+            row = {
+                "elementId": {"guid": guid},
+                "type": "LevelDimension",
+                "floorIndex": preview["floorIndex"],
+                "position": preview["position"],
+                "level": slab["top"],
+                "staticLevel": False,
+                "origin": 0,
+                "parentElementId": {"guid": p["slabGuid"]},
+                "parentTypeId": 8,
+                "note1": {
+                    "contentType": 0,
+                    "text": "",
+                    "position": p["position"],
+                    "pen": settings["notePen"],
+                    "size": settings["noteSize"],
+                },
+                "settings": settings,
+            }
+            self.elements[guid] = "LevelDimension"
+            self.native_level_dimensions[guid] = {
+                **deepcopy(row),
+                **deepcopy(self.native_level_override),
+            }
+            rows.append(row)
+        return {"elements": rows}
+
     def _own_addon(self, params: dict) -> dict:
         if not self.own_addon_loaded:
             return fail(4010, "Add-On command is not registered")
@@ -1218,6 +1318,11 @@ class FakeArchicad:
         if name in self.own_addon_errors:
             error = {"code": -2130312312, "message": f"{name} failed."}
             return ok({"addOnCommandResponse": {"error": error}})
+        if name in {"PreviewLevelDimensions", "CreateLevelDimensions", "GetLevelDimensions"}:
+            result = self._level_dimensions(name, args)
+            if name == "CreateLevelDimensions" and self.native_level_lose_response:
+                raise httpx.ReadTimeout("Lost native write response")
+            return ok({"addOnCommandResponse": result})
         if name in {
             "GetElementHotspots",
             "GetDimensionFavorite",

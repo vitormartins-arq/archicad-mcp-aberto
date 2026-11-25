@@ -27,8 +27,8 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **189 registered tools**: **75 read-only**, **8 view/session actions** and
-**106 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **191 registered tools**: **76 read-only**, **8 view/session actions** and
+**107 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
@@ -1024,3 +1024,5 @@ User-facing files are generated from `distribution.json`: name plus material rev
 See [the distribution contract](docs/DISTRIBUTION.md) for packaging, immutable revisions,
 Archicad-major folders and the separate Main/test Drive delivery. R03 is proposed;
 existing R01/R02 files are unchanged.
+
+Native slab-top level dimensions: [usage and scope](docs/LEVEL_DIMENSIONS.md).

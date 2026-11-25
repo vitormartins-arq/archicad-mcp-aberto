@@ -616,3 +616,8 @@
   keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.
 
 - Lamp GDL: per-change script-hidden consent, scalar enum/range validation, identity and dependency read-back; retain all other flags and explicit preview/token checks. Task checkpoints use 00 - Anteriores.
+
+- Add `create_level_dimensions` and `get_level_dimensions` through the native companion:
+  actual measured LevelDimension elements associated with slab tops, default dry run,
+  single-use token, per-item receipts and separate value/association readback. Initial
+  scope and unvalidated live behavior are documented in docs/LEVEL_DIMENSIONS.md.
