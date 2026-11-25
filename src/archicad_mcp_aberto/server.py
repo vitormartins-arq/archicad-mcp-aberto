@@ -60,6 +60,9 @@ from archicad_mcp_aberto.tools import labels as labels_tool
 from archicad_mcp_aberto.tools import layer_settings as layer_settings_tool
 from archicad_mcp_aberto.tools import layers as layers_tool
 from archicad_mcp_aberto.tools import layout_book as layout_book_tool
+from archicad_mcp_aberto.tools import (
+    level_dimensions as level_dimensions_tool,
+)
 from archicad_mcp_aberto.tools import mep as mep_tool
 from archicad_mcp_aberto.tools import meshes as meshes_tool
 from archicad_mcp_aberto.tools import model_tables as model_tables_tool
@@ -2200,6 +2203,28 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         Needs the ArchicadMcpAberto add-on. Never saves."""
         return await hotspot_dimensions_tool.create_linear_dimensions(
             client_of(ctx), dimensions, favorite, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_level_dimensions(
+        ctx: Context, element_guids: list[str], port: int | None = None
+    ) -> dict:
+        """Read native LevelDimension values, slab association and measured notes."""
+        return await level_dimensions_tool.get_level_dimensions(client_of(ctx), element_guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_level_dimensions(
+        ctx: Context,
+        dimensions: list[dict],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Native measured slab-top level dimensions: slab_guid, position {x,y} in metres,
+        optional layer_index/favorite. Requires updated companion; preview then token/apply.
+        Separate native readback; one Undo step; never saves or substitutes a Label."""
+        return await level_dimensions_tool.create_level_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)
