@@ -15,7 +15,7 @@
   Verificação final: 3.551 testes simulados e Ruff passaram. Integração privada: 118
   testes com a dependência genérica local e Ruff passaram. Processo novo da instalação
   isolada listou 215 ferramentas e 113 escritas guardadas; preservação dos arquivos
-  ativos e regras SO/FI/PE conferida por hashes/instruções. Nenhuma chamada ao Archicad.
+  ativos e regras privadas conferida por hashes/instruções. Nenhuma chamada ao Archicad.
 
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
@@ -1222,3 +1222,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   actual GDL background pen instead of treating header style as its equivalent.
   No model writes or add-on installation in this development task. Public push pending
   authorization; live visual acceptance belongs to the editing session.
+
+- Codex, 25 November 2026: public publication authorized by Vitor. Preparing the
+  combined visual-review, Symbol label, draw-order, DPI and busy-diagnostic PR on
+  `fix/label-visibility-dpi`; R20 supersedes the earlier local-only status above.
+  Tests are simulated; no model write performed by this branch.
