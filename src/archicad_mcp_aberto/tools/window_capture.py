@@ -13,6 +13,7 @@ import ctypes
 import struct
 import sys
 import zlib
+from contextlib import contextmanager
 
 from archicad_mcp_aberto.connection import (
     AddOnError,
@@ -79,7 +80,39 @@ def _windows(project_name: str) -> list[tuple[int, str]]:
     return found
 
 
+@contextmanager
+def _physical_pixels(user32=None):
+    """Use physical pixels only on this thread, restoring its prior DPI context.
+
+    PMv2 is preferred; PMv1 is a safe fallback on older Windows 10 builds. Never
+    change process-wide DPI awareness, which cannot reliably be undone in a host.
+    """
+    user32 = user32 if user32 is not None else ctypes.windll.user32
+    setter = getattr(user32, "SetThreadDpiAwarenessContext", None)
+    if setter is None:
+        raise ValueError("Thread DPI awareness is unavailable; use a native image capture.")
+    setter.argtypes = [ctypes.c_void_p]
+    setter.restype = ctypes.c_void_p
+    previous = setter(ctypes.c_void_p(-4))  # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+    if not previous:
+        previous = setter(ctypes.c_void_p(-3))  # PER_MONITOR_AWARE, older Windows 10
+    if not previous:
+        raise ValueError("Cannot enter a physical-pixel DPI context; capture refused.")
+    try:
+        yield
+    finally:
+        if not setter(ctypes.c_void_p(previous)):
+            raise RuntimeError("Failed to restore the original thread DPI context.")
+
+
 def _capture(hwnd: int) -> tuple[int, int, bytes]:
+    # GetWindowRect and GDI must run in the SAME physical-pixel context. Otherwise
+    # 200% scaling can allocate a half-sized bitmap and crop the captured window.
+    with _physical_pixels():
+        return _capture_pixels(hwnd)
+
+
+def _capture_pixels(hwnd: int) -> tuple[int, int, bytes]:
     user32 = ctypes.windll.user32
     gdi32 = ctypes.windll.gdi32
     for function in (gdi32.CreateCompatibleDC, user32.GetWindowDC):

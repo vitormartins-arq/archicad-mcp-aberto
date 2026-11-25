@@ -22,6 +22,7 @@ from archicad_mcp_aberto.tools import (
     design_options,
     documents,
     drafting,
+    draw_order,
     edit,
     element_structure,
     favorites,
@@ -160,6 +161,29 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
 
     def client_of(ctx: Context) -> ArchicadClient:
         return ctx.request_context.lifespan_context["client"]
+
+    @mcp.tool(annotations=WRITE)
+    async def set_draw_order(
+        ctx: Context,
+        changes: list[draw_order.DrawOrderChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Set drawIndex 1..14 for up to 50 annotations/2D elements; requires Tapir.
+
+        Changes display order only, never a measurement origin or label owner/leader.
+        Preview/token/explicit port and full readable geometry readback are required.
+        Inspect the actual resulting image: order alone does not create an opaque mask.
+        Embedded model/host elements are refused. Never saves.
+        """
+        return await draw_order.set_draw_order(
+            client_of(ctx),
+            changes,
+            port,
+            dry_run,
+            confirmation_token,
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     async def discover_archicad(ctx: Context) -> dict:
@@ -1147,10 +1171,14 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview up to 20 text labels. element_guid attaches the label to that element
+        """Preview up to 20 Text or Symbol labels. Symbol needs an explicit Symbol favorite.
+        element_guid attaches the label to that element
         (on its story); a free label needs position (metres) and floor_index. Optional
         height_mm (paper millimetres); style from the Label tool default. Requires Tapir;
-        apply with explicit port and token. Never saves."""
+        apply with explicit port and token. Symbol uses its favorite's library content;
+        omit text/height_mm. position plus leader_mid/leader_end sets explicit leader
+        coordinates; otherwise native default placement may apply. Inspect the image.
+        Never saves."""
         return await labels_tool.create_labels(
             client_of(ctx), labels, port, dry_run, confirmation_token
         )

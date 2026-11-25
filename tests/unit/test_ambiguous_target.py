@@ -22,6 +22,7 @@ from archicad_mcp_aberto.tools import (
     design_options,
     documents,
     drafting,
+    draw_order,
     drawings,
     edit,
     element_structure,
@@ -111,6 +112,7 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "set_draw_order": {"changes": [{"guid": GUID, "draw_index": 14}]},
     "list_camera_paths": {},
     "create_camera_paths_from_views": {},
     "begin_model_task": {},
@@ -603,6 +605,7 @@ TARGETED = {
         design_options,
         documents,
         drafting,
+        draw_order,
         drawings,
         renames,
         edit,
@@ -757,6 +760,16 @@ async def test_reversing_probe_order_does_not_select_first_instance(name):
 @pytest.mark.parametrize("port", [19723, 19724])
 async def test_explicit_port_reaches_only_requested_instance(name, port):
     first, second = instances()
+    if name == "set_draw_order":
+        for instance in (first, second):
+            instance.elements[GUID] = "Label"
+            instance.details[GUID] = {
+                "type": "Label",
+                "floorIndex": 0,
+                "layerIndex": 1,
+                "drawIndex": 10,
+                "details": {"begCoordinate": {"x": 0, "y": 0}},
+            }
     if name in {"modify_walls", "create_windows", "create_doors", "create_associative_dimensions"}:
         for instance in (first, second):
             instance.details[GUID] = deepcopy(CREATE_WALLS_FIXTURE["wall_details"])
@@ -886,6 +899,8 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
     assert result_port == port
     assert selected.calls and untouched.calls == []
     expected_type = "Object" if name in GDL_TOOLS else "Wall"
+    if name == "set_draw_order":
+        expected_type = "Label"
     expected_type = MODIFY_TYPES.get(name, expected_type)
     extra = {
         "create_groups": {PROP: "Wall"},

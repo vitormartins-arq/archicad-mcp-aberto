@@ -166,3 +166,34 @@ async def test_changed_current_value_invalidates_preview():
                 c, [change()], 19723, False, preview["confirmation_token"]
             )
     assert "SetGDLParametersOfElements" not in fake.tapir_calls
+
+
+async def test_symbol_label_background_parameter_preserves_measurement_geometry():
+    # Synthetic regression using the Tapir 1.7.0 parameter schema, not a live capture.
+    fake = model()
+    fake.elements[GUID] = "Label"
+    before = {
+        "type": "Label",
+        "labelClass": "Symbol",
+        "floorIndex": 0,
+        "layerIndex": 1,
+        "parentElementId": {"guid": OTHER},
+        "begCoordinate": {"x": 3.0, "y": 4.0},
+        "drawIndex": 14,
+        "libPart": {"name": "Property Label"},
+    }
+    fake.details[GUID] = deepcopy(before)
+    fake.gdl_parameters[GUID] = [
+        {
+            "name": "AC_LabelTextBgrPen",
+            "type": "PenColor",
+            "value": -1,
+            "flags": [],
+            "isLocked": False,
+        }
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        result = await apply(c, [change("AC_LabelTextBgrPen", 19)])
+    assert result["counts"]["verified"] == 1
+    assert fake.gdl_parameters[GUID][0]["value"] == 19
+    assert fake.details[GUID] == before

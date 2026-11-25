@@ -834,6 +834,10 @@
     {
       "name": "visual_review_coverage",
       "description": "Audit coverage of every currently registered project/model write tool."
+    },
+    {
+      "name": "set_draw_order",
+      "description": "Preview/apply annotation display order, preserving physical positions and ownership."
     }
   ],
   "compatibility": {

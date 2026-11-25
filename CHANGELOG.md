@@ -625,3 +625,8 @@
   keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.
 
 - Lamp GDL: per-change script-hidden consent, scalar enum/range validation, identity and dependency read-back; retain all other flags and explicit preview/token checks. Task checkpoints use 00 - Anteriores.
+
+- Fix Windows capture DPI context with restoration; retain native modal dialog names
+  in busy diagnostics. Add safe annotation draw-order edits and Symbol labels created
+  from explicit favorites, preserving owners and checking native readback. Document
+  Symbol GDL background parameters separately from header style settings.
