@@ -1,5 +1,22 @@
 # Estado atual
 
+- **25/11/2026 — feat/visual-review (local, sem push público autorizado):** guarda
+  genérica no registro MCP cobre as 106 escritas atuais e extensões privadas posteriores.
+  Prévia orienta amostra inicial; batch sem amostra inspecionada é recusado antes do
+  dispatch. Resultado numérico fica separado de task_complete=false; capturas reais
+  candidatas e avaliação explícita por imagem antecedem a conclusão/salvamento final.
+  Cinco ferramentas de inspeção/recuperação/auditoria adicionadas (194 no registro).
+  Enquadramento nativo 2D por caixas reais com margem não depende de WindowZoom/SetZoom.
+  Falha tenta alternativas de captura existentes e mantém bloqueio, sem Computer Use.
+  Servidor não faz inferência visual: a avaliação é da IA que efetivamente olha a imagem.
+  Ver docs/VISUAL_REVIEW.md para limites, reconciliação de resultado desconhecido e
+  escopo da guarda (fronteira MCP, não as funções Python diretas). Nenhum PLN alterado.
+  Registro de lições no Drive indisponível em H: e G: nesta sessão; não foi atualizado.
+  Verificação final: 3.551 testes simulados e Ruff passaram. Integração privada: 118
+  testes com a dependência genérica local e Ruff passaram. Processo novo da instalação
+  isolada listou 215 ferramentas e 113 escritas guardadas; preservação dos arquivos
+  ativos e regras SO/FI/PE conferida por hashes/instruções. Nenhuma chamada ao Archicad.
+
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
 - **Section dimension association fixed / 18 November 2026:** the loss of association

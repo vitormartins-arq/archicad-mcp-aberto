@@ -1,5 +1,12 @@
 # archicad-mcp-aberto
 
+Após cada alteração, o MCP mantém uma conferência visual pendente: sucesso numérico
+não significa resultado correto. A IA deve olhar a imagem real no contexto certo,
+corrigir problemas e registrar a avaliação antes de concluir/salvar a tarefa. Veja o
+[fluxo implementado](VISUAL_REVIEW.md), com amostra inicial de lotes, enquadramento por
+elementos sem depender de WindowZoom e alternativas de captura. Imagem inadequada
+mantém a tarefa incompleta; o servidor não tem um modelo de visão próprio.
+
 Servidor [MCP](https://modelcontextprotocol.io) aberto que deixa assistentes de IA
 (Claude, Codex, Cursor e outros) trabalharem com o Archicad aberto: lê o modelo,
 documenta o projeto e prepara alterações com confirmação e conferência.
@@ -24,7 +31,7 @@ JSON oficial e o Tapir. Nada sai do computador: sem telemetria e sem internet.
 
 ## Situação
 
-Pré-alfa com **189 ferramentas registradas**: **75 somente de leitura**, **8 ações de
+Pré-alfa com **194 ferramentas registradas**: **80 somente de leitura**, **8 ações de
 visualização/sessão** e **106 que escrevem no modelo ou no projeto**. A classificação
 pré-alfa permanece porque as ferramentas mais antigas têm validações registradas no
 ArchiCAD, enquanto parte das mais novas ainda aguarda conferência ao vivo. A lista

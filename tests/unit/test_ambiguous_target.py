@@ -713,6 +713,11 @@ async def test_all_registered_targeted_tools_have_cases():
         "fit_in_window",
         "window_zoom",
         "pan_window",
+        # Visual-review MCP orchestration is covered at the boundary in test_visual_review.
+        "get_visual_reviews",
+        "capture_visual_review",
+        "review_visual_result",
+        "reconcile_visual_review",
     }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()

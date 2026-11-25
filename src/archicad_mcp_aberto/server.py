@@ -88,6 +88,7 @@ from archicad_mcp_aberto.tools import window_capture as window_capture_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 from archicad_mcp_aberto.tools import zones_read as zones_read_tool
+from archicad_mcp_aberto.visual_mcp import VisualReviewMCP
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -96,6 +97,17 @@ Archicad MCP (read tools and safe wall and slab creation).
 - With several instances open, ask the user which project to use and pass its port.
   Never pick the first one. Ports are not permanent identities.
 - Lengths are in meters and angles in radians (SI), whatever the project display units.
+- After EVERY project/model edit, inspect the actual resulting image before completion.
+  API success, GUIDs, coordinates, bounds or numeric readback are not visual verification.
+  Writes return pending visual reviews and candidate images. LOOK at them, confirm the
+  affected context, full coverage, readable scale and actual correctness; use
+  capture_visual_review and review_visual_result. Reject blank, cropped or wrong views.
+  For batches, inspect a small sample first and contextual images covering the final lot.
+  Labels need their object, mounting face, reading direction and neighbouring annotations.
+  Layouts need updated drawings and the actual sheet/PDF; data changes need the pertinent
+  schedule/dialog/documentation. Try another existing MCP capture/navigation capability
+  on failure. If adequate inspection is unavailable, report the task INCOMPLETE and the
+  blocker, never visually verified. Do not substitute Computer Use without authorization.
 - "busy" (error 4001) means Archicad is in user input. Ask the user to finish, then retry.
   It does not mean an add-on is missing.
 - Tools that say "requires Tapir" need the free Tapir add-on loaded (see tapir_status).
@@ -144,7 +156,7 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         async with factory() as client:
             yield {"client": client}
 
-    mcp = FastMCP("archicad-mcp-aberto", instructions=INSTRUCTIONS, lifespan=lifespan)
+    mcp = VisualReviewMCP("archicad-mcp-aberto", instructions=INSTRUCTIONS, lifespan=lifespan)
 
     def client_of(ctx: Context) -> ArchicadClient:
         return ctx.request_context.lifespan_context["client"]

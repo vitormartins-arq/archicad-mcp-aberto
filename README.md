@@ -6,6 +6,12 @@ preview safe model changes with explicit confirmation, per-item receipts and ver
 
 [Leia em português](docs/LEIA-ME.pt-BR.md)
 
+Project/model writes now return a pending image-backed completion review. Numeric
+readback is retained separately and does not certify visual correctness. The assistant
+must inspect contextual images, record its assessment and resolve blockers before
+final saving. See [visual completion](docs/VISUAL_REVIEW.md), including early batch
+sampling, native 2D framing without a zoom setter, alternative captures and limitations.
+
 > Not an official Graphisoft product and not affiliated with Graphisoft or Nemetschek.
 > Archicad is a trademark of Graphisoft SE.
 
@@ -27,7 +33,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **189 registered tools**: **75 read-only**, **8 view/session actions** and
+Pre-alpha with **194 registered tools**: **80 read-only**, **8 view/session actions** and
 **106 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and

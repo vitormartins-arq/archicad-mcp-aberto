@@ -1,5 +1,14 @@
 # Changelog
 
+- Add a generic image-backed MCP completion guard for every registered project/model
+  write, including late extension tools. Numeric readback remains distinct from visual
+  approval; pending reviews prevent final task saving. Add review listing, contextual
+  capture, explicit assessment, numeric reconciliation and registry-coverage tools.
+  Existing capture capabilities provide real images; invalid/blank images, stale state,
+  wrong assessment flags and unsampled batches cannot pass. Native 2D element framing
+  uses official bounds and a temporary capture zoom, without a WindowZoom setter.
+  All validation in this change is offline/synthetic; no real model was edited.
+
 - Add `get_section_cut_elements` (read-only) and `create_section_dimensions`. The first
   lists what a section, elevation or interior elevation cuts or shows, per model element,
   with absolute Z from the 3D box and the section elements' hotspots in view coordinates;
