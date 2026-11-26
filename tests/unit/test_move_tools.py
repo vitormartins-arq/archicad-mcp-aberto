@@ -109,6 +109,47 @@ async def test_unknown_element_is_refused_in_preview():
     assert "MoveElements" not in fake.tapir_calls
 
 
+@pytest.mark.parametrize("locked", [False, True])
+async def test_label_omitted_from_inventory_requires_native_details_and_editability(locked):
+    fake = model(
+        details={
+            A: {
+                "type": "Label",
+                "floorIndex": 0,
+                "layerIndex": 1,
+                "details": {
+                    "ownerElementId": {"guid": B},
+                    "text": "ID",
+                    "begCoordinate": {"x": 1, "y": 2},
+                    "midCoordinate": {"x": 2, "y": 3},
+                    "endCoordinate": {"x": 3, "y": 3},
+                },
+            }
+        },
+        locked_elements={A} if locked else set(),
+        bounding_boxes_2d={A: BOUNDING_BOXES_FIXTURE["error"]},
+        bounding_boxes_3d={A: BOUNDING_BOXES_FIXTURE["error"]},
+    )
+    async with client(fake) as c:
+        original = c.command
+
+        async def without_annotations(port, command, *args, **kwargs):
+            result = await original(port, command, *args, **kwargs)
+            if command == "GetAllElements":
+                result["elements"] = [e for e in result["elements"] if e["elementId"]["guid"] != A]
+            return result
+
+        c.command = without_annotations
+        if locked:
+            with pytest.raises(ValueError, match="non-editable labels"):
+                await write.move_elements(c, [move(A)])
+        else:
+            result = await write.move_elements(c, [move(A)])
+            assert result["items"][0]["label_before"]["details"]["text"] == "ID"
+            assert result["items"][0]["before"] == {}
+    assert "MoveElements" not in fake.tapir_calls
+
+
 async def test_hotlinked_element_is_refused_in_preview():
     fake = model(details={A: {"type": "Wall", "hotlinkId": {"guid": B}}})
     async with client(fake) as c:

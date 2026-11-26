@@ -1562,8 +1562,6 @@ async def _move_plan(
     everything = await client.command(port, "GetAllElements")
     existing = {e["elementId"]["guid"].upper() for e in everything["elements"]}
     missing = [g for g in guids if g not in existing]
-    if missing:
-        raise ValueError(f"Not in this project: {', '.join(missing)}.")
     details = await client.tapir(
         port,
         "GetDetailsOfElements",
@@ -1575,6 +1573,42 @@ async def _move_plan(
     rows = details.get("detailsOfElements")
     if not isinstance(rows, list) or len(rows) != len(guids):
         raise ValueError("Unexpected details response cardinality.")
+    # GetAllElements omits annotations. Resolve explicitly requested labels by
+    # native details, and require editability instead of trusting that inventory.
+    for guid, row in zip(guids, rows, strict=True):
+        if guid in missing and (
+            not isinstance(row, dict) or "error" in row or row.get("type") != "Label"
+        ):
+            raise ValueError(f"Not in this project: {guid}.")
+    labels = [
+        g
+        for g, row in zip(guids, rows, strict=True)
+        if isinstance(row, dict) and row.get("type") == "Label"
+    ]
+    if labels:
+        editable = await client.tapir(
+            port, "FilterElements", {"elements": element_ids(labels), "filters": ["IsEditable"]}
+        )
+        editable_rows = editable.get("elements")
+        if not isinstance(editable_rows, list):
+            raise ValueError("Unexpected editable-filter response.")
+        editable_guids = {e["elementId"]["guid"].upper() for e in editable_rows}
+        if set(labels) - editable_guids:
+            raise ValueError("Locked/non-editable labels cannot be moved.")
+        label_result = await client.tapir(
+            port,
+            "GetDetailsOfElements",
+            {
+                "elements": element_ids(labels),
+                "fields": ["type", "floorIndex", "layerIndex", "details"],
+            },
+        )
+        label_rows = label_result.get("detailsOfElements")
+        if not isinstance(label_rows, list) or len(label_rows) != len(labels):
+            raise ValueError("Unexpected label details response cardinality.")
+        label_details = dict(zip(labels, label_rows, strict=True))
+    else:
+        label_details = {}
     boxes = await _boxes(client, port, guids)
     items = []
     for index, (move, row) in enumerate(zip(moves, rows, strict=True)):
@@ -1582,7 +1616,17 @@ async def _move_plan(
             raise ValueError(f"Element {move.guid}: cannot read it ({row}).")
         if row.get("hotlinkId"):
             raise ValueError(f"Element {move.guid} belongs to a hotlink and is read-only.")
-        if not boxes[move.guid]:
+        label_before = label_details.get(move.guid)
+        if label_before is not None:
+            d = label_before.get("details", {})
+            for key in ("begCoordinate", "midCoordinate", "endCoordinate"):
+                if not isinstance(d.get(key), dict) or not all(
+                    isinstance(d[key].get(axis), (int, float)) for axis in ("x", "y")
+                ):
+                    raise ValueError(f"Element {move.guid}: missing native label coordinates.")
+            if move.vector.z != 0:
+                raise ValueError("Labels support plan XY moves only.")
+        if not boxes[move.guid] and label_before is None:
             raise ValueError(f"Element {move.guid}: no bounding box, so a move cannot be checked.")
         items.append(
             {
@@ -1593,6 +1637,7 @@ async def _move_plan(
                 "floorIndex": row.get("floorIndex"),
                 "layerIndex": row.get("layerIndex"),
                 "before": boxes[move.guid],
+                **({"label_before": label_before} if label_before is not None else {}),
                 "parameters": {
                     "elementId": {"guid": move.guid},
                     "moveVector": move.vector.model_dump(),
@@ -1660,6 +1705,27 @@ async def _move_dispatch(client: ArchicadClient, receipt: dict) -> None:
         for item in moved:
             item["after"] = after[item["element_guid"]]
             differences = _move_mismatches(item, item["after"])
+            if "label_before" in item:
+                label_result = await client.tapir(
+                    port,
+                    "GetDetailsOfElements",
+                    {
+                        "elements": element_ids([item["element_guid"]]),
+                        "fields": ["type", "floorIndex", "layerIndex", "details"],
+                    },
+                )
+                label_rows = label_result.get("detailsOfElements")
+                if not isinstance(label_rows, list) or len(label_rows) != 1:
+                    raise ValueError("Unexpected label verification response.")
+                item["label_after"] = label_rows[0]
+                expected = deepcopy(item["label_before"])
+                vector = item["parameters"]["moveVector"]
+                for section in (expected["details"], expected["details"].get("leaderLine", {})):
+                    for key in ("begCoordinate", "midCoordinate", "endCoordinate"):
+                        if key in section:
+                            for axis in ("x", "y"):
+                                section[key][axis] += vector[axis]
+                differences.extend(_mismatches(expected, item["label_after"]))
             item.update(status="verification_failed" if differences else "verified")
             if differences:
                 item["mismatches"] = differences
