@@ -227,6 +227,34 @@ def sent_labels(fake):
     ]
 
 
+async def test_symbol_favorite_class_preserved_in_preview(monkeypatch):
+    async def resolve(*args):
+        pass
+
+    async def native(client, port, name, parameters):
+        assert name == "GetLabelFavoriteClass"
+        return {"name": parameters["name"], "labelClass": "Symbol"}
+
+    monkeypatch.setattr(labels.write, "_resolve_favorites", resolve)
+    monkeypatch.setattr(labels.grids, "_addon", native)
+    async with ArchicadClient(transport=fake_transport(model())) as c:
+        preview = await labels.create_labels(c, [label(favorite="ID - FORRO")], 19723)
+        payload = preview["items"][0]["parameters"]
+        assert payload["labelClass"] == "Symbol" and "text" not in payload
+        assert payload["favoriteName"] == "ID - FORRO"
+        with pytest.raises(ValueError, match="Text-label override"):
+            await labels.create_labels(c, [label(favorite="ID - FORRO", height_mm=3)], 19723)
+    item = preview["items"][0]
+    assert labels._mismatches(
+        item,
+        {
+            "type": "Label",
+            "floorIndex": item["floorIndex"],
+            "details": {"labelClass": "Text", "ownerElementId": {"guid": WALL}},
+        },
+    ) == ["details.labelClass"]
+
+
 async def test_attached_label_preview_then_apply():
     fake = model()
     inputs = [label(position={"x": 1, "y": 0}, height_mm=3.5)]

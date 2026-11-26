@@ -278,7 +278,15 @@ SECOND = [
 
 
 @pytest.mark.parametrize(("kind", "tool", "command", "key", "item"), SECOND)
-async def test_other_create_tools_take_a_favorite(kind, tool, command, key, item):
+async def test_other_create_tools_take_a_favorite(kind, tool, command, key, item, monkeypatch):
+    if kind == "Label":
+        from archicad_mcp_aberto.tools import grids
+
+        async def native(client, port, name, parameters):
+            assert name == "GetLabelFavoriteClass"
+            return {"name": parameters["name"], "labelClass": "Text"}
+
+        monkeypatch.setattr(grids, "_addon", native)
     fake = model()
     fake.favorites[kind] = [f" {kind.upper()} LAB"]
     async with ArchicadClient(transport=fake_transport(fake)) as c:

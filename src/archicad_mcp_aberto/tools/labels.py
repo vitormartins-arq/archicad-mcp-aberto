@@ -15,7 +15,7 @@ from uuid import UUID
 from pydantic import Field, field_validator, model_validator
 
 from archicad_mcp_aberto.connection import ArchicadClient
-from archicad_mcp_aberto.tools import keynotes, read, texts, write
+from archicad_mcp_aberto.tools import grids, keynotes, read, texts, write
 
 MAX_LABELS = 20
 KeynoteField = Literal["Key", "Title", "Description", "Reference"]
@@ -93,12 +93,30 @@ async def _plan(client, labels, port, operation):
         item["parameters"] = payload
         items.append(item)
     await write._resolve_favorites(client, port, "Label", labels, items)
+    classes = {}
+    for item in items:
+        p = item["parameters"]
+        favorite = p.get("favoriteName")
+        if favorite is None:
+            continue
+        if favorite not in classes:
+            found = await grids._addon(client, port, "GetLabelFavoriteClass", {"name": favorite})
+            if found.get("name") != favorite or found.get("labelClass") not in {"Text", "Symbol"}:
+                raise ValueError("Native favorite class is missing; no Text fallback is allowed.")
+            classes[favorite] = found["labelClass"]
+        p["labelClass"] = classes[favorite]
+        if p["labelClass"] == "Symbol":
+            if "style" in p:
+                raise ValueError(
+                    "height_mm is a Text-label override; preserve the Symbol favorite."
+                )
+            p.pop("text", None)
     return {"operation": operation, "target": target, "items": items}
 
 
 def _mismatches(item: dict, row: Any) -> list[str]:
     p = item["parameters"]
-    details: dict[str, Any] = {"labelClass": "Text"}
+    details: dict[str, Any] = {"labelClass": p["labelClass"]}
     if "begCoordinate" in p:
         details["begCoordinate"] = p["begCoordinate"]
     if "style" in p:
@@ -110,7 +128,9 @@ def _mismatches(item: dict, row: Any) -> list[str]:
     actual = row.get("details") if isinstance(row, dict) else None
     actual = actual if isinstance(actual, dict) else {}
     found = actual.get("text")
-    if not isinstance(found, str) or texts._lines(found) != p["text"]:
+    if p["labelClass"] == "Text" and (
+        not isinstance(found, str) or texts._lines(found) != p["text"]
+    ):
         differences.append("details.text")
     if "parentElementId" in p:
         owner = actual.get("ownerElementId")

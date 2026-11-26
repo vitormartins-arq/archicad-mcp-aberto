@@ -59,6 +59,8 @@
     }
   },
   "tools": [
+    {"name": "get_angle_dimensions", "description": "Read native angular dimensions and associative references."},
+    {"name": "create_angle_dimensions", "description": "Preview and create native associative angular dimensions from favorites."},
     {
       "name": "get_suspend_groups",
       "description": "Read native Suspend Groups mode without changing membership or selection."
