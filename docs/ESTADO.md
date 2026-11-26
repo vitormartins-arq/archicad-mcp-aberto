@@ -5,6 +5,13 @@
   tools. LAB cotas wrapper is unchanged. Matching R45/R28 companion installation and MCP
   reconnection are still required; no active Archicad was changed or restarted.
 
+- **Slab dimension safety / 26 November 2026:** Slab witnesses now require native
+  persistent vertex IDs and verification refuses static dimensions. Native R34
+  must enforce whole-batch rollback and re-resolve IDs. Added get/create radial
+  dimension DEVELOPMENT candidate with native edge/radius read-back. Real Slab arc
+  association remains untested; disposable acceptance required. No client model or
+  installed APX changed here. See SLAB_DIMENSIONS.md.
+
 - **Angular documentation candidate / 26 November 2026:** added native angular
   get/create tools with exact favorites, four hotspot references, token/receipts,
   duplicate checks and independent read-back. Also preserves Symbol label favorite
