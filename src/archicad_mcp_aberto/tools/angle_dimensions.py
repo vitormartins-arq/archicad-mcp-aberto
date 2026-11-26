@@ -93,12 +93,16 @@ async def _plan(client, dimensions, port, operation):
 
 
 async def _dispatch(client, receipt):
+    await _dispatch_native(client, receipt, "CreateAngleDimensions", get_angle_dimensions)
+
+
+async def _dispatch_native(client, receipt, command, reader):
     port = receipt["target"]["port"]
     try:
         result = await grids._addon(
             client,
             port,
-            "CreateAngleDimensions",
+            command,
             {
                 "dimensions": [i["parameters"] for i in receipt["items"]],
                 "expectedPlan": receipt["native_plan"],
@@ -124,7 +128,7 @@ async def _dispatch(client, receipt):
         try:
             guid = str(UUID(ids[0])).upper()
             item.update(element_guid=guid, status="unverified")
-            found = await get_angle_dimensions(client, port, [guid])
+            found = await reader(client, port, [guid])
             actual = found["dimensions"]
             if len(actual) != 1 or str(actual[0].get("guid", "")).upper() != guid:
                 raise ValueError("Read-back returned another dimension.")
@@ -138,7 +142,7 @@ async def _dispatch(client, receipt):
                 mismatches=problems,
             )
             item["verification_scope"] = (
-                "Native type, four reference identities, radians, position and favorite style. "
+                "Native type, reference identities, measured value, position and favorite style. "
                 "Rebuild/edit/visual acceptance pending."
             )
         except (ArchicadError, ValueError, TypeError, AttributeError) as exc:

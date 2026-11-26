@@ -1149,7 +1149,11 @@ class FakeArchicad:
             row = {
                 "elementId": {"guid": guid},
                 "floorIndex": dimension["floorIndex"],
-                "settings": {**deepcopy(favorite), **self.dimension_settings_override},
+                "settings": {
+                    **deepcopy(favorite),
+                    "static": False,
+                    **self.dimension_settings_override,
+                },
                 "direction": deepcopy(dimension["direction"]),
                 "witnessPoints": deepcopy(dimension["witnessPoints"]),
                 "textDifferences": list(self.dimension_text_differences),
