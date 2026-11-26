@@ -59,6 +59,8 @@
     }
   },
   "tools": [
+    {"name":"get_floor_surface_backgrounds","description":"Audit floor top-surface RGB and preserve native cover-fill pagination."},
+    {"name":"set_floor_surface_backgrounds","description":"Candidate scoped RGB-only floor backgrounds with preview, backup and preservation checks."},
     {"name":"get_radial_dimensions","description":"Read native slab-arc radial dimensions."},
     {"name":"create_radial_dimensions","description":"Candidate guarded radial dimensions with native edge references."},
     {"name": "get_angle_dimensions", "description": "Read native angular dimensions and associative references."},

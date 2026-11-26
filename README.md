@@ -35,8 +35,8 @@ companion; live acceptance pending. See [LEVEL_DIMENSIONS.md](docs/LEVEL_DIMENSI
 Suspend Groups: `get_suspend_groups` queries the mode; `set_suspend_groups` previews,
 applies and verifies a reversible change without ungrouping. See [workflow](docs/SUSPEND_GROUPS.md).
 
-Pre-alpha with **200 registered tools**: **81 read-only**, **8 view/session actions** and
-**111 project or model writes**. The broad surface is already useful, but pre-alpha is
+Pre-alpha with **202 registered tools**: **82 read-only**, **8 view/session actions** and
+**112 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
 the manifest test prevents it from drifting away from the server.
