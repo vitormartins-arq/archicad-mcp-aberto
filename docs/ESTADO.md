@@ -1,5 +1,12 @@
 # Estado atual
 
+- **Angular documentation candidate / 26 November 2026:** added native angular
+  get/create tools with exact favorites, four hotspot references, token/receipts,
+  duplicate checks and independent read-back. Also preserves Symbol label favorite
+  class and uses native GoToView for saved views. Matching private companion R33
+  required; AC29/30 compilation passed. Live disposable-project acceptance pending;
+  no client project, active Python runtime or installed APX changed. See ANGLE_DIMENSIONS.md.
+
 - **Suspend Groups / 24 November 2026:** added `get_suspend_groups` and
   `set_suspend_groups` with strict snapshot/token, independent read-back and an explicit
   restoration value. No ungrouping or expansion of edit GUIDs. Matching native companion

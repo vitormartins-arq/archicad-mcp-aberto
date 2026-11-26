@@ -53,3 +53,28 @@ class Client:
 async def test_pan_keeps_the_zoom_and_moves_the_view():
     result = await tool.pan_window(Client(), 2.0, -1.0, 19723)
     assert result["zoom"] == {"xMin": 2.0, "xMax": 12.0, "yMin": -1.0, "yMax": 4.0}
+
+
+@pytest.mark.anyio
+async def test_saved_view_uses_native_representation(monkeypatch):
+    from archicad_mcp_aberto.tools import grids
+
+    async def native(client, port, name, parameters):
+        assert name == "OpenSavedNavigatorView" and parameters == {"guid": "saved-view"}
+        return {"isSavedView": True, "opened": True, "windowType": 1}
+
+    monkeypatch.setattr(grids, "_addon", native)
+    found = await tool.open_navigator_item(Client(), "saved-view", 19723)
+    assert found["opened"] and found["isSavedView"]
+
+
+@pytest.mark.anyio
+async def test_saved_view_failure_never_falls_back_to_partial_database(monkeypatch):
+    from archicad_mcp_aberto.tools import grids
+
+    async def native(*args):
+        raise ValueError("Failed to generate saved view")
+
+    monkeypatch.setattr(grids, "_addon", native)
+    with pytest.raises(ValueError, match="generate"):
+        await tool.open_navigator_item(Client(), "saved-view", 19723)
