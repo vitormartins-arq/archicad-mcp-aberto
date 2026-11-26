@@ -26,6 +26,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     element_structure,
     favorites,
+    floor_backgrounds,
     gateway,
     groups,
     hotlinks,
@@ -217,6 +218,47 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await groups.set_suspend_groups(
             client_of(ctx), suspended, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_floor_surface_backgrounds(
+        ctx: Context,
+        guids: list[str],
+        port: int | None = None,
+    ) -> dict:
+        """Audit effective top-surface RGB, cover fill, full pagination transform and geometry."""
+        return await floor_backgrounds.get_floor_surface_backgrounds(client_of(ctx), guids, port)
+
+    @mcp.tool(annotations=WRITE)
+    async def set_floor_surface_backgrounds(
+        ctx: Context,
+        guids: list[str],
+        scope_id: str,
+        port: int | None = None,
+        view_guid: str | None = None,
+        task_token: str | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Candidate: RGB floor backgrounds from top surfaces, preserving hatch and pagination.
+
+        Pass a fresh scope UUID and explicit Slab GUIDs. Requires AC30 companion and a
+        verified begin_model_task checkpoint for a saved project. Preview/token required.
+        Creates scoped properties and RGB-only native override rules; never changes pens,
+        hatch, foreground, origin, matrix, geometry or existing rules. Optional view_guid
+        stores only its override-combination field and verifies every other readable setting.
+        RGB is a snapshot: explicitly resync after changing surface color/assignment.
+        Undo, visual output and persistence require disposable-project acceptance first.
+        """
+        return await floor_backgrounds.set_floor_surface_backgrounds(
+            client_of(ctx),
+            guids,
+            scope_id,
+            port,
+            view_guid,
+            task_token,
+            dry_run,
+            confirmation_token,
         )
 
     @mcp.tool(annotations=READ_ONLY)

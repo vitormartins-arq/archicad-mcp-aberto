@@ -724,6 +724,11 @@ OPERATIONS["create_radial_dimensions"] = (
     "radial_dimension_receipt_id",
     "Native slab-arc radial dimension candidate, one Undo; never saves.",
 )
+OPERATIONS["set_floor_surface_backgrounds"] = (
+    "floor surface background",
+    "floor_background_receipt_id",
+    "RGB-only native override candidate. Preserves fill and pagination; explicit resync required.",
+)
 OPERATIONS["save_project_as"] = (
     "project save",
     "save_receipt_id",
