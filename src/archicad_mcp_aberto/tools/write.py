@@ -714,6 +714,11 @@ OPERATIONS["create_level_dimensions"] = (
     "level_dimension_receipt_id",
     "Native associative level dimensions from exact favorites, one Undo step; never saves.",
 )
+OPERATIONS["create_angle_dimensions"] = (
+    "angle dimension",
+    "angle_dimension_receipt_id",
+    "Native associative angular dimensions from exact favorites, one Undo step; never saves.",
+)
 OPERATIONS["save_project_as"] = (
     "project save",
     "save_receipt_id",

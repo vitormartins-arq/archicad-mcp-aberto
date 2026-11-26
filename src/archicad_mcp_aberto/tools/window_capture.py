@@ -154,6 +154,17 @@ async def open_navigator_item(
     """Show a story, section, detail, worksheet or layout from the navigator. Changes no element.
     A schedule has no database for this call: open it in Archicad, then look at the window."""
     port = await resolve_port(client, port)
+    from archicad_mcp_aberto.tools import grids
+
+    opened = await grids._addon(
+        client, port, "OpenSavedNavigatorView", {"guid": navigator_item_guid}
+    )
+    if opened.get("isSavedView") is True:
+        if opened.get("opened") is not True:
+            raise ValueError("Saved view opening was not confirmed; do not blindly retry.")
+        return {"port": port, **opened}
+    if opened.get("isSavedView") is not False:
+        raise ValueError("Native navigator item classification missing.")
     found = await client.tapir(
         port,
         "GetDatabaseIdFromNavigatorItemId",

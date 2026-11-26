@@ -10,6 +10,7 @@ import pytest
 from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, resolve_port
 from archicad_mcp_aberto.server import create_server
 from archicad_mcp_aberto.tools import (
+    angle_dimensions,
     attribute_properties,
     attributes,
     attributes_details,
@@ -113,6 +114,19 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "get_angle_dimensions": {},
+    "create_angle_dimensions": {
+        "dimensions": [
+            {
+                "favorite": "Native angle",
+                "floor_index": 0,
+                "position": {"x": 1, "y": 1},
+                "references": [
+                    {"element_guid": GUID, "in_index": i, "neig_id": 1} for i in range(4)
+                ],
+            }
+        ]
+    },
     "get_suspend_groups": {},
     "set_suspend_groups": {"suspended": True},
     "list_camera_paths": {},
@@ -603,6 +617,7 @@ GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters
 TARGETED = {
     name: function
     for module in (
+        angle_dimensions,
         groups,
         publisher,
         camera_paths,
@@ -851,6 +866,17 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             assert selected.own_addon_calls == ["GetSuspendGroups"]
             assert not untouched.calls
             return
+        if name in {"get_angle_dimensions", "create_angle_dimensions"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == [
+                "GetAngleDimensions" if name == "get_angle_dimensions" else "PlanAngleDimensions"
+            ]
+            assert not untouched.calls
+            return
         if name in {"get_level_dimensions", "create_level_dimensions"}:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -1002,12 +1028,13 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             }
 
         monkeypatch.setattr(camera_paths, "_plan", camera_plan)
-    if name == "create_level_dimensions":
+    if name in {"create_level_dimensions", "create_angle_dimensions"}:
 
         async def level_plan(c, dimensions, port, operation):
             return {"operation": operation, "target": {"port": port}, "items": []}
 
-        monkeypatch.setattr(level_dimensions, "_plan", level_plan)
+        module = angle_dimensions if name == "create_angle_dimensions" else level_dimensions
+        monkeypatch.setattr(module, "_plan", level_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
         first.calls.clear()

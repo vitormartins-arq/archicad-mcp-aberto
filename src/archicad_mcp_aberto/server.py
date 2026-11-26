@@ -13,6 +13,7 @@ from mcp.types import TextContent
 
 from archicad_mcp_aberto.connection import ArchicadClient, ports_from_env
 from archicad_mcp_aberto.tools import (
+    angle_dimensions,
     attribute_properties,
     attributes,
     attributes_details,
@@ -261,6 +262,32 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await groups.set_suspend_groups(
             client_of(ctx), suspended, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_angle_dimensions(
+        ctx: Context, port: int | None = None, guids: list[str] | None = None
+    ) -> dict:
+        """Read native angular dimensions, four references, favorite style and angle in radians."""
+        return await angle_dimensions.get_angle_dimensions(client_of(ctx), port, guids)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_angle_dimensions(
+        ctx: Context,
+        dimensions: list[angle_dimensions.AngleDimensionCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Preview/apply 1..20 native associative AngleDimensions with exact favorites.
+
+        Four references (two per direction) use element_guid/in_index/neig_id from native
+        hotspots. Positions in metres; returned angles in radians. No static point fallback.
+        Requires updated companion, visible favorite layer and floor-plan window.
+        One Undo, duplicate checks, strict token and read-back. Never saves.
+        """
+        return await angle_dimensions.create_angle_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)
