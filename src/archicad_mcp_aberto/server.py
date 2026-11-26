@@ -500,8 +500,9 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         confirmation_token: str | None = None,
     ) -> dict:
         """Preview setting up to 100 property values: element_guid, property_guid, value.
-        Text, number, integer, boolean, length, area, volume or angle; lists and enums are
-        refused. Preview shows current and new values; apply identical inputs with explicit
+        Scalars or editable single-enum properties. For enums pass an exact nonlocalized
+        value (for example New) or GUID listed by the property definition; display names
+        and arbitrary enum IDs are refused. Preview shows current and new values; apply with
         port and single-use token; every value is read back. Never saves."""
         return await write.set_property_values(
             client_of(ctx), changes, port, dry_run, confirmation_token

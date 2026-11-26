@@ -146,7 +146,7 @@ in this delivery; operator live validation of these additions remains pending.
 | `create_windows` | Write | Up to 20 windows in existing straight walls | yes |
 | `create_doors` | Write | Up to 20 doors in existing straight walls | yes |
 | `move_elements` | Write | Move up to 50 elements without copying; check displaced boxes | yes |
-| `set_property_values` | Write | Up to 100 scalar property changes, read back after apply | no |
+| `set_property_values` | Write | Up to 100 scalar/editable single-enum changes with read-back | no |
 | `set_classifications` | Write | Classify (or unclassify) up to 100 elements, read back after apply | yes |
 | `delete_elements` | Write | Up to 50 editable elements, only in untitled test projects | yes |
 | `modify_labels` | Write | Text and paper text height of up to 50 Text labels; position changes refused | yes |

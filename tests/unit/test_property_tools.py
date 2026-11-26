@@ -1,6 +1,7 @@
 """SetPropertyValuesOfElements safety tests. Every request goes through MockTransport."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,27 @@ MISSING = "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
 TEXT = "11111111-1111-1111-1111-111111111111"
 LENGTH = "22222222-2222-2222-2222-222222222222"
 ENUM = "33333333-3333-3333-3333-333333333333"
+
+
+def enum_model():
+    fake = model()
+    fake.property_definitions[ENUM] = {
+        "type": "singleEnum",
+        "isEditable": True,
+        "possibleEnumValues": [
+            {
+                "enumValue": {
+                    "enumValueId": {"type": "nonLocalizedValue", "nonLocalizedValue": name},
+                    "displayValue": label,
+                }
+            }
+            for name, label in [("Existing", "Existente"), ("New", "A Construir")]
+        ],
+    }
+    fake.property_values[A, ENUM] = value(
+        "singleEnum", {"type": "nonLocalizedValue", "nonLocalizedValue": "Existing"}
+    )
+    return fake
 
 
 @pytest.fixture(autouse=True)
@@ -91,7 +113,7 @@ async def test_apply_writes_and_reads_back():
         (TEXT, 3, "needs text"),
         (LENGTH, "3 m", "needs a number"),
         (LENGTH, True, "needs a number"),
-        (ENUM, "x", "not supported"),
+        (ENUM, "x", "explicitly be editable"),
     ],
 )
 async def test_wrong_value_type_is_refused_in_preview(prop, new, message):
@@ -198,3 +220,52 @@ async def test_two_instances_require_explicit_target():
     async with client(first, second) as c:
         with pytest.raises(AmbiguousTarget):
             await write.set_property_values(c, [change()])
+
+
+async def test_enum_uses_current_choice_id_and_reads_it_back():
+    fake = enum_model()
+    async with client(fake) as c:
+        result = await apply(c, [change(prop=ENUM, new="New")])
+    assert result["status"] == "verified"
+    stored = fake.property_values[A, ENUM]
+    assert stored == value("singleEnum", {"type": "nonLocalizedValue", "nonLocalizedValue": "New"})
+    assert result["items"][0]["enum_definition"]["isEditable"] is True
+
+
+@pytest.mark.parametrize("requested", ["A Construir", "new", "invented", 1, True])
+async def test_enum_rejects_display_aliases_and_unknown_choices(requested):
+    fake = enum_model()
+    async with client(fake) as c:
+        with pytest.raises(ValueError):
+            await write.set_property_values(c, [change(prop=ENUM, new=requested)], 19723)
+    assert "API.SetPropertyValuesOfElements" not in fake.calls
+
+
+async def test_changed_enum_choices_invalidate_preview():
+    fake = enum_model()
+    async with client(fake) as c:
+        preview = await write.set_property_values(c, [change(prop=ENUM, new="New")], 19723)
+        fake.property_definitions[ENUM]["description"] = "changed definition"
+        with pytest.raises(ValueError, match="changed"):
+            await write.set_property_values(
+                c, [change(prop=ENUM, new="New")], 19723, False, preview["confirmation_token"]
+            )
+    assert "API.SetPropertyValuesOfElements" not in fake.calls
+
+
+async def test_ambiguous_enum_choice_is_refused():
+    fake = enum_model()
+    choices = fake.property_definitions[ENUM]["possibleEnumValues"]
+    choices.append(deepcopy(choices[1]))
+    async with client(fake) as c:
+        with pytest.raises(ValueError, match="ambiguous"):
+            await write.set_property_values(c, [change(prop=ENUM, new="New")], 19723)
+
+
+async def test_enum_success_without_state_change_fails_verification():
+    fake = enum_model()
+    fake.property_set_ignored = True
+    async with client(fake) as c:
+        result = await apply(c, [change(prop=ENUM, new="New")])
+    assert result["status"] == "needs_review"
+    assert result["items"][0]["status"] == "verification_failed"
