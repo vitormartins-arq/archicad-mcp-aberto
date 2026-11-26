@@ -719,6 +719,11 @@ OPERATIONS["create_angle_dimensions"] = (
     "angle_dimension_receipt_id",
     "Native associative angular dimensions from exact favorites, one Undo step; never saves.",
 )
+OPERATIONS["create_radial_dimensions"] = (
+    "radial dimension",
+    "radial_dimension_receipt_id",
+    "Native slab-arc radial dimension candidate, one Undo; never saves.",
+)
 OPERATIONS["save_project_as"] = (
     "project save",
     "save_receipt_id",

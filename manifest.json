@@ -59,6 +59,8 @@
     }
   },
   "tools": [
+    {"name":"get_radial_dimensions","description":"Read native slab-arc radial dimensions."},
+    {"name":"create_radial_dimensions","description":"Candidate guarded radial dimensions with native edge references."},
     {"name": "get_angle_dimensions", "description": "Read native angular dimensions and associative references."},
     {"name": "create_angle_dimensions", "description": "Preview and create native associative angular dimensions from favorites."},
     {

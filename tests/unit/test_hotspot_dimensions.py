@@ -89,6 +89,34 @@ async def test_origin_is_chosen_by_coordinate_and_the_favorite_reaches_the_add_o
     assert item["after"]["witnessPoints"][0]["inIndex"] == 9
 
 
+async def test_slab_requires_persistent_vertex_not_hotspot_ordinal():
+    witness = tool.Witness(element_guid=FIRST, in_index=20)
+    row = {
+        "elementType": 8,
+        "associationRequired": True,
+        "hotspots": [{"inIndex": 20, "x": 1.0, "y": 2.0, "nodeId": 2, "associationResolved": True}],
+    }
+    assert tool._witness(witness, row, "slab")["nodeId"] == 2
+    row["hotspots"][0].pop("nodeId")
+    with pytest.raises(ValueError, match="node ID"):
+        tool._witness(witness, row, "slab")
+    row["hotspots"][0].pop("associationResolved")
+    with pytest.raises(ValueError, match="unresolved"):
+        tool._witness(witness, row, "slab")
+
+
+async def test_static_dimension_never_verified():
+    fake = model()
+    fake.dimension_settings_override = {"static": True}
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        items = [dimension(FIRST, SECOND)]
+        preview = await tool.create_linear_dimensions(c, items, FAVORITE, 19723)
+        result = await tool.create_linear_dimensions(
+            c, items, FAVORITE, 19723, False, preview["confirmation_token"]
+        )
+    assert "settings.static" in result["items"][0]["mismatches"]
+
+
 async def test_text_the_favorite_did_not_apply_fails_verification():
     fake = model()
     async with ArchicadClient(transport=fake_transport(fake)) as c:

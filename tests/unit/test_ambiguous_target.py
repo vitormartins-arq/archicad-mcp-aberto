@@ -62,6 +62,7 @@ from archicad_mcp_aberto.tools import (
     project_save,
     property_definitions,
     publisher,
+    radial_dimensions,
     read,
     renames,
     revisions,
@@ -114,6 +115,18 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "get_radial_dimensions": {},
+    "create_radial_dimensions": {
+        "dimensions": [
+            {
+                "slab_guid": GUID,
+                "floor_index": 0,
+                "arc_begin_index": 1,
+                "end_point": {"x": 2, "y": 2},
+                "favorite": "Radial",
+            }
+        ]
+    },
     "get_angle_dimensions": {},
     "create_angle_dimensions": {
         "dimensions": [
@@ -617,6 +630,7 @@ GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters
 TARGETED = {
     name: function
     for module in (
+        radial_dimensions,
         angle_dimensions,
         groups,
         publisher,
@@ -862,6 +876,17 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             assert selected.own_addon_calls == ["GetSuspendGroups"]
             assert not untouched.calls
             return
+        if name in {"get_radial_dimensions", "create_radial_dimensions"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == [
+                "GetRadialDimensions" if name == "get_radial_dimensions" else "PlanRadialDimensions"
+            ]
+            assert not untouched.calls
+            return
         if name in {"get_angle_dimensions", "create_angle_dimensions"}:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -1024,12 +1049,14 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             }
 
         monkeypatch.setattr(camera_paths, "_plan", camera_plan)
-    if name in {"create_level_dimensions", "create_angle_dimensions"}:
+    if name in {"create_level_dimensions", "create_angle_dimensions", "create_radial_dimensions"}:
 
         async def level_plan(c, dimensions, port, operation):
             return {"operation": operation, "target": {"port": port}, "items": []}
 
         module = angle_dimensions if name == "create_angle_dimensions" else level_dimensions
+        if name == "create_radial_dimensions":
+            module = radial_dimensions
         monkeypatch.setattr(module, "_plan", level_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)

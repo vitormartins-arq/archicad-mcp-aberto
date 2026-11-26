@@ -45,6 +45,7 @@ from archicad_mcp_aberto.tools import (
     project_save,
     property_definitions,
     publisher,
+    radial_dimensions,
     read,
     revisions,
     view_image,
@@ -216,6 +217,31 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         """
         return await groups.set_suspend_groups(
             client_of(ctx), suspended, port, dry_run, confirmation_token
+        )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_radial_dimensions(
+        ctx: Context, port: int | None = None, guids: list[str] | None = None
+    ) -> dict:
+        """Read native RadialDimensions: radius in metres, edge references and favorite style."""
+        return await radial_dimensions.get_radial_dimensions(client_of(ctx), port, guids)
+
+    @mcp.tool(annotations=WRITE)
+    async def create_radial_dimensions(
+        ctx: Context,
+        dimensions: list[radial_dimensions.RadialDimensionCreate],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Candidate: native associative radial dimensions from actual slab polygon arcs.
+
+        Exact RadialDimension favorite, floor_index, slab_guid, arc_begin_index and end_point
+        in metres. No static fallback. Strict preview/token, one Undo, native/read-back guards.
+        Requires updated companion and disposable-project acceptance before real application.
+        """
+        return await radial_dimensions.create_radial_dimensions(
+            client_of(ctx), dimensions, port, dry_run, confirmation_token
         )
 
     @mcp.tool(annotations=READ_ONLY)

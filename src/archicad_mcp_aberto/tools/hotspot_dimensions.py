@@ -192,6 +192,24 @@ def _witness(witness: Witness, row: dict, label: str) -> dict:
         out["line"] = True
     if witness.special is not None:
         out["special"] = witness.special
+    if row.get("associationRequired") or row.get("elementType") in {"Slab", 8}:
+        matches = [
+            h
+            for h in row.get("hotspots", [])
+            if h.get("inIndex") == hotspot["inIndex"]
+            and math.hypot(h.get("x", math.inf) - hotspot["x"], h.get("y", math.inf) - hotspot["y"])
+            <= 1e-7
+        ]
+        nodes = {h.get("nodeId") for h in matches if h.get("associationResolved") is True}
+        if witness.line or len(nodes) != 1:
+            raise ValueError(
+                f"{label}: slab vertex identity unresolved; "
+                "update companion and read fresh hotspots."
+            )
+        node = next(iter(nodes))
+        if type(node) is not int or node <= 0:
+            raise ValueError(f"{label}: invalid persistent slab node ID; no static fallback.")
+        out["nodeId"] = node
     return out
 
 
@@ -202,7 +220,12 @@ def _signature(witnesses: list[dict], direction: dict) -> tuple:
     if x < -1e-6 or (abs(x) <= 1e-6 and y < 0):
         x, y = -x, -y
     points = sorted(
-        (str((w.get("elementId") or {}).get("guid", "")).upper(), w.get("inIndex"))
+        (
+            str((w.get("elementId") or {}).get("guid", "")).upper(),
+            ("vertex", w["nodeId"])
+            if w.get("nodeId") and w.get("elementType") in {None, 8, "Slab"}
+            else ("hotspot", w.get("inIndex")),
+        )
         for w in witnesses
     )
     return tuple(points), round(x, 4) + 0.0, round(y, 4) + 0.0
@@ -315,7 +338,11 @@ def _mismatches(item: dict, row: dict) -> list[str]:
             problems.append(f"witnessPoints.{n}.elementId")
         if got.get("inIndex") != want["inIndex"]:
             problems.append(f"witnessPoints.{n}.inIndex")
+        if "nodeId" in want and got.get("nodeId") != want["nodeId"]:
+            problems.append(f"witnessPoints.{n}.nodeId")
     settings = row.get("settings") or {}
+    if settings.get("static") is not False:
+        problems.append("settings.static")
     if "favorite_settings" in item:
         for path in COMPARED_SETTINGS:
             if not _same(_setting(settings, path), _setting(item["favorite_settings"], path)):
