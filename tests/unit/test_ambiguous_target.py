@@ -27,6 +27,7 @@ from archicad_mcp_aberto.tools import (
     edit,
     element_structure,
     favorites,
+    floor_backgrounds,
     gateway,
     grids,
     groups,
@@ -115,6 +116,8 @@ MODIFY_TYPES = {
 }
 SCENE = {"name": "Sala - 1P 01", "camera": {"x": 0, "y": 0, "z": 1.3}, "target": {"x": 5, "y": 0}}
 INPUTS = {
+    "get_floor_surface_backgrounds": {"guids": [GUID]},
+    "set_floor_surface_backgrounds": {"guids": [GUID], "scope_id": PROP},
     "get_radial_dimensions": {},
     "create_radial_dimensions": {
         "dimensions": [
@@ -630,6 +633,7 @@ GDL_TOOLS = {"get_gdl_parameters", "set_gdl_parameters", "set_element_parameters
 TARGETED = {
     name: function
     for module in (
+        floor_backgrounds,
         radial_dimensions,
         angle_dimensions,
         groups,
@@ -876,6 +880,19 @@ async def test_explicit_port_reaches_only_requested_instance(name, port):
             assert selected.own_addon_calls == ["GetSuspendGroups"]
             assert not untouched.calls
             return
+        if name in {"get_floor_surface_backgrounds", "set_floor_surface_backgrounds"}:
+            from archicad_mcp_aberto.connection import AddOnError
+
+            with pytest.raises(AddOnError):
+                await TARGETED[name](c, port=port, **deepcopy(INPUTS[name]))
+            selected, untouched = (first, second) if port == 19723 else (second, first)
+            assert selected.own_addon_calls == [
+                "GetFloorSurfaceBackgroundState"
+                if name.startswith("get_")
+                else "PlanFloorSurfaceBackgrounds"
+            ]
+            assert not untouched.calls
+            return
         if name in {"get_radial_dimensions", "create_radial_dimensions"}:
             from archicad_mcp_aberto.connection import AddOnError
 
@@ -1049,7 +1066,12 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
             }
 
         monkeypatch.setattr(camera_paths, "_plan", camera_plan)
-    if name in {"create_level_dimensions", "create_angle_dimensions", "create_radial_dimensions"}:
+    if name in {
+        "create_level_dimensions",
+        "create_angle_dimensions",
+        "create_radial_dimensions",
+        "set_floor_surface_backgrounds",
+    }:
 
         async def level_plan(c, dimensions, port, operation):
             return {"operation": operation, "target": {"port": port}, "items": []}
@@ -1057,6 +1079,8 @@ async def test_write_apply_requires_explicit_port_before_dispatch(name, tmp_path
         module = angle_dimensions if name == "create_angle_dimensions" else level_dimensions
         if name == "create_radial_dimensions":
             module = radial_dimensions
+        if name == "set_floor_surface_backgrounds":
+            module = floor_backgrounds
         monkeypatch.setattr(module, "_plan", level_plan)
     async with client(first, second) as c:
         preview = await TARGETED[name](c, port=19724, **arguments)
