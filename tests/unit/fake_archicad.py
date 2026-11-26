@@ -346,6 +346,7 @@ class FakeArchicad:
     elements: dict[str, str] = field(default_factory=dict)  # guid -> type
     selection: list[str] = field(default_factory=list)
     properties: dict[str, str] = field(default_factory=dict)  # guid -> name
+    property_definitions: dict[str, dict] = field(default_factory=dict)
     stories: list[dict] = field(
         default_factory=lambda: [{"index": 0, "name": "Térreo", "level": 0.0}]
     )
@@ -790,6 +791,7 @@ class FakeArchicad:
                     continue
                 # Key layout seen live on AC30 build 3001 (propertyId.guid, not "guid").
                 definition = {"propertyId": {"guid": g}, "name": self.properties[g]}
+                definition.update(deepcopy(self.property_definitions.get(g, {})))
                 if g in self.read_only_properties:
                     definition["isEditable"] = False
                 out.append({"propertyDefinition": definition})

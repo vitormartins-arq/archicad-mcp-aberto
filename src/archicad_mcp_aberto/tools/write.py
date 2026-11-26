@@ -1768,6 +1768,34 @@ async def _read_values(
     return out
 
 
+def _single_enum_value(definition: dict, requested: Any) -> dict:
+    """Resolve only an exact API enumeration ID from the property's editable definition."""
+    if definition.get("isEditable") is not True or definition.get("type") != "singleEnum":
+        raise ValueError("single-enum definition must explicitly be editable")
+    if not isinstance(requested, str):
+        raise ValueError("single-enum values require an exact nonlocalized value or GUID")
+    possible = definition.get("possibleEnumValues")
+    if not isinstance(possible, list) or not possible:
+        raise ValueError("single-enum choices could not be read")
+    matches = []
+    for wrapped in possible:
+        option = wrapped.get("enumValue") if isinstance(wrapped, dict) else None
+        identifier = option.get("enumValueId") if isinstance(option, dict) else None
+        if not isinstance(identifier, dict):
+            raise ValueError("invalid single-enum choice definition")
+        if identifier.get("type") == "nonLocalizedValue":
+            key = identifier.get("nonLocalizedValue")
+        elif identifier.get("type") == "guid":
+            key = identifier.get("guid")
+        else:
+            raise ValueError("unsupported single-enum identifier type")
+        if key == requested:
+            matches.append(identifier)
+    if len(matches) != 1:
+        raise ValueError("enum value is absent or ambiguous in the property's choices")
+    return deepcopy(matches[0])
+
+
 async def _property_plan(
     client: ArchicadClient, changes: list[PropertyChange], port: int | None, operation: str
 ) -> dict:
@@ -1797,12 +1825,16 @@ async def _property_plan(
         if not isinstance(value, dict):
             raise ValueError(f"{label}: cannot read the current value ({row}).")
         kind = value.get("type")
-        if kind not in SCALAR_TYPES:
+        if kind not in SCALAR_TYPES and kind != "singleEnum":
             raise ValueError(f"{label}: value type {kind!r} is not supported yet.")
         if value.get("status") == "notAvailable":
             raise ValueError(f"{label}: the property is not available for this element.")
         try:
-            new = _coerce(kind, change.value)
+            new = (
+                _single_enum_value(definition, change.value)
+                if kind == "singleEnum"
+                else _coerce(kind, change.value)
+            )
         except ValueError as exc:
             raise ValueError(f"{label}: a {kind} property {exc}.") from None
         items.append(
@@ -1813,6 +1845,7 @@ async def _property_plan(
                 "property_guid": change.property_guid,
                 "property_name": definition.get("name"),
                 "before": value,
+                **({"enum_definition": deepcopy(definition)} if kind == "singleEnum" else {}),
                 "parameters": {
                     "elementId": {"guid": change.element_guid},
                     "propertyId": {"guid": change.property_guid},
@@ -1893,7 +1926,7 @@ async def set_property_values(
 ) -> dict:
     """Preview/apply up to 100 property values (element + property + new value).
 
-    Scalar types only (text, number, integer, boolean, length, area, volume, angle).
+    Scalars and editable single-enums resolved against the current property's choices.
     The preview shows the current and new value and refuses read-only or unavailable
     properties; applying reads every value back. Never saves.
     """
