@@ -838,6 +838,10 @@
     {
       "name": "set_draw_order",
       "description": "Preview/apply annotation display order, preserving physical positions and ownership."
+    },
+    {
+      "name": "supersede_visual_reviews",
+      "description": "Resolve obsolete correction reviews through a fresh visually inspected replacement, preserving failed history."
     }
   ],
   "compatibility": {

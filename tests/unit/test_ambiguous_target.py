@@ -721,6 +721,7 @@ async def test_all_registered_targeted_tools_have_cases():
         "capture_visual_review",
         "review_visual_result",
         "reconcile_visual_review",
+        "supersede_visual_reviews",
     }
     assert registered == set(TARGETED)
     assert registered <= INPUTS.keys()

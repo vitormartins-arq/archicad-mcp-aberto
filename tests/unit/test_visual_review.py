@@ -538,3 +538,142 @@ async def test_nonsettling_context_refuses_capture_before_dispatch(fake, monkeyp
     assert record["status"] == "blocked"
     assert not record["evidence"]
     assert fake.state.plan_calls == fake.state.window_calls == 0
+
+
+async def supersession_pair(fake):
+    old = await apply(fake)
+    await approve(fake, old, outcome="needs_correction")
+    final = await apply(fake)
+    old_id = body(old)["visual_review"]["review_id"]
+    final_id = body(final)["visual_review"]["review_id"]
+    await fake.call(
+        "reconcile_visual_review",
+        review_id=old_id,
+        read_tool="read_state",
+        arguments={},
+        port=19723,
+    )
+    await approve(fake, final)
+    return old_id, final_id
+
+
+async def supersede(fake, old_id, final_id):
+    return await fake.call(
+        "supersede_visual_reviews",
+        review_ids=[old_id],
+        replacement_review_id=final_id,
+        port=19723,
+        observation=(
+            "Final correction replaces the old position; readback and image cover all targets."
+        ),
+    )
+
+
+@pytest.mark.anyio
+async def test_supersession_preserves_failed_history_and_allows_final_save(fake):
+    old_id, final_id = await supersession_pair(fake)
+    original = json.loads((fake.root / f"{old_id}.json").read_text())
+    with pytest.raises(Exception, match="incomplete"):
+        await fake.call("finish_model_task", port=19723)
+    result = body(await supersede(fake, old_id, final_id))
+    record = fake.mcp.visual_reviews.records[old_id]
+    assert result["reviews"][0]["status"] == "superseded"
+    assert record["task_complete"] is False
+    assert record["assessment"] == original["assessment"]
+    assert record["model_receipt"] == original["model_receipt"]
+    assert record["evidence"] == original["evidence"]
+    assert record["supersession"]["previous_status"] == "needs_correction"
+    await fake.call("finish_model_task", port=19723)
+    restored = review.VisualReviews(fake.root)
+    assert restored.resolved(restored.records[old_id])
+    assert fake.mcp.visual_reviews.sample("change", record["context"]) != old_id
+    with pytest.raises(Exception, match="historical"):
+        await fake.call("capture_visual_review", review_ids=[old_id], port=19723)
+    with pytest.raises(Exception, match="cannot be approved"):
+        await fake.call(
+            "review_visual_result",
+            review_ids=[old_id],
+            port=19723,
+            evidence_id=record["evidence"][-1]["evidence_id"],
+            outcome="passed",
+            observation="Attempt to approve an obsolete incorrect configuration.",
+        )
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "unpassed",
+        "stale",
+        "tampered",
+        "missing_readback",
+        "other_project",
+        "other_scope",
+        "other_client",
+        "self",
+        "already_passed",
+    ],
+)
+async def test_supersession_refuses_missing_or_invalid_final_evidence(fake, fault):
+    old_id, final_id = await supersession_pair(fake)
+    records = fake.mcp.visual_reviews.records
+    old, final = records[old_id], records[final_id]
+    if fault == "unpassed":
+        final["status"] = "needs_correction"
+    if fault == "stale":
+        fake.state.stamp += 1
+    if fault == "tampered":
+        from pathlib import Path
+
+        Path(final["evidence"][-1]["path"]).write_bytes(b"changed")
+    if fault == "missing_readback":
+        old.pop("numeric_reconciliation")
+    if fault == "other_project":
+        old["context"]["sessionId"] = "another"
+    if fault == "other_scope":
+        old["required_representation"] = "layout"
+    if fault == "other_client":
+        old["client_session"] = "another"
+    if fault == "self":
+        final_id = old_id
+    if fault == "already_passed":
+        old["status"] = "passed"
+    with pytest.raises(Exception, match="review|Replacement|Choose|session"):
+        await supersede(fake, old_id, final_id)
+    assert "supersession" not in old
+
+
+@pytest.mark.anyio
+async def test_reopened_replacement_blocks_dependent_superseded_reviews(fake):
+    old_id, final_id = await supersession_pair(fake)
+    await supersede(fake, old_id, final_id)
+    await fake.call("capture_visual_review", review_ids=[final_id], port=19723)
+    assert not fake.mcp.visual_reviews.resolved(fake.mcp.visual_reviews.records[old_id])
+    with pytest.raises(Exception, match="incomplete"):
+        await fake.call("finish_model_task", port=19723)
+
+
+@pytest.mark.anyio
+async def test_supersession_requires_explicit_port_with_two_simulated_instances(tmp_path):
+    from archicad_mcp_aberto.connection import ArchicadClient
+    from tests.unit.fake_archicad import FakeArchicad, fake_transport
+
+    first, second = FakeArchicad(19723), FakeArchicad(19724)
+    async with ArchicadClient(
+        ports=[19723, 19724], transport=fake_transport(first, second)
+    ) as client:
+        mcp = visual_mcp.VisualReviewMCP("ambiguous", visual_review_root=tmp_path)
+        ctx = SimpleNamespace(request_context=SimpleNamespace(lifespan_context={"client": client}))
+        with pytest.raises(Exception, match="port"):
+            await mcp._tool_manager.call_tool(
+                "supersede_visual_reviews",
+                {
+                    "review_ids": ["obsolete"],
+                    "replacement_review_id": "final",
+                    "observation": (
+                        "The final correction covers all obsolete targets and side effects."
+                    ),
+                },
+                context=ctx,
+            )

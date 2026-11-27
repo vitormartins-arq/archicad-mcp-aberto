@@ -33,7 +33,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **195 registered tools**: **80 read-only**, **8 view/session actions** and
+Pre-alpha with **196 registered tools**: **81 read-only**, **8 view/session actions** and
 **107 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -1030,3 +1030,7 @@ User-facing files are generated from `distribution.json`: name plus material rev
 See [the distribution contract](docs/DISTRIBUTION.md) for packaging, immutable revisions,
 Archicad-major folders and the separate Main/test Drive delivery. R03 is proposed;
 existing R01/R02 files are unchanged.
+
+Obsolete correction attempts can be closed with `supersede_visual_reviews` after fresh
+readback and visual approval of their replacement, preserving the failed history.
+See [visual review workflow](docs/VISUAL_REVIEW.md#superseded-corrections).

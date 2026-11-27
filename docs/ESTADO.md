@@ -1246,3 +1246,15 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Other model/host types remain refused. No live model edit; numerical and visual live
   acceptance belongs to the caller. Sample lifecycle proposal stays local/uninstalled
   on proposal/visual-sample-lifecycle, separate from these corrections.
+
+
+- Codex, 27 November 2026: `feat/visual-review-supersession` adds a ledger-only
+  `supersede_visual_reviews` operation. Each obsolete pending/correction needs actual
+  fresh getter reconciliation; a same-project/client/representation replacement needs
+  current intact image evidence and an explicit passed assessment covering all targets.
+  Original receipts, failed assessments and images are retained. Superseded is not passed
+  and cannot serve as an early sample. Reopening the replacement blocks final saving.
+  No stamp tolerance, automatic approval, model write or live project access introduced.
+  Validation: `uv run pytest` (3604 passed), `uv run ruff check .` and distribution
+  revision check passed. R26 is source-only; no active runtime installation performed.
+  The configured community lessons-log path was absent; this state entry is retained.

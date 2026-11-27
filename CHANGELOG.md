@@ -641,3 +641,6 @@
   grouping path, excluding hosts/embedded openings. Object verification compares full
   readable geometry, ID, GDL parameters and classifications; no GDL/property/classification
   setter is sent. Missing readback cannot be reported verified. Simulated only.
+
+- Add audited visual-review supersession: fresh readback and an inspected replacement
+  resolve obsolete corrections without approving the old result or relaxing capture checks.

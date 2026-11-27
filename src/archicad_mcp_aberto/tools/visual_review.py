@@ -254,7 +254,7 @@ class VisualReviews:
         pending = [
             r["review_id"]
             for r in self.records.values()
-            if r.get("status") not in {"passed", "preview_only"}
+            if not self.resolved(r)
             and (r.get("context") is None or same_project(r.get("context"), current))
         ]
         if pending:
@@ -262,6 +262,83 @@ class VisualReviews:
                 f"Visual inspection is incomplete: {pending}. "
                 "Capture the correct context and inspect before final saving."
             )
+
+    def resolved(self, record: dict) -> bool:
+        if record.get("status") in {"passed", "preview_only"}:
+            return True
+        if record.get("status") != "superseded":
+            return False
+        link = record.get("supersession", {})
+        replacement = self.records.get(link.get("replacement_review_id"), {})
+        return bool(
+            replacement.get("status") == "passed"
+            and replacement.get("assessment") == link.get("replacement_assessment")
+            and same_project(record.get("context"), replacement.get("context"))
+        )
+
+    async def supersede(self, client, review_ids, replacement_review_id, port, observation):
+        """Resolve obsolete attempts by reference, never approve their old outcome."""
+        if (
+            not 1 <= len(review_ids) <= 50
+            or len(set(review_ids)) != len(review_ids)
+            or replacement_review_id in review_ids
+            or len(observation.strip()) < 40
+        ):
+            raise ValueError(
+                "Choose 1-50 distinct obsolete reviews and explain coverage/correction."
+            )
+        current = await self.identity(client, port)
+        replacement = self.get(replacement_review_id, client, port)
+        assessment = replacement.get("assessment", {})
+        evidence = next(
+            (
+                e
+                for e in replacement.get("evidence", [])
+                if e["evidence_id"] == assessment.get("evidence_id")
+            ),
+            None,
+        )
+        if (
+            replacement.get("status") != "passed"
+            or not evidence
+            or evidence["context"] != current
+            or not all(
+                assessment.get(k)
+                for k in ("context_correct", "framing_sufficient", "readable", "full_coverage")
+            )
+            or hashlib.sha256(Path(evidence["path"]).read_bytes()).hexdigest() != evidence["sha256"]
+        ):
+            raise ValueError("Replacement needs a fresh, intact, passed visual assessment.")
+        records = [self.get(key, client, port) for key in review_ids]
+        for record in records:
+            if (
+                record.get("status")
+                not in {"needs_correction", "blocked", "awaiting_capture", "awaiting_inspection"}
+                or not record.get("context")
+                or not same_project(record["context"], current)
+                or record.get("required_representation")
+                != replacement.get("required_representation")
+                or record.get("numeric_reconciliation", {}).get("context") != current
+            ):
+                raise ValueError(
+                    "Obsolete review needs same-project/scope fresh readback reconciliation."
+                )
+        for record in records:
+            record["supersession"] = {
+                "replacement_review_id": replacement_review_id,
+                "replacement_assessment": dict(assessment),
+                "previous_status": record["status"],
+                "observation": observation,
+                "context": current,
+                "actor": "assistant_reported_correction_coverage",
+            }
+            record.update(status="superseded", task_complete=False)
+            self.save(record)
+        return {
+            "reviews": [self.summary(r) for r in records],
+            "replacement_review_id": replacement_review_id,
+            "note": "Old attempts were not approved. Final completion depends on the replacement.",
+        }
 
     def sample(self, tool: str, context: dict, before_id: str | None = None) -> str | None:
         for record in reversed(list(self.records.values())):
@@ -327,6 +404,8 @@ class VisualReviews:
             record = self.records.get(key)
             if not record or record.get("port") != port:
                 raise ValueError("Unknown visual review or wrong port.")
+            if record.get("status") == "superseded":
+                raise ValueError("Superseded reviews are historical; inspect the replacement.")
             if current and record.get("context") and not same_project(record["context"], current):
                 raise ValueError("The reviewed project/session has changed.")
             records.append(record)
@@ -439,6 +518,7 @@ class VisualReviews:
                 "item_count",
                 "early_sample_review_id",
                 "blocker",
+                "supersession",
             )
             if k in record
         } | {
@@ -470,6 +550,8 @@ class VisualReviews:
         current = await self.identity(client, port)
         records = [self.get(key, client, port) for key in review_ids]
         for record in records:
+            if record.get("status") == "superseded":
+                raise ValueError("Superseded reviews cannot be approved or reassessed.")
             matches = [e for e in record["evidence"] if e["evidence_id"] == evidence_id]
             if len(matches) != 1 or matches[0]["context"] != current:
                 raise ValueError("Evidence missing or stale. Capture the correct context again.")

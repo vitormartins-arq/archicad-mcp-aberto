@@ -121,3 +121,33 @@ PrintWindow, which can force regeneration and advance Archicad's project stamp. 
 exact context check stays enabled. The target must be visible; stale/occluded display
 is not acceptable evidence, and the assistant must still inspect actual context and
 legibility. A failed copy is refused rather than falling back to forced repaint.
+
+
+## Superseded corrections
+
+An incorrect/reverted attempt must never be marked passed just to clear the save gate.
+Use `supersede_visual_reviews(review_ids, replacement_review_id, observation, port)`:
+
+1. Apply the actual correction using its existing preview/token and receipt flow.
+2. For EACH obsolete review, use `reconcile_visual_review` with an appropriate getter.
+   Read the result and account for the final state, including reversions and side effects.
+3. Capture and inspect the replacement at readable scale with full coverage of ALL
+   affected targets. Pass its visual assessment normally. An unknown numeric outcome
+   still requires its own readback reconciliation.
+4. Link the obsolete attempts to that passed replacement. Explain what was corrected,
+   what the final readback confirms and how the inspected images cover the old scope.
+
+The operation changes only the local review ledger. It preserves original numeric
+receipts, evidence and assessments, records previous status and the replacement
+assessment, and sets `status: superseded`, **not** `passed`; `task_complete` stays false
+on the obsolete attempt. It cannot be reused as an early sample or assessed again.
+Only pending/blocked/needs-correction attempts in the same native project, MCP client,
+port and representation can be linked. Self-links, repeated IDs, already passed records,
+missing readback, stale/tampered/unapproved replacement evidence are refused. Recapture
+old MCP-client records explicitly before reconciliation when resuming after a restart.
+
+The save gate resolves the obsolete obligation only while the referenced replacement
+remains passed with the same assessment. Reopening that review blocks completion again.
+No cyclic chains, automatic visual approvals, ignored modification stamps, model writes
+or retries are introduced. The assistant must truthfully establish replacement coverage;
+the server has no vision model and cannot infer semantic target coverage from JSON.

@@ -193,6 +193,31 @@ class VisualReviewMCP(FastMCP):
                 )
 
         @self.tool(annotations=READ)
+        async def supersede_visual_reviews(
+            ctx: Context,
+            review_ids: list[str],
+            replacement_review_id: str,
+            observation: str,
+            port: int,
+        ) -> dict:
+            """Close obsolete correction attempts without marking them visually passed.
+
+            First reconcile EACH obsolete review with an appropriate registered getter.
+            Inspect and pass the final replacement with fresh real-image evidence covering
+            every affected target, including reversions and collateral changes. Explain
+            concretely which attempts were replaced, final readback and complete coverage.
+            Same project/session/representation only. Old receipts/evidence are preserved;
+            superseded reviews cannot serve as early samples or be approved later.
+            No model write, capture, automatic approval or stamp tolerance is performed.
+            """
+            client = ctx.request_context.lifespan_context["client"]
+            chosen = await resolve_port(client, port)
+            async with self.visual_reviews.lock:
+                return await self.visual_reviews.supersede(
+                    client, review_ids, replacement_review_id, chosen, observation
+                )
+
+        @self.tool(annotations=READ)
         async def visual_review_coverage() -> dict:
             """Audit coverage of every currently registered project/model write tool.
 
