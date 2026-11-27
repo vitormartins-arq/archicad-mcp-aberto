@@ -115,3 +115,9 @@ Failure receipts record changed context fields and private before/after values f
 troubleshooting. Those runtime receipts may contain project paths and must not be
 published as fixtures. This change does not prove that an observed stamp increment was
 only a redraw: no delta allowance, ignored stamp or numeric-only visual approval exists.
+
+Windows window capture now copies the existing surface with BitBlt instead of sending
+PrintWindow, which can force regeneration and advance Archicad's project stamp. The
+exact context check stays enabled. The target must be visible; stale/occluded display
+is not acceptable evidence, and the assistant must still inspect actual context and
+legibility. A failed copy is refused rather than falling back to forced repaint.

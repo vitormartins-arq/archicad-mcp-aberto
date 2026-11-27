@@ -1234,3 +1234,8 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   blocked; structured runtime diagnostics preserve the compared contexts. Read-only live
   diagnosis observed stamp changes around capture, but no real editing/saving command was
   issued. Further live calls suspended while the project is busy; acceptance pending.
+
+- Codex, 27 November 2026: confirmed a non-repainting BitBlt window capture with exact
+  equal before/after project context, whereas forced-render capture advanced the stamp.
+  Use displayed pixels without PrintWindow, keep physical DPI and strict context checks.
+  This establishes capture behavior, not approval of the model. No editing/save commands.

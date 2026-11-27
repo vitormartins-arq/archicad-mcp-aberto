@@ -633,3 +633,6 @@
 
 - Fix visual capture fallback context: wait for exact bounded stabilization before each
   attempt, retain strict during-capture stamp checks and report changed context fields.
+
+- Read Windows window pixels with BitBlt instead of requesting PrintWindow regeneration;
+  keep exact state checks and refuse failed/blank captures without a repaint fallback.

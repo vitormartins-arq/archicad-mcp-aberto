@@ -142,3 +142,32 @@ def test_failed_dpi_restoration_is_not_reported_as_a_successful_capture():
     with pytest.raises(RuntimeError, match="restore"):
         with tool._physical_pixels(SimpleNamespace(SetThreadDpiAwarenessContext=setter)):
             pass
+
+
+class BitmapCopier:
+    def __init__(self, success=True):
+        self.success = success
+        self.calls = []
+
+    def __call__(self, *args):
+        self.calls.append(args)
+        return int(self.success)
+
+
+def test_window_copy_reads_existing_surface_without_repaint():
+    from types import SimpleNamespace
+
+    copier = BitmapCopier()
+    # No PrintWindow member exists on this fake: the safe path cannot invoke it.
+    tool._copy_window_bitmap(SimpleNamespace(BitBlt=copier), 11, 22, 2586, 1626)
+    assert copier.calls == [(11, 0, 0, 2586, 1626, 22, 0, 0, 0x00CC0020)]
+    assert len(copier.argtypes) == 9
+
+
+def test_failed_bitmap_copy_refuses_instead_of_forcing_repaint():
+    from types import SimpleNamespace
+
+    copier = BitmapCopier(success=False)
+    with pytest.raises(ValueError, match="displayed pixels"):
+        tool._copy_window_bitmap(SimpleNamespace(BitBlt=copier), 11, 22, 2586, 1626)
+    assert len(copier.calls) == 1
