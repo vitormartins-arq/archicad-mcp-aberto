@@ -1227,3 +1227,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   combined visual-review, Symbol label, draw-order, DPI and busy-diagnostic PR on
   `fix/label-visibility-dpi`; R20 supersedes the earlier local-only status above.
   Tests are simulated; no model write performed by this branch.
+
+- Codex, 27 November 2026: visual capture fallbacks now stabilize and compare their own
+  exact before/after context. A failed export no longer poisons later stable captures.
+  Images changing during their own capture, project changes and unsettled contexts remain
+  blocked; structured runtime diagnostics preserve the compared contexts. Read-only live
+  diagnosis observed stamp changes around capture, but no real editing/saving command was
+  issued. Further live calls suspended while the project is busy; acceptance pending.

@@ -630,3 +630,6 @@
   in busy diagnostics. Add safe annotation draw-order edits and Symbol labels created
   from explicit favorites, preserving owners and checking native readback. Document
   Symbol GDL background parameters separately from header style settings.
+
+- Fix visual capture fallback context: wait for exact bounded stabilization before each
+  attempt, retain strict during-capture stamp checks and report changed context fields.

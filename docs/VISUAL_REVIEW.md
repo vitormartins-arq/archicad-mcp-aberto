@@ -101,3 +101,17 @@ corrections, stale/tampered evidence, durable restart state, real ambiguous-targ
 resolution, readback reconciliation and public/private registration inheritance.
 Offline tests are not real Archicad visual acceptance. Local installation and loading
 in a fresh MCP process must be reported separately from an already running connection.
+
+## Capture context per attempt
+
+Each capture capability now waits for a bounded exact context stabilization and uses
+that context as its own before/after boundary. A native export discarded for a changed
+stamp must not poison a subsequent stable window capture by sharing its earlier stamp.
+Project/session identity changes are never rebased. If a source changes the stamp during
+its own capture, that image is still discarded; if context never settles, no capture is
+accepted. Assessment continues to require the exact current evidence context and file hash.
+
+Failure receipts record changed context fields and private before/after values for
+troubleshooting. Those runtime receipts may contain project paths and must not be
+published as fixtures. This change does not prove that an observed stamp increment was
+only a redraw: no delta allowance, ignored stamp or numeric-only visual approval exists.

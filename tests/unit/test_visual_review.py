@@ -84,6 +84,10 @@ def fake(tmp_path, monkeypatch):
             raise ValueError("Window is unavailable")
         return {"port": port, "title": "Synthetic fixture", "png": png(state.blank)}
 
+    async def no_wait(_):
+        return None
+
+    monkeypatch.setattr(review, "_settle_pause", no_wait)
     monkeypatch.setattr(mcp.visual_reviews, "identity", identity)
     monkeypatch.setattr(visual_mcp, "resolve_port", resolve)
     monkeypatch.setattr(review.view_image, "capture_view_image", plan)
@@ -455,3 +459,82 @@ async def test_visual_review_uses_real_resolver_with_two_simulated_instances(tmp
         ctx = SimpleNamespace(request_context=SimpleNamespace(lifespan_context={"client": client}))
         with pytest.raises(Exception, match="port"):
             await mcp._tool_manager.call_tool("get_visual_reviews", {}, context=ctx)
+
+
+@pytest.mark.anyio
+async def test_discard_changed_export_then_capture_stable_window_with_fresh_context(
+    fake, monkeypatch
+):
+    async def changed_plan(client, zoom=None, port=None):
+        fake.state.stamp += 1
+        return {"png_base64": base64.b64encode(png()).decode(), "port": port}
+
+    monkeypatch.setattr(review.view_image, "capture_view_image", changed_plan)
+    result = await apply(fake)
+    record = fake.mcp.visual_reviews.records[body(result)["visual_review"]["review_id"]]
+    assert record["capture_attempts"][0]["status"] == "failed"
+    assert record["capture_attempts"][0]["changed_context_fields"] == ["modificationStamp"]
+    assert record["capture_attempts"][1]["status"] == "captured"
+    assert len(record["evidence"]) == 1
+    assert record["evidence"][0]["source"] == "window"
+    assert record["evidence"][0]["context"]["modificationStamp"] == str(fake.state.stamp)
+    assert record["task_complete"] is False  # Capturing never constitutes approval.
+    await approve(fake, result)
+
+
+@pytest.mark.anyio
+async def test_every_source_changing_during_its_own_capture_remains_blocked(fake, monkeypatch):
+    async def changed_plan(client, zoom=None, port=None):
+        fake.state.stamp += 1
+        return {"png_base64": base64.b64encode(png()).decode()}
+
+    async def changed_window(client, port=None):
+        fake.state.stamp += 1
+        return {"png": png()}
+
+    async def changed_3d(*args, **kwargs):
+        fake.state.stamp += 1
+        return {"image": base64.b64encode(png()).decode()}
+
+    monkeypatch.setattr(review.view_image, "capture_view_image", changed_plan)
+    monkeypatch.setattr(review.window_capture, "get_archicad_window_image", changed_window)
+    monkeypatch.setattr(review.scenes, "_addon", changed_3d)
+    result = await apply(fake)
+    record = fake.mcp.visual_reviews.records[body(result)["visual_review"]["review_id"]]
+    assert record["status"] == "blocked"
+    assert not record["evidence"]
+    assert len(record["capture_attempts"]) == 3
+    assert all(
+        a["changed_context_fields"] == ["modificationStamp"] for a in record["capture_attempts"]
+    )
+    assert not any(c.type == "image" for c in result.content)
+
+
+@pytest.mark.anyio
+async def test_project_switch_during_export_cannot_be_rebased_for_fallback(fake, monkeypatch):
+    async def changed_plan(client, zoom=None, port=None):
+        fake.state.session = "different-project-session"
+        return {"png_base64": base64.b64encode(png()).decode()}
+
+    monkeypatch.setattr(review.view_image, "capture_view_image", changed_plan)
+    result = await apply(fake)
+    record = fake.mcp.visual_reviews.records[body(result)["visual_review"]["review_id"]]
+    assert record["status"] == "blocked"
+    assert not record["evidence"]
+    assert fake.state.window_calls == 0
+
+
+@pytest.mark.anyio
+async def test_nonsettling_context_refuses_capture_before_dispatch(fake, monkeypatch):
+    original_identity = fake.mcp.visual_reviews.identity
+
+    async def moving_identity(client, port):
+        fake.state.stamp += 1
+        return await original_identity(client, port)
+
+    monkeypatch.setattr(fake.mcp.visual_reviews, "identity", moving_identity)
+    result = await apply(fake)
+    record = fake.mcp.visual_reviews.records[body(result)["visual_review"]["review_id"]]
+    assert record["status"] == "blocked"
+    assert not record["evidence"]
+    assert fake.state.plan_calls == fake.state.window_calls == 0

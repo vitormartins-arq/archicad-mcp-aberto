@@ -23,6 +23,7 @@ from archicad_mcp_aberto.tools import project_save, read, scenes, view_image, wi
 IDENTITY = ("sessionId", "projectEpoch", "projectPath")
 SAVE_TOOLS = {"finish_model_task", "save_project_as", "save_next_project_revision"}
 CHECKPOINT_TOOLS = {"begin_model_task"}
+_settle_pause = asyncio.sleep
 
 
 def inspect_png(data: bytes) -> dict:
@@ -228,6 +229,26 @@ class VisualReviews:
     async def identity(self, client, port: int) -> dict:
         return await project_save._context(client, port)
 
+    async def capture_context(self, client, port: int) -> dict:
+        """Exact bounded stabilization before a capture; never waive model stamps.
+
+        A discarded native export can cause deferred updates. Each fallback starts
+        a new observation interval after those updates settle, instead of reusing
+        the context from before the failed export. Project identity must never change.
+        """
+        first = previous = await self.identity(client, port)
+        matches = 0
+        for _ in range(12):
+            await _settle_pause(0.15)
+            current = await self.identity(client, port)
+            if not same_project(first, current):
+                raise ValueError("Project/session changed while settling capture context.")
+            matches = matches + 1 if current == previous else 0
+            if matches >= 2:
+                return current
+            previous = current
+        raise ValueError("Project context did not settle; no image accepted.")
+
     async def assert_complete(self, client, port: int) -> None:
         current = await self.identity(client, port)
         pending = [
@@ -318,7 +339,11 @@ class VisualReviews:
         ):
             choices = ["window", "plan"]
         for capability in choices:
+            before = after = None
             try:
+                before = await self.capture_context(client, port) if current else {}
+                if current and not same_project(current, before):
+                    raise ValueError("The reviewed project/session changed before capture.")
                 if capability == "plan":
                     raw = await view_image.capture_view_image(client, zoom, port)
                     data = base64.b64decode(raw["png_base64"], validate=True)
@@ -335,7 +360,7 @@ class VisualReviews:
                     raise ValueError("Source must be auto, plan, window or 3d.")
                 metrics = inspect_png(data)
                 after = await self.identity(client, port) if current else {}
-                if current and after != current:
+                if current and after != before:
                     raise ValueError("Project changed during capture; discard this image.")
                 evidence_id = str(uuid4())
                 path = self.root / f"{evidence_id}.png"
@@ -368,7 +393,15 @@ class VisualReviews:
                         record.update(status="blocked", blocker=identity_error)
                 break
             except Exception as exc:
-                attempts.append({"source": capability, "status": "failed", "error": str(exc)})
+                attempt = {"source": capability, "status": "failed", "error": str(exc)}
+                if before and after:
+                    # Actual values are private runtime evidence, never static fixtures.
+                    attempt["changed_context_fields"] = sorted(
+                        k for k in before.keys() | after.keys() if before.get(k) != after.get(k)
+                    )
+                    attempt["before_context"] = before
+                    attempt["after_context"] = after
+                attempts.append(attempt)
         for record in records:
             record["capture_attempts"].extend(attempts)
             if image is None:
