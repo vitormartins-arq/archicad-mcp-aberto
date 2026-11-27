@@ -1266,3 +1266,7 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   and before capture stabilization; preserve existing fit behavior/older-version errors.
   Success is never pixel freshness/visual approval. No client project calls performed.
   Preparing a minimal reversible Python runtime patch; no APX update or Archicad restart.
+  Validation: 3608 simulated tests, Ruff and distribution check passed. Minimal two-module
+  runtime patch installed with backups/hashes; 84 other Python modules preserved. A fresh
+  stdio MCP listed 220 tools including redraw, and the installed module passed against
+  FakeArchicad. No real project calls/restarts. Existing MCP processes need a new connection.
