@@ -2188,6 +2188,17 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         return await window_capture_tool.fit_in_window(client_of(ctx), element_guids, port)
 
     @mcp.tool(annotations=VIEW)
+    async def redraw_current_database(ctx: Context, port: int | None = None) -> dict:
+        """Redraw the visible region of the current database, including background windows.
+
+        Tapir >=1.8 (documented in 2.0); unavailable versions return an error.
+        Changes display only, never elements or saves. After fit/navigation call this
+        before stabilizing/capturing visual evidence, not between capture and assessment.
+        Inspect the actual next image; success is not proof of freshness or correctness.
+        """
+        return await window_capture_tool.redraw_current_database(client_of(ctx), port)
+
+    @mcp.tool(annotations=VIEW)
     async def window_zoom(
         ctx: Context, zoom: dict[str, float] | None = None, port: int | None = None
     ) -> dict:

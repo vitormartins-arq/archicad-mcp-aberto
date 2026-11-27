@@ -171,3 +171,47 @@ def test_failed_bitmap_copy_refuses_instead_of_forcing_repaint():
     with pytest.raises(ValueError, match="displayed pixels"):
         tool._copy_window_bitmap(SimpleNamespace(BitBlt=copier), 11, 22, 2586, 1626)
     assert len(copier.calls) == 1
+
+
+@pytest.mark.anyio
+async def test_documented_redraw_command_changes_no_model_data():
+    from copy import deepcopy
+
+    from archicad_mcp_aberto.connection import ArchicadClient
+    from tests.unit.fake_archicad import FakeArchicad, fake_transport
+
+    fake = FakeArchicad(19723, tapir_version="2.0.0", elements={"one": "Object"})
+    before = deepcopy((fake.elements, fake.details, fake.property_values))
+    async with ArchicadClient(ports=[19723], transport=fake_transport(fake)) as client:
+        result = await tool.redraw_current_database(client, 19723)
+    assert result == {"port": 19723, "success": True, "visible_region_only": True}
+    assert fake.tapir_requests == [{"command": "RedrawCurrentDatabase", "parameters": {}}]
+    assert (fake.elements, fake.details, fake.property_values) == before
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "response", [{"success": False, "error": {"code": 1, "message": "Failed"}}, {}]
+)
+async def test_redraw_does_not_claim_success_for_failed_or_malformed_response(response):
+    from archicad_mcp_aberto.connection import ArchicadClient, TapirError
+    from tests.unit.fake_archicad import FakeArchicad, fake_transport
+
+    fake = FakeArchicad(19723, tapir_version="2.0.0", redraw_result=response)
+    async with ArchicadClient(ports=[19723], transport=fake_transport(fake)) as client:
+        with pytest.raises(TapirError):
+            await tool.redraw_current_database(client, 19723)
+
+
+@pytest.mark.anyio
+async def test_redraw_refuses_ambiguous_target_and_reports_missing_command():
+    from archicad_mcp_aberto.connection import AmbiguousTarget, ArchicadClient, CommandNotRegistered
+    from tests.unit.fake_archicad import FakeArchicad, fake_transport
+
+    a, b = FakeArchicad(19723), FakeArchicad(19724, tapir_version=None)
+    async with ArchicadClient(ports=[19723, 19724], transport=fake_transport(a, b)) as client:
+        with pytest.raises(AmbiguousTarget):
+            await tool.redraw_current_database(client)
+        assert a.tapir_calls == b.tapir_calls == []
+        with pytest.raises(CommandNotRegistered):
+            await tool.redraw_current_database(client, 19724)

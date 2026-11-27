@@ -33,7 +33,7 @@ The server only talks to `localhost`. It sends no telemetry and makes no interne
 
 ## Status
 
-Pre-alpha with **196 registered tools**: **81 read-only**, **8 view/session actions** and
+Pre-alpha with **197 registered tools**: **81 read-only**, **9 view/session actions** and
 **107 project or model writes**. The broad surface is already useful, but pre-alpha is
 intentional: older tools have recorded live validation while several newer tools still
 need operator checks in Archicad. The table below is the current registered surface, and
@@ -1034,3 +1034,6 @@ existing R01/R02 files are unchanged.
 Obsolete correction attempts can be closed with `supersede_visual_reviews` after fresh
 readback and visual approval of their replacement, preserving the failed history.
 See [visual review workflow](docs/VISUAL_REVIEW.md#superseded-corrections).
+
+Use `redraw_current_database(port)` after fitting/navigating when the displayed canvas
+is stale (Tapir >=1.8). Redraw before capturing evidence; inspect the next actual image.

@@ -151,3 +151,20 @@ remains passed with the same assessment. Reopening that review blocks completion
 No cyclic chains, automatic visual approvals, ignored modification stamps, model writes
 or retries are introduced. The assistant must truthfully establish replacement coverage;
 the server has no vision model and cannot infer semantic target coverage from JSON.
+
+
+## Display refresh before capture
+
+`redraw_current_database(port)` invokes the documented Tapir `RedrawCurrentDatabase`
+command without parameters (introduced 1.8.0, schema verified at Tapir 2.0.0 bb71abf).
+It redraws only the visible region of the current database, including background windows;
+it does not edit elements or save. Older versions without the command report an error.
+This is a view action, never a read-command gateway exception or a model write.
+
+After navigation use: `fit_in_window` -> `redraw_current_database` -> bounded context
+stabilization/capture -> actual image inspection -> assessment. Fit keeps its existing
+contract and does not silently dispatch a newer-version command. Do not redraw between
+capture and assessment: the redraw may advance the stamp and invalidate earlier evidence.
+A successful redraw is not proof of current pixels or visual correctness. If the next
+image remains stale/wrong/unreadable, keep the task incomplete and diagnose the display.
+No redraw is hidden inside BitBlt or an evidence observation interval.

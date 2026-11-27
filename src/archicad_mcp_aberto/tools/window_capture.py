@@ -20,6 +20,7 @@ from archicad_mcp_aberto.connection import (
     ArchicadBusy,
     ArchicadClient,
     CommandNotRegistered,
+    TapirError,
     resolve_port,
 )
 from archicad_mcp_aberto.tools import scenes
@@ -267,6 +268,20 @@ async def fit_in_window(
     elements = [{"elementId": {"guid": g}} for g in element_guids]
     await client.tapir(port, "FitInWindow", {"elements": elements})
     return {"port": port, "fitted": len(elements)}
+
+
+async def redraw_current_database(client: ArchicadClient, port: int | None = None) -> dict:
+    """Redraw the current database's visible region (Tapir >=1.8), no model edits.
+
+    Call explicitly AFTER fitting/navigating and BEFORE capture context stabilization.
+    This is not evidence that displayed pixels are current: inspect the next image.
+    It can advance the project stamp; never invoke it inside an evidence interval.
+    """
+    port = await resolve_port(client, port)
+    response = await client.tapir(port, "RedrawCurrentDatabase")
+    if response.get("success") is not True:
+        raise TapirError("RedrawCurrentDatabase did not report success.", detail=response)
+    return {"port": port, "success": True, "visible_region_only": True}
 
 
 async def window_zoom(

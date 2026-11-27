@@ -714,6 +714,7 @@ async def test_all_registered_targeted_tools_have_cases():
         "get_archicad_window_image",
         "open_navigator_item",
         "fit_in_window",
+        "redraw_current_database",
         "window_zoom",
         "pan_window",
         # Visual-review MCP orchestration is covered at the boundary in test_visual_review.

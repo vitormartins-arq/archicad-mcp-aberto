@@ -1258,3 +1258,11 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   Validation: `uv run pytest` (3604 passed), `uv run ruff check .` and distribution
   revision check passed. R26 is source-only; no active runtime installation performed.
   The configured community lessons-log path was absent; this state entry is retained.
+
+
+- Codex, 27 November 2026: `feat/redraw-current-database` adds an explicit view-only
+  refresh action using Tapir RedrawCurrentDatabase (introduced 1.8, documented 2.0
+  bb71abf schema; fixture is documentation-derived, not a live capture). Use after fit
+  and before capture stabilization; preserve existing fit behavior/older-version errors.
+  Success is never pixel freshness/visual approval. No client project calls performed.
+  Preparing a minimal reversible Python runtime patch; no APX update or Archicad restart.

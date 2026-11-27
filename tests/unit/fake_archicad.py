@@ -608,6 +608,8 @@ class FakeArchicad:
     command_requests: list[dict] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
+    # Tapir 2.0 schema bb71abf, introduced 1.8; documented, NOT captured live.
+    redraw_result: dict = field(default_factory=lambda: {"success": True})
 
     # IssueCommands.cpp tag 1.7.0; source-derived, not captured live.
     issues: dict[str, dict] = field(
@@ -1356,6 +1358,9 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "RedrawCurrentDatabase":
+            assert not args  # Official command has no parameters.
+            return ok({"addOnCommandResponse": deepcopy(self.redraw_result)})
         if name == "CreateDrawings":
             # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
             placeable = {"StoryItem", "ScheduleItem", "WorksheetDrawingItem"}

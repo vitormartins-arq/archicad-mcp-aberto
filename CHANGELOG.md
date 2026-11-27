@@ -644,3 +644,6 @@
 
 - Add audited visual-review supersession: fresh readback and an inspected replacement
   resolve obsolete corrections without approving the old result or relaxing capture checks.
+
+- Add explicit view-only `redraw_current_database` using the documented Tapir command,
+  before evidence capture rather than forcing repaint inside the capture interval.
