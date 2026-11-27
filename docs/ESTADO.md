@@ -1,5 +1,22 @@
 # Estado atual
 
+- **25/11/2026 — feat/visual-review (local, sem push público autorizado):** guarda
+  genérica no registro MCP cobre as 106 escritas atuais e extensões privadas posteriores.
+  Prévia orienta amostra inicial; batch sem amostra inspecionada é recusado antes do
+  dispatch. Resultado numérico fica separado de task_complete=false; capturas reais
+  candidatas e avaliação explícita por imagem antecedem a conclusão/salvamento final.
+  Cinco ferramentas de inspeção/recuperação/auditoria adicionadas (194 no registro).
+  Enquadramento nativo 2D por caixas reais com margem não depende de WindowZoom/SetZoom.
+  Falha tenta alternativas de captura existentes e mantém bloqueio, sem Computer Use.
+  Servidor não faz inferência visual: a avaliação é da IA que efetivamente olha a imagem.
+  Ver docs/VISUAL_REVIEW.md para limites, reconciliação de resultado desconhecido e
+  escopo da guarda (fronteira MCP, não as funções Python diretas). Nenhum PLN alterado.
+  Registro de lições no Drive indisponível em H: e G: nesta sessão; não foi atualizado.
+  Verificação final: 3.551 testes simulados e Ruff passaram. Integração privada: 118
+  testes com a dependência genérica local e Ruff passaram. Processo novo da instalação
+  isolada listou 215 ferramentas e 113 escritas guardadas; preservação dos arquivos
+  ativos e regras privadas conferida por hashes/instruções. Nenhuma chamada ao Archicad.
+
 - **PR #95 / 24 November 2026:** integrated current main into the GDL parameter branch, preserving newer tools and R18 distribution metadata. Resolved documentation, tool count and combined test coverage conflicts. 3,523 offline tests passed; Ruff check and format check passed. Revision advanced to R19. Active MCP connection unchanged; live acceptance pending.
 
 - **Section dimension association fixed / 18 November 2026:** the loss of association
@@ -1197,3 +1214,67 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
 - Codex, 26/10/2026: R08 fixes installer failures reported by Vitor. Native Extensions selection is accepted/displayed; foreign Graphisoft APXs without MDID and stale removed-APX registrations are not own-product matches. Empty old folders are backed up. 31 local checks include real notebook read-only preflight for both products; no production write or merge.
 
 - Codex, 4 November 2026: Lamp GDL follow-up on PR #95. Explicit per-change script-hidden consent, scalar enum/range checks, identity/dimension read-back and dependent-change reporting. Existing task checkpoint uses Anteriores per current policy. Offline regression tests and a read-only live audit; real writes/saving remain coordinated acceptance work. Active editable checkout must be upgraded without overwriting local object-replacement changes.
+
+- Codex, 25 November 2026: local `fix/label-visibility-dpi` adds Symbol favorite-based
+  label creation, annotation-only `set_draw_order` (Tapir 1.7.0 / 02691b5d), temporary
+  per-thread physical-pixel capture and the native modal-dialog detail in busy errors.
+  Existing GDL tools already support Symbol Label parameters; add a regression for the
+  actual GDL background pen instead of treating header style as its equivalent.
+  No model writes or add-on installation in this development task. Public push pending
+  authorization; live visual acceptance belongs to the editing session.
+
+- Codex, 25 November 2026: public publication authorized by Vitor. Preparing the
+  combined visual-review, Symbol label, draw-order, DPI and busy-diagnostic PR on
+  `fix/label-visibility-dpi`; R20 supersedes the earlier local-only status above.
+  Tests are simulated; no model write performed by this branch.
+
+- Codex, 27 November 2026: visual capture fallbacks now stabilize and compare their own
+  exact before/after context. A failed export no longer poisons later stable captures.
+  Images changing during their own capture, project changes and unsettled contexts remain
+  blocked; structured runtime diagnostics preserve the compared contexts. Read-only live
+  diagnosis observed stamp changes around capture, but no real editing/saving command was
+  issued. Further live calls suspended while the project is busy; acceptance pending.
+
+- Codex, 27 November 2026: confirmed a non-repainting BitBlt window capture with exact
+  equal before/after project context, whereas forced-render capture advanced the stamp.
+  Use displayed pixels without PrintWindow, keep physical DPI and strict context checks.
+  This establishes capture behavior, not approval of the model. No editing/save commands.
+
+- Codex, 27 November 2026: extend guarded set_draw_order to Object only, with Object
+  GDL/classification snapshots plus existing geometry/ID/owner readback. Tapir 02691b5d
+  skips ACAPI_Element_Change for drawIndex-only input and uses grouping draw-order tools.
+  Other model/host types remain refused. No live model edit; numerical and visual live
+  acceptance belongs to the caller. Sample lifecycle proposal stays local/uninstalled
+  on proposal/visual-sample-lifecycle, separate from these corrections.
+
+
+- Codex, 27 November 2026: `feat/visual-review-supersession` adds a ledger-only
+  `supersede_visual_reviews` operation. Each obsolete pending/correction needs actual
+  fresh getter reconciliation; a same-project/client/representation replacement needs
+  current intact image evidence and an explicit passed assessment covering all targets.
+  Original receipts, failed assessments and images are retained. Superseded is not passed
+  and cannot serve as an early sample. Reopening the replacement blocks final saving.
+  No stamp tolerance, automatic approval, model write or live project access introduced.
+  Validation: `uv run pytest` (3604 passed), `uv run ruff check .` and distribution
+  revision check passed. R26 is source-only; no active runtime installation performed.
+  The configured community lessons-log path was absent; this state entry is retained.
+
+
+- Codex, 27 November 2026: `feat/redraw-current-database` adds an explicit view-only
+  refresh action using Tapir RedrawCurrentDatabase (introduced 1.8, documented 2.0
+  bb71abf schema; fixture is documentation-derived, not a live capture). Use after fit
+  and before capture stabilization; preserve existing fit behavior/older-version errors.
+  Success is never pixel freshness/visual approval. No client project calls performed.
+  Preparing a minimal reversible Python runtime patch; no APX update or Archicad restart.
+  Validation: 3608 simulated tests, Ruff and distribution check passed. Minimal two-module
+  runtime patch installed with backups/hashes; 84 other Python modules preserved. A fresh
+  stdio MCP listed 220 tools including redraw, and the installed module passed against
+  FakeArchicad. No real project calls/restarts. Existing MCP processes need a new connection.
+
+- Codex, 27 November 2026: authorized runtime follow-up installs the two PR #123
+  supersession modules on top of the existing redraw patch. Baseline hashes matched;
+  backups retained and 84 other Python modules (including redraw) were unchanged.
+  A fresh stdio process lists 221 tools with both actions. Installed synthetic ledger
+  test confirms refusal before visual approval, preserved obsolete receipt, resolved
+  save obligation and renewed blocking when the replacement reopens. No real Archicad
+  calls, existing-process restarts, model edits or production review changes performed.

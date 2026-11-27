@@ -359,3 +359,59 @@ async def test_apply_requires_explicit_port_and_journal(monkeypatch):
             await apply(labels.create_labels, c, [free()])
     assert "API.SetClassificationsOfElements" not in fake.calls
     assert "CreateLabels" not in fake.tapir_calls
+
+
+async def test_create_symbol_label_from_validated_favorite_and_preserve_owner():
+    fake = model()
+    fake.favorites["Label"] = ["Property style"]
+    fake.favorite_settings["Property style"] = {
+        "defaults": {"labelClass": "Symbol"},
+        "details": {
+            "labelClass": "Symbol",
+            "libPart": {"name": "Property Label"},
+            "symbolStyle": {"textWay": "Vertical", "flipEnabled": True},
+        },
+    }
+    inputs = [{"label_class": "Symbol", "element_guid": WALL, "favorite": "Property style"}]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await labels.create_labels(c, inputs, 19723)
+        assert preview["items"][0]["parameters"] == {
+            "labelClass": "Symbol",
+            "parentElementId": {"guid": WALL},
+            "favoriteName": "Property style",
+        }
+        result = await labels.create_labels(c, inputs, 19723, False, preview["confirmation_token"])
+    assert result["status"] == "verified"
+    label = next(r for g, r in fake.details.items() if fake.elements[g] == "Label")
+    assert label["details"]["labelClass"] == "Symbol"
+    assert label["details"]["ownerElementId"]["guid"].upper() == WALL
+    assert "text" not in label["details"]
+
+
+async def test_symbol_label_rejects_text_fields_and_missing_favorite():
+    for extra in (
+        {},
+        {"favorite": "Property style", "text": "wrong"},
+        {"favorite": "Property style", "height_mm": 3},
+    ):
+        with pytest.raises(ValueError):
+            await labels.create_labels(
+                None, [{"label_class": "Symbol", "element_guid": WALL, **extra}], 19723
+            )
+
+
+async def test_explicit_label_leader_coordinates_are_all_read_back():
+    fake = model()
+    inputs = [
+        {
+            "text": "Note",
+            "element_guid": WALL,
+            "position": {"x": 1, "y": 2},
+            "leader_mid": {"x": 2, "y": 2},
+            "leader_end": {"x": 3, "y": 2},
+        }
+    ]
+    async with ArchicadClient(transport=fake_transport(fake)) as c:
+        preview = await labels.create_labels(c, inputs, 19723)
+        result = await labels.create_labels(c, inputs, 19723, False, preview["confirmation_token"])
+    assert result["status"] == "verified"

@@ -1,5 +1,14 @@
 # Changelog
 
+- Add a generic image-backed MCP completion guard for every registered project/model
+  write, including late extension tools. Numeric readback remains distinct from visual
+  approval; pending reviews prevent final task saving. Add review listing, contextual
+  capture, explicit assessment, numeric reconciliation and registry-coverage tools.
+  Existing capture capabilities provide real images; invalid/blank images, stale state,
+  wrong assessment flags and unsampled batches cannot pass. Native 2D element framing
+  uses official bounds and a temporary capture zoom, without a WindowZoom setter.
+  All validation in this change is offline/synthetic; no real model was edited.
+
 - Add `get_section_cut_elements` (read-only) and `create_section_dimensions`. The first
   lists what a section, elevation or interior elevation cuts or shows, per model element,
   with absolute Z from the 3D box and the section elements' hotspots in view coordinates;
@@ -616,3 +625,25 @@
   keep the existing no-overwrite preview, single-use token, explicit port and receipt flow.
 
 - Lamp GDL: per-change script-hidden consent, scalar enum/range validation, identity and dependency read-back; retain all other flags and explicit preview/token checks. Task checkpoints use 00 - Anteriores.
+
+- Fix Windows capture DPI context with restoration; retain native modal dialog names
+  in busy diagnostics. Add safe annotation draw-order edits and Symbol labels created
+  from explicit favorites, preserving owners and checking native readback. Document
+  Symbol GDL background parameters separately from header style settings.
+
+- Fix visual capture fallback context: wait for exact bounded stabilization before each
+  attempt, retain strict during-capture stamp checks and report changed context fields.
+
+- Read Windows window pixels with BitBlt instead of requesting PrintWindow regeneration;
+  keep exact state checks and refuse failed/blank captures without a repaint fallback.
+
+- `set_draw_order` also accepts Object through the documented Tapir drawIndex-only
+  grouping path, excluding hosts/embedded openings. Object verification compares full
+  readable geometry, ID, GDL parameters and classifications; no GDL/property/classification
+  setter is sent. Missing readback cannot be reported verified. Simulated only.
+
+- Add audited visual-review supersession: fresh readback and an inspected replacement
+  resolve obsolete corrections without approving the old result or relaxing capture checks.
+
+- Add explicit view-only `redraw_current_database` using the documented Tapir command,
+  before evidence capture rather than forcing repaint inside the capture interval.

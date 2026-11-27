@@ -111,3 +111,21 @@ def test_port_configuration_preserves_custom_ports_order_and_deduplicates():
 def test_port_configuration_reads_environment(monkeypatch):
     monkeypatch.setenv("ARCHICAD_MCP_PORTS", "19725,19723-19725")
     assert ports_from_env() == (19725, 19723, 19724)
+
+
+def test_busy_error_preserves_exact_modal_dialog_name_when_api_supplies_it():
+    from archicad_mcp_aberto.connection.errors import from_api_error
+
+    message = "Invalid program status (there is an open modal dialog: Selected level settings)"
+    error = from_api_error({"code": 4001, "message": message})
+    assert isinstance(error, ArchicadBusy)
+    assert message in str(error)
+    assert error.detail["message"] == message
+
+
+def test_busy_without_detail_does_not_invent_a_modal_dialog():
+    from archicad_mcp_aberto.connection.errors import from_api_error
+
+    error = from_api_error({"code": 4001})
+    assert "identified dialog/action" in str(error)
+    assert "API diagnostic:" not in str(error)

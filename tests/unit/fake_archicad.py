@@ -608,6 +608,8 @@ class FakeArchicad:
     command_requests: list[dict] = field(default_factory=list)
     tapir_calls: list[str] = field(default_factory=list)
     tapir_requests: list[dict] = field(default_factory=list)
+    # Tapir 2.0 schema bb71abf, introduced 1.8; documented, NOT captured live.
+    redraw_result: dict = field(default_factory=lambda: {"success": True})
 
     # IssueCommands.cpp tag 1.7.0; source-derived, not captured live.
     issues: dict[str, dict] = field(
@@ -1356,6 +1358,9 @@ class FakeArchicad:
         args = params.get("addOnCommandParameters", {})
         self.tapir_calls.append(name)
         self.tapir_requests.append({"command": name, "parameters": deepcopy(args)})
+        if name == "RedrawCurrentDatabase":
+            assert not args  # Official command has no parameters.
+            return ok({"addOnCommandResponse": deepcopy(self.redraw_result)})
         if name == "CreateDrawings":
             # Shapes from the Tapir 1.7.0 source (DocumentCreationCommands.cpp); not live.
             placeable = {"StoryItem", "ScheduleItem", "WorksheetDrawingItem"}
@@ -2517,6 +2522,8 @@ class FakeArchicad:
                     out.append({"attributeId": {"guid": layer_guid(index)}})
             return ok({"addOnCommandResponse": {"attributeIds": out}})
         if name == "SetDetailsOfElements":
+            # Also accepts details.drawIndex: official Tapir 1.7.0/02691b5d,
+            # ElementCommands.cpp. Existing generic response shape; not a live capture.
             out = []
             for position, row in enumerate(args["elementsWithDetails"]):
                 guid = row["elementId"]["guid"]
@@ -3452,6 +3459,24 @@ class FakeArchicad:
                 if index in self.create_errors:
                     out.append(deepcopy(self.create_errors[index]))
                     continue
+                # Symbol favorite behavior from official 02691b5d CreateLabels.
+                # Synthetic source-derived values; never a live capture.
+                label, favorite_details = self._favored("Label", label)
+                if "error" in favorite_details:
+                    out.append(favorite_details)
+                    continue
+                if label.get("labelClass") == "Symbol" and not favorite_details.get(
+                    "libPart", {}
+                ).get("name"):
+                    out.append(
+                        {
+                            "error": {
+                                "code": -1,
+                                "message": "Symbol label needs a valid library part.",
+                            }
+                        }
+                    )
+                    continue
                 parent = label.get("parentElementId", {}).get("guid")
                 if parent is not None and parent not in self.elements:
                     error = {"code": -2130313112, "message": "Invalid parent element GUID"}
@@ -3464,6 +3489,7 @@ class FakeArchicad:
                 self.elements[guid] = "Label"
                 row = deepcopy(LABELS_FIXTURE["label_details"])
                 details = row["details"]
+                details.update(deepcopy(favorite_details))
                 if parent is not None:
                     row["floorIndex"] = self.details.get(parent, {}).get("floorIndex", 0)
                     details["ownerElementId"] = {"guid": parent.lower()}
@@ -3473,10 +3499,20 @@ class FakeArchicad:
                 if "begCoordinate" in label:
                     details["begCoordinate"] = dict(label["begCoordinate"])
                 details["labelClass"] = label.get("labelClass", "Text")
-                details["text"] = (
-                    self.text_stored_as if self.text_stored_as is not None else label["text"]
-                )
-                details["style"].update(label.get("style", {}))
+                for coordinate in ("midCoordinate", "endCoordinate"):
+                    if coordinate in label:
+                        details[coordinate] = deepcopy(label[coordinate])
+                if details["labelClass"] == "Symbol":
+                    details.pop("text", None)
+                    details.pop("style", None)
+                    details.setdefault(
+                        "symbolStyle", {"textWay": "Horizontal", "flipEnabled": True}
+                    )
+                else:
+                    details["text"] = (
+                        self.text_stored_as if self.text_stored_as is not None else label["text"]
+                    )
+                    details["style"].update(label.get("style", {}))
                 self.details[guid] = row
                 out.append(self._id(guid))
             return ok({"addOnCommandResponse": {"elements": out}})
