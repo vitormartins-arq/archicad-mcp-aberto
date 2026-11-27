@@ -636,3 +636,8 @@
 
 - Read Windows window pixels with BitBlt instead of requesting PrintWindow regeneration;
   keep exact state checks and refuse failed/blank captures without a repaint fallback.
+
+- `set_draw_order` also accepts Object through the documented Tapir drawIndex-only
+  grouping path, excluding hosts/embedded openings. Object verification compares full
+  readable geometry, ID, GDL parameters and classifications; no GDL/property/classification
+  setter is sent. Missing readback cannot be reported verified. Simulated only.

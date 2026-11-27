@@ -12,11 +12,12 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from archicad_mcp_aberto.tools import edit, read, write
+from archicad_mcp_aberto.tools import classifications, edit, read, write
 
 MAX_CHANGES = 50
-# Restrict to annotation/2D types: embedded openings can indirectly change host order.
+# Explicit Object + annotation/2D types only: openings may change their host order.
 TYPES = {
+    "Object",
     "Label",
     "Text",
     "Line",
@@ -55,14 +56,49 @@ async def _details(client, port, guids, timeout=None):
     return rows
 
 
+async def _object_invariants(client, port, guids, timeout=None):
+    if not guids:
+        return {}
+    gdl = await edit._gdl_rows(client, port, guids, timeout)
+    systems = await classifications._systems(client, port)
+    system_ids = sorted(s["guid"] for s in systems)
+    values = (
+        await classifications._current(
+            client, port, [(g, s) for g in guids for s in system_ids], timeout
+        )
+        if system_ids
+        else {}
+    )
+    snapshots = {}
+    for guid in guids:
+        row = gdl[guid]
+        if (
+            not isinstance(row, dict)
+            or "error" in row
+            or not isinstance(row.get("parameters"), list)
+        ):
+            raise ValueError("Cannot verify Object GDL parameters before/after draw order.")
+        assigned = {s: values[guid, s] for s in system_ids}
+        if any("error" in entry for entry in assigned.values()):
+            raise ValueError("Cannot verify Object classifications before/after draw order.")
+        snapshots[guid] = {"gdl": deepcopy(row), "classifications": assigned}
+    return snapshots
+
+
 async def _plan(client, changes, port, operation):
     guids = [c.guid for c in changes]
     port, target, _ = await edit._editable(client, guids, port)
     rows = await _details(client, port, guids)
+    objects = [g for g, row in zip(guids, rows, strict=True) if row.get("type") == "Object"]
+    invariants = await _object_invariants(client, port, objects)
+    if objects:
+        rows = await _details(client, port, guids)  # Capture geometry after parameter reads.
     items = []
     for index, (change, row) in enumerate(zip(changes, rows, strict=True)):
         if row.get("type") not in TYPES or "error" in row:
-            raise ValueError(f"Item {index}: only supported annotation/2D types may change order.")
+            raise ValueError(
+                f"Item {index}: only Object or supported annotation/2D types may change order."
+            )
         current = row.get("drawIndex")
         if not isinstance(current, int) or isinstance(current, bool):
             raise ValueError(f"Item {index}: current drawIndex cannot be read.")
@@ -72,6 +108,11 @@ async def _plan(client, changes, port, operation):
                 "guid": change.guid,
                 "status": "ready",
                 "before": deepcopy(row),
+                **(
+                    {"object_invariants": invariants[change.guid]}
+                    if change.guid in invariants
+                    else {}
+                ),
                 "requested_draw_index": change.draw_index,
                 "parameters": {
                     "elementId": {"guid": change.guid},
@@ -89,6 +130,12 @@ async def _plan(client, changes, port, operation):
 
 
 async def _verify(client, receipt, items):
+    invariants = await _object_invariants(
+        client,
+        receipt["target"]["port"],
+        [i["guid"] for i in items if "object_invariants" in i],
+        receipt["write_timeout_seconds"],
+    )
     rows = await _details(
         client,
         receipt["target"]["port"],
@@ -98,6 +145,10 @@ async def _verify(client, receipt, items):
     for item, row in zip(items, rows, strict=True):
         expected = {**deepcopy(item["before"]), "drawIndex": item["requested_draw_index"]}
         mismatches = write._mismatches(expected, row)
+        if "object_invariants" in item:
+            item["object_invariants_after"] = invariants[item["guid"]]
+            if item["object_invariants"] != invariants[item["guid"]]:
+                mismatches.append("object_invariants.GDL_or_classifications")
         item.update(
             after=row,
             mismatches=mismatches,
@@ -110,7 +161,7 @@ async def _dispatch(client, receipt):
 
 
 async def set_draw_order(client, changes, port=None, dry_run=True, confirmation_token=None):
-    """Preview/apply annotation drawIndex 1..14, preserving all readable geometry/owners."""
+    """Preview/apply Object/annotation drawIndex 1..14; verify geometry, GDL and classes."""
     if not 1 <= len(changes) <= MAX_CHANGES:
         raise ValueError(f"Pass 1 to {MAX_CHANGES} annotation changes.")
     validated = [

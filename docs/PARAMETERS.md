@@ -184,3 +184,9 @@ Mask shape is also library-part-specific. Read `possibleValues` and
 an enum from another library part or assume 1 means Rectangle. Validate shape,
 border and occlusion in the final image. Native allowed-value validation is enforced
 by the existing GDL setter, including for Symbol Labels.
+
+`set_draw_order` supports Object in addition to the annotation whitelist. It sends only
+`details.drawIndex`; Tapir 02691b5d handles that via draw-order grouping and skips the
+geometry/memo change path. Object GDL and classification snapshots are read and compared
+in addition to geometry, placement, ID and story/layer. A mismatch or unreadable invariant
+cannot pass verification. This does not change the GDL setter's parametric-size contract.

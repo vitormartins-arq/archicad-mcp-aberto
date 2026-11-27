@@ -1239,3 +1239,10 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   equal before/after project context, whereas forced-render capture advanced the stamp.
   Use displayed pixels without PrintWindow, keep physical DPI and strict context checks.
   This establishes capture behavior, not approval of the model. No editing/save commands.
+
+- Codex, 27 November 2026: extend guarded set_draw_order to Object only, with Object
+  GDL/classification snapshots plus existing geometry/ID/owner readback. Tapir 02691b5d
+  skips ACAPI_Element_Change for drawIndex-only input and uses grouping draw-order tools.
+  Other model/host types remain refused. No live model edit; numerical and visual live
+  acceptance belongs to the caller. Sample lifecycle proposal stays local/uninstalled
+  on proposal/visual-sample-lifecycle, separate from these corrections.

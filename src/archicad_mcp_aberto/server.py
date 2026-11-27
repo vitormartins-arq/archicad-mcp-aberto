@@ -170,10 +170,11 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Set drawIndex 1..14 for up to 50 annotations/2D elements; requires Tapir.
+        """Set drawIndex 1..14 for up to 50 Objects or annotations/2D elements; Tapir.
 
         Changes display order only, never a measurement origin or label owner/leader.
-        Preview/token/explicit port and full readable geometry readback are required.
+        Preview/token/explicit port and readable geometry readback are required.
+        Object GDL parameters and classifications are also compared before/after.
         Inspect the actual resulting image: order alone does not create an opaque mask.
         Embedded model/host elements are refused. Never saves.
         """
