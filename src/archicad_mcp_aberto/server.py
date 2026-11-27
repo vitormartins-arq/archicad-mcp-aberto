@@ -22,6 +22,7 @@ from archicad_mcp_aberto.tools import (
     design_options,
     documents,
     drafting,
+    draw_order,
     edit,
     element_structure,
     favorites,
@@ -88,6 +89,7 @@ from archicad_mcp_aberto.tools import window_capture as window_capture_tool
 from archicad_mcp_aberto.tools import zone_categories as zone_categories_tool
 from archicad_mcp_aberto.tools import zones as zones_tool
 from archicad_mcp_aberto.tools import zones_read as zones_read_tool
+from archicad_mcp_aberto.visual_mcp import VisualReviewMCP
 
 INSTRUCTIONS = """\
 Archicad MCP (read tools and safe wall and slab creation).
@@ -96,6 +98,17 @@ Archicad MCP (read tools and safe wall and slab creation).
 - With several instances open, ask the user which project to use and pass its port.
   Never pick the first one. Ports are not permanent identities.
 - Lengths are in meters and angles in radians (SI), whatever the project display units.
+- After EVERY project/model edit, inspect the actual resulting image before completion.
+  API success, GUIDs, coordinates, bounds or numeric readback are not visual verification.
+  Writes return pending visual reviews and candidate images. LOOK at them, confirm the
+  affected context, full coverage, readable scale and actual correctness; use
+  capture_visual_review and review_visual_result. Reject blank, cropped or wrong views.
+  For batches, inspect a small sample first and contextual images covering the final lot.
+  Labels need their object, mounting face, reading direction and neighbouring annotations.
+  Layouts need updated drawings and the actual sheet/PDF; data changes need the pertinent
+  schedule/dialog/documentation. Try another existing MCP capture/navigation capability
+  on failure. If adequate inspection is unavailable, report the task INCOMPLETE and the
+  blocker, never visually verified. Do not substitute Computer Use without authorization.
 - "busy" (error 4001) means Archicad is in user input. Ask the user to finish, then retry.
   It does not mean an add-on is missing.
 - Tools that say "requires Tapir" need the free Tapir add-on loaded (see tapir_status).
@@ -144,10 +157,34 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         async with factory() as client:
             yield {"client": client}
 
-    mcp = FastMCP("archicad-mcp-aberto", instructions=INSTRUCTIONS, lifespan=lifespan)
+    mcp = VisualReviewMCP("archicad-mcp-aberto", instructions=INSTRUCTIONS, lifespan=lifespan)
 
     def client_of(ctx: Context) -> ArchicadClient:
         return ctx.request_context.lifespan_context["client"]
+
+    @mcp.tool(annotations=WRITE)
+    async def set_draw_order(
+        ctx: Context,
+        changes: list[draw_order.DrawOrderChange],
+        port: int | None = None,
+        dry_run: bool = True,
+        confirmation_token: str | None = None,
+    ) -> dict:
+        """Set drawIndex 1..14 for up to 50 Objects or annotations/2D elements; Tapir.
+
+        Changes display order only, never a measurement origin or label owner/leader.
+        Preview/token/explicit port and readable geometry readback are required.
+        Object GDL parameters and classifications are also compared before/after.
+        Inspect the actual resulting image: order alone does not create an opaque mask.
+        Embedded model/host elements are refused. Never saves.
+        """
+        return await draw_order.set_draw_order(
+            client_of(ctx),
+            changes,
+            port,
+            dry_run,
+            confirmation_token,
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     async def discover_archicad(ctx: Context) -> dict:
@@ -1135,10 +1172,14 @@ def create_server(client_factory: Callable[[], ArchicadClient] | None = None) ->
         dry_run: bool = True,
         confirmation_token: str | None = None,
     ) -> dict:
-        """Preview up to 20 text labels. element_guid attaches the label to that element
+        """Preview up to 20 Text or Symbol labels. Symbol needs an explicit Symbol favorite.
+        element_guid attaches the label to that element
         (on its story); a free label needs position (metres) and floor_index. Optional
         height_mm (paper millimetres); style from the Label tool default. Requires Tapir;
-        apply with explicit port and token. Never saves."""
+        apply with explicit port and token. Symbol uses its favorite's library content;
+        omit text/height_mm. position plus leader_mid/leader_end sets explicit leader
+        coordinates; otherwise native default placement may apply. Inspect the image.
+        Never saves."""
         return await labels_tool.create_labels(
             client_of(ctx), labels, port, dry_run, confirmation_token
         )

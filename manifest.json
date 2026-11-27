@@ -814,6 +814,30 @@
     {
       "name": "save_layouts_as_pdf",
       "description": "Preview and save layouts as one merged PDF without using the Publisher."
+    },
+    {
+      "name": "get_visual_reviews",
+      "description": "List visual completion records for this project. Pure read; no capture."
+    },
+    {
+      "name": "capture_visual_review",
+      "description": "Capture actual post-edit evidence for 1-50 reviews on an explicit port."
+    },
+    {
+      "name": "reconcile_visual_review",
+      "description": "Read current numeric state to reconcile a failed/unknown write; never retry it."
+    },
+    {
+      "name": "review_visual_result",
+      "description": "Record your assessment ONLY AFTER looking at the actual returned image."
+    },
+    {
+      "name": "visual_review_coverage",
+      "description": "Audit coverage of every currently registered project/model write tool."
+    },
+    {
+      "name": "set_draw_order",
+      "description": "Preview/apply annotation display order, preserving physical positions and ownership."
     }
   ],
   "compatibility": {

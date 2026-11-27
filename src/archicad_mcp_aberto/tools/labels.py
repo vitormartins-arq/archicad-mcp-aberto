@@ -22,15 +22,20 @@ KeynoteField = Literal["Key", "Title", "Description", "Reference"]
 
 
 class LabelCreate(write._Favored):
-    text: Annotated[str, Field(min_length=1, max_length=2000)]
+    text: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
+    label_class: Literal["Text", "Symbol"] = "Text"
     element_guid: str | None = None
     position: write.Point | None = None
     floor_index: int | None = None
     height_mm: write.Positive | None = None
+    leader_mid: write.Point | None = None
+    leader_end: write.Point | None = None
 
     @field_validator("text")
     @classmethod
-    def visible(cls, value: str) -> str:
+    def visible(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         if not value.strip():
             raise ValueError("text must not be blank.")
         return texts._lines(value)
@@ -42,6 +47,19 @@ class LabelCreate(write._Favored):
 
     @model_validator(mode="after")
     def placed(self) -> LabelCreate:
+        if self.label_class == "Text" and self.text is None:
+            raise ValueError("Text labels require text.")
+        if self.label_class == "Symbol":
+            if not self.favorite:
+                raise ValueError("Symbol labels require an explicitly validated Symbol favorite.")
+            if self.text is not None or self.height_mm is not None:
+                raise ValueError(
+                    "text and height_mm are Text-label fields; use the Symbol favorite."
+                )
+        if (self.leader_mid is None) != (self.leader_end is None):
+            raise ValueError("leader_mid and leader_end must be provided together.")
+        if self.leader_mid is not None and self.position is None:
+            raise ValueError("Explicit leader geometry also requires position.")
         if self.element_guid is not None:
             if self.floor_index is not None:
                 raise ValueError("an attached label sits on its element's story; omit floor_index.")
@@ -69,7 +87,9 @@ async def _plan(client, labels, port, operation):
             owners[guid] = row
     items = []
     for index, label in enumerate(labels):
-        payload: dict[str, Any] = {"labelClass": "Text", "text": label.text}
+        payload: dict[str, Any] = {"labelClass": label.label_class}
+        if label.label_class == "Text":
+            payload["text"] = label.text
         item: dict[str, Any] = {"index": index, "status": "ready"}
         if label.element_guid:
             owner = owners[label.element_guid]
@@ -86,6 +106,9 @@ async def _plan(client, labels, port, operation):
             item["floorIndex"] = label.floor_index
         if label.position is not None:
             payload["begCoordinate"] = label.position.model_dump()
+        if label.leader_mid is not None:
+            payload["midCoordinate"] = label.leader_mid.model_dump()
+            payload["endCoordinate"] = label.leader_end.model_dump()
         if label.height_mm is not None:
             payload["style"] = {"height": label.height_mm}
         if label.favorite is not None:
@@ -98,11 +121,14 @@ async def _plan(client, labels, port, operation):
 
 def _mismatches(item: dict, row: Any) -> list[str]:
     p = item["parameters"]
-    details: dict[str, Any] = {"labelClass": "Text"}
+    details: dict[str, Any] = {"labelClass": p["labelClass"]}
     if "begCoordinate" in p:
         details["begCoordinate"] = p["begCoordinate"]
     if "style" in p:
         details["style"] = p["style"]
+    for key in ("midCoordinate", "endCoordinate"):
+        if key in p:
+            details[key] = p[key]
     expected: dict[str, Any] = {"type": "Label", "details": details}
     if item.get("floorIndex") is not None:
         expected["floorIndex"] = item["floorIndex"]
@@ -110,8 +136,16 @@ def _mismatches(item: dict, row: Any) -> list[str]:
     actual = row.get("details") if isinstance(row, dict) else None
     actual = actual if isinstance(actual, dict) else {}
     found = actual.get("text")
-    if not isinstance(found, str) or texts._lines(found) != p["text"]:
+    if p["labelClass"] == "Text" and (
+        not isinstance(found, str) or texts._lines(found) != p["text"]
+    ):
         differences.append("details.text")
+    if p["labelClass"] == "Symbol":
+        part = actual.get("libPart")
+        if not isinstance(part, dict) or not isinstance(part.get("name"), str) or not part["name"]:
+            differences.append("details.libPart")
+        if not isinstance(actual.get("symbolStyle"), dict):
+            differences.append("details.symbolStyle")
     if "parentElementId" in p:
         owner = actual.get("ownerElementId")
         guid = owner.get("guid") if isinstance(owner, dict) else None
@@ -131,7 +165,7 @@ async def create_labels(
     dry_run: bool = True,
     confirmation_token: str | None = None,
 ) -> dict:
-    """Preview/apply up to 20 text labels. Metres; height_mm in paper millimetres.
+    """Preview/apply up to 20 Text or explicitly favored Symbol labels. Metres.
 
     With element_guid the label is attached to that element (and its story); without it,
     position and floor_index are needed. Newlines make several lines.

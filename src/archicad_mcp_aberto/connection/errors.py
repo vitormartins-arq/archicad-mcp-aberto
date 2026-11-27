@@ -61,8 +61,13 @@ def from_api_error(error: Any) -> ArchicadError:
     text = error.get("message") if isinstance(error, dict) else None
     raw = json.dumps(error, ensure_ascii=False)
     if code == BUSY_CODE:
+        diagnostic = (
+            f" API diagnostic: {text.strip()}" if isinstance(text, str) and text.strip() else ""
+        )
         return ArchicadBusy(
-            "Archicad is busy with user input. Ask the user to finish the current action, "
+            "Archicad is busy with user input."
+            + diagnostic
+            + " Ask the user to finish the identified dialog/action, "
             "then retry. This does not mean an add-on is missing.",
             code,
             error,

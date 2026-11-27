@@ -250,6 +250,11 @@ def _segments_intersect(a: Point, b: Point, c: Point, d: Point) -> bool:
 
 # operation -> (noun used in messages, per-item receipt key, note shown with a preview)
 OPERATIONS = {
+    "set_draw_order": (
+        "annotation draw order", "draw_order_receipt_id",
+        "Only display order changes; physical measurement points and ownership are preserved. "
+        "Actual masking/overlap requires inspection of the resulting image.",
+    ),
     "create_windows": (
         "window",
         "window_receipt_id",
