@@ -1270,3 +1270,11 @@ testadas ao vivo no AC30 build 3001 BRA com Tapir 1.7.0, em projeto sem nome.
   runtime patch installed with backups/hashes; 84 other Python modules preserved. A fresh
   stdio MCP listed 220 tools including redraw, and the installed module passed against
   FakeArchicad. No real project calls/restarts. Existing MCP processes need a new connection.
+
+- Codex, 27 November 2026: authorized runtime follow-up installs the two PR #123
+  supersession modules on top of the existing redraw patch. Baseline hashes matched;
+  backups retained and 84 other Python modules (including redraw) were unchanged.
+  A fresh stdio process lists 221 tools with both actions. Installed synthetic ledger
+  test confirms refusal before visual approval, preserved obsolete receipt, resolved
+  save obligation and renewed blocking when the replacement reopens. No real Archicad
+  calls, existing-process restarts, model edits or production review changes performed.
