@@ -3,8 +3,8 @@
 The API has image calls only for the 3D and rendering windows, and saving a picture only
 covers some 2D windows. So this asks Windows for the image of the top-level window of the
 instance on the given port, found by its project name in the title. Windows only. Reads only:
-nothing is sent to Archicad but the project name query, and the window need not be in front,
-but it must not be minimized.
+only the project name is queried. Copy displayed pixels without requesting a repaint;
+the target must be visible and not minimized. Inspect the result for occlusion/stale display.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import ctypes
 import struct
 import sys
 import zlib
+from contextlib import contextmanager
 
 from archicad_mcp_aberto.connection import (
     AddOnError,
@@ -23,7 +24,7 @@ from archicad_mcp_aberto.connection import (
 )
 from archicad_mcp_aberto.tools import scenes
 
-PW_RENDERFULLCONTENT = 2
+SRCCOPY = 0x00CC0020
 SRCCOPY_BI_RGB = 0
 DIB_RGB_COLORS = 0
 ARCHICAD_TITLE = "Archicad"
@@ -79,7 +80,58 @@ def _windows(project_name: str) -> list[tuple[int, str]]:
     return found
 
 
+@contextmanager
+def _physical_pixels(user32=None):
+    """Use physical pixels only on this thread, restoring its prior DPI context.
+
+    PMv2 is preferred; PMv1 is a safe fallback on older Windows 10 builds. Never
+    change process-wide DPI awareness, which cannot reliably be undone in a host.
+    """
+    user32 = user32 if user32 is not None else ctypes.windll.user32
+    setter = getattr(user32, "SetThreadDpiAwarenessContext", None)
+    if setter is None:
+        raise ValueError("Thread DPI awareness is unavailable; use a native image capture.")
+    setter.argtypes = [ctypes.c_void_p]
+    setter.restype = ctypes.c_void_p
+    previous = setter(ctypes.c_void_p(-4))  # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+    if not previous:
+        previous = setter(ctypes.c_void_p(-3))  # PER_MONITOR_AWARE, older Windows 10
+    if not previous:
+        raise ValueError("Cannot enter a physical-pixel DPI context; capture refused.")
+    try:
+        yield
+    finally:
+        if not setter(ctypes.c_void_p(previous)):
+            raise RuntimeError("Failed to restore the original thread DPI context.")
+
+
 def _capture(hwnd: int) -> tuple[int, int, bytes]:
+    # GetWindowRect and GDI must run in the SAME physical-pixel context. Otherwise
+    # 200% scaling can allocate a half-sized bitmap and crop the captured window.
+    with _physical_pixels():
+        return _capture_pixels(hwnd)
+
+
+def _copy_window_bitmap(gdi32, destination, source, width: int, height: int) -> None:
+    """Copy the existing window surface. PrintWindow can regenerate Archicad elements."""
+    copy = gdi32.BitBlt
+    copy.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_uint,
+    ]
+    copy.restype = ctypes.c_int
+    if not copy(destination, 0, 0, width, height, source, 0, 0, SRCCOPY):
+        raise ValueError("Windows could not copy displayed pixels; show the target window.")
+
+
+def _capture_pixels(hwnd: int) -> tuple[int, int, bytes]:
     user32 = ctypes.windll.user32
     gdi32 = ctypes.windll.gdi32
     for function in (gdi32.CreateCompatibleDC, user32.GetWindowDC):
@@ -102,7 +154,6 @@ def _capture(hwnd: int) -> tuple[int, int, bytes]:
     ]
     user32.GetWindowDC.argtypes = [ctypes.c_void_p]
     user32.ReleaseDC.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-    user32.PrintWindow.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint]
     user32.IsIconic.argtypes = [ctypes.c_void_p]
     user32.GetWindowRect.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     if user32.IsIconic(hwnd):
@@ -117,8 +168,7 @@ def _capture(hwnd: int) -> tuple[int, int, bytes]:
     bitmap = gdi32.CreateCompatibleBitmap(window_dc, width, height)
     previous = gdi32.SelectObject(memory_dc, bitmap)
     try:
-        if not user32.PrintWindow(hwnd, memory_dc, PW_RENDERFULLCONTENT):
-            raise ValueError("Windows refused to give the image of the Archicad window.")
+        _copy_window_bitmap(gdi32, memory_dc, window_dc, width, height)
         # BITMAPINFOHEADER, negative height for top-down rows
         info = struct.pack("<IiiHHIIiiII", 40, width, -height, 1, 32, SRCCOPY_BI_RGB, 0, 0, 0, 0, 0)
         info_buffer = ctypes.create_string_buffer(info, len(info) + 16)
@@ -201,6 +251,8 @@ async def get_archicad_window_image(
     return {
         "port": port,
         "title": title,
+        "capture_method": "BitBlt",
+        "forced_repaint": False,
         "width": width,
         "height": height,
         "png": encode_png(width, height, pixels),

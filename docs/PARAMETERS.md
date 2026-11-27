@@ -157,3 +157,36 @@ parameter edits after the checkpoint and finish with `finish_model_task` to save
 same PLN. These tools already exist in current source; an old editable installation
 can hide them. Updating the Python server does not require closing Archicad or a new
 APX when the installed native save commands are available.
+
+### Symbol label background and draw order
+
+Tapir 1.7.0 (`02691b5d`, `ElementGDLParameterCommands.cpp`) supports Symbol Label
+parameters through the existing `get_gdl_parameters` / `set_gdl_parameters` tools.
+An older installed wrapper may incorrectly restrict them to Object; that is a server
+version limitation, not evidence that Tapir lacks Label support.
+
+Inspect the actual parameter metadata first. The Symbol label's GDL parameter
+`AC_LabelTextBgrPen` controls its text background independently of
+`ModifyLabels.symbolStyle.backgroundFillPenIndex`. Never assume changing one updates
+the other. Respect flags and locks; do not clear them. Pen indices are project-specific.
+If the opaque-background parameter is already true, leave it unchanged.
+Use `set_draw_order` only for annotation order (1..14), preserving geometry and owners.
+Neither numeric readback nor a successful setter proves that overlapping lines are
+hidden: inspect a real image containing the label and its surroundings before completion.
+
+Order matters for Symbol labels: a later style/details operation can regenerate GDL
+parameters. Apply intended style/order first, then re-read parameters, apply the actual
+GDL background last, and re-read it again after any subsequent edit. Inspect the final
+mask shape as well as occlusion; no assumption of persistence across regeneration.
+
+Mask shape is also library-part-specific. Read `possibleValues` and
+`canHaveCustomValue` before setting a parameter such as `iShapeHead`; never guess
+an enum from another library part or assume 1 means Rectangle. Validate shape,
+border and occlusion in the final image. Native allowed-value validation is enforced
+by the existing GDL setter, including for Symbol Labels.
+
+`set_draw_order` supports Object in addition to the annotation whitelist. It sends only
+`details.drawIndex`; Tapir 02691b5d handles that via draw-order grouping and skips the
+geometry/memo change path. Object GDL and classification snapshots are read and compared
+in addition to geometry, placement, ID and story/layer. A mismatch or unreadable invariant
+cannot pass verification. This does not change the GDL setter's parametric-size contract.
