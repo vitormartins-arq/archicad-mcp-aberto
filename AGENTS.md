@@ -26,7 +26,7 @@ projects: https://claude.ai/artifact/B2FsgTjNSA9HM8aMvXHWEz
    `<Drive>\02 - Empresarial\Projetos - Lab\Archicad\Archicad MCP\MCP Comunidade\Licoes-aprendidas.md`
    (`<Drive>` is `H:\Meu Drive` on one PC and may be `G:\Meu Drive` on the other).
    Do not append or renumber entries in Drive. Record new lessons (LA-xxx) and open
-   items (P-xxx) in the appropriate repository documentation, checking existing IDs.
+   items (P-xxx) in repository documentation, checking existing IDs. Use `docs/LICOES-APRENDIDAS.md` for new generic public entries once an authorized entry is needed; label its migration status explicitly, and never represent it as a complete historical register before validation.
    Migration must preserve history and exclude private information from this public repo.
 3. `CONTRIBUTING.md` for where code goes and the rules for a tool.
 4. `docs/FILA.md`: Codex's task queue, kept by Claude. When Vitor says "faça as tarefas
@@ -79,16 +79,17 @@ for all of Vitor's projects (blocks, add-ons, MCPs).
   21/10/2026: "não quero ficar dependendo de update do Tapir"). Also send the same
   command to Tapir upstream as a suggestion, so it can replace ours later. The add-on
   needs a Graphisoft-issued MDID.
-- Never delete files on Vitor's computer.
+- Never delete files on Vitor's computer except for the explicitly authorized, narrowly scoped verified PLN backup retention workflow above. This exception does not authorize deleting technical logs, unrelated backups or other project files.
 
 ## Repository and storage policy (28 November 2026)
 
 - GitHub is the canonical source for code, technical documentation, approved decisions, lessons, pending items, tests and development history. Conversation memory is evidence, not authority.
-- Before editing, verify the repository, remote, branch and existing changes. For a local clone, check `git status` and `git fetch`; preserve local and remote work. Develop in an isolated checkout outside synced Drive folders. Reuse existing paths and files.
+- Before editing, verify the repository, target ref, current commit and existing changes. In a local clone, check `git status`, `origin` and `git fetch`; preserve local and remote work. For connector-only documentation work, verify the remote ref and file version instead; do not claim local checks. Use an isolated checkout outside synced Drive folders for local development and tests. Reuse existing paths and files.
 - Google Drive is reserved for architectural projects, authorized deliveries, release snapshots and authorized backups. Never use it as an active development checkout or write new permanent development logs there. Distribution receipts, versioned source snapshots and delivery maps remain permitted in their authorized delivery locations; they are not canonical development sources.
 - Preserve historical external references and files as read-only until an approved migration is validated. Record new technical lessons and pending items in the appropriate GitHub repository; retain identifiers, dates, reasons, evidence and status. Do not claim an unmigrated register exists in GitHub. Do not copy private rules, client data or credentials into public repositories.
 - Review the diff and relevant checks before authorized commits/pushes; verify the remote commit and report branch, changed files, tests, synchronization and blockers. Distinguish code changes, commits, builds, deliveries and actual installation.
 - No destructive Git operations, overwrite of collaborators' work, merge, deployment, publication or deletion without applicable authorization. Existing authorized project backup/save and distribution contracts remain intact.
+- Governance-only reviews do not authorize builds, releases, installations, delivery or changes to revision metadata. If CI requires a new material revision even for documentation, report the blocker and obtain applicable authorization for the revision; do not bypass the revision check.
 
 ## Material revisions
 
